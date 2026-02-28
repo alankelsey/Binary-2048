@@ -1,0 +1,74 @@
+:root {
+  --bg: #0d1117;
+  --panel: #131a22;
+  --tile: #1f2833;
+  --text: #e6edf3;
+  --accent: #38bdf8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(circle at top, #162238, var(--bg) 55%);
+  color: var(--text);
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+}
+
+main {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 2rem 1rem 3rem;
+}
+
+.card {
+  border: 1px solid #243042;
+  background: color-mix(in srgb, var(--panel) 90%, #000 10%);
+  border-radius: 14px;
+  padding: 1rem;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.cell {
+  min-height: 60px;
+  border-radius: 10px;
+  background: var(--tile);
+  border: 1px solid #2d3b4f;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+button {
+  border: 1px solid #3b82f6;
+  color: #dff4ff;
+  background: #0f2949;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #113864;
+}
+
+.meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.95rem;
+  color: #9fb2c9;
+}
