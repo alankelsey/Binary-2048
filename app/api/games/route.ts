@@ -4,10 +4,11 @@ import type { Cell, GameConfig } from "@/lib/binary2048/types";
 
 export async function POST(req: Request) {
   try {
-    const body = (await req.json().catch(() => ({}))) as {
+    const raw = await req.json().catch(() => ({}));
+    const body = ((raw && typeof raw === "object" ? raw : {}) as {
       config?: Partial<GameConfig>;
       initialGrid?: Cell[][];
-    };
+    });
     const session = createSession(body.config, body.initialGrid);
     return NextResponse.json({
       id: session.current.id,

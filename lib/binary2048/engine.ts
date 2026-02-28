@@ -33,6 +33,7 @@ export function createGame(
 ): { state: GameState; events: GameEvent[] } {
   const config = mergeConfig(partialConfig);
   validateConfig(config);
+  const normalizedInitialGrid = normalizeInitialGrid(initialGrid, config);
   const events: GameEvent[] = [];
   const state: GameState = {
     id: `g_${idCounter++}`,
@@ -45,9 +46,9 @@ export function createGame(
     turn: 0,
     won: false,
     over: false,
-    grid: initialGrid ? cloneGrid(initialGrid) : newEmptyGrid(config.height, config.width)
+    grid: normalizedInitialGrid ? cloneGrid(normalizedInitialGrid) : newEmptyGrid(config.height, config.width)
   };
-  const withSpawns = initialGrid ? state : spawnN(state, 2, events);
+  const withSpawns = normalizedInitialGrid ? state : spawnN(state, 2, events);
   return { state: updateWinLose(withSpawns, events), events };
 }
 
@@ -129,6 +130,22 @@ function validateConfig(config: GameConfig) {
   const s = config.spawn.pZero + config.spawn.pOne + config.spawn.pWildcard;
   if (Math.abs(s - 1) > 1e-6) throw new Error("Spawn probabilities must sum to 1");
   if (!config.spawn.wildcardMultipliers.length) throw new Error("wildcardMultipliers cannot be empty");
+}
+
+function normalizeInitialGrid(initialGrid: Cell[][] | undefined, config: GameConfig): Cell[][] | undefined {
+  if (initialGrid === undefined || initialGrid === null) return undefined;
+  if (!Array.isArray(initialGrid) || initialGrid.length === 0) {
+    throw new Error("initialGrid must be a non-empty 2D array when provided");
+  }
+  if (initialGrid.length !== config.height) {
+    throw new Error(`initialGrid height must match config.height (${config.height})`);
+  }
+  for (const row of initialGrid) {
+    if (!Array.isArray(row) || row.length !== config.width) {
+      throw new Error(`each initialGrid row must have config.width (${config.width}) cells`);
+    }
+  }
+  return initialGrid;
 }
 
 function resolveLine(line: Cell[], events: GameEvent[]): { line: Cell[]; changed: boolean } {
@@ -228,6 +245,7 @@ function updateWinLose(state: GameState, events: GameEvent[]): GameState {
 }
 
 function isGameOver(grid: Cell[][]): boolean {
+  if (!Array.isArray(grid) || grid.length === 0 || !Array.isArray(grid[0])) return false;
   if (getEmptyCoords(grid).length > 0) return false;
   const h = grid.length;
   const w = grid[0].length;
@@ -314,12 +332,12 @@ function nextInt(state: GameState, max: number): { value: number; state: GameSta
 
 function randomUnit(seed: number, step: number): number {
   let x = (seed ^ (Math.imul(step + 1, 747796405) + 2891336453)) >>> 0;
-  x ^= x >>> 16;
+  x = (x ^ (x >>> 16)) >>> 0;
   x = Math.imul(x, 2246822519) >>> 0;
-  x ^= x >>> 13;
+  x = (x ^ (x >>> 13)) >>> 0;
   x = Math.imul(x, 3266489917) >>> 0;
-  x ^= x >>> 16;
-  return x / 4294967296;
+  x = (x ^ (x >>> 16)) >>> 0;
+  return (x >>> 0) / 4294967296;
 }
 
 function newEmptyGrid(height: number, width: number): Cell[][] {
