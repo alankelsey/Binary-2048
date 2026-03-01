@@ -176,17 +176,33 @@ export default function Home() {
     const effects: Record<string, CellEffect> = {};
     const prevZeroCount = prev.grid.flat().filter((cell) => cell?.t === "z").length;
     const nextZeroCount = next.grid.flat().filter((cell) => cell?.t === "z").length;
-    const zeroCollided = nextZeroCount < prevZeroCount;
+    const prevWildCount = prev.grid.flat().filter((cell) => cell?.t === "w").length;
+    const nextWildCount = next.grid.flat().filter((cell) => cell?.t === "w").length;
+    const zeroCollisionCount = Math.max(0, prevZeroCount - nextZeroCount);
+    const wildCollisionCount = Math.max(0, prevWildCount - nextWildCount);
+    const changedNumberCells: string[] = [];
+    const changedOccupiedCells: string[] = [];
+
+    const tileChanged = (before: Cell, after: Cell) => {
+      if (!before && !after) return false;
+      if (!before || !after) return true;
+      if (before.t !== after.t) return true;
+      if (before.t === "n" && after.t === "n") return before.v !== after.v;
+      if (before.t === "w" && after.t === "w") return before.m !== after.m;
+      return false;
+    };
 
     for (let r = 0; r < next.height; r++) {
       for (let c = 0; c < next.width; c++) {
         const key = `${r}-${c}`;
         const before = prev.grid[r]?.[c] ?? null;
         const after = next.grid[r]?.[c] ?? null;
-        if (zeroCollided && before?.t === "z" && after?.t !== "z") {
-          effects[key] = "zero-bust";
-          continue;
+
+        if (after && tileChanged(before, after)) {
+          changedOccupiedCells.push(key);
+          if (after.t === "n") changedNumberCells.push(key);
         }
+
         if (!hasMergeEvent || !after) continue;
         if (after.t === "w") {
           if (before?.t !== "w" || before.m !== after.m) effects[key] = "merge-wild";
@@ -195,6 +211,26 @@ export default function Home() {
         if (after.t === "n") {
           if (before?.t !== "n" || before.v !== after.v) effects[key] = "merge-number";
         }
+      }
+    }
+
+    // Wildcard collisions should feel like a boost: highlight impacted number destinations in green.
+    if (wildCollisionCount > 0) {
+      let assigned = 0;
+      for (const key of changedNumberCells) {
+        effects[key] = "merge-wild";
+        assigned += 1;
+        if (assigned >= wildCollisionCount) break;
+      }
+    }
+
+    // Zero collisions should animate where impact is seen, not where the zero started.
+    if (zeroCollisionCount > 0) {
+      let assigned = 0;
+      for (const key of changedOccupiedCells) {
+        effects[key] = "zero-bust";
+        assigned += 1;
+        if (assigned >= zeroCollisionCount) break;
       }
     }
     return effects;
@@ -210,7 +246,7 @@ export default function Home() {
     effectTimerRef.current = window.setTimeout(() => {
       setCellEffects({});
       effectTimerRef.current = null;
-    }, 280);
+    }, 460);
   }
 
   function label(cell: Cell): string {

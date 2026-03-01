@@ -68,3 +68,13 @@ Open `http://localhost:3000`.
 ## License
 
 Licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE).
+
+## Roadmap Additions
+
+- App theming system: light/dark/theme packs, board backgrounds, and tile style presets.
+- Color standards for boosts vs impediments:
+  - Boost effects and tiles use green-forward accents.
+  - Impediment effects and tiles use warm/red-forward accents.
+- Sale item icon system:
+  - Define a consistent icon palette and rarity colors for store packs/items.
+  - Ensure WCAG contrast compliance for icon + label combinations.
