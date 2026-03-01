@@ -12,7 +12,13 @@ type GameState = {
   id: string;
   width: number;
   height: number;
+  config?: {
+    spawn?: {
+      pWildcard?: number;
+    };
+  };
   score: number;
+  turn: number;
   won: boolean;
   over: boolean;
   grid: Cell[][];
@@ -29,6 +35,8 @@ const SPAWN_MODES: Record<
   ltfg: { label: "LTFG", pWildcard: 0.2 },
   death: { label: "Death by AI", pWildcard: 0.04 }
 };
+const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.1.0";
+const APP_COMMIT = process.env.NEXT_PUBLIC_APP_COMMIT ?? "dev";
 
 function Binary2048Logo() {
   return (
@@ -97,6 +105,8 @@ export default function Home() {
       }
       setGameId(json.id);
       setState(json.current);
+      const wildcardRate = json?.current?.config?.spawn?.pWildcard;
+      if (typeof wildcardRate === "number") setSpawnMode(modeFromWildcardRate(wildcardRate));
       setCellEffects({});
       window.localStorage.setItem(gameIdKey, json.id);
       window.localStorage.setItem(modeKey, spawnMode);
@@ -113,7 +123,10 @@ export default function Home() {
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json?.current || json?.id !== id) return false;
       setGameId(id);
-      setState(json.current as GameState);
+      const restored = json.current as GameState;
+      setState(restored);
+      const wildcardRate = restored?.config?.spawn?.pWildcard;
+      if (typeof wildcardRate === "number") setSpawnMode(modeFromWildcardRate(wildcardRate));
       setCellEffects({});
       setErrorMessage("");
       return true;
@@ -356,6 +369,10 @@ export default function Home() {
     }
   }
 
+  const wildcardRate = state?.config?.spawn?.pWildcard;
+  const activeMode = typeof wildcardRate === "number" ? modeFromWildcardRate(wildcardRate) : spawnMode;
+  const difficultyLocked = Boolean(state && !state.over && !state.won && (state.turn ?? 0) > 0);
+
   return (
     <main>
       <header className="brand">
@@ -370,8 +387,9 @@ export default function Home() {
         <div className="meta">
           <span>Game: {gameId || "-"}</span>
           <span className="score-pill">Score: {state?.score ?? 0}</span>
+          <span>Moves: {state?.turn ?? 0}</span>
           <span>High: {highScore}</span>
-          <span>Mode: {SPAWN_MODES[spawnMode].label}</span>
+          <span>Mode: {SPAWN_MODES[activeMode].label}</span>
           <span>{state?.won ? "Won" : state?.over ? "Game Over" : "Active"}</span>
         </div>
         {errorMessage ? <p className="status-error">{errorMessage}</p> : null}
@@ -426,7 +444,7 @@ export default function Home() {
                 className={`difficulty-select mode-${spawnMode}`}
                 value={spawnMode}
                 onChange={(event) => setSpawnMode(event.target.value as SpawnMode)}
-                disabled={busy}
+                disabled={busy || difficultyLocked}
               >
                 <option value="normal">{SPAWN_MODES.normal.label}</option>
                 <option value="ltfg">{SPAWN_MODES.ltfg.label}</option>
@@ -476,6 +494,9 @@ export default function Home() {
             <p>Tip: keep your highest value anchored to one side and avoid breaking the chain.</p>
           </div>
         </details>
+        <p className="build-version" aria-label="app version">
+          v{APP_VERSION} ({APP_COMMIT})
+        </p>
       </div>
     </main>
   );

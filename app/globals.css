@@ -284,6 +284,14 @@ button:hover {
   margin: 0.2rem 0;
 }
 
+.build-version {
+  margin: 0.55rem 0 0;
+  font-size: 0.7rem;
+  color: #6f88a6;
+  text-align: right;
+  letter-spacing: 0.02em;
+}
+
 .gameover-overlay {
   position: absolute;
   inset: 0.7rem 0.2rem 0.2rem;
