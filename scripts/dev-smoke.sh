@@ -12,7 +12,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-npm run dev -- -p "${PORT}" >"${LOG_FILE}" 2>&1 &
+npm run dev:once -- -p "${PORT}" >"${LOG_FILE}" 2>&1 &
 SERVER_PID=$!
 
 for _ in $(seq 1 80); do
