@@ -31,6 +31,8 @@ Open `http://localhost:3000`.
 - `POST /api/games/:id/move`
   - Body: `{ "dir": "up" | "down" | "left" | "right" }`
   - Applies one move and returns updated state
+- `GET /api/games/:id/encoded`
+  - Returns AI-friendly encoded state + legal moves + ruleset/version metadata
 - `GET /api/games/:id/export`
   - Returns export JSON (download attachment)
 - `POST /api/sim/run`
