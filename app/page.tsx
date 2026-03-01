@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, type TouchEvent } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type TouchEvent } from "react";
 
 type Tile = { t: "n"; v: number } | { t: "z" } | { t: "w"; m: number };
 type Cell = Tile | null;
 type Dir = "up" | "down" | "left" | "right";
 type CellEffect = "merge-number" | "merge-wild" | "zero-bust";
+type SpawnMode = "normal" | "ltfg" | "death";
 
 type GameState = {
   id: string;
@@ -15,6 +16,18 @@ type GameState = {
   won: boolean;
   over: boolean;
   grid: Cell[][];
+};
+
+const SPAWN_MODES: Record<
+  SpawnMode,
+  {
+    label: string;
+    pWildcard: number;
+  }
+> = {
+  normal: { label: "Normal", pWildcard: 0.1 },
+  ltfg: { label: "LTFG", pWildcard: 0.2 },
+  death: { label: "Death by AI", pWildcard: 0.04 }
 };
 
 function Binary2048Logo() {
@@ -42,24 +55,40 @@ function Binary2048Logo() {
 }
 
 export default function Home() {
+  const gameIdKey = "binary2048.currentGameId";
+  const modeKey = "binary2048.spawnMode";
   const highScoreKey = "binary2048.highScore";
   const [gameId, setGameId] = useState<string>("");
   const [state, setState] = useState<GameState | null>(null);
   const [busy, setBusy] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [highScore, setHighScore] = useState(0);
+  const [spawnMode, setSpawnMode] = useState<SpawnMode>("normal");
   const [cellEffects, setCellEffects] = useState<Record<string, CellEffect>>({});
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const effectTimerRef = useRef<number | null>(null);
+  const importInputRef = useRef<HTMLInputElement | null>(null);
 
   async function newGame() {
     setBusy(true);
     setErrorMessage("");
     try {
+      const pZero = 0.15;
+      const pWildcard = SPAWN_MODES[spawnMode].pWildcard;
+      const pOne = 1 - pZero - pWildcard;
       const res = await fetch("/api/games", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({})
+        body: JSON.stringify({
+          config: {
+            spawn: {
+              pZero,
+              pOne,
+              pWildcard,
+              wildcardMultipliers: [2]
+            }
+          }
+        })
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json?.current || !json?.id) {
@@ -69,10 +98,27 @@ export default function Home() {
       setGameId(json.id);
       setState(json.current);
       setCellEffects({});
+      window.localStorage.setItem(gameIdKey, json.id);
+      window.localStorage.setItem(modeKey, spawnMode);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Failed to create game");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function restoreGame(id: string): Promise<boolean> {
+    try {
+      const res = await fetch(`/api/games/${id}`);
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json?.current || json?.id !== id) return false;
+      setGameId(id);
+      setState(json.current as GameState);
+      setCellEffects({});
+      setErrorMessage("");
+      return true;
+    } catch {
+      return false;
     }
   }
 
@@ -92,6 +138,7 @@ export default function Home() {
         const message = (json && typeof json.error === "string" ? json.error : "Failed to apply move");
         if (res.status === 404) {
           // Session may be gone in dev/serverless contexts; create a fresh game.
+          window.localStorage.removeItem(gameIdKey);
           await newGame();
           return;
         }
@@ -102,6 +149,9 @@ export default function Home() {
       const hasMergeEvent = events.some((event: { type?: string }) => event?.type === "merge");
       setState(next);
       startCellEffects(computeCellEffects(previous, next, hasMergeEvent));
+      if (next.over || next.won) {
+        window.localStorage.removeItem(gameIdKey);
+      }
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Failed to apply move");
     } finally {
@@ -153,7 +203,7 @@ export default function Home() {
   function label(cell: Cell): string {
     if (!cell) return "";
     if (cell.t === "z") return "0";
-    if (cell.t === "w") return `W${cell.m}`;
+    if (cell.t === "w") return "";
     return String(cell.v);
   }
 
@@ -164,14 +214,93 @@ export default function Home() {
     return "tile-number";
   }
 
+  function numberTileStyle(cell: Cell): CSSProperties | undefined {
+    if (!cell || cell.t !== "n") return undefined;
+    const exp = Math.max(0, Math.log2(Math.max(1, cell.v)));
+    const t = Math.min(1, exp / 11);
+    const hue = Math.round(210 - 206 * t);
+    const lightTop = Math.round(30 + 22 * t);
+    const lightBottom = Math.round(22 + 15 * t);
+    return {
+      color: "#f8fbff",
+      background: `linear-gradient(180deg, hsl(${hue} 72% ${lightTop}%), hsl(${hue} 74% ${lightBottom}%))`,
+      borderColor: `hsl(${Math.max(0, hue - 8)} 80% ${Math.min(70, lightTop + 14)}%)`
+    };
+  }
+
+  function modeFromWildcardRate(pWildcard: number): SpawnMode {
+    const modes: SpawnMode[] = ["normal", "ltfg", "death"];
+    return modes.reduce((best, mode) => {
+      const bestDelta = Math.abs(SPAWN_MODES[best].pWildcard - pWildcard);
+      const nextDelta = Math.abs(SPAWN_MODES[mode].pWildcard - pWildcard);
+      return nextDelta < bestDelta ? mode : best;
+    }, "normal" as SpawnMode);
+  }
+
+  async function importGameFile(file: File) {
+    setBusy(true);
+    setErrorMessage("");
+    try {
+      const text = await file.text();
+      const payload = JSON.parse(text);
+      const res = await fetch("/api/games/import", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json?.current || !json?.id) {
+        const message = (json && typeof json.error === "string" ? json.error : "Failed to import game");
+        throw new Error(message);
+      }
+      setGameId(json.id);
+      setState(json.current);
+      setCellEffects({});
+      window.localStorage.setItem(gameIdKey, json.id);
+
+      const importedRate = json?.current?.config?.spawn?.pWildcard;
+      if (typeof importedRate === "number") {
+        const inferredMode = modeFromWildcardRate(importedRate);
+        setSpawnMode(inferredMode);
+        window.localStorage.setItem(modeKey, inferredMode);
+      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Failed to import game";
+      setErrorMessage(msg);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   useEffect(() => {
-    void newGame();
+    let cancelled = false;
+    async function initializeGame() {
+      setBusy(true);
+      const savedId = window.localStorage.getItem(gameIdKey);
+      if (savedId) {
+        const ok = await restoreGame(savedId);
+        if (ok || cancelled) {
+          setBusy(false);
+          return;
+        }
+      }
+      if (!cancelled) await newGame();
+      if (!cancelled) setBusy(false);
+    }
+    void initializeGame();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
     const raw = window.sessionStorage.getItem(highScoreKey);
     const parsed = Number(raw ?? "0");
     if (!Number.isNaN(parsed) && parsed > 0) setHighScore(parsed);
+    const savedMode = window.localStorage.getItem(modeKey);
+    if (savedMode === "normal" || savedMode === "ltfg" || savedMode === "death") {
+      setSpawnMode(savedMode);
+    }
   }, []);
 
   useEffect(() => {
@@ -180,6 +309,10 @@ export default function Home() {
     setHighScore(score);
     window.sessionStorage.setItem(highScoreKey, String(score));
   }, [state?.score, highScore]);
+
+  useEffect(() => {
+    window.localStorage.setItem(modeKey, spawnMode);
+  }, [spawnMode]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -232,12 +365,13 @@ export default function Home() {
           <p className="brand-subtitle">Merge bits. Control chaos. Reach 2048.</p>
         </div>
       </header>
-      <p>Arrow keys also work. Bonus tiles: zero annihilator + wildcard multipliers.</p>
+      <p>Arrow keys combine tiles. Bonus tiles: zero annihilator + wildcard multipliers.</p>
       <div className="card">
         <div className="meta">
           <span>Game: {gameId || "-"}</span>
           <span className="score-pill">Score: {state?.score ?? 0}</span>
           <span>High: {highScore}</span>
+          <span>Mode: {SPAWN_MODES[spawnMode].label}</span>
           <span>{state?.won ? "Won" : state?.over ? "Game Over" : "Active"}</span>
         </div>
         {errorMessage ? <p className="status-error">{errorMessage}</p> : null}
@@ -256,13 +390,11 @@ export default function Home() {
                   <div
                     key={`${r}-${c}`}
                     className={`cell ${cell ? "filled" : "empty"} ${cellTypeClass(cell)} ${effectClass}`}
+                    style={numberTileStyle(cell)}
                   >
                     {cell?.t === "w" ? (
-                      <span className="wild-icon-wrap">
-                        <span className="wild-icon" aria-hidden="true">
-                          ✦
-                        </span>
-                        <span>{cell.m}</span>
+                      <span className="wild-icon" aria-label="wildcard tile">
+                        ✦
                       </span>
                     ) : (
                       label(cell)
@@ -283,29 +415,67 @@ export default function Home() {
           ) : null}
         </div>
         <div className="actions">
-          <button disabled={busy} onClick={() => void newGame()}>
-            New Game
-          </button>
-          <button
-            disabled={!gameId}
-            onClick={() => {
-              if (!gameId) return;
-              window.open(`/api/games/${gameId}/export`, "_blank");
+          <div className="primary-controls">
+            <button disabled={busy} onClick={() => void newGame()}>
+              New Game
+            </button>
+            <label className="difficulty-select-wrap">
+              <span className="difficulty-label">Difficulty</span>
+              <select
+                aria-label="Wildcard spawn mode"
+                className={`difficulty-select mode-${spawnMode}`}
+                value={spawnMode}
+                onChange={(event) => setSpawnMode(event.target.value as SpawnMode)}
+                disabled={busy}
+              >
+                <option value="normal">{SPAWN_MODES.normal.label}</option>
+                <option value="ltfg">{SPAWN_MODES.ltfg.label}</option>
+                <option value="death">{SPAWN_MODES.death.label}</option>
+              </select>
+            </label>
+          </div>
+          <div className="secondary-controls">
+            <button
+              disabled={busy}
+              onClick={() => {
+                importInputRef.current?.click();
+              }}
+            >
+              Import JSON
+            </button>
+            <button
+              disabled={!gameId}
+              onClick={() => {
+                if (!gameId) return;
+                window.open(`/api/games/${gameId}/export`, "_blank");
+              }}
+            >
+              Export JSON
+            </button>
+          </div>
+          <input
+            ref={importInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="file-input-hidden"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              event.target.value = "";
+              if (!file) return;
+              void importGameFile(file);
             }}
-          >
-            Export JSON
-          </button>
+          />
         </div>
         <details className="game-hint">
           <summary>How to play: Swipe on mobile or use arrow keys. Keep your strongest chain organized.</summary>
           <div className="game-hint-body">
             <p>Basic moves: all tiles slide in one direction per turn.</p>
             <p>`0` tiles annihilate when they collide with any tile. `0+0` also vanishes.</p>
-            <p>Wildcards (`W2`, `W4`, ...) multiply number tiles and can merge with matching wildcards.</p>
+            <p>Wildcard tiles (`✦`) double any number tile they collide with, then disappear.</p>
             <p>Game ends when no empty cells and no valid merges remain.</p>
+            <p>Tip: keep your highest value anchored to one side and avoid breaking the chain.</p>
           </div>
         </details>
-        <p className="swipe-hint">Tip: keep your highest value anchored to one side and avoid breaking the chain.</p>
       </div>
     </main>
   );

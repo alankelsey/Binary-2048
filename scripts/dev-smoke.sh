@@ -38,7 +38,12 @@ if [[ -z "${GAME_ID}" || "${GAME_ID}" == "null" ]]; then
 fi
 
 curl -fsS -X POST "${BASE}/api/games/${GAME_ID}/move" -H "Content-Type: application/json" -d '{"dir":"left"}' >/dev/null
-curl -fsS "${BASE}/api/games/${GAME_ID}/export" >/dev/null
+EXPORT_RESP="$(curl -fsS "${BASE}/api/games/${GAME_ID}/export")"
+if [[ "${EXPORT_RESP}" != *'"version":1'* && "${EXPORT_RESP}" != *'"version": 1'* ]]; then
+  echo "Dev smoke test failed: /api/games/${GAME_ID}/export missing version field"
+  exit 1
+fi
+curl -fsS -X POST "${BASE}/api/games/import" -H "Content-Type: application/json" -d "${EXPORT_RESP}" >/dev/null
 curl -fsS -X POST "${BASE}/api/sim/run" -H "Content-Type: application/json" -d '{"config":{"width":4,"height":4,"seed":99,"winTile":2048,"zeroBehavior":"annihilate","spawnOnNoopMove":false,"spawn":{"pZero":0,"pOne":1,"pWildcard":0,"wildcardMultipliers":[2,4,8]}},"initialGrid":[[{"t":"w","m":2},{"t":"w","m":2},{"t":"n","v":1},null],[null,null,null,null],[null,null,null,null],[null,null,null,null]],"moves":["left"]}' >/dev/null
 
 if grep -q "segment-explorer-node.js#SegmentViewNode" "${LOG_FILE}" || grep -q "React Client Manifest" "${LOG_FILE}"; then

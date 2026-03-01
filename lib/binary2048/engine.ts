@@ -31,7 +31,9 @@ export function createGame(
   partialConfig?: Partial<GameConfig>,
   initialGrid?: Cell[][]
 ): { state: GameState; events: GameEvent[] } {
-  const config = mergeConfig(partialConfig);
+  const baseConfig = mergeConfig(partialConfig);
+  const config: GameConfig =
+    partialConfig?.seed === undefined ? { ...baseConfig, seed: randomSeed() } : baseConfig;
   validateConfig(config);
   const normalizedInitialGrid = normalizeInitialGrid(initialGrid, config);
   const events: GameEvent[] = [];
@@ -50,6 +52,10 @@ export function createGame(
   };
   const withSpawns = normalizedInitialGrid ? state : spawnN(state, 2, events);
   return { state: updateWinLose(withSpawns, events), events };
+}
+
+function randomSeed(): number {
+  return Math.floor(Math.random() * 2147483647) + 1;
 }
 
 export function applyMove(state: GameState, dir: Dir): { state: GameState; moved: boolean; events: GameEvent[] } {

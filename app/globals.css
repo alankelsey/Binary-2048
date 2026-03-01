@@ -104,14 +104,12 @@ main {
   color: #ffd4de;
 }
 
-.wild-icon-wrap {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.2rem;
-  font-weight: 800;
-}
-
 .wild-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05em;
+  line-height: 1;
   color: #7dd3fc;
   text-shadow: 0 0 10px rgba(125, 211, 252, 0.45);
 }
@@ -130,11 +128,29 @@ main {
 }
 
 .actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 0.42rem;
   max-width: 100%;
   margin-top: 0.25rem;
+}
+
+.primary-controls {
+  display: flex;
+  gap: 0.42rem;
+  align-items: center;
+}
+
+.secondary-controls {
+  display: flex;
+  gap: 0.42rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.secondary-controls button {
+  min-width: 8.1rem;
 }
 
 button {
@@ -167,6 +183,66 @@ button:hover {
   border: 1px solid #2f5fa2;
   border-radius: 999px;
   padding: 0.18rem 0.5rem;
+}
+
+.difficulty-select-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.difficulty-label {
+  font-size: 0.72rem;
+  color: #88a4c6;
+  white-space: nowrap;
+}
+
+.difficulty-select {
+  appearance: none;
+  border: 1px solid #2f4f74;
+  background: #102035;
+  color: #dbeafd;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  line-height: 1.2;
+  padding: 0.28rem 1.65rem 0.28rem 0.6rem;
+  cursor: pointer;
+  min-width: 8.6rem;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #9dbde1 50%),
+    linear-gradient(135deg, #9dbde1 50%, transparent 50%);
+  background-position:
+    calc(100% - 0.85rem) calc(50% - 0.06rem),
+    calc(100% - 0.56rem) calc(50% - 0.06rem);
+  background-size: 0.32rem 0.32rem, 0.32rem 0.32rem;
+  background-repeat: no-repeat;
+}
+
+.difficulty-select:focus-visible {
+  outline: 2px solid #4da6ff;
+  outline-offset: 2px;
+}
+
+.difficulty-select.mode-normal {
+  border-color: #2f7a57;
+  background-color: #103125;
+  color: #d7ffea;
+}
+
+.difficulty-select.mode-ltfg {
+  border-color: #8a5a21;
+  background-color: #35240f;
+  color: #ffe8c6;
+}
+
+.difficulty-select.mode-death {
+  border-color: #8a2b3a;
+  background-color: #36131c;
+  color: #ffe0e7;
+}
+
+.file-input-hidden {
+  display: none;
 }
 
 .status-error {
@@ -303,6 +379,35 @@ button:hover {
 
   .swipe-hint {
     font-size: 0.72rem;
+  }
+
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .primary-controls {
+    width: 100%;
+  }
+
+  .difficulty-select-wrap {
+    flex: 1;
+    justify-content: flex-start;
+  }
+
+  .difficulty-select {
+    min-width: 0;
+    width: 10.2rem;
+    max-width: 100%;
+  }
+
+  .secondary-controls {
+    width: 100%;
+  }
+
+  .secondary-controls button {
+    flex: 1;
+    min-width: 0;
   }
 
   .gameover-overlay {

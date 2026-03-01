@@ -1,5 +1,5 @@
 import { applyMove, buildExport, createGame } from "@/lib/binary2048/engine";
-import type { Cell, Dir, GameConfig, GameSession } from "@/lib/binary2048/types";
+import type { Cell, Dir, GameConfig, GameExport, GameSession } from "@/lib/binary2048/types";
 
 const globalStore = globalThis as typeof globalThis & {
   __binary2048_games?: Map<string, GameSession>;
@@ -57,4 +57,42 @@ export function listSessionState(id: string) {
     current: session.current,
     stepCount: session.steps.length
   };
+}
+
+export function importSession(exported: GameExport) {
+  if (!exported || typeof exported !== "object") throw new Error("Invalid export payload");
+  if (!exported.config || !exported.initial?.grid || !Array.isArray(exported.steps)) {
+    throw new Error("Export is missing required fields");
+  }
+
+  const created = createGame(exported.config, exported.initial.grid);
+  const initialState = created.state;
+  let current = initialState;
+  const steps: GameSession["steps"] = [];
+
+  for (const step of exported.steps) {
+    if (!step || (step.dir !== "up" && step.dir !== "down" && step.dir !== "left" && step.dir !== "right")) {
+      throw new Error("Export contains invalid move direction");
+    }
+    const before = current;
+    const move = applyMove(before, step.dir);
+    steps.push({
+      turn: before.turn + 1,
+      dir: step.dir,
+      moved: move.moved,
+      before,
+      after: move.state,
+      events: move.events
+    });
+    current = move.state;
+    if (current.over) break;
+  }
+
+  const session = {
+    initialState,
+    current,
+    steps
+  };
+  games.set(current.id, session);
+  return session;
 }

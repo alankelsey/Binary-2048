@@ -2,10 +2,12 @@
   "name": "binary-2048",
   "version": "0.1.0",
   "private": true,
+  "license": "Apache-2.0",
   "scripts": {
     "clean:next": "rm -rf .next",
     "predev": "npm run clean:next",
     "dev": "NEXT_DISABLE_WEBPACK_CACHE=1 next dev",
+    "dev:turbo": "NEXT_DISABLE_WEBPACK_CACHE=1 next dev --turbo",
     "prebuild": "npm run clean:next",
     "build": "next build && bash ./scripts/build-smoke.sh",
     "start": "next start",
