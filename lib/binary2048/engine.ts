@@ -54,8 +54,44 @@ export function createGame(
   return { state: updateWinLose(withSpawns, events), events };
 }
 
+export function generateBitstormInitialGrid(config: GameConfig): Cell[][] {
+  validateConfig(config);
+  const grid = newEmptyGrid(config.height, config.width);
+  const total = config.height * config.width;
+  const targetFilled = Math.max(4, Math.min(total - 1, Math.floor(total * 0.38)));
+  const used = new Set<number>();
+  let step = 0;
+
+  for (let i = 0; i < targetFilled; i++) {
+    let flat = Math.floor(randomUnit(config.seed, step++) * total);
+    while (used.has(flat)) flat = (flat + 1) % total;
+    used.add(flat);
+
+    const r = Math.floor(flat / config.width);
+    const c = flat % config.width;
+    grid[r][c] = bitstormTileForStep(config, step++);
+  }
+
+  return grid;
+}
+
 function randomSeed(): number {
   return Math.floor(Math.random() * 2147483647) + 1;
+}
+
+function bitstormTileForStep(config: GameConfig, step: number): Tile {
+  const roll = randomUnit(config.seed, step);
+  const zeroThreshold = Math.min(0.25, Math.max(0.05, config.spawn.pZero));
+  const oneThreshold = Math.min(0.9, zeroThreshold + Math.max(0.45, config.spawn.pOne * 0.55));
+  const twoThreshold = Math.min(0.97, oneThreshold + 0.2);
+
+  if (roll < zeroThreshold) return { t: "z" };
+  if (roll < oneThreshold) return { t: "n", v: 1 };
+  if (roll < twoThreshold) return { t: "n", v: 2 };
+
+  const multiplierStep = step + 13;
+  const multiplierIndex = Math.floor(randomUnit(config.seed, multiplierStep) * config.spawn.wildcardMultipliers.length);
+  return { t: "w", m: config.spawn.wildcardMultipliers[multiplierIndex] };
 }
 
 export function applyMove(state: GameState, dir: Dir): { state: GameState; moved: boolean; events: GameEvent[] } {

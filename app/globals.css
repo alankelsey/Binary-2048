@@ -480,6 +480,12 @@ button:hover {
   gap: 0.35rem;
 }
 
+.mode-select-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
 .color-mode-select {
   appearance: none;
   border: 1px solid #355273;
@@ -491,6 +497,27 @@ button:hover {
   padding: 0.28rem 1.65rem 0.28rem 0.6rem;
   cursor: pointer;
   min-width: 9.4rem;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #9dbde1 50%),
+    linear-gradient(135deg, #9dbde1 50%, transparent 50%);
+  background-position:
+    calc(100% - 0.85rem) calc(50% - 0.06rem),
+    calc(100% - 0.56rem) calc(50% - 0.06rem);
+  background-size: 0.32rem 0.32rem, 0.32rem 0.32rem;
+  background-repeat: no-repeat;
+}
+
+.game-mode-select {
+  appearance: none;
+  border: 1px solid #3c5f86;
+  background: #132a44;
+  color: #dbeafd;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  line-height: 1.2;
+  padding: 0.28rem 1.65rem 0.28rem 0.6rem;
+  cursor: pointer;
+  min-width: 8.8rem;
   background-image:
     linear-gradient(45deg, transparent 50%, #9dbde1 50%),
     linear-gradient(135deg, #9dbde1 50%, transparent 50%);
@@ -542,6 +569,12 @@ button:hover {
   .color-mode-select {
     min-width: 0;
     width: 10.4rem;
+    max-width: 100%;
+  }
+
+  .game-mode-select {
+    min-width: 0;
+    width: 9.8rem;
     max-width: 100%;
   }
 

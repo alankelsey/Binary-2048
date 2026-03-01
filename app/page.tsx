@@ -8,6 +8,7 @@ type Cell = Tile | null;
 type Dir = "up" | "down" | "left" | "right";
 type SpawnMode = "normal" | "ltfg" | "death";
 type ColorMode = "default" | "cb-protanopia" | "cb-deuteranopia";
+type GameMode = "classic" | "bitstorm";
 
 type GameState = {
   id: string;
@@ -35,6 +36,10 @@ const SPAWN_MODES: Record<
   normal: { label: "Normal", pWildcard: 0.1 },
   ltfg: { label: "LTFG", pWildcard: 0.2 },
   death: { label: "Death by AI", pWildcard: 0.04 }
+};
+const GAME_MODES: Record<GameMode, { label: string }> = {
+  classic: { label: "Classic" },
+  bitstorm: { label: "Bitstorm" }
 };
 const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.1.0";
 const APP_COMMIT = process.env.NEXT_PUBLIC_APP_COMMIT ?? "dev";
@@ -66,6 +71,7 @@ function Binary2048Logo() {
 export default function Home() {
   const gameIdKey = "binary2048.currentGameId";
   const modeKey = "binary2048.spawnMode";
+  const gameModeKey = "binary2048.gameMode";
   const highScoreKey = "binary2048.highScore";
   const colorModeKey = "binary2048.colorMode";
   const [gameId, setGameId] = useState<string>("");
@@ -75,6 +81,7 @@ export default function Home() {
   const [highScore, setHighScore] = useState(0);
   const [spawnMode, setSpawnMode] = useState<SpawnMode>("normal");
   const [colorMode, setColorMode] = useState<ColorMode>("default");
+  const [gameMode, setGameMode] = useState<GameMode>("classic");
   const [cellEffects, setCellEffects] = useState<Record<string, CellEffect>>({});
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const effectTimerRef = useRef<number | null>(null);
@@ -91,6 +98,7 @@ export default function Home() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
+          mode: gameMode,
           config: {
             spawn: {
               pZero,
@@ -288,6 +296,10 @@ export default function Home() {
     if (savedMode === "normal" || savedMode === "ltfg" || savedMode === "death") {
       setSpawnMode(savedMode);
     }
+    const savedGameMode = window.localStorage.getItem(gameModeKey);
+    if (savedGameMode === "classic" || savedGameMode === "bitstorm") {
+      setGameMode(savedGameMode);
+    }
     const savedColorMode = window.localStorage.getItem(colorModeKey);
     if (savedColorMode === "default" || savedColorMode === "cb-protanopia" || savedColorMode === "cb-deuteranopia") {
       setColorMode(savedColorMode);
@@ -304,6 +316,10 @@ export default function Home() {
   useEffect(() => {
     window.localStorage.setItem(modeKey, spawnMode);
   }, [spawnMode]);
+
+  useEffect(() => {
+    window.localStorage.setItem(gameModeKey, gameMode);
+  }, [gameMode]);
 
   useEffect(() => {
     window.localStorage.setItem(colorModeKey, colorMode);
@@ -372,7 +388,8 @@ export default function Home() {
           <span className="score-pill">Score: {state?.score ?? 0}</span>
           <span>Moves: {state?.turn ?? 0}</span>
           <span>High: {highScore}</span>
-          <span>Mode: {SPAWN_MODES[activeMode].label}</span>
+          <span>Difficulty: {SPAWN_MODES[activeMode].label}</span>
+          <span>Mode: {GAME_MODES[gameMode].label}</span>
           <span>{state?.won ? "Won" : state?.over ? "Game Over" : "Active"}</span>
         </div>
         {errorMessage ? <p className="status-error">{errorMessage}</p> : null}
@@ -445,6 +462,19 @@ export default function Home() {
                 <option value="default">Default</option>
                 <option value="cb-protanopia">CB Protanopia</option>
                 <option value="cb-deuteranopia">CB Deuteranopia</option>
+              </select>
+            </label>
+            <label className="mode-select-wrap">
+              <span className="difficulty-label">Mode</span>
+              <select
+                aria-label="Game mode"
+                className="game-mode-select"
+                value={gameMode}
+                onChange={(event) => setGameMode(event.target.value as GameMode)}
+                disabled={busy || difficultyLocked}
+              >
+                <option value="classic">{GAME_MODES.classic.label}</option>
+                <option value="bitstorm">{GAME_MODES.bitstorm.label}</option>
               </select>
             </label>
           </div>

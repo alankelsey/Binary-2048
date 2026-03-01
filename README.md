@@ -90,3 +90,18 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE).
   - Imported games are treated as `unranked` unless replay hash/signature validation passes.
   - Any replay that contains paid boosts/impediments must include entitlement metadata.
   - Ranked or leaderboard submissions require server-authoritative validation of moves, boosts, and inventory consumption.
+- New seeded-chaos mode (`Bitstorm`):
+  - Add a mode that starts from a pre-filled board instead of an empty grid.
+  - Boards are generated from deterministic seeds to create repeatable challenge runs.
+  - Mode name for branding: `Bitstorm` (chaos-style, but consistent with Binary-2048 theme).
+  - Expose `Mode` as a dropdown in the gameplay controls row next to `Color`.
+- UI controls governance (admin/dev toggle):
+  - Add a dev/admin control policy to enable/disable individual dropdowns and advanced controls.
+  - In `dev`, default all controls ON for rapid testing.
+  - In `prod`, unauthenticated and unpaid users should see:
+    - `New Game`
+    - `Difficulty`
+    - `Color`
+    - `Mode`
+    - `Import`
+    - `Export`
