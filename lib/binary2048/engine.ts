@@ -201,6 +201,7 @@ function canMerge(a: Tile, b: Tile): boolean {
 
 function mergePair(a: Tile, b: Tile): Tile | null {
   if (a.t === "z" && b.t === "z") return null;
+  if ((a.t === "z" && b.t === "w") || (a.t === "w" && b.t === "z")) return null;
   if (a.t === "z") return b;
   if (b.t === "z") return a;
   if (a.t === "n" && b.t === "n") return { t: "n", v: a.v * 2 };
