@@ -15,6 +15,7 @@
     "build": "NEXT_DIST_DIR=.next-build next build && bash ./scripts/build-smoke.sh",
     "start": "NEXT_DIST_DIR=.next-build next start",
     "test:unit": "jest --runInBand",
+    "test:all": "npm run test:unit && npm run test:dev && npm run build",
     "test:routes": "npm run build",
     "test:dev": "bash ./scripts/dev-smoke.sh",
     "lint": "next lint",

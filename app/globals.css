@@ -14,13 +14,13 @@
   --wild-anim-a: rgba(74, 222, 128, 0.36);
   --wild-anim-b: rgba(74, 222, 128, 0.62);
   --wild-anim-c: rgba(74, 222, 128, 0);
-  --zero-bust-a: rgba(248, 113, 113, 0.45);
-  --zero-bust-b: rgba(251, 146, 60, 0.88);
-  --zero-bust-c: rgba(248, 113, 113, 0.5);
-  --zero-bust-d: rgba(251, 146, 60, 0.55);
-  --zero-bust-e: rgba(253, 186, 116, 0.95);
-  --zero-bust-f: rgba(251, 146, 60, 0.24);
-  --zero-bust-g: rgba(251, 146, 60, 0.45);
+  --zero-bust-a: rgba(250, 204, 21, 0.5);
+  --zero-bust-b: rgba(234, 179, 8, 0.95);
+  --zero-bust-c: rgba(250, 204, 21, 0.56);
+  --zero-bust-d: rgba(234, 179, 8, 0.64);
+  --zero-bust-e: rgba(253, 224, 71, 0.96);
+  --zero-bust-f: rgba(234, 179, 8, 0.28);
+  --zero-bust-g: rgba(234, 179, 8, 0.55);
 }
 
 :root[data-color-mode="cb-protanopia"] {
@@ -190,6 +190,11 @@ main {
   color: #ffd3db;
   animation: zeroBust 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
   will-change: transform, opacity, box-shadow, border-color;
+}
+
+.cell.fx-spawn {
+  animation: spawnPulse 210ms ease-out;
+  will-change: transform, opacity, box-shadow;
 }
 
 .actions {
@@ -448,6 +453,24 @@ button:hover {
     opacity: 1;
     border-color: var(--zero-bust-a);
     box-shadow: 0 0 0 var(--zero-bust-a);
+  }
+}
+
+@keyframes spawnPulse {
+  0% {
+    transform: scale(0.86);
+    opacity: 0.82;
+    box-shadow: 0 0 0 rgba(147, 197, 253, 0);
+  }
+  65% {
+    transform: scale(1.03);
+    opacity: 1;
+    box-shadow: 0 0 10px rgba(147, 197, 253, 0.35);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+    box-shadow: 0 0 0 rgba(147, 197, 253, 0);
   }
 }
 
