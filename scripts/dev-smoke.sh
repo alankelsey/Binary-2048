@@ -45,6 +45,7 @@ if [[ "${EXPORT_RESP}" != *'"version":1'* && "${EXPORT_RESP}" != *'"version": 1'
 fi
 curl -fsS -X POST "${BASE}/api/games/import" -H "Content-Type: application/json" -d "${EXPORT_RESP}" >/dev/null
 curl -fsS -X POST "${BASE}/api/sim/run" -H "Content-Type: application/json" -d '{"config":{"width":4,"height":4,"seed":99,"winTile":2048,"zeroBehavior":"annihilate","spawnOnNoopMove":false,"spawn":{"pZero":0,"pOne":1,"pWildcard":0,"wildcardMultipliers":[2,4,8]}},"initialGrid":[[{"t":"w","m":2},{"t":"w","m":2},{"t":"n","v":1},null],[null,null,null,null],[null,null,null,null],[null,null,null,null]],"moves":["left"]}' >/dev/null
+curl -fsS -X POST "${BASE}/api/simulate" -H "Content-Type: application/json" -d '{"seed":77,"moves":["left","up","right"],"config":{"size":4}}' >/dev/null
 
 if grep -q "segment-explorer-node.js#SegmentViewNode" "${LOG_FILE}" || grep -q "React Client Manifest" "${LOG_FILE}"; then
   echo "Dev smoke test failed: detected React Client Manifest/segment-explorer error."

@@ -44,6 +44,9 @@ Open `http://localhost:3000`.
 - `POST /api/sim/run`
   - Body: `{ "config": GameConfig, "initialGrid": Cell[][], "moves": Dir[] }`
   - Runs deterministic scenario and returns export JSON
+- `POST /api/simulate`
+  - Body: `{ "seed"?: number, "moves": Dir[], "config"?: Partial<GameConfig> & { size?: number }, "initialGrid"?: Cell[][], "includeSteps"?: boolean }`
+  - Runs batch simulation and returns final state, score, and step summaries
 
 ## Example Scenario Payload
 
