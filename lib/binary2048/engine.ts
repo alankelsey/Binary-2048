@@ -20,8 +20,8 @@ export const DEFAULT_CONFIG: GameConfig = {
   zeroBehavior: "annihilate",
   spawnOnNoopMove: false,
   spawn: {
-    pZero: 0.05,
-    pOne: 0.85,
+    pZero: 0.15,
+    pOne: 0.75,
     pWildcard: 0.1,
     wildcardMultipliers: [2, 4, 8]
   }
@@ -60,16 +60,19 @@ export function applyMove(state: GameState, dir: Dir): { state: GameState; moved
   const lines = extractLines(before.grid, dir);
   const nextLines: Cell[][] = [];
   let moved = false;
+  let gainedScore = 0;
 
   for (const line of lines) {
-    const { line: out, changed } = resolveLine(line, events);
+    const { line: out, changed, gainedScore: lineScore } = resolveLine(line, events);
     nextLines.push(out);
     if (changed) moved = true;
+    gainedScore += lineScore;
   }
 
   let next = cloneState(before);
   next.grid = writeLines(before.grid, dir, nextLines);
   next.turn += 1;
+  next.score += gainedScore;
 
   if (moved || next.config.spawnOnNoopMove) {
     next = spawnN(next, 1, events);
@@ -148,10 +151,11 @@ function normalizeInitialGrid(initialGrid: Cell[][] | undefined, config: GameCon
   return initialGrid;
 }
 
-function resolveLine(line: Cell[], events: GameEvent[]): { line: Cell[]; changed: boolean } {
+function resolveLine(line: Cell[], events: GameEvent[]): { line: Cell[]; changed: boolean; gainedScore: number } {
   const compact = line.filter((c) => c !== null);
   const out: Cell[] = [];
   let i = 0;
+  let gainedScore = 0;
 
   while (i < compact.length) {
     const a = compact[i] as Tile;
@@ -161,6 +165,7 @@ function resolveLine(line: Cell[], events: GameEvent[]): { line: Cell[]; changed
       if (merged) {
         out.push(merged);
         events.push({ type: "merge", at: [-1, -1], into: merged });
+        gainedScore += pointsForMerge(merged);
       }
       i += 2;
     } else {
@@ -171,7 +176,13 @@ function resolveLine(line: Cell[], events: GameEvent[]): { line: Cell[]; changed
 
   while (out.length < line.length) out.push(null);
   const changed = serializeLine(line) !== serializeLine(out);
-  return { line: out, changed };
+  return { line: out, changed, gainedScore };
+}
+
+function pointsForMerge(tile: Tile): number {
+  if (tile.t === "n") return tile.v;
+  if (tile.t === "w") return tile.m;
+  return 0;
 }
 
 function canMerge(a: Tile, b: Tile): boolean {

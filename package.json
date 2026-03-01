@@ -3,10 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "clean:next": "rm -rf .next",
+    "predev": "npm run clean:next",
+    "dev": "NEXT_DISABLE_WEBPACK_CACHE=1 next dev",
+    "prebuild": "npm run clean:next",
+    "build": "next build && bash ./scripts/build-smoke.sh",
     "start": "next start",
-    "lint": "next lint"
+    "test:routes": "npm run build",
+    "test:dev": "bash ./scripts/dev-smoke.sh",
+    "lint": "next lint",
+    "curl:local": "BASE=http://localhost:3000; RESP=$(curl -sS -X POST \"$BASE/api/games\" -H \"Content-Type: application/json\" -d '{}'); echo \"$RESP\"; if command -v jq >/dev/null 2>&1; then ID=$(echo \"$RESP\" | jq -r '.id'); else ID=$(echo \"$RESP\" | sed -n 's/.*\"id\":\"\\([^\"]*\\)\".*/\\1/p'); fi; echo \"id=$ID\"; curl -sS \"$BASE/api/games/$ID/export\""
   },
   "dependencies": {
     "next": "15.5.12",

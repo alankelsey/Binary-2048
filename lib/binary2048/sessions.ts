@@ -1,7 +1,12 @@
 import { applyMove, buildExport, createGame } from "@/lib/binary2048/engine";
 import type { Cell, Dir, GameConfig, GameSession } from "@/lib/binary2048/types";
 
-const games = new Map<string, GameSession>();
+const globalStore = globalThis as typeof globalThis & {
+  __binary2048_games?: Map<string, GameSession>;
+};
+
+const games = globalStore.__binary2048_games ?? new Map<string, GameSession>();
+globalStore.__binary2048_games = games;
 
 export function createSession(config?: Partial<GameConfig>, initialGrid?: Cell[][]) {
   const created = createGame(config, initialGrid);
