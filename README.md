@@ -78,3 +78,15 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE).
 - Sale item icon system:
   - Define a consistent icon palette and rarity colors for store packs/items.
   - Ensure WCAG contrast compliance for icon + label combinations.
+- Replay and undo system:
+  - Keep full step logs in exports so users can step forward/backward through any run.
+  - Add a replay viewer that can load an exported game and scrub move-by-move.
+  - Add limited undo in live play by difficulty:
+    - `Normal`: 2 undos per run
+    - `LTFG`: 1 undo per run
+    - `Death by AI`: 0 undos per run
+  - Support purchasable extra undo charges as boost inventory.
+- Import/export and economy integrity:
+  - Imported games are treated as `unranked` unless replay hash/signature validation passes.
+  - Any replay that contains paid boosts/impediments must include entitlement metadata.
+  - Ranked or leaderboard submissions require server-authoritative validation of moves, boosts, and inventory consumption.
