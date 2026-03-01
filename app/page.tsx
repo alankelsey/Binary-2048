@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties, type TouchEvent } from "react";
+import { computeCellEffects, type CellEffect, type MoveEvent } from "@/lib/binary2048/cell-effects";
 
 type Tile = { t: "n"; v: number } | { t: "z" } | { t: "w"; m: number };
 type Cell = Tile | null;
 type Dir = "up" | "down" | "left" | "right";
-type CellEffect = "merge-number" | "merge-wild" | "zero-bust";
 type SpawnMode = "normal" | "ltfg" | "death";
 type ColorMode = "default" | "cb-protanopia" | "cb-deuteranopia";
 
@@ -161,10 +161,9 @@ export default function Home() {
         throw new Error(message);
       }
       const next = json.current as GameState;
-      const events = Array.isArray(json?.lastStep?.events) ? json.lastStep.events : [];
-      const hasMergeEvent = events.some((event: { type?: string }) => event?.type === "merge");
+      const events = Array.isArray(json?.lastStep?.events) ? (json.lastStep.events as MoveEvent[]) : [];
       setState(next);
-      startCellEffects(computeCellEffects(previous, next, hasMergeEvent));
+      startCellEffects(computeCellEffects(previous, next, events, dir));
       if (next.over || next.won) {
         window.localStorage.removeItem(gameIdKey);
       }
@@ -173,92 +172,6 @@ export default function Home() {
     } finally {
       setBusy(false);
     }
-  }
-
-  function computeCellEffects(prev: GameState, next: GameState, hasMergeEvent: boolean): Record<string, CellEffect> {
-    const effects: Record<string, CellEffect> = {};
-    const prevZeroCount = prev.grid.flat().filter((cell) => cell?.t === "z").length;
-    const nextZeroCount = next.grid.flat().filter((cell) => cell?.t === "z").length;
-    const prevWildCount = prev.grid.flat().filter((cell) => cell?.t === "w").length;
-    const nextWildCount = next.grid.flat().filter((cell) => cell?.t === "w").length;
-    const zeroCollisionCount = Math.max(0, prevZeroCount - nextZeroCount);
-    const wildCollisionCount = Math.max(0, prevWildCount - nextWildCount);
-    const changedNumberCells: string[] = [];
-    const changedOccupiedCells: string[] = [];
-    const removedZeroCells: string[] = [];
-    const removedWildCells: string[] = [];
-
-    const tileChanged = (before: Cell, after: Cell) => {
-      if (!before && !after) return false;
-      if (!before || !after) return true;
-      if (before.t !== after.t) return true;
-      if (before.t === "n" && after.t === "n") return before.v !== after.v;
-      if (before.t === "w" && after.t === "w") return before.m !== after.m;
-      return false;
-    };
-
-    for (let r = 0; r < next.height; r++) {
-      for (let c = 0; c < next.width; c++) {
-        const key = `${r}-${c}`;
-        const before = prev.grid[r]?.[c] ?? null;
-        const after = next.grid[r]?.[c] ?? null;
-
-        if (before?.t === "z" && after?.t !== "z") removedZeroCells.push(key);
-        if (before?.t === "w" && after?.t !== "w") removedWildCells.push(key);
-
-        if (after && tileChanged(before, after)) {
-          changedOccupiedCells.push(key);
-          if (after.t === "n") changedNumberCells.push(key);
-        }
-
-        if (!hasMergeEvent || !after) continue;
-        if (after.t === "w") {
-          if (before?.t !== "w" || before.m !== after.m) effects[key] = "merge-wild";
-          continue;
-        }
-        if (after.t === "n") {
-          if (before?.t !== "n" || before.v !== after.v) effects[key] = "merge-number";
-        }
-      }
-    }
-
-    // Wildcard collisions should feel like a boost: highlight impacted number destinations in green.
-    if (wildCollisionCount > 0) {
-      let assigned = 0;
-      for (const key of changedNumberCells) {
-        effects[key] = "merge-wild";
-        assigned += 1;
-        if (assigned >= wildCollisionCount) break;
-      }
-      if (assigned < wildCollisionCount) {
-        for (const key of removedWildCells) {
-          if (effects[key]) continue;
-          effects[key] = "merge-wild";
-          assigned += 1;
-          if (assigned >= wildCollisionCount) break;
-        }
-      }
-    }
-
-    // Zero collisions should animate where impact is seen, not where the zero started.
-    if (zeroCollisionCount > 0) {
-      let assigned = 0;
-      for (const key of changedOccupiedCells) {
-        effects[key] = "zero-bust";
-        assigned += 1;
-        if (assigned >= zeroCollisionCount) break;
-      }
-      // If annihilation leaves an empty destination (e.g. 0+0 or 0+wild), fall back to the removed zero location.
-      if (assigned < zeroCollisionCount) {
-        for (const key of removedZeroCells) {
-          if (effects[key]) continue;
-          effects[key] = "zero-bust";
-          assigned += 1;
-          if (assigned >= zeroCollisionCount) break;
-        }
-      }
-    }
-    return effects;
   }
 
   function startCellEffects(effects: Record<string, CellEffect>) {
