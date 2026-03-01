@@ -110,3 +110,41 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE).
     - `Mode`
     - `Import`
     - `Export`
+
+## AI / Multibot Roadmap
+
+- Deterministic, replayable engine loop:
+  - Keep engine pure and deterministic with seeded PRNG only.
+  - Standardize step output shape for bot consumers:
+    - `state` (next state)
+    - `reward` (score delta)
+    - `done`
+    - `info` (`changed`, `spawned`, `events`, `illegalMove`)
+- AI-friendly state encoding:
+  - Add fixed-size encoded grid API using 2 channels per cell:
+    - `type`: `0=empty`, `1=zero`, `2=number`, `3=wild`
+    - `value`: bounded exponent form (`log2` for numbers, multiplier exponent for wildcards)
+- Rules/version pinning for reproducible bot evaluation:
+  - Include and export `rulesetId`, `engineVersion` (commit SHA), and spawn probabilities.
+- Legal move support and no-op policy:
+  - Add `legalMoves(state)` and/or expose `changed=false` on no-op moves.
+  - Define training policy for no-op moves (penalize or disallow).
+- Batch simulation endpoint for scale:
+  - Add `POST /api/simulate` to run many moves in one request with seed + config.
+  - Return final state/score and optional step summaries for rollouts and MCTS.
+- Multibot hooks and runner:
+  - Bot contract: input `{ encodedState, legalMoves, meta }`, output `{ action }`.
+  - Match runner modes: AI vs AI (same seed), AI vs replay, tournament brackets.
+  - Support formats: same-seed race, best-of-N seeds, per-move time budget.
+- Reward-shaping telemetry (optional):
+  - Track auxiliary metrics such as max tile, empty-cell count, monotonicity, and zero-pressure penalties.
+- Near-term API increments (without major re-architecture):
+  - `GET /api/games/:id/encoded` -> encoded state + legal moves
+  - `POST /api/games/:id/move` -> include `changed`, `reward`, `spawned`, `done`
+  - `POST /api/simulate` -> seed + moves + config -> final state/score
+  - `GET /api/games/:id/export` -> include replay-critical data (`seed`, `moves`, versions)
+- Open product decision:
+  - Confirm multibot scope for implementation order:
+    - bot swarm/self-play tournaments
+    - external integration bots (Discord/Slack)
+    - project-specific custom meaning
