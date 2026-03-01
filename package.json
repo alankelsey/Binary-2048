@@ -14,6 +14,7 @@
     "prebuild": "npm run clean:build",
     "build": "NEXT_DIST_DIR=.next-build next build && bash ./scripts/build-smoke.sh",
     "start": "NEXT_DIST_DIR=.next-build next start",
+    "test:unit": "jest --runInBand",
     "test:routes": "npm run build",
     "test:dev": "bash ./scripts/dev-smoke.sh",
     "lint": "next lint",
@@ -25,9 +26,12 @@
     "react-dom": "19.0.0"
   },
   "devDependencies": {
+    "@types/jest": "29.5.14",
     "@types/node": "22.13.10",
     "@types/react": "19.0.10",
     "@types/react-dom": "19.0.4",
+    "jest": "29.7.0",
+    "ts-jest": "29.2.5",
     "typescript": "5.8.2"
   }
 }

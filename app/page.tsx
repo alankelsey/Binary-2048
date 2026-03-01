@@ -185,6 +185,8 @@ export default function Home() {
     const wildCollisionCount = Math.max(0, prevWildCount - nextWildCount);
     const changedNumberCells: string[] = [];
     const changedOccupiedCells: string[] = [];
+    const removedZeroCells: string[] = [];
+    const removedWildCells: string[] = [];
 
     const tileChanged = (before: Cell, after: Cell) => {
       if (!before && !after) return false;
@@ -200,6 +202,9 @@ export default function Home() {
         const key = `${r}-${c}`;
         const before = prev.grid[r]?.[c] ?? null;
         const after = next.grid[r]?.[c] ?? null;
+
+        if (before?.t === "z" && after?.t !== "z") removedZeroCells.push(key);
+        if (before?.t === "w" && after?.t !== "w") removedWildCells.push(key);
 
         if (after && tileChanged(before, after)) {
           changedOccupiedCells.push(key);
@@ -225,6 +230,14 @@ export default function Home() {
         assigned += 1;
         if (assigned >= wildCollisionCount) break;
       }
+      if (assigned < wildCollisionCount) {
+        for (const key of removedWildCells) {
+          if (effects[key]) continue;
+          effects[key] = "merge-wild";
+          assigned += 1;
+          if (assigned >= wildCollisionCount) break;
+        }
+      }
     }
 
     // Zero collisions should animate where impact is seen, not where the zero started.
@@ -234,6 +247,15 @@ export default function Home() {
         effects[key] = "zero-bust";
         assigned += 1;
         if (assigned >= zeroCollisionCount) break;
+      }
+      // If annihilation leaves an empty destination (e.g. 0+0 or 0+wild), fall back to the removed zero location.
+      if (assigned < zeroCollisionCount) {
+        for (const key of removedZeroCells) {
+          if (effects[key]) continue;
+          effects[key] = "zero-bust";
+          assigned += 1;
+          if (assigned >= zeroCollisionCount) break;
+        }
       }
     }
     return effects;
