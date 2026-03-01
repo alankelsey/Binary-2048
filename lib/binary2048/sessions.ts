@@ -29,7 +29,7 @@ export function moveSession(id: string, dir: Dir) {
   const before = session.current;
   const move = applyMove(before, dir);
   const step = {
-    turn: before.turn + 1,
+    turn: move.state.turn,
     dir,
     moved: move.moved,
     before,
@@ -77,7 +77,7 @@ export function importSession(exported: GameExport) {
     const before = current;
     const move = applyMove(before, step.dir);
     steps.push({
-      turn: before.turn + 1,
+      turn: move.state.turn,
       dir: step.dir,
       moved: move.moved,
       before,

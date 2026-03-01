@@ -77,7 +77,7 @@ export function applyMove(state: GameState, dir: Dir): { state: GameState; moved
 
   let next = cloneState(before);
   next.grid = writeLines(before.grid, dir, nextLines);
-  next.turn += 1;
+  if (moved) next.turn += 1;
   next.score += gainedScore;
 
   if (moved || next.config.spawnOnNoopMove) {
@@ -98,7 +98,7 @@ export function runScenario(config: GameConfig, initialGrid: Cell[][], moves: Di
     const before = cloneState(current);
     const move = applyMove(current, dir);
     const after = move.state;
-    steps.push({ turn: before.turn + 1, dir, moved: move.moved, before, after: cloneState(after), events: move.events });
+    steps.push({ turn: after.turn, dir, moved: move.moved, before, after: cloneState(after), events: move.events });
     current = after;
     if (current.over) break;
   }
