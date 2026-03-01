@@ -7,6 +7,7 @@ type Cell = Tile | null;
 type Dir = "up" | "down" | "left" | "right";
 type CellEffect = "merge-number" | "merge-wild" | "zero-bust";
 type SpawnMode = "normal" | "ltfg" | "death";
+type ColorMode = "default" | "cb-protanopia" | "cb-deuteranopia";
 
 type GameState = {
   id: string;
@@ -66,12 +67,14 @@ export default function Home() {
   const gameIdKey = "binary2048.currentGameId";
   const modeKey = "binary2048.spawnMode";
   const highScoreKey = "binary2048.highScore";
+  const colorModeKey = "binary2048.colorMode";
   const [gameId, setGameId] = useState<string>("");
   const [state, setState] = useState<GameState | null>(null);
   const [busy, setBusy] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [highScore, setHighScore] = useState(0);
   const [spawnMode, setSpawnMode] = useState<SpawnMode>("normal");
+  const [colorMode, setColorMode] = useState<ColorMode>("default");
   const [cellEffects, setCellEffects] = useState<Record<string, CellEffect>>({});
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const effectTimerRef = useRef<number | null>(null);
@@ -350,6 +353,10 @@ export default function Home() {
     if (savedMode === "normal" || savedMode === "ltfg" || savedMode === "death") {
       setSpawnMode(savedMode);
     }
+    const savedColorMode = window.localStorage.getItem(colorModeKey);
+    if (savedColorMode === "default" || savedColorMode === "cb-protanopia" || savedColorMode === "cb-deuteranopia") {
+      setColorMode(savedColorMode);
+    }
   }, []);
 
   useEffect(() => {
@@ -362,6 +369,11 @@ export default function Home() {
   useEffect(() => {
     window.localStorage.setItem(modeKey, spawnMode);
   }, [spawnMode]);
+
+  useEffect(() => {
+    window.localStorage.setItem(colorModeKey, colorMode);
+    document.documentElement.setAttribute("data-color-mode", colorMode);
+  }, [colorMode]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -485,6 +497,19 @@ export default function Home() {
                 <option value="normal">{SPAWN_MODES.normal.label}</option>
                 <option value="ltfg">{SPAWN_MODES.ltfg.label}</option>
                 <option value="death">{SPAWN_MODES.death.label}</option>
+              </select>
+            </label>
+            <label className="color-mode-wrap">
+              <span className="difficulty-label">Color</span>
+              <select
+                aria-label="Color mode"
+                className="color-mode-select"
+                value={colorMode}
+                onChange={(event) => setColorMode(event.target.value as ColorMode)}
+              >
+                <option value="default">Default</option>
+                <option value="cb-protanopia">CB Protanopia</option>
+                <option value="cb-deuteranopia">CB Deuteranopia</option>
               </select>
             </label>
           </div>
