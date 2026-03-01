@@ -433,70 +433,71 @@ export default function Home() {
           ) : null}
         </div>
         <div className="actions">
-          <div className="primary-controls">
-            <button disabled={busy} onClick={() => void newGame()}>
-              New Game
-            </button>
-            <label className="difficulty-select-wrap">
-              <span className="difficulty-label">Difficulty</span>
-              <select
-                aria-label="Wildcard spawn mode"
-                className={`difficulty-select mode-${spawnMode}`}
-                value={spawnMode}
-                onChange={(event) => setSpawnMode(event.target.value as SpawnMode)}
-                disabled={busy || difficultyLocked}
+          <button disabled={busy} onClick={() => void newGame()}>
+            New Game
+          </button>
+          <details className="options-panel">
+            <summary>Options</summary>
+            <div className="options-grid">
+              <label className="difficulty-select-wrap">
+                <span className="difficulty-label">Difficulty</span>
+                <select
+                  aria-label="Wildcard spawn mode"
+                  className={`difficulty-select mode-${spawnMode}`}
+                  value={spawnMode}
+                  onChange={(event) => setSpawnMode(event.target.value as SpawnMode)}
+                  disabled={busy || difficultyLocked}
+                >
+                  <option value="normal">{SPAWN_MODES.normal.label}</option>
+                  <option value="ltfg">{SPAWN_MODES.ltfg.label}</option>
+                  <option value="death">{SPAWN_MODES.death.label}</option>
+                </select>
+              </label>
+              <label className="color-mode-wrap">
+                <span className="difficulty-label">Color</span>
+                <select
+                  aria-label="Color mode"
+                  className="color-mode-select"
+                  value={colorMode}
+                  onChange={(event) => setColorMode(event.target.value as ColorMode)}
+                >
+                  <option value="default">Default</option>
+                  <option value="cb-protanopia">CB Protanopia</option>
+                  <option value="cb-deuteranopia">CB Deuteranopia</option>
+                </select>
+              </label>
+              <label className="mode-select-wrap">
+                <span className="difficulty-label">Mode</span>
+                <select
+                  aria-label="Game mode"
+                  className="game-mode-select"
+                  value={gameMode}
+                  onChange={(event) => setGameMode(event.target.value as GameMode)}
+                  disabled={busy || difficultyLocked}
+                >
+                  <option value="classic">{GAME_MODES.classic.label}</option>
+                  <option value="bitstorm">{GAME_MODES.bitstorm.label}</option>
+                </select>
+              </label>
+              <button
+                disabled={busy}
+                onClick={() => {
+                  importInputRef.current?.click();
+                }}
               >
-                <option value="normal">{SPAWN_MODES.normal.label}</option>
-                <option value="ltfg">{SPAWN_MODES.ltfg.label}</option>
-                <option value="death">{SPAWN_MODES.death.label}</option>
-              </select>
-            </label>
-            <label className="color-mode-wrap">
-              <span className="difficulty-label">Color</span>
-              <select
-                aria-label="Color mode"
-                className="color-mode-select"
-                value={colorMode}
-                onChange={(event) => setColorMode(event.target.value as ColorMode)}
+                Import JSON
+              </button>
+              <button
+                disabled={!gameId}
+                onClick={() => {
+                  if (!gameId) return;
+                  window.open(`/api/games/${gameId}/export`, "_blank");
+                }}
               >
-                <option value="default">Default</option>
-                <option value="cb-protanopia">CB Protanopia</option>
-                <option value="cb-deuteranopia">CB Deuteranopia</option>
-              </select>
-            </label>
-            <label className="mode-select-wrap">
-              <span className="difficulty-label">Mode</span>
-              <select
-                aria-label="Game mode"
-                className="game-mode-select"
-                value={gameMode}
-                onChange={(event) => setGameMode(event.target.value as GameMode)}
-                disabled={busy || difficultyLocked}
-              >
-                <option value="classic">{GAME_MODES.classic.label}</option>
-                <option value="bitstorm">{GAME_MODES.bitstorm.label}</option>
-              </select>
-            </label>
-          </div>
-          <div className="secondary-controls">
-            <button
-              disabled={busy}
-              onClick={() => {
-                importInputRef.current?.click();
-              }}
-            >
-              Import JSON
-            </button>
-            <button
-              disabled={!gameId}
-              onClick={() => {
-                if (!gameId) return;
-                window.open(`/api/games/${gameId}/export`, "_blank");
-              }}
-            >
-              Export JSON
-            </button>
-          </div>
+                Export JSON
+              </button>
+            </div>
+          </details>
           <input
             ref={importInputRef}
             type="file"
