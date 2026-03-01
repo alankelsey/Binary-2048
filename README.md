@@ -31,6 +31,12 @@ Open `http://localhost:3000`.
 - `POST /api/games/:id/move`
   - Body: `{ "dir": "up" | "down" | "left" | "right" }`
   - Applies one move and returns updated state
+  - AI-friendly fields included in response:
+    - `changed` (whether move altered board)
+    - `reward` (score delta for move)
+    - `done` (game over or won)
+    - `spawned` (first spawn event summary when present)
+    - `info` (`changed`, `spawned`, `events`, `illegalMove`)
 - `GET /api/games/:id/encoded`
   - Returns AI-friendly encoded state + legal moves + ruleset/version metadata
 - `GET /api/games/:id/export`
