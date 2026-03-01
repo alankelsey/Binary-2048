@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties, type TouchEvent } from "react";
 import { computeCellEffects, type CellEffect, type MoveEvent } from "@/lib/binary2048/cell-effects";
+import { getUiPolicy } from "@/lib/binary2048/ui-policy";
 
 type Tile = { t: "n"; v: number } | { t: "z" } | { t: "w"; m: number };
 type Cell = Tile | null;
@@ -43,6 +44,7 @@ const GAME_MODES: Record<GameMode, { label: string }> = {
 };
 const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.1.0";
 const APP_COMMIT = process.env.NEXT_PUBLIC_APP_COMMIT ?? "dev";
+const UI_POLICY = getUiPolicy();
 
 function Binary2048Logo() {
   return (
@@ -436,68 +438,80 @@ export default function Home() {
           <button disabled={busy} onClick={() => void newGame()}>
             New Game
           </button>
-          <details className="options-panel">
-            <summary>Options</summary>
-            <div className="options-grid">
-              <label className="difficulty-select-wrap">
-                <span className="difficulty-label">Difficulty</span>
-                <select
-                  aria-label="Wildcard spawn mode"
-                  className={`difficulty-select mode-${spawnMode}`}
-                  value={spawnMode}
-                  onChange={(event) => setSpawnMode(event.target.value as SpawnMode)}
-                  disabled={busy || difficultyLocked}
-                >
-                  <option value="normal">{SPAWN_MODES.normal.label}</option>
-                  <option value="ltfg">{SPAWN_MODES.ltfg.label}</option>
-                  <option value="death">{SPAWN_MODES.death.label}</option>
-                </select>
-              </label>
-              <label className="color-mode-wrap">
-                <span className="difficulty-label">Color</span>
-                <select
-                  aria-label="Color mode"
-                  className="color-mode-select"
-                  value={colorMode}
-                  onChange={(event) => setColorMode(event.target.value as ColorMode)}
-                >
-                  <option value="default">Default</option>
-                  <option value="cb-protanopia">CB Protanopia</option>
-                  <option value="cb-deuteranopia">CB Deuteranopia</option>
-                </select>
-              </label>
-              <label className="mode-select-wrap">
-                <span className="difficulty-label">Mode</span>
-                <select
-                  aria-label="Game mode"
-                  className="game-mode-select"
-                  value={gameMode}
-                  onChange={(event) => setGameMode(event.target.value as GameMode)}
-                  disabled={busy || difficultyLocked}
-                >
-                  <option value="classic">{GAME_MODES.classic.label}</option>
-                  <option value="bitstorm">{GAME_MODES.bitstorm.label}</option>
-                </select>
-              </label>
-              <button
-                disabled={busy}
-                onClick={() => {
-                  importInputRef.current?.click();
-                }}
-              >
-                Import JSON
-              </button>
-              <button
-                disabled={!gameId}
-                onClick={() => {
-                  if (!gameId) return;
-                  window.open(`/api/games/${gameId}/export`, "_blank");
-                }}
-              >
-                Export JSON
-              </button>
-            </div>
-          </details>
+          {UI_POLICY.showOptionsButton ? (
+            <details className="options-panel">
+              <summary>Options</summary>
+              <div className="options-grid">
+                {UI_POLICY.controls.difficulty ? (
+                  <label className="difficulty-select-wrap">
+                    <span className="difficulty-label">Difficulty</span>
+                    <select
+                      aria-label="Wildcard spawn mode"
+                      className={`difficulty-select mode-${spawnMode}`}
+                      value={spawnMode}
+                      onChange={(event) => setSpawnMode(event.target.value as SpawnMode)}
+                      disabled={busy || difficultyLocked}
+                    >
+                      <option value="normal">{SPAWN_MODES.normal.label}</option>
+                      <option value="ltfg">{SPAWN_MODES.ltfg.label}</option>
+                      <option value="death">{SPAWN_MODES.death.label}</option>
+                    </select>
+                  </label>
+                ) : null}
+                {UI_POLICY.controls.color ? (
+                  <label className="color-mode-wrap">
+                    <span className="difficulty-label">Color</span>
+                    <select
+                      aria-label="Color mode"
+                      className="color-mode-select"
+                      value={colorMode}
+                      onChange={(event) => setColorMode(event.target.value as ColorMode)}
+                    >
+                      <option value="default">Default</option>
+                      <option value="cb-protanopia">CB Protanopia</option>
+                      <option value="cb-deuteranopia">CB Deuteranopia</option>
+                    </select>
+                  </label>
+                ) : null}
+                {UI_POLICY.controls.mode ? (
+                  <label className="mode-select-wrap">
+                    <span className="difficulty-label">Mode</span>
+                    <select
+                      aria-label="Game mode"
+                      className="game-mode-select"
+                      value={gameMode}
+                      onChange={(event) => setGameMode(event.target.value as GameMode)}
+                      disabled={busy || difficultyLocked}
+                    >
+                      <option value="classic">{GAME_MODES.classic.label}</option>
+                      <option value="bitstorm">{GAME_MODES.bitstorm.label}</option>
+                    </select>
+                  </label>
+                ) : null}
+                {UI_POLICY.controls.import ? (
+                  <button
+                    disabled={busy}
+                    onClick={() => {
+                      importInputRef.current?.click();
+                    }}
+                  >
+                    Import JSON
+                  </button>
+                ) : null}
+                {UI_POLICY.controls.export ? (
+                  <button
+                    disabled={!gameId}
+                    onClick={() => {
+                      if (!gameId) return;
+                      window.open(`/api/games/${gameId}/export`, "_blank");
+                    }}
+                  >
+                    Export JSON
+                  </button>
+                ) : null}
+              </div>
+            </details>
+          ) : null}
           <input
             ref={importInputRef}
             type="file"
