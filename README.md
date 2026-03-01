@@ -90,6 +90,11 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE).
   - Imported games are treated as `unranked` unless replay hash/signature validation passes.
   - Any replay that contains paid boosts/impediments must include entitlement metadata.
   - Ranked or leaderboard submissions require server-authoritative validation of moves, boosts, and inventory consumption.
+- New impediment tile (`Lock-0`) for boost/impede economy:
+  - Add an impediment tile that cannot be destroyed on consecutive turns.
+  - Rule: it can only be destroyed every other turn (cooldown-gated destruction).
+  - After cooldown is satisfied, collision behavior resolves like a `0` tile.
+  - Include this in replay/event logs so ranked validation can verify cooldown timing.
 - New seeded-chaos mode (`Bitstorm`):
   - Add a mode that starts from a pre-filled board instead of an empty grid.
   - Boards are generated from deterministic seeds to create repeatable challenge runs.
