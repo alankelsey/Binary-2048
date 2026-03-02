@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { DEFAULT_CONFIG, generateBitstormInitialGrid } from "@/lib/binary2048/engine";
-import { createSession } from "@/lib/binary2048/sessions";
+import { createSession, getUndoMeta } from "@/lib/binary2048/sessions";
 import type { Cell, GameConfig } from "@/lib/binary2048/types";
 
 export async function POST(req: Request) {
@@ -35,6 +35,7 @@ export async function POST(req: Request) {
       id: session.current.id,
       current: session.current,
       steps: session.steps,
+      undo: getUndoMeta(session),
       mode
     });
   } catch (error) {

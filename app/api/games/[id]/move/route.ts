@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { parseAction, toActionCode } from "@/lib/binary2048/action";
-import { moveSession } from "@/lib/binary2048/sessions";
+import { getUndoMeta, moveSession } from "@/lib/binary2048/sessions";
 import type { GameEvent } from "@/lib/binary2048/types";
 
 function firstSpawn(events: GameEvent[]) {
@@ -35,6 +35,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     reward,
     done: Boolean(session.current.over || session.current.won),
     spawned,
+    undo: getUndoMeta(session),
     info: {
       changed,
       spawned,

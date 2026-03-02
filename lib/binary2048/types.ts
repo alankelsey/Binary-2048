@@ -56,6 +56,8 @@ export type GameSession = {
   initialState: GameState;
   current: GameState;
   steps: StepRecord[];
+  undoLimit: number;
+  undoUsed: number;
 };
 
 export type GameExport = {

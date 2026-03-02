@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { importSession } from "@/lib/binary2048/sessions";
+import { getUndoMeta, importSession } from "@/lib/binary2048/sessions";
 import type { GameExport } from "@/lib/binary2048/types";
 
 export async function POST(req: Request) {
@@ -9,7 +9,8 @@ export async function POST(req: Request) {
     return NextResponse.json({
       id: session.current.id,
       current: session.current,
-      steps: session.steps
+      steps: session.steps,
+      undo: getUndoMeta(session)
     });
   } catch (error) {
     return NextResponse.json(

@@ -8,8 +8,8 @@ describe("session undo", () => {
     seed: 222,
     spawn: {
       pZero: 0,
-      pOne: 1,
-      pWildcard: 0,
+      pOne: 0.9,
+      pWildcard: 0.1,
       wildcardMultipliers: [2]
     }
   };
@@ -31,7 +31,8 @@ describe("session undo", () => {
     const afterMove = getSession(id)?.current;
     expect(afterMove?.turn).toBe(1);
 
-    undoSession(id);
+    const undone = undoSession(id);
+    expect(undone.error).toBeNull();
     const afterUndo = getSession(id)?.current;
     expect(afterUndo).toEqual(beforeMove);
   });
@@ -41,6 +42,33 @@ describe("session undo", () => {
     const id = session.current.id;
     const beforeUndo = getSession(id)?.current;
     const undone = undoSession(id);
-    expect(undone?.current).toEqual(beforeUndo);
+    expect(undone.session?.current).toEqual(beforeUndo);
+  });
+
+  it("enforces undo limits by difficulty mode", () => {
+    const normalSession = createSession(config, initialGrid);
+    const normalId = normalSession.current.id;
+    moveSession(normalId, "left");
+    moveSession(normalId, "right");
+    moveSession(normalId, "left");
+    expect(undoSession(normalId).error).toBeNull();
+    expect(undoSession(normalId).error).toBeNull();
+    expect(undoSession(normalId).error).toBe("LIMIT_REACHED");
+
+    const deathSession = createSession(
+      {
+        ...config,
+        spawn: {
+          pZero: 0,
+          pOne: 0.96,
+          pWildcard: 0.04,
+          wildcardMultipliers: [2]
+        }
+      },
+      initialGrid
+    );
+    const deathId = deathSession.current.id;
+    moveSession(deathId, "left");
+    expect(undoSession(deathId).error).toBe("LIMIT_REACHED");
   });
 });

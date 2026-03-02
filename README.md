@@ -40,9 +40,14 @@ Controls: swipe on mobile, arrow keys, and `W/A/S/D`.
     - `reward` (score delta for move)
     - `done` (game over or won)
     - `spawned` (first spawn event summary when present)
+    - `undo` (`limit`, `used`, `remaining`)
     - `info` (`changed`, `spawned`, `events`, `illegalMove`)
 - `POST /api/games/:id/undo`
   - Reverts one move for the current in-memory session
+  - Enforces per-run undo limits by difficulty:
+    - `Normal`: 2
+    - `LTFG`: 1
+    - `Death by AI`: 0
 - `GET /api/games/:id/encoded`
   - Returns AI-friendly encoded state + legal moves + ruleset/version metadata
 - `GET /api/games/:id/export`

@@ -27,6 +27,7 @@ type GameState = {
   over: boolean;
   grid: Cell[][];
 };
+type UndoMeta = { limit: number; used: number; remaining: number };
 
 const SPAWN_MODES: Record<
   SpawnMode,
@@ -86,6 +87,7 @@ export default function Home() {
   const [colorMode, setColorMode] = useState<ColorMode>("default");
   const [gameMode, setGameMode] = useState<GameMode>("classic");
   const [cellEffects, setCellEffects] = useState<Record<string, CellEffect>>({});
+  const [undo, setUndo] = useState<UndoMeta>({ limit: 2, used: 0, remaining: 2 });
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const effectTimerRef = useRef<number | null>(null);
   const importInputRef = useRef<HTMLInputElement | null>(null);
@@ -119,6 +121,7 @@ export default function Home() {
       }
       setGameId(json.id);
       setState(json.current);
+      if (json?.undo) setUndo(json.undo as UndoMeta);
       const wildcardRate = json?.current?.config?.spawn?.pWildcard;
       if (typeof wildcardRate === "number") setSpawnMode(modeFromWildcardRate(wildcardRate));
       setCellEffects({});
@@ -139,6 +142,7 @@ export default function Home() {
       setGameId(id);
       const restored = json.current as GameState;
       setState(restored);
+      if (json?.undo) setUndo(json.undo as UndoMeta);
       const wildcardRate = restored?.config?.spawn?.pWildcard;
       if (typeof wildcardRate === "number") setSpawnMode(modeFromWildcardRate(wildcardRate));
       setCellEffects({});
@@ -172,6 +176,7 @@ export default function Home() {
         throw new Error(message);
       }
       const next = json.current as GameState;
+      if (json?.undo) setUndo(json.undo as UndoMeta);
       const events = Array.isArray(json?.lastStep?.events) ? (json.lastStep.events as MoveEvent[]) : [];
       setState(next);
       startCellEffects(computeCellEffects(previous, next, events, dir));
@@ -197,6 +202,7 @@ export default function Home() {
         throw new Error(message);
       }
       setState(json.current as GameState);
+      if (json?.undo) setUndo(json.undo as UndoMeta);
       setCellEffects({});
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Failed to undo move");
@@ -273,6 +279,7 @@ export default function Home() {
       }
       setGameId(json.id);
       setState(json.current);
+      if (json?.undo) setUndo(json.undo as UndoMeta);
       setCellEffects({});
       window.localStorage.setItem(gameIdKey, json.id);
 
@@ -389,7 +396,7 @@ export default function Home() {
   const difficultyLocked = Boolean(state && !state.over && !state.won && (state.turn ?? 0) > 0);
   const isPlayable = Boolean(state && !state.over && !state.won);
   const isActiveRun = Boolean(state && !state.over && !state.won && (state.turn ?? 0) > 0);
-  const canUndo = Boolean(gameId && state && (state.turn ?? 0) > 0 && !busy);
+  const canUndo = Boolean(gameId && state && (state.turn ?? 0) > 0 && (undo.remaining ?? 0) > 0 && !busy);
 
   return (
     <main>

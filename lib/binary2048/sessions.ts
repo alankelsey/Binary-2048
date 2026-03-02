@@ -8,12 +8,40 @@ const globalStore = globalThis as typeof globalThis & {
 const games = globalStore.__binary2048_games ?? new Map<string, GameSession>();
 globalStore.__binary2048_games = games;
 
+const UNDO_MODES = {
+  normal: { pWildcard: 0.1, undoLimit: 2 },
+  ltfg: { pWildcard: 0.2, undoLimit: 1 },
+  death: { pWildcard: 0.04, undoLimit: 0 }
+} as const;
+
+function inferUndoLimit(config: Partial<GameConfig> | GameConfig | undefined): number {
+  const wildcard = config?.spawn?.pWildcard;
+  if (typeof wildcard !== "number") return UNDO_MODES.normal.undoLimit;
+  const modes = Object.values(UNDO_MODES);
+  const best = modes.reduce((prev, cur) => {
+    const prevDelta = Math.abs(prev.pWildcard - wildcard);
+    const curDelta = Math.abs(cur.pWildcard - wildcard);
+    return curDelta < prevDelta ? cur : prev;
+  });
+  return best.undoLimit;
+}
+
+export function getUndoMeta(session: Pick<GameSession, "undoLimit" | "undoUsed">) {
+  return {
+    limit: session.undoLimit,
+    used: session.undoUsed,
+    remaining: Math.max(0, session.undoLimit - session.undoUsed)
+  };
+}
+
 export function createSession(config?: Partial<GameConfig>, initialGrid?: Cell[][]) {
   const created = createGame(config, initialGrid);
   games.set(created.state.id, {
     initialState: created.state,
     current: created.state,
-    steps: []
+    steps: [],
+    undoLimit: inferUndoLimit(created.state.config),
+    undoUsed: 0
   });
   return games.get(created.state.id)!;
 }
@@ -45,14 +73,16 @@ export function moveSession(id: string, dir: Dir) {
 
 export function undoSession(id: string) {
   const session = games.get(id);
-  if (!session) return null;
-  if (session.steps.length === 0) return session;
+  if (!session) return { session: null, error: "NOT_FOUND" as const };
+  if (session.steps.length === 0) return { session, error: null };
+  if (session.undoUsed >= session.undoLimit) return { session, error: "LIMIT_REACHED" as const };
 
   const step = session.steps.pop();
-  if (!step) return session;
+  if (!step) return { session, error: null };
   session.current = step.before;
+  session.undoUsed += 1;
   games.set(id, session);
-  return session;
+  return { session, error: null };
 }
 
 export function exportSession(id: string) {
@@ -67,7 +97,8 @@ export function listSessionState(id: string) {
   return {
     id,
     current: session.current,
-    stepCount: session.steps.length
+    stepCount: session.steps.length,
+    undo: getUndoMeta(session)
   };
 }
 
@@ -103,7 +134,9 @@ export function importSession(exported: GameExport) {
   const session = {
     initialState,
     current,
-    steps
+    steps,
+    undoLimit: inferUndoLimit(exported.config),
+    undoUsed: 0
   };
   games.set(current.id, session);
   return session;
