@@ -10,6 +10,7 @@ cleanup() {
   if [[ -n "${SERVER_PID:-}" ]]; then
     kill "${SERVER_PID}" >/dev/null 2>&1 || true
   fi
+  rm -rf "${DIST_DIR}" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
 

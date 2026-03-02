@@ -5,7 +5,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "clean:next": "rm -rf .next .next-dev .next-build",
-    "clean:dev": "rm -rf .next .next-dev",
+    "clean:dev": "rm -rf .next .next-dev .next-dev-*",
     "clean:build": "rm -rf .next-build",
     "predev": "npm run clean:dev",
     "dev": "bash ./scripts/dev-loop.sh",
