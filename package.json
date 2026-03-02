@@ -18,6 +18,7 @@
     "test:all": "npm run test:unit && npm run test:dev && npm run build",
     "test:routes": "npm run build",
     "test:dev": "bash ./scripts/dev-smoke.sh",
+    "bot:smoke": "node ./scripts/bot-smoke.mjs",
     "lint": "next lint",
     "curl:local": "BASE=http://localhost:3000; RESP=$(curl -sS -X POST \"$BASE/api/games\" -H \"Content-Type: application/json\" -d '{}'); echo \"$RESP\"; if command -v jq >/dev/null 2>&1; then ID=$(echo \"$RESP\" | jq -r '.id'); else ID=$(echo \"$RESP\" | sed -n 's/.*\"id\":\"\\([^\"]*\\)\".*/\\1/p'); fi; echo \"id=$ID\"; curl -sS \"$BASE/api/games/$ID/export\""
   },

@@ -23,6 +23,12 @@ Open `http://localhost:3000`.
 
 Controls: swipe on mobile, arrow keys, and `W/A/S/D`.
 
+Tiny bot smoke runner (in another terminal while dev server is running):
+
+```bash
+npm run bot:smoke
+```
+
 ## API
 
 - `POST /api/games`
