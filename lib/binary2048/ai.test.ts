@@ -1,4 +1,4 @@
-import { encodeCell, encodeState, legalMoves } from "@/lib/binary2048/ai";
+import { ACTION_SPACE, encodeCell, encodeState, flattenEncodedState, legalActionCodes, legalMoves, stateHash } from "@/lib/binary2048/ai";
 import { createGame } from "@/lib/binary2048/engine";
 import type { Cell, GameConfig } from "@/lib/binary2048/types";
 
@@ -50,5 +50,25 @@ describe("AI helpers", () => {
     const { state } = createGame(config, initialGrid);
     const moves = legalMoves(state);
     expect(moves).toEqual(expect.arrayContaining(["up", "down", "left", "right"]));
+    const actions = legalActionCodes(state);
+    expect(actions).toEqual(expect.arrayContaining(["U", "D", "L", "R"]));
+  });
+
+  it("exposes stable action space and flattened encoding", () => {
+    expect(ACTION_SPACE).toEqual(["L", "R", "U", "D"]);
+    const grid: Cell[][] = [[{ t: "n", v: 1 }]];
+    const flat = flattenEncodedState(encodeState({ grid }));
+    expect(flat).toEqual([2, 0]);
+  });
+
+  it("produces deterministic state hashes", () => {
+    const base = {
+      grid: [[{ t: "n", v: 1 }] as Cell[]],
+      turn: 3,
+      score: 12,
+      rngStep: 9
+    };
+    expect(stateHash(base)).toBe(stateHash(base));
+    expect(stateHash({ ...base, turn: 4 })).not.toBe(stateHash(base));
   });
 });

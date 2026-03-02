@@ -50,6 +50,11 @@ Controls: swipe on mobile, arrow keys, and `W/A/S/D`.
     - `Death by AI`: 0
 - `GET /api/games/:id/encoded`
   - Returns AI-friendly encoded state + legal moves + ruleset/version metadata
+  - Includes:
+    - `actionSpace`: `["L","R","U","D"]`
+    - `legalActions`: subset of action space for current state
+    - `encodedFlat`: flattened tensor-friendly encoding `[type0,value0,type1,value1,...]`
+    - `stateHash`: deterministic hash of encoded board + turn/score/RNG step
 - `GET /api/games/:id/export`
   - Returns export JSON (download attachment)
   - Includes replay-critical metadata: `rulesetId`, `engineVersion`, and compact replay (`seed`, `moves`, `movesApplied`)
