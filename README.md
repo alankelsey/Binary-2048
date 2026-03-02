@@ -29,6 +29,12 @@ Tiny bot smoke runner (in another terminal while dev server is running):
 npm run bot:smoke
 ```
 
+One-command bot smoke with temporary local dev server:
+
+```bash
+npm run bot:smoke:dev
+```
+
 ## API
 
 - `POST /api/games`
