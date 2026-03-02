@@ -5,12 +5,15 @@ PORT=4112
 LOG_FILE="/tmp/binary2048-bot-smoke.log"
 BASE_URL="${BASE:-http://localhost:${PORT}}"
 DIST_DIR=".next-dev-${PORT}"
+KEEP_DEV_DIST="${KEEP_DEV_DIST:-0}"
 
 cleanup() {
   if [[ -n "${SERVER_PID:-}" ]]; then
     kill "${SERVER_PID}" >/dev/null 2>&1 || true
   fi
-  rm -rf "${DIST_DIR}" >/dev/null 2>&1 || true
+  if [[ "${KEEP_DEV_DIST}" != "1" ]]; then
+    rm -rf "${DIST_DIR}" >/dev/null 2>&1 || true
+  fi
 }
 trap cleanup EXIT
 

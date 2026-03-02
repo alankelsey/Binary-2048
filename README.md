@@ -35,6 +35,14 @@ One-command bot smoke with temporary local dev server:
 npm run bot:smoke:dev
 ```
 
+Keep temporary per-port dev output dirs for troubleshooting:
+
+```bash
+KEEP_DEV_DIST=1 npm run test:dev
+KEEP_DEV_DIST=1 npm run bot:smoke:dev
+KEEP_DEV_DIST=1 npm run bot:tourney:dev
+```
+
 Tiny same-seed multibot tournament:
 
 ```bash
