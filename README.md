@@ -101,6 +101,10 @@ npm run bot:tourney:dev
 - `POST /api/simulate`
   - Body: `{ "seed"?: number, "moves": Array<Dir | "L" | "R" | "U" | "D">, "config"?: Partial<GameConfig> & { size?: number }, "initialGrid"?: Cell[][], "includeSteps"?: boolean }`
   - Runs batch simulation and returns final state, score, and step summaries
+  - Includes compact terminal artifacts for bot clients:
+    - `finalStateHash`
+    - `finalEncodedFlat`
+    - `finalActionMask`
 
 ## Example Scenario Payload
 

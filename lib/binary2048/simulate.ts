@@ -1,5 +1,6 @@
 import { applyMove, createGame, DEFAULT_CONFIG } from "@/lib/binary2048/engine";
 import { parseAction, toActionCode, type ActionCode, type AnyAction } from "@/lib/binary2048/action";
+import { actionMask, flattenEncodedState, legalActionCodes, stateHash, encodeState } from "@/lib/binary2048/ai";
 import type { Cell, Dir, GameConfig, GameState, Tile } from "@/lib/binary2048/types";
 
 export type SimulateStepSummary = {
@@ -25,6 +26,9 @@ export type SimulateBatchResult = {
   seed: number;
   initial: GameState;
   final: GameState;
+  finalStateHash: string;
+  finalEncodedFlat: number[];
+  finalActionMask: number[];
   totalScore: number;
   totalReward: number;
   movesApplied: number;
@@ -99,6 +103,9 @@ export function simulateBatch(req: SimulateBatchRequest): SimulateBatchResult {
     seed: config.seed,
     initial,
     final: current,
+    finalStateHash: stateHash(current),
+    finalEncodedFlat: flattenEncodedState(encodeState(current)),
+    finalActionMask: actionMask(legalActionCodes(current)),
     totalScore: current.score,
     totalReward,
     movesApplied: stepSummaries.length,

@@ -43,6 +43,11 @@ describe("simulateBatch", () => {
 
     expect(result.movesApplied).toBe(1);
     expect(result.stepSummaries[0]?.reward).toBe(2);
+    expect(typeof result.finalStateHash).toBe("string");
+    expect(Array.isArray(result.finalEncodedFlat)).toBe(true);
+    expect(result.finalEncodedFlat.length).toBe(4 * 4 * 2);
+    expect(Array.isArray(result.finalActionMask)).toBe(true);
+    expect(result.finalActionMask).toHaveLength(4);
   });
 
   it("accepts compact action codes", () => {
