@@ -57,6 +57,19 @@ One-command tournament with temporary local dev server:
 npm run bot:tourney:dev
 ```
 
+WAF setup helper (requires AWS CLI credentials + CloudFront distribution id):
+
+```bash
+DIST_ID=E123ABC456XYZ LOG_GROUP_NAME=aws-waf-logs-binary2048 npm run ops:waf:setup
+```
+
+WAF verify and rollback helpers:
+
+```bash
+DIST_ID=E123ABC456XYZ npm run ops:waf:verify
+DIST_ID=E123ABC456XYZ npm run ops:waf:rollback
+```
+
 ## API
 
 - `POST /api/games`
@@ -194,6 +207,19 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE).
     - Mobile swipe gestures
   - Keyboard controls should remain active alongside swipe (not mutually exclusive).
   - Add automated tests verifying all three input paths trigger correct movement behavior and direction mapping.
+- AWS edge security and abuse controls:
+  - Enable AWS WAF on CloudFront with:
+    - IP-based rate limiting over 5-minute windows.
+    - Geo blocking policy for unsupported regions.
+    - Managed rule groups (baseline bot/reputation/common attack protections).
+    - CAPTCHA/challenge gates for suspicious traffic patterns.
+  - Add tiered request limits (higher limits for authenticated/paid users).
+  - Add billing tripwires (AWS Budgets + CloudWatch alarms) for request spikes and cost anomalies.
+  - Route 53 hardening:
+    - Avoid wildcard DNS records unless required.
+    - Add DNS query logging + anomaly alarms for NXDOMAIN/subdomain abuse patterns.
+  - Track rollout in [docs/aws-waf-baseline.md](./docs/aws-waf-baseline.md).
+  - Apply checklist in [docs/aws-waf-apply.md](./docs/aws-waf-apply.md).
 
 ## AI / Multibot Roadmap
 

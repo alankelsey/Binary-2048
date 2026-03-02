@@ -1,0 +1,26 @@
+{
+  "AlarmName": "WAFBlockedRequestsHigh",
+  "AlarmDescription": "High blocked request volume on Binary-2048 WAF",
+  "Namespace": "AWS/WAFV2",
+  "MetricName": "BlockedRequests",
+  "Dimensions": [
+    {
+      "Name": "WebACL",
+      "Value": "binary2048-web-acl"
+    },
+    {
+      "Name": "Region",
+      "Value": "CloudFront"
+    },
+    {
+      "Name": "Rule",
+      "Value": "ALL"
+    }
+  ],
+  "Statistic": "Sum",
+  "Period": 300,
+  "EvaluationPeriods": 1,
+  "Threshold": 500,
+  "ComparisonOperator": "GreaterThanThreshold",
+  "TreatMissingData": "notBreaching"
+}
