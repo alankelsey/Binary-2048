@@ -21,6 +21,8 @@ npm run dev
 
 Open `http://localhost:3000`.
 
+Controls: swipe on mobile, arrow keys, and `W/A/S/D`.
+
 ## API
 
 - `POST /api/games`
@@ -39,6 +41,8 @@ Open `http://localhost:3000`.
     - `done` (game over or won)
     - `spawned` (first spawn event summary when present)
     - `info` (`changed`, `spawned`, `events`, `illegalMove`)
+- `POST /api/games/:id/undo`
+  - Reverts one move for the current in-memory session
 - `GET /api/games/:id/encoded`
   - Returns AI-friendly encoded state + legal moves + ruleset/version metadata
 - `GET /api/games/:id/export`
@@ -95,6 +99,12 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE).
 - Replay and undo system:
   - Keep full step logs in exports so users can step forward/backward through any run.
   - Add a replay viewer that can load an exported game and scrub move-by-move.
+  - Active-run controls policy:
+    - During an active game, hide all options controls except `Export JSON`.
+    - During an active game, visible controls should be:
+      - `New Game`
+      - `Undo`
+      - `Export JSON`
   - Add limited undo in live play by difficulty:
     - `Normal`: 2 undos per run
     - `LTFG`: 1 undo per run
@@ -124,6 +134,15 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE).
     - `Mode`
     - `Import`
     - `Export`
+  - Gameplay-state override:
+    - If a run is active, temporarily suppress options/dropdowns per active-run controls policy.
+- Input support and validation:
+  - Movement input must support:
+    - `W`, `A`, `S`, `D` keys
+    - Arrow keys
+    - Mobile swipe gestures
+  - Keyboard controls should remain active alongside swipe (not mutually exclusive).
+  - Add automated tests verifying all three input paths trigger correct movement behavior and direction mapping.
 
 ## AI / Multibot Roadmap
 

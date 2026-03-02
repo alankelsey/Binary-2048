@@ -43,6 +43,18 @@ export function moveSession(id: string, dir: Dir) {
   return session;
 }
 
+export function undoSession(id: string) {
+  const session = games.get(id);
+  if (!session) return null;
+  if (session.steps.length === 0) return session;
+
+  const step = session.steps.pop();
+  if (!step) return session;
+  session.current = step.before;
+  games.set(id, session);
+  return session;
+}
+
 export function exportSession(id: string) {
   const session = games.get(id);
   if (!session) return null;

@@ -22,7 +22,6 @@ for _ in $(seq 1 80); do
   sleep 0.25
 done
 
-curl -fsS "${BASE}/" >/dev/null
 GAME_RESP="$(curl -fsS -X POST "${BASE}/api/games" -H "Content-Type: application/json" -d '{}')"
 
 if command -v jq >/dev/null 2>&1; then
@@ -38,6 +37,7 @@ if [[ -z "${GAME_ID}" || "${GAME_ID}" == "null" ]]; then
 fi
 
 curl -fsS -X POST "${BASE}/api/games/${GAME_ID}/move" -H "Content-Type: application/json" -d '{"dir":"left"}' >/dev/null
+curl -fsS -X POST "${BASE}/api/games/${GAME_ID}/undo" >/dev/null
 EXPORT_RESP="$(curl -fsS "${BASE}/api/games/${GAME_ID}/export")"
 if [[ "${EXPORT_RESP}" != *'"version":1'* && "${EXPORT_RESP}" != *'"version": 1'* ]]; then
   echo "Dev smoke test failed: /api/games/${GAME_ID}/export missing version field"

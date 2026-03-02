@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties, type TouchEvent } from "react";
 import { computeCellEffects, type CellEffect, type MoveEvent } from "@/lib/binary2048/cell-effects";
+import { keyToDir, swipeToDir } from "@/lib/binary2048/input";
 import { getUiPolicy } from "@/lib/binary2048/ui-policy";
 
 type Tile = { t: "n"; v: number } | { t: "z" } | { t: "w"; m: number };
@@ -184,6 +185,26 @@ export default function Home() {
     }
   }
 
+  async function undoMove() {
+    if (!gameId) return;
+    setBusy(true);
+    setErrorMessage("");
+    try {
+      const res = await fetch(`/api/games/${gameId}/undo`, { method: "POST" });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json?.current) {
+        const message = (json && typeof json.error === "string" ? json.error : "Failed to undo move");
+        throw new Error(message);
+      }
+      setState(json.current as GameState);
+      setCellEffects({});
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Failed to undo move");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function startCellEffects(effects: Record<string, CellEffect>) {
     if (effectTimerRef.current) {
       window.clearTimeout(effectTimerRef.current);
@@ -330,10 +351,10 @@ export default function Home() {
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "ArrowUp") void move("up");
-      if (event.key === "ArrowDown") void move("down");
-      if (event.key === "ArrowLeft") void move("left");
-      if (event.key === "ArrowRight") void move("right");
+      const dir = keyToDir(event.key);
+      if (!dir) return;
+      event.preventDefault();
+      void move(dir);
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -358,21 +379,16 @@ export default function Home() {
 
     const dx = touch.clientX - touchStartRef.current.x;
     const dy = touch.clientY - touchStartRef.current.y;
-    const absX = Math.abs(dx);
-    const absY = Math.abs(dy);
-    const minSwipe = 24;
-
-    if (absX < minSwipe && absY < minSwipe) return;
-    if (absX > absY) {
-      void move(dx > 0 ? "right" : "left");
-    } else {
-      void move(dy > 0 ? "down" : "up");
-    }
+    const dir = swipeToDir(dx, dy, 24);
+    if (!dir) return;
+    void move(dir);
   }
 
   const wildcardRate = state?.config?.spawn?.pWildcard;
   const activeMode = typeof wildcardRate === "number" ? modeFromWildcardRate(wildcardRate) : spawnMode;
   const difficultyLocked = Boolean(state && !state.over && !state.won && (state.turn ?? 0) > 0);
+  const isActiveRun = Boolean(state && !state.over && !state.won && (state.turn ?? 0) > 0);
+  const canUndo = Boolean(gameId && state && (state.turn ?? 0) > 0 && !busy);
 
   return (
     <main>
@@ -383,7 +399,7 @@ export default function Home() {
           <p className="brand-subtitle">Merge bits. Control chaos. Reach 2048.</p>
         </div>
       </header>
-      <p>Arrow keys combine tiles. Bonus tiles: zero annihilator + wildcard multipliers.</p>
+      <p>Arrow keys or WASD combine tiles. Bonus tiles: zero annihilator + wildcard multipliers.</p>
       <div className="card">
         <div className="meta">
           <span>Game: {gameId || "-"}</span>
@@ -438,7 +454,22 @@ export default function Home() {
           <button disabled={busy} onClick={() => void newGame()}>
             New Game
           </button>
-          {UI_POLICY.showOptionsButton ? (
+          {isActiveRun ? (
+            <>
+              <button disabled={!canUndo} onClick={() => void undoMove()}>
+                Undo
+              </button>
+              <button
+                disabled={!gameId}
+                onClick={() => {
+                  if (!gameId) return;
+                  window.open(`/api/games/${gameId}/export`, "_blank");
+                }}
+              >
+                Export JSON
+              </button>
+            </>
+          ) : UI_POLICY.showOptionsButton ? (
             <details className="options-panel">
               <summary>Options</summary>
               <div className="options-grid">
@@ -526,7 +557,7 @@ export default function Home() {
           />
         </div>
         <details className="game-hint">
-          <summary>How to play: Swipe on mobile or use arrow keys. Keep your strongest chain organized.</summary>
+          <summary>How to play: Swipe on mobile or use arrow keys/WASD. Keep your strongest chain organized.</summary>
           <div className="game-hint-body">
             <p>Basic moves: all tiles slide in one direction per turn.</p>
             <p>`0` tiles annihilate when they collide with any tile. `0+0` also vanishes.</p>
