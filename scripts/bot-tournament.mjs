@@ -83,11 +83,12 @@ async function runBotOnSeed(botName, seed) {
     const bot = BOTS[botName];
     const action = bot.pick(legalActions, ctx);
     if (!action) break;
+    const expectStateHash = typeof encoded?.stateHash === "string" ? encoded.stateHash : undefined;
 
     const move = await requestJson(`/api/games/${id}/move`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ action })
+      body: JSON.stringify({ action, expectStateHash })
     });
     ctx.lastAction = action;
     moves += 1;

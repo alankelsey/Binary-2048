@@ -45,11 +45,12 @@ async function main() {
     const encoded = await requestJson(`/api/games/${id}/encoded`);
     const action = pickAction(encoded?.legalActions);
     if (!action) break;
+    const expectStateHash = typeof encoded?.stateHash === "string" ? encoded.stateHash : undefined;
 
     const move = await requestJson(`/api/games/${id}/move`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ action })
+      body: JSON.stringify({ action, expectStateHash })
     });
     moves += 1;
     done = Boolean(move?.done);
