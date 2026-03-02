@@ -251,6 +251,14 @@ button:hover {
   background: #113864;
 }
 
+button:disabled {
+  background: #223248;
+  border-color: #3a4f6a;
+  color: #8fa3bc;
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
 .meta {
   display: flex;
   gap: 1rem;
