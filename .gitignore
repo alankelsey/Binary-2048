@@ -1,5 +1,6 @@
 .next
 .next-dev
+.next-dev-*
 .next-build
 node_modules
 dist

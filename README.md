@@ -43,6 +43,8 @@ KEEP_DEV_DIST=1 npm run bot:smoke:dev
 KEEP_DEV_DIST=1 npm run bot:tourney:dev
 ```
 
+Dev helper scripts automatically normalize `next-env.d.ts` after they exit to reduce generated diff noise.
+
 Tiny same-seed multibot tournament:
 
 ```bash

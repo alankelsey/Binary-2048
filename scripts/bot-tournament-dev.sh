@@ -14,6 +14,7 @@ cleanup() {
   if [[ "${KEEP_DEV_DIST}" != "1" ]]; then
     rm -rf "${DIST_DIR}" >/dev/null 2>&1 || true
   fi
+  bash ./scripts/normalize-next-env.sh >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
 
