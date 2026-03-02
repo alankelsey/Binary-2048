@@ -63,4 +63,33 @@ describe("POST /api/games/:id/move hash guard", () => {
     expect(typeof json.stateHash).toBe("string");
     expect(getSession(id)?.steps.length).toBe(1);
   });
+
+  it("returns 400 when neither dir nor action is provided", async () => {
+    const session = createSession(config, initialGrid);
+    const id = session.current.id;
+
+    const req = new Request("http://localhost/api/games/x/move", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({})
+    });
+    const res = await POST(req, { params: Promise.resolve({ id }) });
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json.error).toBe("dir or action is required");
+  });
+
+  it("returns 404 for missing game id", async () => {
+    const req = new Request("http://localhost/api/games/x/move", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "L" })
+    });
+    const res = await POST(req, { params: Promise.resolve({ id: "missing_game" }) });
+    const json = await res.json();
+
+    expect(res.status).toBe(404);
+    expect(json.error).toBe("Game not found");
+  });
 });
