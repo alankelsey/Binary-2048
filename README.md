@@ -77,6 +77,7 @@ npm run bot:tourney:dev
   - Includes:
     - `actionSpace`: `["L","R","U","D"]`
     - `legalActions`: subset of action space for current state
+    - `actionMask`: fixed-order legality mask aligned to `actionSpace` (e.g. `[1,0,1,0]`)
     - `encodedFlat`: flattened tensor-friendly encoding `[type0,value0,type1,value1,...]`
     - `stateHash`: deterministic hash of encoded board + turn/score/RNG step
 - `GET /api/games/:id/export`

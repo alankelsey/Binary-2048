@@ -1,5 +1,13 @@
 import { NextResponse } from "next/server";
-import { ACTION_SPACE, encodeState, flattenEncodedState, legalActionCodes, legalMoves, stateHash } from "@/lib/binary2048/ai";
+import {
+  ACTION_SPACE,
+  actionMask,
+  encodeState,
+  flattenEncodedState,
+  legalActionCodes,
+  legalMoves,
+  stateHash
+} from "@/lib/binary2048/ai";
 import { getSession } from "@/lib/binary2048/sessions";
 
 const RULESET_ID = "binary2048-v1";
@@ -23,6 +31,7 @@ export async function GET(_: Request, context: { params: Promise<{ id: string }>
     actionSpace: ACTION_SPACE,
     legalMoves: legalDirMoves,
     legalActions,
+    actionMask: actionMask(legalActions),
     meta: {
       rulesetId: RULESET_ID,
       engineVersion: ENGINE_VERSION,

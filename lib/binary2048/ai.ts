@@ -34,6 +34,11 @@ export function legalActionCodes(state: GameState): ActionCode[] {
   return legalMoves(state).map((dir) => toActionCode(dir));
 }
 
+export function actionMask(legalActions: ActionCode[]): number[] {
+  const set = new Set<ActionCode>(legalActions);
+  return ACTION_SPACE.map((action) => (set.has(action) ? 1 : 0));
+}
+
 export function flattenEncodedState(encoded: EncodedState): number[] {
   const out: number[] = [];
   for (const row of encoded) {

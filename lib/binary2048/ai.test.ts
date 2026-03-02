@@ -1,4 +1,13 @@
-import { ACTION_SPACE, encodeCell, encodeState, flattenEncodedState, legalActionCodes, legalMoves, stateHash } from "@/lib/binary2048/ai";
+import {
+  ACTION_SPACE,
+  actionMask,
+  encodeCell,
+  encodeState,
+  flattenEncodedState,
+  legalActionCodes,
+  legalMoves,
+  stateHash
+} from "@/lib/binary2048/ai";
 import { createGame } from "@/lib/binary2048/engine";
 import type { Cell, GameConfig } from "@/lib/binary2048/types";
 
@@ -70,5 +79,10 @@ describe("AI helpers", () => {
     };
     expect(stateHash(base)).toBe(stateHash(base));
     expect(stateHash({ ...base, turn: 4 })).not.toBe(stateHash(base));
+  });
+
+  it("provides fixed-order action masks aligned to action space", () => {
+    expect(actionMask(["L", "U"])).toEqual([1, 0, 1, 0]);
+    expect(actionMask(["R", "D"])).toEqual([0, 1, 0, 1]);
   });
 });
