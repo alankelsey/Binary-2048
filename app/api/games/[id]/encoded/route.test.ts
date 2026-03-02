@@ -42,4 +42,13 @@ describe("GET /api/games/:id/encoded", () => {
     expect(typeof json.stateHash).toBe("string");
     expect(json.meta?.rulesetId).toBe("binary2048-v1");
   });
+
+  it("returns 404 for missing game id", async () => {
+    const res = await GET(new Request("http://localhost/api/games/x/encoded"), {
+      params: Promise.resolve({ id: "missing_game" })
+    });
+    const json = await res.json();
+    expect(res.status).toBe(404);
+    expect(json.error).toBe("Game not found");
+  });
 });
