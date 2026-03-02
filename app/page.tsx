@@ -387,7 +387,8 @@ export default function Home() {
   const wildcardRate = state?.config?.spawn?.pWildcard;
   const activeMode = typeof wildcardRate === "number" ? modeFromWildcardRate(wildcardRate) : spawnMode;
   const difficultyLocked = Boolean(state && !state.over && !state.won && (state.turn ?? 0) > 0);
-  const isActiveRun = Boolean(state && !state.over && !state.won);
+  const isPlayable = Boolean(state && !state.over && !state.won);
+  const isActiveRun = Boolean(state && !state.over && !state.won && (state.turn ?? 0) > 0);
   const canUndo = Boolean(gameId && state && (state.turn ?? 0) > 0 && !busy);
 
   return (
@@ -454,11 +455,13 @@ export default function Home() {
           <button disabled={busy} onClick={() => void newGame()}>
             New Game
           </button>
+          {isPlayable ? (
+            <button disabled={!canUndo} onClick={() => void undoMove()}>
+              Undo
+            </button>
+          ) : null}
           {isActiveRun ? (
             <>
-              <button disabled={!canUndo} onClick={() => void undoMove()}>
-                Undo
-              </button>
               <button
                 disabled={!gameId}
                 onClick={() => {
