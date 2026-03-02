@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { parseAction, toActionCode } from "@/lib/binary2048/action";
-import { getUndoMeta, moveSession } from "@/lib/binary2048/sessions";
+import { stateHash } from "@/lib/binary2048/ai";
+import { getSession, getUndoMeta, moveSession } from "@/lib/binary2048/sessions";
 import type { GameEvent } from "@/lib/binary2048/types";
 
 function firstSpawn(events: GameEvent[]) {
@@ -15,9 +16,24 @@ function firstSpawn(events: GameEvent[]) {
 
 export async function POST(req: Request, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
-  const body = (await req.json().catch(() => ({}))) as { dir?: unknown; action?: unknown };
+  const body = (await req.json().catch(() => ({}))) as { dir?: unknown; action?: unknown; expectStateHash?: unknown };
   const dir = parseAction(body.dir ?? body.action);
   if (!dir) return NextResponse.json({ error: "dir or action is required" }, { status: 400 });
+  if (typeof body.expectStateHash === "string") {
+    const current = getSession(id);
+    if (!current) return NextResponse.json({ error: "Game not found" }, { status: 404 });
+    const actualHash = stateHash(current.current);
+    if (actualHash !== body.expectStateHash) {
+      return NextResponse.json(
+        {
+          error: "State hash mismatch",
+          expected: body.expectStateHash,
+          actual: actualHash
+        },
+        { status: 409 }
+      );
+    }
+  }
   const session = moveSession(id, dir);
   if (!session) return NextResponse.json({ error: "Game not found" }, { status: 404 });
   const lastStep = session.steps[session.steps.length - 1];
@@ -31,6 +47,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     lastStep,
     action: toActionCode(dir),
     dir,
+    stateHash: stateHash(session.current),
     changed,
     reward,
     done: Boolean(session.current.over || session.current.won),

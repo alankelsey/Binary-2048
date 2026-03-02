@@ -56,10 +56,12 @@ npm run bot:tourney:dev
   - Returns current game state
 - `POST /api/games/:id/move`
   - Body: `{ "dir": "up" | "down" | "left" | "right" }` or `{ "action": "L" | "R" | "U" | "D" }`
+  - Optional concurrency guard: `expectStateHash` (returns `409` if stale)
   - Applies one move and returns updated state
   - AI-friendly fields included in response:
     - `action` (compact move code)
     - `dir` (normalized full direction)
+    - `stateHash` (post-move deterministic hash)
     - `changed` (whether move altered board)
     - `reward` (score delta for move)
     - `done` (game over or won)
