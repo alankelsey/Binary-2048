@@ -20,6 +20,8 @@
     "test:dev": "bash ./scripts/dev-smoke.sh",
     "bot:smoke": "node ./scripts/bot-smoke.mjs",
     "bot:smoke:dev": "bash ./scripts/bot-smoke-dev.sh",
+    "bot:tourney": "node ./scripts/bot-tournament.mjs",
+    "bot:tourney:dev": "bash ./scripts/bot-tournament-dev.sh",
     "lint": "next lint",
     "curl:local": "BASE=http://localhost:3000; RESP=$(curl -sS -X POST \"$BASE/api/games\" -H \"Content-Type: application/json\" -d '{}'); echo \"$RESP\"; if command -v jq >/dev/null 2>&1; then ID=$(echo \"$RESP\" | jq -r '.id'); else ID=$(echo \"$RESP\" | sed -n 's/.*\"id\":\"\\([^\"]*\\)\".*/\\1/p'); fi; echo \"id=$ID\"; curl -sS \"$BASE/api/games/$ID/export\""
   },

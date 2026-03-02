@@ -35,6 +35,18 @@ One-command bot smoke with temporary local dev server:
 npm run bot:smoke:dev
 ```
 
+Tiny same-seed multibot tournament:
+
+```bash
+npm run bot:tourney
+```
+
+One-command tournament with temporary local dev server:
+
+```bash
+npm run bot:tourney:dev
+```
+
 ## API
 
 - `POST /api/games`
