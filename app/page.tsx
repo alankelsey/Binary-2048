@@ -464,7 +464,7 @@ export default function Home() {
           </button>
           {isPlayable ? (
             <button disabled={!canUndo} onClick={() => void undoMove()}>
-              Undo ({undo.remaining} left)
+              Undo {undo.remaining}
             </button>
           ) : null}
           {isActiveRun ? (
