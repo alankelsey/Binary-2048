@@ -148,9 +148,21 @@ export function buildExport(
   steps: StepRecord[],
   final: GameState
 ): GameExport {
+  const engineVersion = process.env.NEXT_PUBLIC_APP_COMMIT ?? "dev";
+  const moves = steps.map((step) => step.dir);
   return {
     version: 1,
-    meta: { createdAtISO: new Date().toISOString(), engine: "binary-2048" },
+    meta: {
+      createdAtISO: new Date().toISOString(),
+      engine: "binary-2048",
+      rulesetId: "binary2048-v1",
+      engineVersion,
+      replay: {
+        seed: config.seed,
+        moves,
+        movesApplied: moves.length
+      }
+    },
     config,
     initial,
     steps,

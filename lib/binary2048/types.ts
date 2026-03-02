@@ -60,7 +60,17 @@ export type GameSession = {
 
 export type GameExport = {
   version: number;
-  meta: { createdAtISO: string; engine: string };
+  meta: {
+    createdAtISO: string;
+    engine: string;
+    rulesetId: string;
+    engineVersion: string;
+    replay: {
+      seed: number;
+      moves: Dir[];
+      movesApplied: number;
+    };
+  };
   config: GameConfig;
   initial: GameState;
   steps: StepRecord[];

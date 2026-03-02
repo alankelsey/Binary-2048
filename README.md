@@ -41,6 +41,7 @@ Open `http://localhost:3000`.
   - Returns AI-friendly encoded state + legal moves + ruleset/version metadata
 - `GET /api/games/:id/export`
   - Returns export JSON (download attachment)
+  - Includes replay-critical metadata: `rulesetId`, `engineVersion`, and compact replay (`seed`, `moves`, `movesApplied`)
 - `POST /api/sim/run`
   - Body: `{ "config": GameConfig, "initialGrid": Cell[][], "moves": Dir[] }`
   - Runs deterministic scenario and returns export JSON
