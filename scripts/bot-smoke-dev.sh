@@ -4,6 +4,7 @@ set -euo pipefail
 PORT=4112
 LOG_FILE="/tmp/binary2048-bot-smoke.log"
 BASE_URL="${BASE:-http://localhost:${PORT}}"
+DIST_DIR=".next-dev-${PORT}"
 
 cleanup() {
   if [[ -n "${SERVER_PID:-}" ]]; then
@@ -12,7 +13,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-npm run dev:once -- -p "${PORT}" >"${LOG_FILE}" 2>&1 &
+NEXT_DIST_DIR="${DIST_DIR}" npm run dev:once -- -p "${PORT}" >"${LOG_FILE}" 2>&1 &
 SERVER_PID=$!
 
 for _ in $(seq 1 80); do
