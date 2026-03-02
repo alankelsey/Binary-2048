@@ -1,9 +1,11 @@
 import { applyMove, createGame, DEFAULT_CONFIG } from "@/lib/binary2048/engine";
+import { parseAction, toActionCode, type ActionCode, type AnyAction } from "@/lib/binary2048/action";
 import type { Cell, Dir, GameConfig, GameState, Tile } from "@/lib/binary2048/types";
 
 export type SimulateStepSummary = {
   turn: number;
   dir: Dir;
+  action: ActionCode;
   changed: boolean;
   reward: number;
   done: boolean;
@@ -12,7 +14,7 @@ export type SimulateStepSummary = {
 
 export type SimulateBatchRequest = {
   seed?: number;
-  moves: Dir[];
+  moves: AnyAction[];
   config?: Partial<GameConfig> & { size?: number };
   initialGrid?: Cell[][];
   includeSteps?: boolean;
@@ -55,10 +57,13 @@ export function simulateBatch(req: SimulateBatchRequest): SimulateBatchResult {
   if (!Array.isArray(req.moves) || req.moves.length === 0) {
     throw new Error("moves must be a non-empty array");
   }
+  const normalizedMoves: Dir[] = [];
   for (const move of req.moves) {
-    if (move !== "up" && move !== "down" && move !== "left" && move !== "right") {
+    const parsed = parseAction(move);
+    if (!parsed) {
       throw new Error(`Invalid move direction: ${String(move)}`);
     }
+    normalizedMoves.push(parsed);
   }
 
   const config = mergeConfig(req.config, req.seed);
@@ -68,7 +73,7 @@ export function simulateBatch(req: SimulateBatchRequest): SimulateBatchResult {
   let totalReward = 0;
   const stepSummaries: SimulateStepSummary[] = [];
 
-  for (const dir of req.moves) {
+  for (const dir of normalizedMoves) {
     const beforeScore = current.score;
     const moved = applyMove(current, dir);
     const reward = moved.state.score - beforeScore;
@@ -77,6 +82,7 @@ export function simulateBatch(req: SimulateBatchRequest): SimulateBatchResult {
     stepSummaries.push({
       turn: moved.state.turn,
       dir,
+      action: toActionCode(dir),
       changed: moved.moved,
       reward,
       done,

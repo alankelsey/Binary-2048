@@ -44,4 +44,14 @@ describe("simulateBatch", () => {
     expect(result.movesApplied).toBe(1);
     expect(result.stepSummaries[0]?.reward).toBe(2);
   });
+
+  it("accepts compact action codes", () => {
+    const result = simulateBatch({
+      seed: 101,
+      moves: ["L", "U", "R", "D"],
+      config: { size: 4 }
+    });
+    expect(result.movesApplied).toBe(4);
+    expect(result.stepSummaries[0]?.action).toBe("L");
+  });
 });

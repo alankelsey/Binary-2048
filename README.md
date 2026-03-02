@@ -29,9 +29,11 @@ Open `http://localhost:3000`.
 - `GET /api/games/:id`
   - Returns current game state
 - `POST /api/games/:id/move`
-  - Body: `{ "dir": "up" | "down" | "left" | "right" }`
+  - Body: `{ "dir": "up" | "down" | "left" | "right" }` or `{ "action": "L" | "R" | "U" | "D" }`
   - Applies one move and returns updated state
   - AI-friendly fields included in response:
+    - `action` (compact move code)
+    - `dir` (normalized full direction)
     - `changed` (whether move altered board)
     - `reward` (score delta for move)
     - `done` (game over or won)
@@ -46,7 +48,7 @@ Open `http://localhost:3000`.
   - Body: `{ "config": GameConfig, "initialGrid": Cell[][], "moves": Dir[] }`
   - Runs deterministic scenario and returns export JSON
 - `POST /api/simulate`
-  - Body: `{ "seed"?: number, "moves": Dir[], "config"?: Partial<GameConfig> & { size?: number }, "initialGrid"?: Cell[][], "includeSteps"?: boolean }`
+  - Body: `{ "seed"?: number, "moves": Array<Dir | "L" | "R" | "U" | "D">, "config"?: Partial<GameConfig> & { size?: number }, "initialGrid"?: Cell[][], "includeSteps"?: boolean }`
   - Runs batch simulation and returns final state, score, and step summaries
 
 ## Example Scenario Payload
