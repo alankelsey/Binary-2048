@@ -189,6 +189,11 @@ DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
     - Full export JSON payload, or
     - `{ "header"?: { "rulesetId"?: string, "seed"?: number }, "config": GameConfig, "initialGrid": Cell[][], "moves": Array<Dir | "L" | "R" | "U" | "D"> }`
   - Deterministically reconstructs a run and returns final state + step summaries
+- `POST /api/replay/code`
+  - Body: replay/export payload
+  - Returns base64url replay `code` + length and guardrail flags
+- `GET /api/replay/code?code=...`
+  - Decodes replay code into compact replay payload (`header`, `config`, `initialGrid`, `moves`)
 - `GET /api/openapi`
   - Returns OpenAPI 3.1 JSON for current API surface
 
@@ -237,7 +242,7 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE).
   - OpenAPI spec endpoint + in-app docs page.
   - Active-run controls policy in UI (new/undo/export/replay only while active).
 - Next implementation focus:
-  - Add shareable replay code format (`/replay?code=...`) with size guardrails.
+  - Add `/replay?code=...` page-level UX for loading/playing shared replay links.
   - Begin `Lock-0` impediment tile design behind engine tests first.
 
 - App theming system: light/dark/theme packs, board backgrounds, and tile style presets.

@@ -138,6 +138,28 @@ export const OPENAPI_SPEC = {
         }
       }
     },
+    "/api/replay/code": {
+      post: {
+        summary: "Create shareable replay code from replay payload",
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { type: "object" } }
+          }
+        },
+        responses: {
+          "200": { description: "Replay code created" },
+          "400": { description: "Invalid replay payload" }
+        }
+      },
+      get: {
+        summary: "Decode shareable replay code back to compact replay payload",
+        parameters: [{ name: "code", in: "query", required: true, schema: { type: "string" } }],
+        responses: {
+          "200": { description: "Replay payload" },
+          "400": { description: "Invalid replay code" }
+        }
+      }
+    },
     "/api/openapi": {
       get: {
         summary: "OpenAPI spec document",
