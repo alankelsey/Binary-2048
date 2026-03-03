@@ -179,6 +179,8 @@ DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
     - `finalStateHash`
     - `finalEncodedFlat`
     - `finalActionMask`
+- `GET /api/openapi`
+  - Returns OpenAPI 3.1 JSON for current API surface
 
 ## Example Scenario Payload
 

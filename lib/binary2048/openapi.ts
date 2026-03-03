@@ -1,0 +1,140 @@
+export const OPENAPI_SPEC = {
+  openapi: "3.1.0",
+  info: {
+    title: "Binary-2048 API",
+    version: "0.1.0",
+    description: "API for Binary-2048 gameplay, simulation, and AI-oriented helpers."
+  },
+  servers: [{ url: "/" }],
+  paths: {
+    "/api/health": {
+      get: {
+        summary: "Health check",
+        responses: {
+          "200": {
+            description: "Service healthy",
+            content: { "application/json": { schema: { type: "object" } } }
+          }
+        }
+      }
+    },
+    "/api/games": {
+      post: {
+        summary: "Create a game session",
+        requestBody: {
+          required: false,
+          content: { "application/json": { schema: { type: "object" } } }
+        },
+        responses: {
+          "200": { description: "Game created" },
+          "400": { description: "Invalid request" }
+        }
+      }
+    },
+    "/api/games/{id}": {
+      get: {
+        summary: "Get game state by id",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          "200": { description: "Game found" },
+          "404": { description: "Game not found" }
+        }
+      }
+    },
+    "/api/games/{id}/move": {
+      post: {
+        summary: "Apply one move",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { type: "object" } } }
+        },
+        responses: {
+          "200": { description: "Move applied" },
+          "404": { description: "Game not found" }
+        }
+      }
+    },
+    "/api/games/{id}/undo": {
+      post: {
+        summary: "Undo the last move",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          "200": { description: "Undo applied" },
+          "400": { description: "Undo unavailable" },
+          "404": { description: "Game not found" }
+        }
+      }
+    },
+    "/api/games/{id}/encoded": {
+      get: {
+        summary: "Get AI-friendly encoded state",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          "200": { description: "Encoded state" },
+          "404": { description: "Game not found" }
+        }
+      }
+    },
+    "/api/games/{id}/export": {
+      get: {
+        summary: "Export game JSON",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          "200": { description: "Export JSON" },
+          "404": { description: "Game not found" }
+        }
+      }
+    },
+    "/api/games/import": {
+      post: {
+        summary: "Import game JSON",
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { type: "object" } } }
+        },
+        responses: {
+          "200": { description: "Imported" },
+          "400": { description: "Invalid import payload" }
+        }
+      }
+    },
+    "/api/sim/run": {
+      post: {
+        summary: "Run deterministic scenario",
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { type: "object" } } }
+        },
+        responses: {
+          "200": { description: "Scenario result" },
+          "400": { description: "Invalid scenario payload" }
+        }
+      }
+    },
+    "/api/simulate": {
+      post: {
+        summary: "Batch simulation endpoint",
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { type: "object" } } }
+        },
+        responses: {
+          "200": { description: "Simulation result" },
+          "400": { description: "Invalid simulation payload" }
+        }
+      }
+    },
+    "/api/openapi": {
+      get: {
+        summary: "OpenAPI spec document",
+        responses: {
+          "200": {
+            description: "OpenAPI JSON",
+            content: { "application/json": { schema: { type: "object" } } }
+          }
+        }
+      }
+    }
+  }
+} as const;
