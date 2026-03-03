@@ -550,6 +550,14 @@ export default function Home() {
               >
                 Export JSON
               </button>
+              <button
+                disabled={busy}
+                onClick={() => {
+                  replayInputRef.current?.click();
+                }}
+              >
+                Replay JSON
+              </button>
             </>
           ) : UI_POLICY.showOptionsButton ? (
             <details className="options-panel">
