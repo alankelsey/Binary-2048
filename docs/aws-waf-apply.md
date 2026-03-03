@@ -20,6 +20,7 @@ Script path: `scripts/waf-setup.sh`
 
 Companion scripts:
 - `npm run ops:waf:status` (association + rules + rate-limit + logging snapshot)
+- `npm run ops:waf:export` (backup current Web ACL + logging config)
 - `npm run ops:waf:check` (policy checks for required WAF rules/logging; optional wildcard DNS check)
 - `npm run ops:waf:verify` (check current association)
 - `npm run ops:waf:rollback` (remove WAF association)
@@ -31,6 +32,12 @@ Quick status check:
 
 ```bash
 DIST_ID=E123ABC456XYZ npm run ops:waf:status
+```
+
+Backup before changes:
+
+```bash
+DIST_ID=E123ABC456XYZ npm run ops:waf:export
 ```
 
 Policy check:

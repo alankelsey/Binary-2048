@@ -24,6 +24,7 @@
     "bot:tourney:dev": "bash ./scripts/bot-tournament-dev.sh",
     "ops:waf:setup": "bash ./scripts/waf-setup.sh",
     "ops:waf:status": "bash ./scripts/waf-status.sh",
+    "ops:waf:export": "bash ./scripts/waf-export.sh",
     "ops:waf:check": "bash ./scripts/waf-check.sh",
     "ops:waf:verify": "bash ./scripts/waf-verify.sh",
     "ops:waf:rollback": "bash ./scripts/waf-rollback.sh",

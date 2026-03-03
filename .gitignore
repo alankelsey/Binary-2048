@@ -10,3 +10,4 @@ coverage
 *.log
 .vscode
 docs/COLORBLIND_PLAN.local.md
+docs/waf-exports/*.json

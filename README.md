@@ -76,6 +76,12 @@ WAF policy check helper:
 DIST_ID=E123ABC456XYZ npm run ops:waf:check
 ```
 
+WAF backup helper:
+
+```bash
+DIST_ID=E123ABC456XYZ npm run ops:waf:export
+```
+
 Billing SNS helper:
 
 ```bash
