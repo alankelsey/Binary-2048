@@ -246,9 +246,10 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE).
   - Lock-0 engine prototype with cooldown-gated annihilation + replay events (`lock_block`, `lock_break`).
   - Lock-0 gameplay wiring: spawn probability support (`pLock`) + board rendering (`⛓` lock tile styling).
   - Lock-0 economy policy in game creation: ranked sessions require `lock_tiles_ranked` entitlement to keep lock spawn enabled.
+  - Replay code compression fallback (`r1z.`) when plain replay code exceeds length guardrails, with legacy replay-code decode compatibility.
 - Next implementation focus:
   - Add auth-backed entitlement verification (server-side trust boundary) for ranked lock toggles.
-  - Add optional compressed replay-code mode (e.g., lz-string) when uncompressed code exceeds guardrails.
+  - Add replay-code signing/HMAC to prevent tampering on shared links used in ranked contexts.
 
 - App theming system: light/dark/theme packs, board backgrounds, and tile style presets.
 - Color standards for boosts vs impediments:

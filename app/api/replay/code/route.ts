@@ -9,7 +9,8 @@ export async function POST(req: Request) {
       code: result.code,
       length: result.length,
       maxLength: 3500,
-      overLimit: result.overLimit
+      overLimit: result.overLimit,
+      compressed: result.compressed
     });
   } catch (error) {
     return NextResponse.json(

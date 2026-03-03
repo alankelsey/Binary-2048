@@ -38,6 +38,7 @@ describe("api replay code", () => {
     expect(res.status).toBe(200);
     expect(typeof json.code).toBe("string");
     expect(typeof json.length).toBe("number");
+    expect(typeof json.compressed).toBe("boolean");
   });
 
   it("decodes shareable replay code", async () => {

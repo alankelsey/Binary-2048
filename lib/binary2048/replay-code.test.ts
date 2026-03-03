@@ -34,7 +34,7 @@ describe("replay code helpers", () => {
     expect(parsed.config.seed).toBe(333);
   });
 
-  it("flags codes above the configured max length", () => {
+  it("auto-compresses oversized replay payloads to reduce code length", () => {
     const longMoves = Array.from({ length: 2500 }, () => "L");
     const created = createReplayCode({
       header: { rulesetId: "binary2048-v1", engineVersion: "dev", size: 4, seed: 1, createdAt: "x" },
@@ -42,8 +42,27 @@ describe("replay code helpers", () => {
       initialGrid,
       moves: longMoves
     });
-    expect(created.length).toBeGreaterThan(REPLAY_CODE_MAX_LEN);
-    expect(created.overLimit).toBe(true);
+    expect(created.compressed).toBe(true);
+    expect(created.length).toBeLessThanOrEqual(REPLAY_CODE_MAX_LEN);
+    expect(created.overLimit).toBe(false);
+    const parsed = parseReplayCode(created.code);
+    expect(parsed.moves).toHaveLength(2500);
+  });
+
+  it("parses legacy replay codes without version prefix", () => {
+    const legacyPayload = {
+      header: { rulesetId: "binary2048-v1", engineVersion: "dev", size: 4, seed: 1, createdAt: "x" },
+      config,
+      initialGrid,
+      moves: ["L", "R"]
+    };
+    const legacyCode = Buffer.from(JSON.stringify(legacyPayload), "utf8")
+      .toString("base64")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/g, "");
+    const parsed = parseReplayCode(legacyCode);
+    expect(parsed.moves).toEqual(["L", "R"]);
   });
 
   it("throws on malformed replay code", () => {
