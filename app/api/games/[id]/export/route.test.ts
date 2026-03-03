@@ -37,6 +37,12 @@ describe("GET /api/games/:id/export", () => {
     expect(res.headers.get("content-disposition")).toContain(`${id}.json`);
     expect(json.version).toBe(1);
     expect(json.meta?.rulesetId).toBe("binary2048-v1");
+    expect(json.meta?.spawnProbs).toEqual({
+      zero: 0,
+      one: 1,
+      wildcard: 0,
+      wildcardMultipliers: [2]
+    });
   });
 
   it("returns 404 for unknown game id", async () => {

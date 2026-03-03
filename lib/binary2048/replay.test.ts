@@ -38,6 +38,7 @@ describe("replay helpers", () => {
       rulesetId: "binary2048-v1",
       engineVersion: "test",
       replay: { seed: 1, moves: ["right", "down"], movesApplied: 2 },
+      spawnProbs: { zero: 0.1, one: 0.8, wildcard: 0.1, wildcardMultipliers: [2] },
       integrity: { sessionClass: "unranked", source: "created" }
     },
     config: initial.config,

@@ -173,7 +173,7 @@ DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
     - `stateHash`: deterministic hash of encoded board + turn/score/RNG step
 - `GET /api/games/:id/export`
   - Returns export JSON (download attachment)
-  - Includes replay-critical metadata: `rulesetId`, `engineVersion`, and compact replay (`seed`, `moves`, `movesApplied`)
+  - Includes replay-critical metadata: `rulesetId`, `engineVersion`, `spawnProbs`, and compact replay (`seed`, `moves`, `movesApplied`)
 - `POST /api/sim/run`
   - Body: `{ "config": GameConfig, "initialGrid": Cell[][], "moves": Dir[] }`
   - Runs deterministic scenario and returns export JSON

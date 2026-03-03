@@ -164,6 +164,12 @@ export function buildExport(
         moves,
         movesApplied: moves.length
       },
+      spawnProbs: {
+        zero: config.spawn.pZero,
+        one: config.spawn.pOne,
+        wildcard: config.spawn.pWildcard,
+        wildcardMultipliers: [...config.spawn.wildcardMultipliers]
+      },
       integrity
     },
     config,

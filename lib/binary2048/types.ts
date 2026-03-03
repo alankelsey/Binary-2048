@@ -79,6 +79,12 @@ export type GameExport = {
       moves: Dir[];
       movesApplied: number;
     };
+    spawnProbs: {
+      zero: number;
+      one: number;
+      wildcard: number;
+      wildcardMultipliers: number[];
+    };
     integrity: SessionIntegrity;
   };
   config: GameConfig;
