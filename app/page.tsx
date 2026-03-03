@@ -10,6 +10,7 @@ import { isThemeMode, THEMES, type ThemeMode } from "@/lib/binary2048/theme";
 import { rarityCssClass, STORE_ITEM_ICONS } from "@/lib/binary2048/store-icons";
 import { getControlVisibility } from "@/lib/binary2048/control-visibility";
 import { getReplayCodeFromSearch } from "@/lib/binary2048/replay-link";
+import { buildReplayUrl } from "@/lib/binary2048/replay-share";
 
 type Tile = { t: "n"; v: number } | { t: "z" } | { t: "w"; m: number };
 type Cell = Tile | null;
@@ -522,6 +523,37 @@ export default function Home() {
     }
   }
 
+  async function copyReplayLink() {
+    if (!gameId) return;
+    try {
+      const exportRes = await fetch(`/api/games/${gameId}/export`);
+      const exported = await exportRes.json().catch(() => ({}));
+      if (!exportRes.ok) throw new Error("Failed to export replay");
+
+      const codeRes = await fetch("/api/replay/code", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(exported)
+      });
+      const codeJson = await codeRes.json().catch(() => ({}));
+      if (!codeRes.ok || typeof codeJson?.code !== "string") {
+        throw new Error("Failed to create replay code");
+      }
+
+      if (codeJson.overLimit) {
+        throw new Error("Replay link is too long to share; use Export JSON instead");
+      }
+
+      const replayUrl = buildReplayUrl(window.location.origin, codeJson.code);
+      await navigator.clipboard.writeText(replayUrl);
+      setShareMessage("Replay link copied");
+      window.setTimeout(() => setShareMessage(""), 1800);
+    } catch (error) {
+      setShareMessage(error instanceof Error ? error.message : "Unable to copy replay link");
+      window.setTimeout(() => setShareMessage(""), 2200);
+    }
+  }
+
   return (
     <main>
       <a className="skip-link" href="#game-controls">
@@ -831,6 +863,9 @@ export default function Home() {
           </button>
           <button type="button" onClick={() => void copyShare()}>
             Copy
+          </button>
+          <button type="button" disabled={!gameId} onClick={() => void copyReplayLink()}>
+            Copy Replay Link
           </button>
           {shareMessage ? <span className="share-status">{shareMessage}</span> : null}
         </div>

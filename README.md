@@ -27,6 +27,7 @@ npm run dev
 Open `http://localhost:3000`.
 API docs UI: `http://localhost:3000/api-docs`.
 Replay share UI: `http://localhost:3000/replay?code=...`.
+In-app share row includes `Copy Replay Link` for the current run.
 
 Controls: swipe on mobile, arrow keys, and `W/A/S/D`.
 
@@ -244,7 +245,7 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE).
   - Active-run controls policy in UI (new/undo/export/replay only while active).
 - Next implementation focus:
   - Begin `Lock-0` impediment tile design behind engine tests first.
-  - Add direct in-UI share-link generation that emits `/replay?code=...`.
+  - Add optional compressed replay-code mode (e.g., lz-string) when uncompressed code exceeds guardrails.
 
 - App theming system: light/dark/theme packs, board backgrounds, and tile style presets.
 - Color standards for boosts vs impediments:
