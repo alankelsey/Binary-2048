@@ -11,6 +11,7 @@ describe("OPENAPI_SPEC", () => {
   it("contains expected AI and docs routes", () => {
     expect(OPENAPI_SPEC.paths["/api/games/{id}/encoded"]?.get?.summary).toBe("Get AI-friendly encoded state");
     expect(OPENAPI_SPEC.paths["/api/simulate"]?.post?.summary).toBe("Batch simulation endpoint");
+    expect(OPENAPI_SPEC.paths["/api/replay"]?.post?.summary).toContain("Deterministically reconstruct replay");
     expect(OPENAPI_SPEC.paths["/api/openapi"]?.get?.summary).toBe("OpenAPI spec document");
     expect(OPENAPI_SPEC.paths["/api/health"]?.get?.summary).toBe("Health check");
   });

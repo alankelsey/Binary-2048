@@ -125,6 +125,19 @@ export const OPENAPI_SPEC = {
         }
       }
     },
+    "/api/replay": {
+      post: {
+        summary: "Deterministically reconstruct replay from export or replay payload",
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { type: "object" } } }
+        },
+        responses: {
+          "200": { description: "Replay reconstruction result" },
+          "400": { description: "Invalid replay payload" }
+        }
+      }
+    },
     "/api/openapi": {
       get: {
         summary: "OpenAPI spec document",

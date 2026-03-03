@@ -184,6 +184,11 @@ DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
     - `finalStateHash`
     - `finalEncodedFlat`
     - `finalActionMask`
+- `POST /api/replay`
+  - Body:
+    - Full export JSON payload, or
+    - `{ "header"?: { "rulesetId"?: string, "seed"?: number }, "config": GameConfig, "initialGrid": Cell[][], "moves": Array<Dir | "L" | "R" | "U" | "D"> }`
+  - Deterministically reconstructs a run and returns final state + step summaries
 - `GET /api/openapi`
   - Returns OpenAPI 3.1 JSON for current API surface
 
@@ -233,7 +238,6 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE).
   - Active-run controls policy in UI (new/undo/export/replay only while active).
 - Next implementation focus:
   - Add test-backed security policy helpers for tiered rate limits by user tier.
-  - Add `POST /api/replay` deterministic reconstruction endpoint for exported runs.
   - Add shareable replay code format (`/replay?code=...`) with size guardrails.
   - Begin `Lock-0` impediment tile design behind engine tests first.
 
