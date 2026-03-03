@@ -63,6 +63,12 @@ WAF setup helper (requires AWS CLI credentials + CloudFront distribution id):
 DIST_ID=E123ABC456XYZ LOG_GROUP_NAME=aws-waf-logs-binary2048 npm run ops:waf:setup
 ```
 
+WAF strict setup (geo block + CAPTCHA rule template):
+
+```bash
+DIST_ID=E123ABC456XYZ WAF_TEMPLATE_FILE=docs/waf-web-acl-template-strict.json npm run ops:waf:setup
+```
+
 WAF verify and rollback helpers:
 
 ```bash

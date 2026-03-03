@@ -7,6 +7,7 @@ AWS_REGION="${AWS_REGION:-us-east-1}"
 WEB_ACL_NAME="${WEB_ACL_NAME:-binary2048-web-acl}"
 DIST_ID="${DIST_ID:-}"
 LOG_GROUP_NAME="${LOG_GROUP_NAME:-}"
+WAF_TEMPLATE_FILE="${WAF_TEMPLATE_FILE:-docs/waf-web-acl-template.json}"
 
 if [[ -z "${DIST_ID}" ]]; then
   echo "error: DIST_ID is required (CloudFront distribution id, e.g. E123ABC456XYZ)" >&2
@@ -28,7 +29,11 @@ WEB_ACL_ARN="$(
 
 if [[ "${WEB_ACL_ARN}" == "None" || -z "${WEB_ACL_ARN}" ]]; then
   echo "==> Creating Web ACL from template"
-  TEMPLATE="${ROOT_DIR}/docs/waf-web-acl-template.json"
+  TEMPLATE="${ROOT_DIR}/${WAF_TEMPLATE_FILE}"
+  if [[ ! -f "${TEMPLATE}" ]]; then
+    echo "error: WAF template file not found: ${TEMPLATE}" >&2
+    exit 1
+  fi
   TMP_TEMPLATE="$(mktemp)"
   cp "${TEMPLATE}" "${TMP_TEMPLATE}"
   sed -i.bak "s/\"Name\": \"binary2048-web-acl\"/\"Name\": \"${WEB_ACL_NAME}\"/" "${TMP_TEMPLATE}"

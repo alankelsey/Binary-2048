@@ -18,6 +18,14 @@ npm run ops:waf:setup
 
 Script path: `scripts/waf-setup.sh`
 
+Optional strict template (includes geo block + CAPTCHA burst rule):
+
+```bash
+DIST_ID=E123ABC456XYZ \
+WAF_TEMPLATE_FILE=docs/waf-web-acl-template-strict.json \
+npm run ops:waf:setup
+```
+
 Companion scripts:
 - `npm run ops:waf:status` (association + rules + rate-limit + logging snapshot)
 - `npm run ops:waf:export` (backup current Web ACL + logging config)
