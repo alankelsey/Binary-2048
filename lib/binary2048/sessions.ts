@@ -34,7 +34,11 @@ export function getUndoMeta(session: Pick<GameSession, "undoLimit" | "undoUsed">
   };
 }
 
-export function createSession(config?: Partial<GameConfig>, initialGrid?: Cell[][]) {
+type CreateSessionOptions = {
+  sessionClass?: "ranked" | "unranked";
+};
+
+export function createSession(config?: Partial<GameConfig>, initialGrid?: Cell[][], options?: CreateSessionOptions) {
   const created = createGame(config, initialGrid);
   games.set(created.state.id, {
     initialState: created.state,
@@ -42,7 +46,7 @@ export function createSession(config?: Partial<GameConfig>, initialGrid?: Cell[]
     steps: [],
     undoLimit: inferUndoLimit(created.state.config),
     undoUsed: 0,
-    integrity: { sessionClass: "unranked", source: "created" }
+    integrity: { sessionClass: options?.sessionClass ?? "unranked", source: "created" }
   });
   return games.get(created.state.id)!;
 }

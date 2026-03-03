@@ -245,8 +245,9 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE).
   - Active-run controls policy in UI (new/undo/export/replay only while active).
   - Lock-0 engine prototype with cooldown-gated annihilation + replay events (`lock_block`, `lock_break`).
   - Lock-0 gameplay wiring: spawn probability support (`pLock`) + board rendering (`⛓` lock tile styling).
+  - Lock-0 economy policy in game creation: ranked sessions require `lock_tiles_ranked` entitlement to keep lock spawn enabled.
 - Next implementation focus:
-  - Add Lock-0 economy toggles and entitlement wiring for ranked vs unranked flows.
+  - Add auth-backed entitlement verification (server-side trust boundary) for ranked lock toggles.
   - Add optional compressed replay-code mode (e.g., lz-string) when uncompressed code exceeds guardrails.
 
 - App theming system: light/dark/theme packs, board backgrounds, and tile style presets.
