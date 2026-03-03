@@ -26,6 +26,7 @@ npm run dev
 
 Open `http://localhost:3000`.
 API docs UI: `http://localhost:3000/api-docs`.
+Replay share UI: `http://localhost:3000/replay?code=...`.
 
 Controls: swipe on mobile, arrow keys, and `W/A/S/D`.
 
@@ -242,8 +243,8 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE).
   - OpenAPI spec endpoint + in-app docs page.
   - Active-run controls policy in UI (new/undo/export/replay only while active).
 - Next implementation focus:
-  - Add `/replay?code=...` page-level UX for loading/playing shared replay links.
   - Begin `Lock-0` impediment tile design behind engine tests first.
+  - Add direct in-UI share-link generation that emits `/replay?code=...`.
 
 - App theming system: light/dark/theme packs, board backgrounds, and tile style presets.
 - Color standards for boosts vs impediments:

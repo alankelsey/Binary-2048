@@ -9,6 +9,7 @@ import { buildShareText, buildShareUrls } from "@/lib/binary2048/share";
 import { isThemeMode, THEMES, type ThemeMode } from "@/lib/binary2048/theme";
 import { rarityCssClass, STORE_ITEM_ICONS } from "@/lib/binary2048/store-icons";
 import { getControlVisibility } from "@/lib/binary2048/control-visibility";
+import { getReplayCodeFromSearch } from "@/lib/binary2048/replay-link";
 
 type Tile = { t: "n"; v: number } | { t: "z" } | { t: "w"; m: number };
 type Cell = Tile | null;
@@ -336,10 +337,57 @@ export default function Home() {
     }
   }
 
+  async function loadReplayCode(code: string) {
+    setBusy(true);
+    setErrorMessage("");
+    try {
+      const decodeRes = await fetch(`/api/replay/code?code=${encodeURIComponent(code)}`);
+      const decoded = await decodeRes.json().catch(() => ({}));
+      if (!decodeRes.ok) {
+        const message =
+          decoded && typeof decoded.error === "string" ? decoded.error : "Failed to decode replay code";
+        throw new Error(message);
+      }
+
+      const runRes = await fetch("/api/sim/run", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          config: decoded.config,
+          initialGrid: decoded.initialGrid,
+          moves: decoded.moves
+        })
+      });
+      const replayExport = await runRes.json().catch(() => ({}));
+      if (!runRes.ok) {
+        const message =
+          replayExport && typeof replayExport.error === "string"
+            ? replayExport.error
+            : "Failed to reconstruct replay";
+        throw new Error(message);
+      }
+      const parsed = parseReplayExport(replayExport);
+      if (!parsed) throw new Error("Reconstructed replay payload is invalid");
+      setReplay({ data: parsed, step: 0, sourceName: "Shared replay" });
+      setCellEffects({});
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Failed to load replay code";
+      setErrorMessage(msg);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   useEffect(() => {
     let cancelled = false;
     async function initializeGame() {
       setBusy(true);
+      const sharedReplayCode = getReplayCodeFromSearch(window.location.search);
+      if (sharedReplayCode) {
+        await loadReplayCode(sharedReplayCode);
+        if (!cancelled) setBusy(false);
+        return;
+      }
       const savedId = window.localStorage.getItem(gameIdKey);
       if (savedId) {
         const ok = await restoreGame(savedId);
