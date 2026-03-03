@@ -124,6 +124,12 @@ One-command WAF/billing doctor:
 DIST_ID=E123ABC456XYZ npm run ops:waf:doctor
 ```
 
+End-to-end WAF smoke:
+
+```bash
+DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
+```
+
 ## API
 
 - `POST /api/games`

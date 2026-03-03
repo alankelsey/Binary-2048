@@ -36,6 +36,7 @@ npm run ops:waf:setup
 
 Companion scripts:
 - `npm run ops:waf:discover` (list candidate CloudFront distributions)
+- `npm run ops:waf:smoke` (non-destructive end-to-end verification run)
 - `npm run ops:waf:doctor` (run WAF + billing checks as one command)
 - `npm run ops:waf:status` (association + rules + rate-limit + logging snapshot)
 - `npm run ops:waf:export` (backup current Web ACL + logging config)
@@ -213,6 +214,12 @@ One-command health check (WAF + tripwire):
 
 ```bash
 DIST_ID=E123ABC456XYZ npm run ops:waf:doctor
+```
+
+End-to-end smoke flow:
+
+```bash
+DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
 ```
 
 ## 7) Route 53 abuse visibility
