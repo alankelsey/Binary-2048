@@ -1,11 +1,8 @@
 import { OPENAPI_SPEC } from "@/lib/binary2048/openapi";
-
-type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
-
-const METHOD_ORDER: HttpMethod[] = ["get", "post", "put", "patch", "delete"];
+import { getApiDocEntries } from "@/lib/binary2048/openapi-docs";
 
 export default function ApiDocsPage() {
-  const pathEntries = Object.entries(OPENAPI_SPEC.paths).sort(([a], [b]) => a.localeCompare(b));
+  const entries = getApiDocEntries();
 
   return (
     <main>
@@ -19,19 +16,17 @@ export default function ApiDocsPage() {
         </p>
 
         <div className="api-doc-grid">
-          {pathEntries.map(([path, item]) => {
-            const itemByMethod = item as Partial<Record<HttpMethod, { summary?: string }>>;
-            const methods = METHOD_ORDER.filter((method) => itemByMethod[method]);
+          {entries.map((entry) => {
             return (
-              <section key={path} className="api-doc-card">
-                <code className="api-path">{path}</code>
-                {methods.map((method) => {
-                  const operation = itemByMethod[method];
-                  if (!operation) return null;
+              <section key={entry.path} className="api-doc-card">
+                <code className="api-path">{entry.path}</code>
+                {entry.operations.map((operation) => {
                   return (
-                    <div key={`${path}-${method}`} className="api-op">
-                      <span className={`api-method api-method-${method}`}>{method.toUpperCase()}</span>
-                      <span>{operation.summary ?? "No summary"}</span>
+                    <div key={`${entry.path}-${operation.method}`} className="api-op">
+                      <span className={`api-method api-method-${operation.method}`}>
+                        {operation.method.toUpperCase()}
+                      </span>
+                      <span>{operation.summary}</span>
                     </div>
                   );
                 })}
