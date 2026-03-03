@@ -70,6 +70,18 @@ DIST_ID=E123ABC456XYZ npm run ops:waf:verify
 DIST_ID=E123ABC456XYZ npm run ops:waf:rollback
 ```
 
+WAF policy check helper:
+
+```bash
+DIST_ID=E123ABC456XYZ npm run ops:waf:check
+```
+
+Billing tripwire helper:
+
+```bash
+BUDGET_EMAIL=you@example.com BUDGET_AMOUNT_USD=50 npm run ops:waf:budget
+```
+
 ## API
 
 - `POST /api/games`

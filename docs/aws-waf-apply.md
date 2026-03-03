@@ -20,14 +20,28 @@ Script path: `scripts/waf-setup.sh`
 
 Companion scripts:
 - `npm run ops:waf:status` (association + rules + rate-limit + logging snapshot)
+- `npm run ops:waf:check` (policy checks for required WAF rules/logging; optional wildcard DNS check)
 - `npm run ops:waf:verify` (check current association)
 - `npm run ops:waf:rollback` (remove WAF association)
 - `npm run ops:waf:alarm` (create/update blocked-requests alarm)
+- `npm run ops:waf:budget` (create monthly billing tripwire budget)
 
 Quick status check:
 
 ```bash
 DIST_ID=E123ABC456XYZ npm run ops:waf:status
+```
+
+Policy check:
+
+```bash
+DIST_ID=E123ABC456XYZ npm run ops:waf:check
+```
+
+Optional wildcard DNS check (Route 53 hosted zone id required):
+
+```bash
+DIST_ID=E123ABC456XYZ HOSTED_ZONE_ID=Z123EXAMPLEABC npm run ops:waf:check
 ```
 
 ## 1) Find your Amplify-backed CloudFront distribution
@@ -128,9 +142,9 @@ Create a monthly cost budget with 50/80/100 notifications (use AWS Console or JS
 Template path: `docs/aws-budget-template.json`
 
 ```bash
-aws budgets create-budget \
-  --account-id 123456789012 \
-  --cli-input-json file://docs/aws-budget-template.json
+BUDGET_EMAIL=you@example.com \
+BUDGET_AMOUNT_USD=50 \
+npm run ops:waf:budget
 ```
 
 ## 7) Route 53 abuse visibility
