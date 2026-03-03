@@ -11,6 +11,7 @@ Next.js App Router scaffold for a Binary 2048 web game with deterministic simula
 - Deterministic RNG (`seed + rngStep`) for reproducible scenarios
 - In-memory game sessions and export API
 - Scenario simulation endpoint for tests
+- Replay JSON viewer: load export files and step through turns
 
 ## Run
 

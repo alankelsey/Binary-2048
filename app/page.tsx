@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type CSSProperties, type TouchEvent } from
 import { computeCellEffects, type CellEffect, type MoveEvent } from "@/lib/binary2048/cell-effects";
 import { keyToDir, swipeToDir } from "@/lib/binary2048/input";
 import { getUiPolicy } from "@/lib/binary2048/ui-policy";
+import { parseReplayExport, replayStateAtStep, type ReplayData } from "@/lib/binary2048/replay";
 
 type Tile = { t: "n"; v: number } | { t: "z" } | { t: "w"; m: number };
 type Cell = Tile | null;
@@ -88,11 +89,14 @@ export default function Home() {
   const [gameMode, setGameMode] = useState<GameMode>("classic");
   const [cellEffects, setCellEffects] = useState<Record<string, CellEffect>>({});
   const [undo, setUndo] = useState<UndoMeta>({ limit: 2, used: 0, remaining: 2 });
+  const [replay, setReplay] = useState<{ data: ReplayData; step: number; sourceName: string } | null>(null);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const effectTimerRef = useRef<number | null>(null);
   const importInputRef = useRef<HTMLInputElement | null>(null);
+  const replayInputRef = useRef<HTMLInputElement | null>(null);
 
   async function newGame() {
+    setReplay(null);
     setBusy(true);
     setErrorMessage("");
     try {
@@ -154,7 +158,7 @@ export default function Home() {
   }
 
   async function move(dir: Dir) {
-    if (!gameId || !state || state.over) return;
+    if (replay || !gameId || !state || state.over) return;
     const previous = state;
     setBusy(true);
     setErrorMessage("");
@@ -191,7 +195,7 @@ export default function Home() {
   }
 
   async function undoMove() {
-    if (!gameId) return;
+    if (replay || !gameId) return;
     setBusy(true);
     setErrorMessage("");
     try {
@@ -297,6 +301,24 @@ export default function Home() {
     }
   }
 
+  async function loadReplayFile(file: File) {
+    setBusy(true);
+    setErrorMessage("");
+    try {
+      const text = await file.text();
+      const payload = JSON.parse(text);
+      const parsed = parseReplayExport(payload);
+      if (!parsed) throw new Error("Replay file is missing required export fields");
+      setReplay({ data: parsed, step: 0, sourceName: file.name });
+      setCellEffects({});
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Failed to load replay";
+      setErrorMessage(msg);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   useEffect(() => {
     let cancelled = false;
     async function initializeGame() {
@@ -380,7 +402,7 @@ export default function Home() {
   }
 
   function onBoardTouchEnd(event: TouchEvent<HTMLDivElement>) {
-    if (!touchStartRef.current || busy || !state || state.over) return;
+    if (!touchStartRef.current || replay || busy || !state || state.over) return;
     const touch = event.changedTouches[0];
     if (!touch) return;
 
@@ -391,12 +413,15 @@ export default function Home() {
     void move(dir);
   }
 
-  const wildcardRate = state?.config?.spawn?.pWildcard;
+  const viewState = replay ? replayStateAtStep(replay.data, replay.step) : state;
+  const wildcardRate = viewState?.config?.spawn?.pWildcard;
   const activeMode = typeof wildcardRate === "number" ? modeFromWildcardRate(wildcardRate) : spawnMode;
   const difficultyLocked = Boolean(state && !state.over && !state.won && (state.turn ?? 0) > 0);
-  const isPlayable = Boolean(state && !state.over && !state.won);
-  const isActiveRun = Boolean(state && !state.over && !state.won && (state.turn ?? 0) > 0);
-  const canUndo = Boolean(gameId && state && (state.turn ?? 0) > 0 && (undo.remaining ?? 0) > 0 && !busy);
+  const isPlayable = Boolean(!replay && state && !state.over && !state.won);
+  const isActiveRun = Boolean(!replay && state && !state.over && !state.won && (state.turn ?? 0) > 0);
+  const canUndo = Boolean(!replay && gameId && state && (state.turn ?? 0) > 0 && (undo.remaining ?? 0) > 0 && !busy);
+  const replayStepsTotal = replay?.data.steps.length ?? 0;
+  const replayStep = replay?.step ?? 0;
 
   return (
     <main>
@@ -410,23 +435,54 @@ export default function Home() {
       <p>Arrow keys or WASD combine tiles. Bonus tiles: zero annihilator + wildcard multipliers.</p>
       <div className="card">
         <div className="meta">
-          <span>Game: {gameId || "-"}</span>
-          <span className="score-pill">Score: {state?.score ?? 0}</span>
-          <span>Moves: {state?.turn ?? 0}</span>
+          <span>Game: {replay ? `Replay (${replay.sourceName})` : gameId || "-"}</span>
+          <span className="score-pill">Score: {viewState?.score ?? 0}</span>
+          <span>Moves: {viewState?.turn ?? 0}</span>
           <span>High: {highScore}</span>
           <span>Difficulty: {SPAWN_MODES[activeMode].label}</span>
           <span>Mode: {GAME_MODES[gameMode].label}</span>
-          <span>{state?.won ? "Won" : state?.over ? "Game Over" : "Active"}</span>
+          <span>{replay ? "Replay" : state?.won ? "Won" : state?.over ? "Game Over" : "Active"}</span>
         </div>
+        {replay ? (
+          <div className="replay-controls">
+            <span>
+              Replay step {replayStep}/{replayStepsTotal}
+            </span>
+            <button disabled={busy || replayStep <= 0} onClick={() => setReplay((prev) => (prev ? { ...prev, step: 0 } : prev))}>
+              First
+            </button>
+            <button
+              disabled={busy || replayStep <= 0}
+              onClick={() => setReplay((prev) => (prev ? { ...prev, step: Math.max(0, prev.step - 1) } : prev))}
+            >
+              Prev
+            </button>
+            <button
+              disabled={busy || replayStep >= replayStepsTotal}
+              onClick={() => setReplay((prev) => (prev ? { ...prev, step: Math.min(prev.data.steps.length, prev.step + 1) } : prev))}
+            >
+              Next
+            </button>
+            <button
+              disabled={busy || replayStep >= replayStepsTotal}
+              onClick={() => setReplay((prev) => (prev ? { ...prev, step: prev.data.steps.length } : prev))}
+            >
+              Last
+            </button>
+            <button disabled={busy} onClick={() => setReplay(null)}>
+              Exit Replay
+            </button>
+          </div>
+        ) : null}
         {errorMessage ? <p className="status-error">{errorMessage}</p> : null}
-        <div className={`board-shell ${state?.over ? "game-over" : ""}`}>
+        <div className={`board-shell ${viewState?.over ? "game-over" : ""}`}>
           <div
             className="board"
-            style={{ gridTemplateColumns: `repeat(${state?.width ?? 4}, minmax(0, 1fr))` }}
+            style={{ gridTemplateColumns: `repeat(${viewState?.width ?? 4}, minmax(0, 1fr))` }}
             onTouchStart={onBoardTouchStart}
             onTouchEnd={onBoardTouchEnd}
           >
-            {state?.grid.map((row, r) =>
+            {viewState?.grid.map((row, r) =>
               row.map((cell, c) => {
                 const effect = cellEffects[`${r}-${c}`];
                 const effectClass = effect ? `fx-${effect}` : "";
@@ -448,12 +504,12 @@ export default function Home() {
               })
             )}
           </div>
-          {state?.over ? (
+          {viewState?.over ? (
             <div className="gameover-overlay" role="status" aria-live="polite">
               <div className="gameover-title">GAME OVER</div>
               <div className="gameover-stats">
-                <span>Score: {state.score}</span>
-                <span>High: {Math.max(highScore, state.score)}</span>
+                <span>Score: {viewState.score}</span>
+                <span>High: {Math.max(highScore, viewState.score)}</span>
               </div>
             </div>
           ) : null}
@@ -530,14 +586,24 @@ export default function Home() {
                   </label>
                 ) : null}
                 {UI_POLICY.controls.import ? (
-                  <button
-                    disabled={busy}
-                    onClick={() => {
-                      importInputRef.current?.click();
-                    }}
-                  >
-                    Import JSON
-                  </button>
+                  <>
+                    <button
+                      disabled={busy}
+                      onClick={() => {
+                        importInputRef.current?.click();
+                      }}
+                    >
+                      Import JSON
+                    </button>
+                    <button
+                      disabled={busy}
+                      onClick={() => {
+                        replayInputRef.current?.click();
+                      }}
+                    >
+                      Replay JSON
+                    </button>
+                  </>
                 ) : null}
                 {UI_POLICY.controls.export ? (
                   <button
@@ -563,6 +629,18 @@ export default function Home() {
               event.target.value = "";
               if (!file) return;
               void importGameFile(file);
+            }}
+          />
+          <input
+            ref={replayInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="file-input-hidden"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              event.target.value = "";
+              if (!file) return;
+              void loadReplayFile(file);
             }}
           />
         </div>

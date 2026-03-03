@@ -343,6 +343,22 @@ button:disabled {
   color: #fda4af;
 }
 
+.replay-controls {
+  margin-top: 0.45rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.36rem;
+  align-items: center;
+  font-size: 0.78rem;
+  color: #a8bdd7;
+}
+
+.replay-controls span {
+  margin-right: 0.25rem;
+  font-weight: 700;
+  color: #dbeafb;
+}
+
 .swipe-hint {
   margin: 0.45rem 0 0;
   font-size: 0.76rem;
