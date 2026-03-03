@@ -19,9 +19,16 @@ npm run ops:waf:setup
 Script path: `scripts/waf-setup.sh`
 
 Companion scripts:
+- `npm run ops:waf:status` (association + rules + rate-limit + logging snapshot)
 - `npm run ops:waf:verify` (check current association)
 - `npm run ops:waf:rollback` (remove WAF association)
 - `npm run ops:waf:alarm` (create/update blocked-requests alarm)
+
+Quick status check:
+
+```bash
+DIST_ID=E123ABC456XYZ npm run ops:waf:status
+```
 
 ## 1) Find your Amplify-backed CloudFront distribution
 
