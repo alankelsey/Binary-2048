@@ -23,6 +23,7 @@ npm run dev
 ```
 
 Open `http://localhost:3000`.
+API docs UI: `http://localhost:3000/api-docs`.
 
 Controls: swipe on mobile, arrow keys, and `W/A/S/D`.
 

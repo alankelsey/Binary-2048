@@ -571,6 +571,57 @@ select:focus-visible {
   color: var(--status-ok);
 }
 
+.api-doc-grid {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.75rem;
+}
+
+.api-doc-card {
+  border: 1px solid var(--hint-border);
+  background: color-mix(in srgb, var(--hint-bg) 78%, transparent);
+  border-radius: 10px;
+  padding: 0.5rem 0.65rem;
+}
+
+.api-path {
+  display: inline-block;
+  font-size: 0.82rem;
+  color: #c7defb;
+  margin-bottom: 0.25rem;
+}
+
+.api-op {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.82rem;
+  color: var(--hint-text);
+  margin: 0.22rem 0;
+}
+
+.api-method {
+  min-width: 3.9rem;
+  border-radius: 999px;
+  text-align: center;
+  padding: 0.15rem 0.45rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.api-method-get {
+  background: rgba(34, 197, 94, 0.2);
+  border: 1px solid rgba(34, 197, 94, 0.55);
+  color: #d7ffe6;
+}
+
+.api-method-post {
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.55);
+  color: #ddecff;
+}
+
 .gameover-overlay {
   position: absolute;
   inset: 0.7rem 0.2rem 0.2rem;
