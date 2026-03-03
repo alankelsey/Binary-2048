@@ -232,8 +232,9 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE).
   - OpenAPI spec endpoint + in-app docs page.
   - Active-run controls policy in UI (new/undo/export/replay only while active).
 - Next implementation focus:
-  - Add export metadata for explicit spawn-probability snapshots.
   - Add test-backed security policy helpers for tiered rate limits by user tier.
+  - Add `POST /api/replay` deterministic reconstruction endpoint for exported runs.
+  - Add shareable replay code format (`/replay?code=...`) with size guardrails.
   - Begin `Lock-0` impediment tile design behind engine tests first.
 
 - App theming system: light/dark/theme packs, board backgrounds, and tile style presets.
@@ -305,6 +306,52 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE).
   - Apply checklist in [docs/aws-waf-apply.md](./docs/aws-waf-apply.md).
 
 ## AI / Multibot Roadmap
+
+### AI Chat Log Reconciliation (March 3, 2026)
+
+- Replay as cornerstone (`ruleset + seed + moves`):
+  - Status: `Completed (core)` / `Partial (shape)`
+  - Notes:
+    - Completed: deterministic replay metadata exists in exports (`rulesetId`, `engineVersion`, replay `seed` + `moves`, `spawnProbs`).
+    - Partial: current export still includes full step snapshots (`before/after` states) for debuggability; compact replay-only export mode is not separated yet.
+- Replay header + moves-only canonical object:
+  - Status: `Partial`
+  - Notes:
+    - We already store equivalent fields, but naming differs from the proposed `ReplayHeader` (`replayVersion`, explicit `size`).
+    - Add normalization helper to emit strict `{header,moves}` payload for share/replay APIs.
+- Optional rich step log:
+  - Status: `Completed (richer-than-proposed)`
+  - Notes:
+    - Events and per-step details are present.
+    - Proposed optimization still open: compact step schema without full grids for production exports.
+- `GET /api/games/:id/export`:
+  - Status: `Completed`
+- `POST /api/replay`:
+  - Status: `Planned (next)`
+- Shareable replay link (`/replay?code=...`):
+  - Status: `Planned (next)`
+- Seeded PRNG only (no `Math.random()` in move/spawn engine):
+  - Status: `Completed` for gameplay RNG / `Partial` for seed generation
+  - Notes:
+    - Move/spawn logic uses deterministic seed + rngStep.
+    - New game seed generation still uses `Math.random()` when seed is not provided (acceptable for random session start; can be swapped later).
+- Fixed random draw count per spawn:
+  - Status: `Partial`
+  - Notes:
+    - Spawn path is deterministic, but wildcard multiplier selection adds an extra random draw on wildcard spawns.
+    - If strict fixed-count auditing is required, reserve fixed draw slots each spawn (even when branch is unused).
+- Version pinning (`rulesetId` + `engineVersion`):
+  - Status: `Completed`
+- Storage strategy (light now, Mongo later):
+  - Status: `Completed (light)` / `Planned (Mongo)`
+  - Notes:
+    - Current sessions are in-memory and replay payloads are self-contained.
+    - Mongo storage plan remains for ranked/history features.
+- Anti-cheat server-authoritative ranked flow:
+  - Status: `Planned`
+  - Notes:
+    - Unranked integrity metadata is live (`created` vs `imported`).
+    - Ranked validation + entitlement enforcement still belongs to auth/economy phase.
 
 - Deterministic, replayable engine loop:
   - Keep engine pure and deterministic with seeded PRNG only.
