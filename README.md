@@ -63,6 +63,12 @@ WAF setup helper (requires AWS CLI credentials + CloudFront distribution id):
 DIST_ID=E123ABC456XYZ LOG_GROUP_NAME=aws-waf-logs-binary2048 npm run ops:waf:setup
 ```
 
+Discover candidate distributions:
+
+```bash
+APP_DOMAIN=binary2048.com npm run ops:waf:discover
+```
+
 WAF strict setup (geo block + CAPTCHA rule template):
 
 ```bash
@@ -110,6 +116,12 @@ Billing tripwire verification:
 
 ```bash
 BUDGET_NAME=binary2048-monthly-cost ALARM_NAME=WAFBlockedRequestsHigh npm run ops:waf:tripwire-check
+```
+
+One-command WAF/billing doctor:
+
+```bash
+DIST_ID=E123ABC456XYZ npm run ops:waf:doctor
 ```
 
 ## API

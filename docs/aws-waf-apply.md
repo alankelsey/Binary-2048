@@ -35,6 +35,8 @@ npm run ops:waf:setup
 ```
 
 Companion scripts:
+- `npm run ops:waf:discover` (list candidate CloudFront distributions)
+- `npm run ops:waf:doctor` (run WAF + billing checks as one command)
 - `npm run ops:waf:status` (association + rules + rate-limit + logging snapshot)
 - `npm run ops:waf:export` (backup current Web ACL + logging config)
 - `npm run ops:waf:check` (policy checks for required WAF rules/logging; optional wildcard DNS check)
@@ -97,12 +99,16 @@ DIST_ID=E123ABC456XYZ HOSTED_ZONE_ID=Z123EXAMPLEABC npm run ops:waf:check
 ## 1) Find your Amplify-backed CloudFront distribution
 
 ```bash
-aws cloudfront list-distributions \
-  --query "DistributionList.Items[].[Id,DomainName,Comment]" \
-  --output table
+APP_DOMAIN=binary2048.com npm run ops:waf:discover
 ```
 
 Copy your distribution ID and ARN.
+
+Or list all distributions:
+
+```bash
+npm run ops:waf:discover
+```
 
 ## 2) Create the Web ACL from template
 
@@ -201,6 +207,12 @@ Verify tripwires:
 BUDGET_NAME=binary2048-monthly-cost \
 ALARM_NAME=WAFBlockedRequestsHigh \
 npm run ops:waf:tripwire-check
+```
+
+One-command health check (WAF + tripwire):
+
+```bash
+DIST_ID=E123ABC456XYZ npm run ops:waf:doctor
 ```
 
 ## 7) Route 53 abuse visibility
