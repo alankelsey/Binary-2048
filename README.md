@@ -76,6 +76,12 @@ WAF policy check helper:
 DIST_ID=E123ABC456XYZ npm run ops:waf:check
 ```
 
+Billing SNS helper:
+
+```bash
+TOPIC_NAME=binary2048-billing-alerts SUBSCRIBE_EMAIL=you@example.com npm run ops:waf:sns
+```
+
 Billing tripwire helper:
 
 ```bash

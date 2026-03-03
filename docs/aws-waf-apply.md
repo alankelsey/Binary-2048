@@ -25,6 +25,7 @@ Companion scripts:
 - `npm run ops:waf:rollback` (remove WAF association)
 - `npm run ops:waf:alarm` (create/update blocked-requests alarm)
 - `npm run ops:waf:budget` (create monthly billing tripwire budget)
+- `npm run ops:waf:sns` (create billing alerts SNS topic and optional email subscription)
 
 Quick status check:
 
@@ -36,6 +37,15 @@ Policy check:
 
 ```bash
 DIST_ID=E123ABC456XYZ npm run ops:waf:check
+```
+
+Strict policy check with explicit expected thresholds:
+
+```bash
+DIST_ID=E123ABC456XYZ \
+REQUIRED_API_RATE_LIMIT=600 \
+REQUIRED_GLOBAL_RATE_LIMIT=2000 \
+npm run ops:waf:check
 ```
 
 Optional wildcard DNS check (Route 53 hosted zone id required):
@@ -130,11 +140,9 @@ npm run ops:waf:alarm
 Create SNS topic and subscription:
 
 ```bash
-aws sns create-topic --name binary2048-billing-alerts
-aws sns subscribe \
-  --topic-arn arn:aws:sns:us-east-1:123456789012:binary2048-billing-alerts \
-  --protocol email \
-  --notification-endpoint your-email@example.com
+TOPIC_NAME=binary2048-billing-alerts \
+SUBSCRIBE_EMAIL=your-email@example.com \
+npm run ops:waf:sns
 ```
 
 Create a monthly cost budget with 50/80/100 notifications (use AWS Console or JSON-based `create-budget`).

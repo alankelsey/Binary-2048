@@ -4,6 +4,8 @@ set -euo pipefail
 AWS_REGION="${AWS_REGION:-us-east-1}"
 DIST_ID="${DIST_ID:-}"
 HOSTED_ZONE_ID="${HOSTED_ZONE_ID:-}"
+REQUIRED_API_RATE_LIMIT="${REQUIRED_API_RATE_LIMIT:-600}"
+REQUIRED_GLOBAL_RATE_LIMIT="${REQUIRED_GLOBAL_RATE_LIMIT:-2000}"
 
 if [[ -z "${DIST_ID}" ]]; then
   echo "error: DIST_ID is required (CloudFront distribution id, e.g. E123ABC456XYZ)" >&2
@@ -83,6 +85,37 @@ require_rule "AWSManagedRulesKnownBadInputsRuleSet"
 require_rule "AWSManagedRulesCommonRuleSet"
 require_rule "RateLimitApi"
 require_rule "RateLimitGlobal"
+
+RATE_API_LIMIT="$(
+  aws wafv2 get-web-acl \
+    --region "${AWS_REGION}" \
+    --scope CLOUDFRONT \
+    --name "${WEB_ACL_NAME}" \
+    --id "${WEB_ACL_ID}" \
+    --query "WebACL.Rules[?Name=='RateLimitApi'].Statement.RateBasedStatement.Limit | [0]" \
+    --output text
+)"
+RATE_GLOBAL_LIMIT="$(
+  aws wafv2 get-web-acl \
+    --region "${AWS_REGION}" \
+    --scope CLOUDFRONT \
+    --name "${WEB_ACL_NAME}" \
+    --id "${WEB_ACL_ID}" \
+    --query "WebACL.Rules[?Name=='RateLimitGlobal'].Statement.RateBasedStatement.Limit | [0]" \
+    --output text
+)"
+
+if [[ "${RATE_API_LIMIT}" == "${REQUIRED_API_RATE_LIMIT}" ]]; then
+  ok "RateLimitApi threshold is ${RATE_API_LIMIT}"
+else
+  bad "RateLimitApi threshold mismatch (expected ${REQUIRED_API_RATE_LIMIT}, got ${RATE_API_LIMIT})"
+fi
+
+if [[ "${RATE_GLOBAL_LIMIT}" == "${REQUIRED_GLOBAL_RATE_LIMIT}" ]]; then
+  ok "RateLimitGlobal threshold is ${RATE_GLOBAL_LIMIT}"
+else
+  bad "RateLimitGlobal threshold mismatch (expected ${REQUIRED_GLOBAL_RATE_LIMIT}, got ${RATE_GLOBAL_LIMIT})"
+fi
 
 LOG_DEST="$(
   aws wafv2 get-logging-configuration \
