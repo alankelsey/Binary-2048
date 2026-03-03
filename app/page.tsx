@@ -12,6 +12,7 @@ import { getControlVisibility } from "@/lib/binary2048/control-visibility";
 import { getReplayCodeFromSearch } from "@/lib/binary2048/replay-link";
 import { buildReplayUrl } from "@/lib/binary2048/replay-share";
 import { replaySpeedToDelayMs } from "@/lib/binary2048/replay-autoplay";
+import { shouldStartNewGameOnReplayExit } from "@/lib/binary2048/replay-exit";
 
 type Tile = { t: "n"; v: number } | { t: "z" } | { t: "w"; m: number } | { t: "i" };
 type Cell = Tile | null;
@@ -604,6 +605,14 @@ export default function Home() {
     }
   }
 
+  async function exitReplay() {
+    setReplayPlaying(false);
+    setReplay(null);
+    if (shouldStartNewGameOnReplayExit(Boolean(state))) {
+      await newGame();
+    }
+  }
+
   return (
     <main>
       <a className="skip-link" href="#game-controls">
@@ -701,13 +710,7 @@ export default function Home() {
             >
               Last
             </button>
-            <button
-              disabled={busy}
-              onClick={() => {
-                setReplayPlaying(false);
-                setReplay(null);
-              }}
-            >
+            <button disabled={busy} onClick={() => void exitReplay()}>
               Exit Replay
             </button>
           </div>
