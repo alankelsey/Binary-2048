@@ -400,6 +400,25 @@ button:disabled {
   letter-spacing: 0.02em;
 }
 
+.share-row {
+  margin-top: 0.55rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  font-size: 0.76rem;
+  color: #9fb6d3;
+}
+
+.share-row button {
+  font-size: 0.78rem;
+  padding: 0.3rem 0.5rem;
+}
+
+.share-status {
+  color: #9ee2b3;
+}
+
 .gameover-overlay {
   position: absolute;
   inset: 0.7rem 0.2rem 0.2rem;

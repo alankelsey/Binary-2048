@@ -12,6 +12,7 @@ Next.js App Router scaffold for a Binary 2048 web game with deterministic simula
 - In-memory game sessions and export API
 - Scenario simulation endpoint for tests
 - Replay JSON viewer: load export files and step through turns
+- Built-in social sharing actions (X, LinkedIn, copy share text)
 
 ## Run
 

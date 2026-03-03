@@ -5,6 +5,7 @@ import { computeCellEffects, type CellEffect, type MoveEvent } from "@/lib/binar
 import { keyToDir, swipeToDir } from "@/lib/binary2048/input";
 import { getUiPolicy } from "@/lib/binary2048/ui-policy";
 import { parseReplayExport, replayStateAtStep, type ReplayData } from "@/lib/binary2048/replay";
+import { buildShareText, buildShareUrls } from "@/lib/binary2048/share";
 
 type Tile = { t: "n"; v: number } | { t: "z" } | { t: "w"; m: number };
 type Cell = Tile | null;
@@ -90,6 +91,7 @@ export default function Home() {
   const [cellEffects, setCellEffects] = useState<Record<string, CellEffect>>({});
   const [undo, setUndo] = useState<UndoMeta>({ limit: 2, used: 0, remaining: 2 });
   const [replay, setReplay] = useState<{ data: ReplayData; step: number; sourceName: string } | null>(null);
+  const [shareMessage, setShareMessage] = useState<string>("");
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const effectTimerRef = useRef<number | null>(null);
   const importInputRef = useRef<HTMLInputElement | null>(null);
@@ -422,6 +424,20 @@ export default function Home() {
   const canUndo = Boolean(!replay && gameId && state && (state.turn ?? 0) > 0 && (undo.remaining ?? 0) > 0 && !busy);
   const replayStepsTotal = replay?.data.steps.length ?? 0;
   const replayStep = replay?.step ?? 0;
+  const shareText = buildShareText(viewState?.score ?? 0, highScore, viewState?.turn ?? 0);
+  const shareUrl = typeof window !== "undefined" ? window.location.origin : "https://binary2048.com";
+  const socialUrls = buildShareUrls(shareText, shareUrl);
+
+  async function copyShare() {
+    try {
+      await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
+      setShareMessage("Share text copied");
+      window.setTimeout(() => setShareMessage(""), 1800);
+    } catch {
+      setShareMessage("Unable to copy share text");
+      window.setTimeout(() => setShareMessage(""), 1800);
+    }
+  }
 
   return (
     <main>
@@ -654,6 +670,29 @@ export default function Home() {
             <p>Tip: keep your highest value anchored to one side and avoid breaking the chain.</p>
           </div>
         </details>
+        <div className="share-row" aria-label="share actions">
+          <span>Share:</span>
+          <button
+            type="button"
+            onClick={() => {
+              window.open(socialUrls.x, "_blank", "noopener,noreferrer");
+            }}
+          >
+            X
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              window.open(socialUrls.linkedin, "_blank", "noopener,noreferrer");
+            }}
+          >
+            LinkedIn
+          </button>
+          <button type="button" onClick={() => void copyShare()}>
+            Copy
+          </button>
+          {shareMessage ? <span className="share-status">{shareMessage}</span> : null}
+        </div>
         <p className="build-version" aria-label="app version">
           v{APP_VERSION} ({APP_COMMIT})
         </p>
