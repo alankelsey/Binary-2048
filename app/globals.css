@@ -4,6 +4,23 @@
   --tile: #1f2833;
   --text: #e6edf3;
   --accent: #38bdf8;
+  --subtitle: #8faccc;
+  --meta-text: #9fb2c9;
+  --card-border: #243042;
+  --button-bg: #0f2949;
+  --button-bg-hover: #113864;
+  --button-border: #3b82f6;
+  --button-text: #dff4ff;
+  --button-disabled-bg: #223248;
+  --button-disabled-border: #3a4f6a;
+  --button-disabled-text: #8fa3bc;
+  --cell-filled-top: #253345;
+  --cell-filled-bottom: #1f2c3f;
+  --cell-filled-border: #3a5280;
+  --hint-bg: #0f1f33;
+  --hint-border: #2b425f;
+  --hint-text: #9db7d6;
+  --status-ok: #9ee2b3;
   --wild-top: #1f4d78;
   --wild-bottom: #14385a;
   --wild-border: #79d4ff;
@@ -23,6 +40,75 @@
   --zero-bust-g: rgba(234, 179, 8, 0.55);
   --bg-glow: #162238;
   --bg-base: #0d1117;
+}
+
+:root[data-theme="aurora"] {
+  --panel: #10202a;
+  --tile: #1a2f39;
+  --text: #e9fbff;
+  --subtitle: #98d7df;
+  --meta-text: #9fd0d7;
+  --card-border: #2b5360;
+  --button-bg: #11404f;
+  --button-bg-hover: #14566a;
+  --button-border: #3ac6de;
+  --button-text: #e5fbff;
+  --button-disabled-bg: #27434f;
+  --button-disabled-border: #376273;
+  --button-disabled-text: #96b7c3;
+  --cell-filled-top: #25566b;
+  --cell-filled-bottom: #1d4251;
+  --cell-filled-border: #52a6c0;
+  --hint-bg: #102631;
+  --hint-border: #2f6070;
+  --hint-text: #a8d5de;
+  --status-ok: #b5f4c7;
+}
+
+:root[data-theme="ember"] {
+  --panel: #241813;
+  --tile: #35231c;
+  --text: #fff0ea;
+  --subtitle: #f1b8a6;
+  --meta-text: #ebbaa8;
+  --card-border: #674032;
+  --button-bg: #5a2a1d;
+  --button-bg-hover: #703123;
+  --button-border: #f97316;
+  --button-text: #fff4ee;
+  --button-disabled-bg: #45342e;
+  --button-disabled-border: #66524a;
+  --button-disabled-text: #c8aca1;
+  --cell-filled-top: #6f3326;
+  --cell-filled-bottom: #55271d;
+  --cell-filled-border: #b56245;
+  --hint-bg: #2a1d18;
+  --hint-border: #6f4436;
+  --hint-text: #f1c4b6;
+  --status-ok: #ffd28a;
+}
+
+:root[data-theme="light"] {
+  --panel: #f0f6ff;
+  --tile: #d8e7f8;
+  --text: #102236;
+  --subtitle: #3f5e80;
+  --meta-text: #3c5878;
+  --card-border: #9eb9d9;
+  --button-bg: #d7e9ff;
+  --button-bg-hover: #c6defd;
+  --button-border: #5f93d1;
+  --button-text: #123659;
+  --button-disabled-bg: #d3dde9;
+  --button-disabled-border: #a1b3c7;
+  --button-disabled-text: #617487;
+  --cell-filled-top: #a9c9f3;
+  --cell-filled-bottom: #8eb4e7;
+  --cell-filled-border: #6f96cb;
+  --hint-bg: #dbeafb;
+  --hint-border: #9ab9de;
+  --hint-text: #2b4f78;
+  --status-ok: #1f7a41;
 }
 
 :root[data-color-mode="cb-protanopia"] {
@@ -141,7 +227,7 @@ main {
 }
 
 .card {
-  border: 1px solid #243042;
+  border: 1px solid var(--card-border);
   background: color-mix(in srgb, var(--panel) 90%, #000 10%);
   border-radius: 14px;
   padding: 0.85rem;
@@ -167,7 +253,7 @@ main {
 .brand-subtitle {
   margin: 0.15rem 0 0;
   font-size: 0.85rem;
-  color: #8faccc;
+  color: var(--subtitle);
 }
 
 .board {
@@ -205,8 +291,8 @@ main {
 
 .cell.filled {
   color: #f8fbff;
-  background: linear-gradient(180deg, #253345, #1f2c3f);
-  border-color: #3a5280;
+  background: linear-gradient(180deg, var(--cell-filled-top), var(--cell-filled-bottom));
+  border-color: var(--cell-filled-border);
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
 }
 
@@ -266,9 +352,9 @@ main {
 }
 
 .options-panel {
-  border: 1px solid #2b425f;
+  border: 1px solid var(--hint-border);
   border-radius: 10px;
-  background: #0f1f33;
+  background: var(--hint-bg);
   padding: 0.25rem 0.45rem;
 }
 
@@ -297,9 +383,9 @@ main {
 }
 
 button {
-  border: 1px solid #3b82f6;
-  color: #dff4ff;
-  background: #0f2949;
+  border: 1px solid var(--button-border);
+  color: var(--button-text);
+  background: var(--button-bg);
   border-radius: 8px;
   padding: 0.42rem 0.55rem;
   cursor: pointer;
@@ -307,13 +393,13 @@ button {
 }
 
 button:hover {
-  background: #113864;
+  background: var(--button-bg-hover);
 }
 
 button:disabled {
-  background: #223248;
-  border-color: #3a4f6a;
-  color: #8fa3bc;
+  background: var(--button-disabled-bg);
+  border-color: var(--button-disabled-border);
+  color: var(--button-disabled-text);
   opacity: 0.72;
   cursor: not-allowed;
 }
@@ -329,7 +415,7 @@ select:focus-visible {
   display: flex;
   gap: 1rem;
   font-size: 0.85rem;
-  color: #9fb2c9;
+  color: var(--meta-text);
   align-items: center;
   flex-wrap: wrap;
 }
@@ -434,9 +520,9 @@ select:focus-visible {
 
 .game-hint {
   margin-top: 0.55rem;
-  border: 1px solid #2b425f;
+  border: 1px solid var(--hint-border);
   border-radius: 10px;
-  background: #0f1f33;
+  background: var(--hint-bg);
   padding: 0.45rem 0.65rem;
 }
 
@@ -449,7 +535,7 @@ select:focus-visible {
 
 .game-hint-body {
   margin-top: 0.45rem;
-  color: #9db7d6;
+  color: var(--hint-text);
   font-size: 0.76rem;
   line-height: 1.35;
 }
@@ -482,7 +568,7 @@ select:focus-visible {
 }
 
 .share-status {
-  color: #9ee2b3;
+  color: var(--status-ok);
 }
 
 .gameover-overlay {
@@ -603,6 +689,12 @@ select:focus-visible {
   gap: 0.35rem;
 }
 
+.theme-mode-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
 .mode-select-wrap {
   display: inline-flex;
   align-items: center;
@@ -620,6 +712,27 @@ select:focus-visible {
   padding: 0.28rem 1.65rem 0.28rem 0.6rem;
   cursor: pointer;
   min-width: 9.4rem;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #9dbde1 50%),
+    linear-gradient(135deg, #9dbde1 50%, transparent 50%);
+  background-position:
+    calc(100% - 0.85rem) calc(50% - 0.06rem),
+    calc(100% - 0.56rem) calc(50% - 0.06rem);
+  background-size: 0.32rem 0.32rem, 0.32rem 0.32rem;
+  background-repeat: no-repeat;
+}
+
+.theme-mode-select {
+  appearance: none;
+  border: 1px solid #355273;
+  background: #12253c;
+  color: #dbeafd;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  line-height: 1.2;
+  padding: 0.28rem 1.65rem 0.28rem 0.6rem;
+  cursor: pointer;
+  min-width: 8.8rem;
   background-image:
     linear-gradient(45deg, transparent 50%, #9dbde1 50%),
     linear-gradient(135deg, #9dbde1 50%, transparent 50%);
@@ -690,6 +803,12 @@ select:focus-visible {
   .game-mode-select {
     min-width: 0;
     width: 9.8rem;
+    max-width: 100%;
+  }
+
+  .theme-mode-select {
+    min-width: 0;
+    width: 9.2rem;
     max-width: 100%;
   }
 

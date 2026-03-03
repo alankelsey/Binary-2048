@@ -6,6 +6,7 @@ import { keyToDir, swipeToDir } from "@/lib/binary2048/input";
 import { getUiPolicy } from "@/lib/binary2048/ui-policy";
 import { parseReplayExport, replayStateAtStep, type ReplayData } from "@/lib/binary2048/replay";
 import { buildShareText, buildShareUrls } from "@/lib/binary2048/share";
+import { isThemeMode, THEMES, type ThemeMode } from "@/lib/binary2048/theme";
 
 type Tile = { t: "n"; v: number } | { t: "z" } | { t: "w"; m: number };
 type Cell = Tile | null;
@@ -80,6 +81,7 @@ export default function Home() {
   const gameModeKey = "binary2048.gameMode";
   const highScoreKey = "binary2048.highScore";
   const colorModeKey = "binary2048.colorMode";
+  const themeModeKey = "binary2048.themeMode";
   const [gameId, setGameId] = useState<string>("");
   const [state, setState] = useState<GameState | null>(null);
   const [busy, setBusy] = useState(false);
@@ -87,6 +89,7 @@ export default function Home() {
   const [highScore, setHighScore] = useState(0);
   const [spawnMode, setSpawnMode] = useState<SpawnMode>("normal");
   const [colorMode, setColorMode] = useState<ColorMode>("default");
+  const [themeMode, setThemeMode] = useState<ThemeMode>("midnight");
   const [gameMode, setGameMode] = useState<GameMode>("classic");
   const [cellEffects, setCellEffects] = useState<Record<string, CellEffect>>({});
   const [undo, setUndo] = useState<UndoMeta>({ limit: 2, used: 0, remaining: 2 });
@@ -373,6 +376,10 @@ export default function Home() {
     ) {
       setColorMode(savedColorMode);
     }
+    const savedThemeMode = window.localStorage.getItem(themeModeKey);
+    if (isThemeMode(savedThemeMode)) {
+      setThemeMode(savedThemeMode);
+    }
   }, []);
 
   useEffect(() => {
@@ -394,6 +401,11 @@ export default function Home() {
     window.localStorage.setItem(colorModeKey, colorMode);
     document.documentElement.setAttribute("data-color-mode", colorMode);
   }, [colorMode]);
+
+  useEffect(() => {
+    window.localStorage.setItem(themeModeKey, themeMode);
+    document.documentElement.setAttribute("data-theme", themeMode);
+  }, [themeMode]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -628,6 +640,23 @@ export default function Home() {
                       <option value="cb-protanopia">CB Protanopia</option>
                       <option value="cb-deuteranopia">CB Deuteranopia</option>
                       <option value="cb-tritanopia">CB Tritanopia</option>
+                    </select>
+                  </label>
+                ) : null}
+                {UI_POLICY.controls.color ? (
+                  <label className="theme-mode-wrap">
+                    <span className="difficulty-label">Theme</span>
+                    <select
+                      aria-label="Theme mode"
+                      className="theme-mode-select"
+                      value={themeMode}
+                      onChange={(event) => setThemeMode(event.target.value as ThemeMode)}
+                    >
+                      {Object.entries(THEMES).map(([key, value]) => (
+                        <option key={key} value={key}>
+                          {value.label}
+                        </option>
+                      ))}
                     </select>
                   </label>
                 ) : null}
