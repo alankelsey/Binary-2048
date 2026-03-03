@@ -221,6 +221,21 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE).
 
 ## Roadmap Additions
 
+### Status Snapshot (March 3, 2026)
+
+- Completed foundations:
+  - Deterministic engine + replay export data (`rulesetId`, `engineVersion`, replay seed/moves).
+  - Encoded state + legal action APIs for bot clients.
+  - Replay viewer with step-through controls.
+  - Undo limits by difficulty.
+  - Theme and color mode system with persistence.
+  - OpenAPI spec endpoint + in-app docs page.
+  - Active-run controls policy in UI (new/undo/export/replay only while active).
+- Next implementation focus:
+  - Add export metadata for explicit spawn-probability snapshots.
+  - Add test-backed security policy helpers for tiered rate limits by user tier.
+  - Begin `Lock-0` impediment tile design behind engine tests first.
+
 - App theming system: light/dark/theme packs, board backgrounds, and tile style presets.
 - Color standards for boosts vs impediments:
   - Boost effects and tiles use green-forward accents.

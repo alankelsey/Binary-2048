@@ -8,6 +8,7 @@ import { parseReplayExport, replayStateAtStep, type ReplayData } from "@/lib/bin
 import { buildShareText, buildShareUrls } from "@/lib/binary2048/share";
 import { isThemeMode, THEMES, type ThemeMode } from "@/lib/binary2048/theme";
 import { rarityCssClass, STORE_ITEM_ICONS } from "@/lib/binary2048/store-icons";
+import { getControlVisibility } from "@/lib/binary2048/control-visibility";
 
 type Tile = { t: "n"; v: number } | { t: "z" } | { t: "w"; m: number };
 type Cell = Tile | null;
@@ -449,6 +450,12 @@ export default function Home() {
   const difficultyLocked = Boolean(state && !state.over && !state.won && (state.turn ?? 0) > 0);
   const isPlayable = Boolean(!replay && state && !state.over && !state.won);
   const isActiveRun = Boolean(!replay && state && !state.over && !state.won && (state.turn ?? 0) > 0);
+  const controlVisibility = getControlVisibility({
+    replay: Boolean(replay),
+    isPlayable,
+    isActiveRun,
+    uiPolicy: UI_POLICY
+  });
   const canUndo = Boolean(!replay && gameId && state && (state.turn ?? 0) > 0 && (undo.remaining ?? 0) > 0 && !busy);
   const replayStepsTotal = replay?.data.steps.length ?? 0;
   const replayStep = replay?.step ?? 0;
@@ -583,12 +590,12 @@ export default function Home() {
           <button disabled={busy} onClick={() => void newGame()}>
             New Game
           </button>
-          {isPlayable ? (
+          {controlVisibility.showUndo ? (
             <button disabled={!canUndo} onClick={() => void undoMove()}>
               Undo {undo.remaining}
             </button>
           ) : null}
-          {isActiveRun ? (
+          {controlVisibility.showActiveExport ? (
             <>
               <button
                 disabled={!gameId}
@@ -608,7 +615,7 @@ export default function Home() {
                 Replay JSON
               </button>
             </>
-          ) : UI_POLICY.showOptionsButton ? (
+          ) : controlVisibility.showOptionsPanel ? (
             <details className="options-panel">
               <summary>Options</summary>
               <div className="options-grid">
