@@ -31,5 +31,7 @@ describe("export replay metadata", () => {
     expect(exported.meta.replay.seed).toBe(123);
     expect(exported.meta.replay.moves).toEqual(exported.steps.map((step) => step.dir));
     expect(exported.meta.replay.movesApplied).toBe(exported.steps.length);
+    expect(exported.meta.integrity.sessionClass).toBe("unranked");
+    expect(exported.meta.integrity.source).toBe("created");
   });
 });

@@ -544,6 +544,56 @@ select:focus-visible {
   margin: 0.2rem 0;
 }
 
+.store-icon-legend {
+  margin-top: 0.5rem;
+}
+
+.store-icon-legend > p {
+  margin: 0.2rem 0 0.3rem;
+  font-size: 0.72rem;
+  color: #98b3d4;
+}
+
+.store-icon-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.store-icon-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  border-radius: 999px;
+  padding: 0.15rem 0.45rem;
+  font-size: 0.68rem;
+  border: 1px solid transparent;
+}
+
+.store-icon-chip.rarity-common {
+  color: #dce9f7;
+  background: rgba(148, 163, 184, 0.18);
+  border-color: rgba(148, 163, 184, 0.55);
+}
+
+.store-icon-chip.rarity-rare {
+  color: #def0ff;
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.65);
+}
+
+.store-icon-chip.rarity-epic {
+  color: #f2e8ff;
+  background: rgba(168, 85, 247, 0.18);
+  border-color: rgba(168, 85, 247, 0.62);
+}
+
+.store-icon-chip.rarity-legendary {
+  color: #fff3d8;
+  background: rgba(245, 158, 11, 0.2);
+  border-color: rgba(245, 158, 11, 0.66);
+}
+
 .build-version {
   margin: 0.55rem 0 0;
   font-size: 0.7rem;

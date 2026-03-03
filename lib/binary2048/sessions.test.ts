@@ -71,4 +71,10 @@ describe("session undo", () => {
     moveSession(deathId, "left");
     expect(undoSession(deathId).error).toBe("LIMIT_REACHED");
   });
+
+  it("marks created sessions as unranked created", () => {
+    const session = createSession(config, initialGrid);
+    expect(session.integrity.sessionClass).toBe("unranked");
+    expect(session.integrity.source).toBe("created");
+  });
 });

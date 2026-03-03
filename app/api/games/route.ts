@@ -36,6 +36,7 @@ export async function POST(req: Request) {
       current: session.current,
       steps: session.steps,
       undo: getUndoMeta(session),
+      integrity: session.integrity,
       mode
     });
   } catch (error) {

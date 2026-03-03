@@ -41,7 +41,8 @@ export function createSession(config?: Partial<GameConfig>, initialGrid?: Cell[]
     current: created.state,
     steps: [],
     undoLimit: inferUndoLimit(created.state.config),
-    undoUsed: 0
+    undoUsed: 0,
+    integrity: { sessionClass: "unranked", source: "created" }
   });
   return games.get(created.state.id)!;
 }
@@ -88,7 +89,7 @@ export function undoSession(id: string) {
 export function exportSession(id: string) {
   const session = games.get(id);
   if (!session) return null;
-  return buildExport(session.current.config, session.initialState, session.steps, session.current);
+  return buildExport(session.current.config, session.initialState, session.steps, session.current, session.integrity);
 }
 
 export function listSessionState(id: string) {
@@ -98,7 +99,8 @@ export function listSessionState(id: string) {
     id,
     current: session.current,
     stepCount: session.steps.length,
-    undo: getUndoMeta(session)
+    undo: getUndoMeta(session),
+    integrity: session.integrity
   };
 }
 
@@ -131,12 +133,17 @@ export function importSession(exported: GameExport) {
     if (current.over) break;
   }
 
-  const session = {
+  const session: GameSession = {
     initialState,
     current,
     steps,
     undoLimit: inferUndoLimit(exported.config),
-    undoUsed: 0
+    undoUsed: 0,
+    integrity: {
+      sessionClass: "unranked",
+      source: "imported",
+      importedFromRulesetId: exported.meta?.rulesetId
+    }
   };
   games.set(current.id, session);
   return session;

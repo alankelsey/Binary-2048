@@ -6,6 +6,7 @@ import type {
   GameEvent,
   GameExport,
   GameState,
+  SessionIntegrity,
   StepRecord,
   Tile
 } from "@/lib/binary2048/types";
@@ -146,7 +147,8 @@ export function buildExport(
   config: GameConfig,
   initial: GameState,
   steps: StepRecord[],
-  final: GameState
+  final: GameState,
+  integrity: SessionIntegrity = { sessionClass: "unranked", source: "created" }
 ): GameExport {
   const engineVersion = process.env.NEXT_PUBLIC_APP_COMMIT ?? "dev";
   const moves = steps.map((step) => step.dir);
@@ -161,7 +163,8 @@ export function buildExport(
         seed: config.seed,
         moves,
         movesApplied: moves.length
-      }
+      },
+      integrity
     },
     config,
     initial,

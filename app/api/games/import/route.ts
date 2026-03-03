@@ -10,7 +10,8 @@ export async function POST(req: Request) {
       id: session.current.id,
       current: session.current,
       steps: session.steps,
-      undo: getUndoMeta(session)
+      undo: getUndoMeta(session),
+      integrity: session.integrity
     });
   } catch (error) {
     return NextResponse.json(

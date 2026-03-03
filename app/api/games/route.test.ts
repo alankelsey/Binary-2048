@@ -18,6 +18,8 @@ describe("POST /api/games", () => {
     expect(json.undo?.limit).toBe(2);
     expect(json.undo?.used).toBe(0);
     expect(json.undo?.remaining).toBe(2);
+    expect(json.integrity?.sessionClass).toBe("unranked");
+    expect(json.integrity?.source).toBe("created");
   });
 
   it("creates bitstorm mode with a seeded prefilled board", async () => {

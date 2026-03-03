@@ -53,6 +53,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     done: Boolean(session.current.over || session.current.won),
     spawned,
     undo: getUndoMeta(session),
+    integrity: session.integrity,
     info: {
       changed,
       spawned,

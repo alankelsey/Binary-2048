@@ -12,7 +12,8 @@ export async function POST(_: Request, context: { params: Promise<{ id: string }
         id,
         current: result.session.current,
         stepCount: result.session.steps.length,
-        undo: getUndoMeta(result.session)
+        undo: getUndoMeta(result.session),
+        integrity: result.session.integrity
       },
       { status: 409 }
     );
@@ -23,6 +24,7 @@ export async function POST(_: Request, context: { params: Promise<{ id: string }
     id,
     current: session.current,
     stepCount: session.steps.length,
-    undo: getUndoMeta(session)
+    undo: getUndoMeta(session),
+    integrity: session.integrity
   });
 }

@@ -58,6 +58,13 @@ export type GameSession = {
   steps: StepRecord[];
   undoLimit: number;
   undoUsed: number;
+  integrity: SessionIntegrity;
+};
+
+export type SessionIntegrity = {
+  sessionClass: "unranked" | "ranked";
+  source: "created" | "imported";
+  importedFromRulesetId?: string;
 };
 
 export type GameExport = {
@@ -72,6 +79,7 @@ export type GameExport = {
       moves: Dir[];
       movesApplied: number;
     };
+    integrity: SessionIntegrity;
   };
   config: GameConfig;
   initial: GameState;

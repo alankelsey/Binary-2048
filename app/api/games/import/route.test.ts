@@ -40,6 +40,9 @@ describe("POST /api/games/import", () => {
     expect(typeof json.id).toBe("string");
     expect(Array.isArray(json.steps)).toBe(true);
     expect(json.undo?.limit).toBe(2);
+    expect(json.integrity?.sessionClass).toBe("unranked");
+    expect(json.integrity?.source).toBe("imported");
+    expect(typeof json.integrity?.importedFromRulesetId).toBe("string");
   });
 
   it("returns 400 for invalid payload", async () => {

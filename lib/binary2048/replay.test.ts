@@ -37,7 +37,8 @@ describe("replay helpers", () => {
       engine: "binary2048",
       rulesetId: "binary2048-v1",
       engineVersion: "test",
-      replay: { seed: 1, moves: ["right", "down"], movesApplied: 2 }
+      replay: { seed: 1, moves: ["right", "down"], movesApplied: 2 },
+      integrity: { sessionClass: "unranked", source: "created" }
     },
     config: initial.config,
     initial,
