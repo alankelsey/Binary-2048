@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { canContinueAfterWin } from "@/lib/binary2048/continue-policy";
 import { getUndoMeta, importSession } from "@/lib/binary2048/sessions";
 import type { GameExport } from "@/lib/binary2048/types";
 
@@ -11,7 +12,10 @@ export async function POST(req: Request) {
       current: session.current,
       steps: session.steps,
       undo: getUndoMeta(session),
-      integrity: session.integrity
+      integrity: session.integrity,
+      economy: {
+        canContinueAfterWin: canContinueAfterWin(session.integrity.sessionClass)
+      }
     });
   } catch (error) {
     return NextResponse.json(

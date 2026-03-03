@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { canContinueAfterWin } from "@/lib/binary2048/continue-policy";
 import { DEFAULT_CONFIG, generateBitstormInitialGrid } from "@/lib/binary2048/engine";
 import { createSession, getUndoMeta } from "@/lib/binary2048/sessions";
 import { applyLockEconomyPolicy, type LockEconomyContext } from "@/lib/binary2048/lock-economy";
@@ -60,7 +61,8 @@ export async function POST(req: Request) {
       economy: {
         sessionClass,
         userTier,
-        lockTilesEnabled: session.current.config.spawn.pLock > 0
+        lockTilesEnabled: session.current.config.spawn.pLock > 0,
+        canContinueAfterWin: canContinueAfterWin(sessionClass)
       },
       mode
     });

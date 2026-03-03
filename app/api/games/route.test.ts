@@ -21,6 +21,7 @@ describe("POST /api/games", () => {
     expect(json.integrity?.sessionClass).toBe("unranked");
     expect(json.integrity?.source).toBe("created");
     expect(json.economy?.lockTilesEnabled).toBe(true);
+    expect(json.economy?.canContinueAfterWin).toBe(true);
   });
 
   it("creates bitstorm mode with a seeded prefilled board", async () => {
@@ -72,6 +73,7 @@ describe("POST /api/games", () => {
     expect(json.integrity?.sessionClass).toBe("ranked");
     expect(json.current?.config?.spawn?.pLock).toBe(0);
     expect(json.economy?.lockTilesEnabled).toBe(false);
+    expect(json.economy?.canContinueAfterWin).toBe(false);
   });
 
   it("keeps lock spawn for ranked games with lock entitlement", async () => {
@@ -103,5 +105,6 @@ describe("POST /api/games", () => {
     expect(json.integrity?.sessionClass).toBe("ranked");
     expect(json.current?.config?.spawn?.pLock).toBe(0.2);
     expect(json.economy?.lockTilesEnabled).toBe(true);
+    expect(json.economy?.canContinueAfterWin).toBe(false);
   });
 });

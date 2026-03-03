@@ -37,6 +37,7 @@ type GameState = {
   grid: Cell[][];
 };
 type UndoMeta = { limit: number; used: number; remaining: number };
+type SessionClass = "ranked" | "unranked";
 
 const SPAWN_MODES: Record<
   SpawnMode,
@@ -104,13 +105,28 @@ export default function Home() {
   const [replayPlaying, setReplayPlaying] = useState(false);
   const [replaySpeed, setReplaySpeed] = useState(5);
   const [shareMessage, setShareMessage] = useState<string>("");
+  const [sessionClass, setSessionClass] = useState<SessionClass>("unranked");
+  const [canContinueAfterWin, setCanContinueAfterWin] = useState(true);
+  const [continueAfterWin, setContinueAfterWin] = useState(false);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const effectTimerRef = useRef<number | null>(null);
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const replayInputRef = useRef<HTMLInputElement | null>(null);
 
+  function resolveCanContinueAfterWin(payload: unknown): boolean {
+    const response = payload as {
+      economy?: { canContinueAfterWin?: boolean };
+      integrity?: { sessionClass?: SessionClass };
+    };
+    if (typeof response?.economy?.canContinueAfterWin === "boolean") {
+      return response.economy.canContinueAfterWin;
+    }
+    return response?.integrity?.sessionClass !== "ranked";
+  }
+
   async function newGame() {
     setReplay(null);
+    setContinueAfterWin(false);
     setBusy(true);
     setErrorMessage("");
     try {
@@ -141,6 +157,8 @@ export default function Home() {
       }
       setGameId(json.id);
       setState(json.current);
+      setSessionClass((json?.integrity?.sessionClass as SessionClass) ?? "unranked");
+      setCanContinueAfterWin(resolveCanContinueAfterWin(json));
       if (json?.undo) setUndo(json.undo as UndoMeta);
       const wildcardRate = json?.current?.config?.spawn?.pWildcard;
       if (typeof wildcardRate === "number") setSpawnMode(modeFromWildcardRate(wildcardRate));
@@ -162,6 +180,9 @@ export default function Home() {
       setGameId(id);
       const restored = json.current as GameState;
       setState(restored);
+      setContinueAfterWin(false);
+      setSessionClass((json?.integrity?.sessionClass as SessionClass) ?? "unranked");
+      setCanContinueAfterWin(resolveCanContinueAfterWin(json));
       if (json?.undo) setUndo(json.undo as UndoMeta);
       const wildcardRate = restored?.config?.spawn?.pWildcard;
       if (typeof wildcardRate === "number") setSpawnMode(modeFromWildcardRate(wildcardRate));
@@ -174,7 +195,7 @@ export default function Home() {
   }
 
   async function move(dir: Dir) {
-    if (replay || !gameId || !state || state.over) return;
+    if (replay || !gameId || !state || state.over || (state.won && !continueAfterWin)) return;
     const previous = state;
     setBusy(true);
     setErrorMessage("");
@@ -196,11 +217,13 @@ export default function Home() {
         throw new Error(message);
       }
       const next = json.current as GameState;
+      setSessionClass((json?.integrity?.sessionClass as SessionClass) ?? sessionClass);
+      setCanContinueAfterWin(resolveCanContinueAfterWin(json));
       if (json?.undo) setUndo(json.undo as UndoMeta);
       const events = Array.isArray(json?.lastStep?.events) ? (json.lastStep.events as MoveEvent[]) : [];
       setState(next);
       startCellEffects(computeCellEffects(previous, next, events, dir));
-      if (next.over || next.won) {
+      if (next.over) {
         window.localStorage.removeItem(gameIdKey);
       }
     } catch (error) {
@@ -311,6 +334,9 @@ export default function Home() {
       }
       setGameId(json.id);
       setState(json.current);
+      setContinueAfterWin(false);
+      setSessionClass((json?.integrity?.sessionClass as SessionClass) ?? "unranked");
+      setCanContinueAfterWin(resolveCanContinueAfterWin(json));
       if (json?.undo) setUndo(json.undo as UndoMeta);
       setCellEffects({});
       window.localStorage.setItem(gameIdKey, json.id);
@@ -505,7 +531,7 @@ export default function Home() {
   }
 
   function onBoardTouchEnd(event: TouchEvent<HTMLDivElement>) {
-    if (!touchStartRef.current || replay || busy || !state || state.over) return;
+    if (!touchStartRef.current || replay || busy || !state || state.over || (state.won && !continueAfterWin)) return;
     const touch = event.changedTouches[0];
     if (!touch) return;
 
@@ -520,8 +546,9 @@ export default function Home() {
   const wildcardRate = viewState?.config?.spawn?.pWildcard;
   const activeMode = typeof wildcardRate === "number" ? modeFromWildcardRate(wildcardRate) : spawnMode;
   const difficultyLocked = Boolean(state && !state.over && !state.won && (state.turn ?? 0) > 0);
-  const isPlayable = Boolean(!replay && state && !state.over && !state.won);
-  const isActiveRun = Boolean(!replay && state && !state.over && !state.won && (state.turn ?? 0) > 0);
+  const winPending = Boolean(!replay && state?.won && !continueAfterWin);
+  const isPlayable = Boolean(!replay && state && !state.over && !winPending);
+  const isActiveRun = Boolean(!replay && state && !state.over && !winPending && (state.turn ?? 0) > 0);
   const controlVisibility = getControlVisibility({
     replay: Boolean(replay),
     isPlayable,
@@ -686,7 +713,7 @@ export default function Home() {
           </div>
         ) : null}
         {errorMessage ? <p className="status-error">{errorMessage}</p> : null}
-        <div className={`board-shell ${viewState?.over ? "game-over" : ""}`}>
+        <div className={`board-shell ${viewState?.over ? "game-over" : ""} ${winPending ? "game-won" : ""}`}>
           <div
             className="board"
             style={{ gridTemplateColumns: `repeat(${viewState?.width ?? 4}, minmax(0, 1fr))` }}
@@ -738,6 +765,39 @@ export default function Home() {
               <div className="gameover-stats">
                 <span>Score: {viewState.score}</span>
                 <span>High: {Math.max(highScore, viewState.score)}</span>
+              </div>
+            </div>
+          ) : null}
+          {winPending ? (
+            <div className="win-overlay" role="status" aria-live="polite">
+              <div className="win-burst" aria-hidden="true" />
+              <div className="win-title">YOU WIN</div>
+              <div className="win-stats">
+                <span>Score: {viewState?.score ?? 0}</span>
+                <span>High: {Math.max(highScore, viewState?.score ?? 0)}</span>
+                <span>Session: {sessionClass}</span>
+              </div>
+              <div className="win-actions">
+                {canContinueAfterWin ? (
+                  <button
+                    onClick={() => {
+                      setContinueAfterWin(true);
+                    }}
+                  >
+                    Continue
+                  </button>
+                ) : (
+                  <button disabled title="Continue disabled for ranked/vs sessions">
+                    Continue Disabled
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    void newGame();
+                  }}
+                >
+                  New Game
+                </button>
               </div>
             </div>
           ) : null}

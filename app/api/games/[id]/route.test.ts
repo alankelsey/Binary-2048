@@ -40,6 +40,7 @@ describe("GET /api/games/:id", () => {
     expect(json.undo?.remaining).toBe(2);
     expect(json.integrity?.sessionClass).toBe("unranked");
     expect(json.integrity?.source).toBe("created");
+    expect(json.economy?.canContinueAfterWin).toBe(true);
   });
 
   it("returns 404 for unknown game id", async () => {

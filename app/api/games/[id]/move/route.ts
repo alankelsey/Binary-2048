@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { parseAction, toActionCode } from "@/lib/binary2048/action";
 import { stateHash } from "@/lib/binary2048/ai";
+import { canContinueAfterWin } from "@/lib/binary2048/continue-policy";
 import { getSession, getUndoMeta, moveSession } from "@/lib/binary2048/sessions";
 import type { GameEvent } from "@/lib/binary2048/types";
 
@@ -54,6 +55,9 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     spawned,
     undo: getUndoMeta(session),
     integrity: session.integrity,
+    economy: {
+      canContinueAfterWin: canContinueAfterWin(session.integrity.sessionClass)
+    },
     info: {
       changed,
       spawned,

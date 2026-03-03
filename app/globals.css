@@ -303,6 +303,10 @@ main {
   filter: grayscale(0.95) brightness(0.7);
 }
 
+.board-shell.game-won .board {
+  filter: saturate(1.18) brightness(1.06);
+}
+
 .cell {
   aspect-ratio: 1 / 1;
   border-radius: 8px;
@@ -748,6 +752,62 @@ select:focus-visible {
   border-radius: 12px;
 }
 
+.win-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  display: grid;
+  place-content: center;
+  gap: 0.45rem;
+  text-align: center;
+  background: rgba(8, 20, 38, 0.78);
+  border: 1px solid rgba(59, 130, 246, 0.55);
+  backdrop-filter: blur(1.5px);
+  overflow: hidden;
+}
+
+.win-burst {
+  position: absolute;
+  inset: -30%;
+  background:
+    radial-gradient(circle, rgba(56, 189, 248, 0.28), transparent 55%),
+    conic-gradient(
+      from 0deg,
+      rgba(56, 189, 248, 0.3),
+      rgba(250, 204, 21, 0.35),
+      rgba(34, 197, 94, 0.26),
+      rgba(56, 189, 248, 0.3)
+    );
+  animation: winPulse 1500ms ease-in-out infinite;
+}
+
+.win-title {
+  z-index: 1;
+  font-size: clamp(2rem, 5.2vw, 3.5rem);
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  color: #e4f4ff;
+  text-shadow:
+    0 0 14px rgba(125, 211, 252, 0.9),
+    0 0 28px rgba(34, 197, 94, 0.4);
+}
+
+.win-stats {
+  z-index: 1;
+  display: inline-flex;
+  gap: 0.7rem;
+  justify-content: center;
+  color: #d2e7ff;
+  font-size: 0.92rem;
+}
+
+.win-actions {
+  z-index: 1;
+  display: inline-flex;
+  gap: 0.45rem;
+  justify-content: center;
+}
+
 .gameover-title {
   font-size: clamp(1.8rem, 6vw, 3rem);
   font-weight: 900;
@@ -828,6 +888,21 @@ select:focus-visible {
     opacity: 1;
     border-color: var(--zero-bust-a);
     box-shadow: 0 0 0 var(--zero-bust-a);
+  }
+}
+
+@keyframes winPulse {
+  0% {
+    transform: scale(0.96);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1.02);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(0.96);
+    opacity: 0.55;
   }
 }
 

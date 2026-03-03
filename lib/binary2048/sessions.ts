@@ -1,4 +1,5 @@
 import { applyMove, buildExport, createGame } from "@/lib/binary2048/engine";
+import { canContinueAfterWin } from "@/lib/binary2048/continue-policy";
 import type { Cell, Dir, GameConfig, GameExport, GameSession } from "@/lib/binary2048/types";
 
 const globalStore = globalThis as typeof globalThis & {
@@ -104,7 +105,10 @@ export function listSessionState(id: string) {
     current: session.current,
     stepCount: session.steps.length,
     undo: getUndoMeta(session),
-    integrity: session.integrity
+    integrity: session.integrity,
+    economy: {
+      canContinueAfterWin: canContinueAfterWin(session.integrity.sessionClass)
+    }
   };
 }
 

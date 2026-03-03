@@ -63,6 +63,7 @@ describe("POST /api/games/:id/move hash guard", () => {
     expect(json.stepCount).toBe(1);
     expect(typeof json.stateHash).toBe("string");
     expect(json.integrity?.sessionClass).toBe("unranked");
+    expect(json.economy?.canContinueAfterWin).toBe(true);
     expect(getSession(id)?.steps.length).toBe(1);
   });
 
