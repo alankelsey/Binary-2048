@@ -94,6 +94,12 @@ Billing tripwire helper:
 BUDGET_EMAIL=you@example.com BUDGET_AMOUNT_USD=50 npm run ops:waf:budget
 ```
 
+Billing tripwire verification:
+
+```bash
+BUDGET_NAME=binary2048-monthly-cost ALARM_NAME=WAFBlockedRequestsHigh npm run ops:waf:tripwire-check
+```
+
 ## API
 
 - `POST /api/games`

@@ -31,6 +31,7 @@
     "ops:waf:alarm": "bash ./scripts/waf-create-alarm.sh",
     "ops:waf:budget": "bash ./scripts/waf-budget.sh",
     "ops:waf:sns": "bash ./scripts/waf-sns.sh",
+    "ops:waf:tripwire-check": "bash ./scripts/waf-tripwire-check.sh",
     "lint": "next lint",
     "curl:local": "BASE=http://localhost:3000; RESP=$(curl -sS -X POST \"$BASE/api/games\" -H \"Content-Type: application/json\" -d '{}'); echo \"$RESP\"; if command -v jq >/dev/null 2>&1; then ID=$(echo \"$RESP\" | jq -r '.id'); else ID=$(echo \"$RESP\" | sed -n 's/.*\"id\":\"\\([^\"]*\\)\".*/\\1/p'); fi; echo \"id=$ID\"; curl -sS \"$BASE/api/games/$ID/export\""
   },

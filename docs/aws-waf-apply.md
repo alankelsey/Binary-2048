@@ -27,6 +27,7 @@ Companion scripts:
 - `npm run ops:waf:alarm` (create/update blocked-requests alarm)
 - `npm run ops:waf:budget` (create monthly billing tripwire budget)
 - `npm run ops:waf:sns` (create billing alerts SNS topic and optional email subscription)
+- `npm run ops:waf:tripwire-check` (verify budget + CloudWatch alarm existence)
 
 Quick status check:
 
@@ -160,6 +161,14 @@ Template path: `docs/aws-budget-template.json`
 BUDGET_EMAIL=you@example.com \
 BUDGET_AMOUNT_USD=50 \
 npm run ops:waf:budget
+```
+
+Verify tripwires:
+
+```bash
+BUDGET_NAME=binary2048-monthly-cost \
+ALARM_NAME=WAFBlockedRequestsHigh \
+npm run ops:waf:tripwire-check
 ```
 
 ## 7) Route 53 abuse visibility
