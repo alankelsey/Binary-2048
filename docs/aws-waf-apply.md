@@ -26,6 +26,14 @@ WAF_TEMPLATE_FILE=docs/waf-web-acl-template-strict.json \
 npm run ops:waf:setup
 ```
 
+Game API template (adds endpoint-specific CAPTCHA/challenge rules):
+
+```bash
+DIST_ID=E123ABC456XYZ \
+WAF_TEMPLATE_FILE=docs/waf-web-acl-template-game-api.json \
+npm run ops:waf:setup
+```
+
 Companion scripts:
 - `npm run ops:waf:status` (association + rules + rate-limit + logging snapshot)
 - `npm run ops:waf:export` (backup current Web ACL + logging config)
@@ -61,6 +69,22 @@ Strict policy check with explicit expected thresholds:
 DIST_ID=E123ABC456XYZ \
 REQUIRED_API_RATE_LIMIT=600 \
 REQUIRED_GLOBAL_RATE_LIMIT=2000 \
+npm run ops:waf:check
+```
+
+Profile-aware check with required extra rules:
+
+```bash
+DIST_ID=E123ABC456XYZ \
+REQUIRED_EXTRA_RULES=GeoBlock,CaptchaApiBurst \
+npm run ops:waf:check
+```
+
+Game API profile check:
+
+```bash
+DIST_ID=E123ABC456XYZ \
+REQUIRED_EXTRA_RULES=CaptchaGamesCreateBurst,CaptchaMoveBurst \
 npm run ops:waf:check
 ```
 

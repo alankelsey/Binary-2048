@@ -6,6 +6,7 @@ DIST_ID="${DIST_ID:-}"
 HOSTED_ZONE_ID="${HOSTED_ZONE_ID:-}"
 REQUIRED_API_RATE_LIMIT="${REQUIRED_API_RATE_LIMIT:-600}"
 REQUIRED_GLOBAL_RATE_LIMIT="${REQUIRED_GLOBAL_RATE_LIMIT:-2000}"
+REQUIRED_EXTRA_RULES="${REQUIRED_EXTRA_RULES:-}"
 
 if [[ -z "${DIST_ID}" ]]; then
   echo "error: DIST_ID is required (CloudFront distribution id, e.g. E123ABC456XYZ)" >&2
@@ -85,6 +86,16 @@ require_rule "AWSManagedRulesKnownBadInputsRuleSet"
 require_rule "AWSManagedRulesCommonRuleSet"
 require_rule "RateLimitApi"
 require_rule "RateLimitGlobal"
+
+if [[ -n "${REQUIRED_EXTRA_RULES}" ]]; then
+  IFS=',' read -r -a EXTRA_RULES <<< "${REQUIRED_EXTRA_RULES}"
+  for extra in "${EXTRA_RULES[@]}"; do
+    rule="$(echo "${extra}" | xargs)"
+    if [[ -n "${rule}" ]]; then
+      require_rule "${rule}"
+    fi
+  done
+fi
 
 RATE_API_LIMIT="$(
   aws wafv2 get-web-acl \

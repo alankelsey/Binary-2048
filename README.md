@@ -69,6 +69,12 @@ WAF strict setup (geo block + CAPTCHA rule template):
 DIST_ID=E123ABC456XYZ WAF_TEMPLATE_FILE=docs/waf-web-acl-template-strict.json npm run ops:waf:setup
 ```
 
+WAF game-API setup (endpoint-specific CAPTCHA/challenge rules):
+
+```bash
+DIST_ID=E123ABC456XYZ WAF_TEMPLATE_FILE=docs/waf-web-acl-template-game-api.json npm run ops:waf:setup
+```
+
 WAF verify and rollback helpers:
 
 ```bash
