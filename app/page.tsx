@@ -446,6 +446,9 @@ export default function Home() {
 
   return (
     <main>
+      <a className="skip-link" href="#game-controls">
+        Skip to game controls
+      </a>
       <header className="brand">
         <Binary2048Logo />
         <div>
@@ -464,6 +467,13 @@ export default function Home() {
           <span>Mode: {GAME_MODES[gameMode].label}</span>
           <span>{replay ? "Replay" : state?.won ? "Won" : state?.over ? "Game Over" : "Active"}</span>
         </div>
+        <p className="sr-only" aria-live="polite">
+          {replay
+            ? `Replay step ${replayStep} of ${replayStepsTotal}. Score ${viewState?.score ?? 0}. Moves ${viewState?.turn ?? 0}.`
+            : `Game ${gameId || "-"}, score ${viewState?.score ?? 0}, moves ${viewState?.turn ?? 0}, ${
+                viewState?.over ? "game over" : viewState?.won ? "won" : "active"
+              }.`}
+        </p>
         {replay ? (
           <div className="replay-controls">
             <span>
@@ -502,16 +512,27 @@ export default function Home() {
             style={{ gridTemplateColumns: `repeat(${viewState?.width ?? 4}, minmax(0, 1fr))` }}
             onTouchStart={onBoardTouchStart}
             onTouchEnd={onBoardTouchEnd}
+            role="grid"
+            aria-label="Binary 2048 game board"
           >
             {viewState?.grid.map((row, r) =>
               row.map((cell, c) => {
                 const effect = cellEffects[`${r}-${c}`];
                 const effectClass = effect ? `fx-${effect}` : "";
+                const tileLabel = cell
+                  ? cell.t === "n"
+                    ? `number ${cell.v}`
+                    : cell.t === "z"
+                      ? "zero"
+                      : "wildcard"
+                  : "empty";
                 return (
                   <div
                     key={`${r}-${c}`}
                     className={`cell ${cell ? "filled" : "empty"} ${cellTypeClass(cell)} ${effectClass}`}
                     style={numberTileStyle(cell)}
+                    role="gridcell"
+                    aria-label={`row ${r + 1} column ${c + 1} ${tileLabel}`}
                   >
                     {cell?.t === "w" ? (
                       <span className="wild-icon" aria-label="wildcard tile">
@@ -535,7 +556,7 @@ export default function Home() {
             </div>
           ) : null}
         </div>
-        <div className="actions">
+        <div className="actions" id="game-controls">
           <button disabled={busy} onClick={() => void newGame()}>
             New Game
           </button>

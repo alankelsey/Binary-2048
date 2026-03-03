@@ -94,6 +94,36 @@ body {
   font-family: "Avenir Next", "Segoe UI", sans-serif;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  left: 0.75rem;
+  top: -2.5rem;
+  z-index: 10;
+  background: #0f2949;
+  color: #dff4ff;
+  border: 1px solid #3b82f6;
+  border-radius: 8px;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.82rem;
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  top: 0.7rem;
+}
+
 main {
   max-width: 880px;
   margin: 0 auto;
@@ -277,6 +307,13 @@ button:disabled {
   color: #8fa3bc;
   opacity: 0.72;
   cursor: not-allowed;
+}
+
+button:focus-visible,
+summary:focus-visible,
+select:focus-visible {
+  outline: 2px solid #6ec6ff;
+  outline-offset: 2px;
 }
 
 .meta {
