@@ -21,6 +21,8 @@
   --zero-bust-e: rgba(253, 224, 71, 0.96);
   --zero-bust-f: rgba(234, 179, 8, 0.28);
   --zero-bust-g: rgba(234, 179, 8, 0.55);
+  --bg-glow: #162238;
+  --bg-base: #0d1117;
 }
 
 :root[data-color-mode="cb-protanopia"] {
@@ -41,6 +43,8 @@
   --zero-bust-e: rgba(254, 240, 138, 0.96);
   --zero-bust-f: rgba(234, 179, 8, 0.28);
   --zero-bust-g: rgba(234, 179, 8, 0.52);
+  --bg-glow: #0f2a2e;
+  --bg-base: #0b1718;
 }
 
 :root[data-color-mode="cb-deuteranopia"] {
@@ -61,6 +65,8 @@
   --zero-bust-e: rgba(251, 182, 206, 0.96);
   --zero-bust-f: rgba(236, 72, 153, 0.28);
   --zero-bust-g: rgba(236, 72, 153, 0.52);
+  --bg-glow: #1c2340;
+  --bg-base: #0f1121;
 }
 
 :root[data-color-mode="cb-tritanopia"] {
@@ -81,6 +87,8 @@
   --zero-bust-e: rgba(255, 193, 113, 0.96);
   --zero-bust-f: rgba(234, 88, 12, 0.28);
   --zero-bust-g: rgba(234, 88, 12, 0.54);
+  --bg-glow: #1a2e30;
+  --bg-base: #0f191b;
 }
 
 * {
@@ -89,9 +97,10 @@
 
 body {
   margin: 0;
-  background: radial-gradient(circle at top, #162238, var(--bg) 55%);
+  background: radial-gradient(circle at top, var(--bg-glow), var(--bg-base) 55%);
   color: var(--text);
   font-family: "Avenir Next", "Segoe UI", sans-serif;
+  transition: background 180ms ease-out;
 }
 
 .sr-only {

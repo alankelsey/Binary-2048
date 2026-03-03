@@ -248,12 +248,22 @@ export default function Home() {
     if (!cell || cell.t !== "n") return undefined;
     const exp = Math.max(0, Math.log2(Math.max(1, cell.v)));
     const t = Math.min(1, exp / 11);
-    const hue = Math.round(210 - 206 * t);
+    const ramps: Record<ColorMode, { from: number; to: number; sat: number }> = {
+      default: { from: 210, to: 4, sat: 72 },
+      "cb-protanopia": { from: 198, to: 38, sat: 74 },
+      "cb-deuteranopia": { from: 235, to: 314, sat: 70 },
+      "cb-tritanopia": { from: 178, to: 24, sat: 76 }
+    };
+    const ramp = ramps[colorMode];
+    const hue = Math.round(ramp.from + (ramp.to - ramp.from) * t);
     const lightTop = Math.round(30 + 22 * t);
     const lightBottom = Math.round(22 + 15 * t);
     return {
       color: "#f8fbff",
-      background: `linear-gradient(180deg, hsl(${hue} 72% ${lightTop}%), hsl(${hue} 74% ${lightBottom}%))`,
+      background: `linear-gradient(180deg, hsl(${hue} ${ramp.sat}% ${lightTop}%), hsl(${hue} ${Math.min(
+        84,
+        ramp.sat + 2
+      )}% ${lightBottom}%))`,
       borderColor: `hsl(${Math.max(0, hue - 8)} 80% ${Math.min(70, lightTop + 14)}%)`
     };
   }
