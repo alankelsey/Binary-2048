@@ -91,7 +91,7 @@ export default function Home() {
   const [highScore, setHighScore] = useState(0);
   const [spawnMode, setSpawnMode] = useState<SpawnMode>("normal");
   const [colorMode, setColorMode] = useState<ColorMode>("default");
-  const [themeMode, setThemeMode] = useState<ThemeMode>("midnight");
+  const [themeMode, setThemeMode] = useState<ThemeMode>("classic");
   const [gameMode, setGameMode] = useState<GameMode>("classic");
   const [cellEffects, setCellEffects] = useState<Record<string, CellEffect>>({});
   const [undo, setUndo] = useState<UndoMeta>({ limit: 2, used: 0, remaining: 2 });

@@ -1,5 +1,6 @@
 export const THEMES = {
-  midnight: { label: "Midnight" },
+  classic: { label: "Original" },
+  midnight: { label: "Deep Midnight" },
   aurora: { label: "Aurora" },
   ember: { label: "Ember" },
   light: { label: "Light" }
