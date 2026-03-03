@@ -10,6 +10,7 @@ describe("session undo", () => {
       pZero: 0,
       pOne: 0.9,
       pWildcard: 0.1,
+      pLock: 0,
       wildcardMultipliers: [2]
     }
   };
@@ -62,6 +63,7 @@ describe("session undo", () => {
           pZero: 0,
           pOne: 0.96,
           pWildcard: 0.04,
+          pLock: 0,
           wildcardMultipliers: [2]
         }
       },

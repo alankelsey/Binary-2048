@@ -1,4 +1,4 @@
-type Tile = { t: "n"; v: number } | { t: "z" } | { t: "w"; m: number };
+type Tile = { t: "n"; v: number } | { t: "z" } | { t: "w"; m: number } | { t: "i" };
 type Cell = Tile | null;
 
 export type CellEffect = "merge-number" | "merge-wild" | "zero-bust" | "spawn";
@@ -57,7 +57,7 @@ export function computeCellEffects(
       const after = next.grid[r]?.[c] ?? null;
 
       if (spawnKeys.has(key) && after) effects[key] = "spawn";
-      if (before?.t === "z" && after?.t !== "z") removedZeroCells.push(key);
+      if ((before?.t === "z" || before?.t === "i") && after?.t !== "z" && after?.t !== "i") removedZeroCells.push(key);
       if (before?.t === "w" && after?.t !== "w") removedWildCells.push(key);
 
       if (after && tileChanged(before, after) && !spawnKeys.has(key)) {
@@ -195,21 +195,25 @@ function extractLines(grid: Cell[][], dir: MoveDir): Cell[][] {
 }
 
 function canMergeForEffects(a: Tile, b: Tile): boolean {
-  if (a.t === "z" || b.t === "z") return true;
-  if (a.t === "n" && b.t === "n") return a.v === b.v;
-  if (a.t === "w" && b.t === "w") return a.m === b.m;
-  if ((a.t === "w" && b.t === "n") || (a.t === "n" && b.t === "w")) return true;
+  const left = a.t === "i" ? ({ t: "z" } as const) : a;
+  const right = b.t === "i" ? ({ t: "z" } as const) : b;
+  if (left.t === "z" || right.t === "z") return true;
+  if (left.t === "n" && right.t === "n") return left.v === right.v;
+  if (left.t === "w" && right.t === "w") return left.m === right.m;
+  if ((left.t === "w" && right.t === "n") || (left.t === "n" && right.t === "w")) return true;
   return false;
 }
 
 function mergePairForEffects(a: Tile, b: Tile): Tile | null {
-  if (a.t === "z" && b.t === "z") return null;
-  if ((a.t === "z" && b.t === "w") || (a.t === "w" && b.t === "z")) return null;
-  if (a.t === "z") return b;
-  if (b.t === "z") return a;
-  if (a.t === "n" && b.t === "n") return { t: "n", v: a.v * 2 };
-  if (a.t === "w" && b.t === "w") return { t: "w", m: a.m * 2 };
-  if (a.t === "w" && b.t === "n") return { t: "n", v: b.v * a.m };
-  if (a.t === "n" && b.t === "w") return { t: "n", v: a.v * b.m };
-  return a;
+  const left = a.t === "i" ? ({ t: "z" } as const) : a;
+  const right = b.t === "i" ? ({ t: "z" } as const) : b;
+  if (left.t === "z" && right.t === "z") return null;
+  if ((left.t === "z" && right.t === "w") || (left.t === "w" && right.t === "z")) return null;
+  if (left.t === "z") return right;
+  if (right.t === "z") return left;
+  if (left.t === "n" && right.t === "n") return { t: "n", v: left.v * 2 };
+  if (left.t === "w" && right.t === "w") return { t: "w", m: left.m * 2 };
+  if (left.t === "w" && right.t === "n") return { t: "n", v: right.v * left.m };
+  if (left.t === "n" && right.t === "w") return { t: "n", v: left.v * right.m };
+  return left;
 }

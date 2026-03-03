@@ -40,7 +40,8 @@ export async function GET(_: Request, context: { params: Promise<{ id: string }>
       spawnProbs: {
         zero: state.config.spawn.pZero,
         one: state.config.spawn.pOne,
-        wildcard: state.config.spawn.pWildcard
+        wildcard: state.config.spawn.pWildcard,
+        lock: state.config.spawn.pLock
       }
     }
   });

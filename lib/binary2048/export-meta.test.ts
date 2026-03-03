@@ -14,6 +14,7 @@ describe("export replay metadata", () => {
         pZero: 0,
         pOne: 1,
         pWildcard: 0,
+        pLock: 0,
         wildcardMultipliers: [2]
       }
     };
@@ -35,6 +36,7 @@ describe("export replay metadata", () => {
       zero: 0,
       one: 1,
       wildcard: 0,
+      lock: 0,
       wildcardMultipliers: [2]
     });
     expect(exported.meta.integrity.sessionClass).toBe("unranked");

@@ -12,6 +12,7 @@ const baseConfig: GameConfig = {
     pZero: 0,
     pOne: 1,
     pWildcard: 0,
+    pLock: 0,
     wildcardMultipliers: [2]
   }
 };

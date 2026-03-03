@@ -11,6 +11,7 @@ describe("GET /api/games/:id/export", () => {
       pZero: 0,
       pOne: 1,
       pWildcard: 0,
+      pLock: 0,
       wildcardMultipliers: [2]
     }
   };
@@ -41,6 +42,7 @@ describe("GET /api/games/:id/export", () => {
       zero: 0,
       one: 1,
       wildcard: 0,
+      lock: 0,
       wildcardMultipliers: [2]
     });
   });

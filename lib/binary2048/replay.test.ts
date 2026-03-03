@@ -11,7 +11,7 @@ function makeState(turn: number, score: number): GameState {
       winTile: 2048,
       zeroBehavior: "annihilate",
       spawnOnNoopMove: false,
-      spawn: { pZero: 0.1, pOne: 0.8, pWildcard: 0.1, wildcardMultipliers: [2] }
+      spawn: { pZero: 0.1, pOne: 0.8, pWildcard: 0.1, pLock: 0, wildcardMultipliers: [2] }
     },
     width: 4,
     height: 4,
@@ -38,7 +38,7 @@ describe("replay helpers", () => {
       rulesetId: "binary2048-v1",
       engineVersion: "test",
       replay: { seed: 1, moves: ["right", "down"], movesApplied: 2 },
-      spawnProbs: { zero: 0.1, one: 0.8, wildcard: 0.1, wildcardMultipliers: [2] },
+      spawnProbs: { zero: 0.1, one: 0.8, wildcard: 0.1, lock: 0, wildcardMultipliers: [2] },
       integrity: { sessionClass: "unranked", source: "created" }
     },
     config: initial.config,

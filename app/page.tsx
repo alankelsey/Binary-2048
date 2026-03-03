@@ -12,7 +12,7 @@ import { getControlVisibility } from "@/lib/binary2048/control-visibility";
 import { getReplayCodeFromSearch } from "@/lib/binary2048/replay-link";
 import { buildReplayUrl } from "@/lib/binary2048/replay-share";
 
-type Tile = { t: "n"; v: number } | { t: "z" } | { t: "w"; m: number };
+type Tile = { t: "n"; v: number } | { t: "z" } | { t: "w"; m: number } | { t: "i" };
 type Cell = Tile | null;
 type Dir = "up" | "down" | "left" | "right";
 type SpawnMode = "normal" | "ltfg" | "death";
@@ -26,6 +26,7 @@ type GameState = {
   config?: {
     spawn?: {
       pWildcard?: number;
+      pLock?: number;
     };
   };
   score: number;
@@ -41,11 +42,12 @@ const SPAWN_MODES: Record<
   {
     label: string;
     pWildcard: number;
+    pLock: number;
   }
 > = {
-  normal: { label: "Normal", pWildcard: 0.1 },
-  ltfg: { label: "LTFG", pWildcard: 0.2 },
-  death: { label: "Death by AI", pWildcard: 0.04 }
+  normal: { label: "Normal", pWildcard: 0.1, pLock: 0.03 },
+  ltfg: { label: "LTFG", pWildcard: 0.2, pLock: 0.02 },
+  death: { label: "Death by AI", pWildcard: 0.04, pLock: 0.08 }
 };
 const GAME_MODES: Record<GameMode, { label: string }> = {
   classic: { label: "Classic" },
@@ -111,7 +113,8 @@ export default function Home() {
     try {
       const pZero = 0.15;
       const pWildcard = SPAWN_MODES[spawnMode].pWildcard;
-      const pOne = 1 - pZero - pWildcard;
+      const pLock = SPAWN_MODES[spawnMode].pLock;
+      const pOne = 1 - pZero - pWildcard - pLock;
       const res = await fetch("/api/games", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -122,6 +125,7 @@ export default function Home() {
               pZero,
               pOne,
               pWildcard,
+              pLock,
               wildcardMultipliers: [2]
             }
           }
@@ -241,6 +245,7 @@ export default function Home() {
     if (!cell) return "";
     if (cell.t === "z") return "0";
     if (cell.t === "w") return "";
+    if (cell.t === "i") return "";
     return String(cell.v);
   }
 
@@ -248,6 +253,7 @@ export default function Home() {
     if (!cell) return "cell-empty";
     if (cell.t === "w") return "tile-wild";
     if (cell.t === "z") return "tile-zero";
+    if (cell.t === "i") return "tile-lock";
     return "tile-number";
   }
 
@@ -634,6 +640,8 @@ export default function Home() {
                     ? `number ${cell.v}`
                     : cell.t === "z"
                       ? "zero"
+                      : cell.t === "i"
+                        ? "lock zero"
                       : "wildcard"
                   : "empty";
                 return (
@@ -647,6 +655,10 @@ export default function Home() {
                     {cell?.t === "w" ? (
                       <span className="wild-icon" aria-label="wildcard tile">
                         ✦
+                      </span>
+                    ) : cell?.t === "i" ? (
+                      <span className="lock-icon" aria-label="lock zero tile">
+                        ⛓
                       </span>
                     ) : (
                       label(cell)
@@ -827,6 +839,7 @@ export default function Home() {
           <div className="game-hint-body">
             <p>Basic moves: all tiles slide in one direction per turn.</p>
             <p>`0` tiles annihilate when they collide with any tile. `0+0` also vanishes.</p>
+            <p>`Lock-0` (`⛓`) blocks one collision turn, then behaves like `0` on the next moved turn.</p>
             <p>Wildcard tiles (`✦`) double any number tile they collide with, then disappear.</p>
             <p>Game ends when no empty cells and no valid merges remain.</p>
             <p>Tip: keep your highest value anchored to one side and avoid breaking the chain.</p>

@@ -22,8 +22,9 @@ export const DEFAULT_CONFIG: GameConfig = {
   spawnOnNoopMove: false,
   spawn: {
     pZero: 0.15,
-    pOne: 0.75,
+    pOne: 0.72,
     pWildcard: 0.1,
+    pLock: 0.03,
     wildcardMultipliers: [2, 4, 8]
   }
 };
@@ -168,6 +169,7 @@ export function buildExport(
         zero: config.spawn.pZero,
         one: config.spawn.pOne,
         wildcard: config.spawn.pWildcard,
+        lock: config.spawn.pLock,
         wildcardMultipliers: [...config.spawn.wildcardMultipliers]
       },
       integrity
@@ -193,7 +195,7 @@ function mergeConfig(partial: Partial<GameConfig> | undefined): GameConfig {
 
 function validateConfig(config: GameConfig) {
   if (config.width < 2 || config.height < 2) throw new Error("Grid too small");
-  const s = config.spawn.pZero + config.spawn.pOne + config.spawn.pWildcard;
+  const s = config.spawn.pZero + config.spawn.pOne + config.spawn.pWildcard + config.spawn.pLock;
   if (Math.abs(s - 1) > 1e-6) throw new Error("Spawn probabilities must sum to 1");
   if (!config.spawn.wildcardMultipliers.length) throw new Error("wildcardMultipliers cannot be empty");
 }
@@ -312,14 +314,17 @@ function sampleSpawnTile(state: GameState): { tile: Tile; state: GameState } {
   const a = nextRand(state);
   const pz = state.config.spawn.pZero;
   const po = pz + state.config.spawn.pOne;
+  const pw = po + state.config.spawn.pWildcard;
   if (a.value < pz) return { tile: { t: "z" }, state: a.state };
   if (a.value < po) return { tile: { t: "n", v: 1 }, state: a.state };
-
-  const b = nextInt(a.state, state.config.spawn.wildcardMultipliers.length);
-  return {
-    tile: { t: "w", m: state.config.spawn.wildcardMultipliers[b.value] },
-    state: b.state
-  };
+  if (a.value < pw) {
+    const b = nextInt(a.state, state.config.spawn.wildcardMultipliers.length);
+    return {
+      tile: { t: "w", m: state.config.spawn.wildcardMultipliers[b.value] },
+      state: b.state
+    };
+  }
+  return { tile: { t: "i" }, state: a.state };
 }
 
 function updateWinLose(state: GameState, events: GameEvent[]): GameState {

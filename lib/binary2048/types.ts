@@ -11,6 +11,7 @@ export type SpawnConfig = {
   pZero: number;
   pOne: number;
   pWildcard: number;
+  pLock: number;
   wildcardMultipliers: number[];
 };
 
@@ -86,6 +87,7 @@ export type GameExport = {
       zero: number;
       one: number;
       wildcard: number;
+      lock: number;
       wildcardMultipliers: number[];
     };
     integrity: SessionIntegrity;

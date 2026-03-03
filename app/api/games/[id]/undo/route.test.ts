@@ -11,6 +11,7 @@ describe("POST /api/games/:id/undo", () => {
       pZero: 0,
       pOne: 0.9,
       pWildcard: 0.1,
+      pLock: 0,
       wildcardMultipliers: [2]
     }
   };
