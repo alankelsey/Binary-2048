@@ -237,7 +237,6 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE).
   - OpenAPI spec endpoint + in-app docs page.
   - Active-run controls policy in UI (new/undo/export/replay only while active).
 - Next implementation focus:
-  - Add test-backed security policy helpers for tiered rate limits by user tier.
   - Add shareable replay code format (`/replay?code=...`) with size guardrails.
   - Begin `Lock-0` impediment tile design behind engine tests first.
 
@@ -302,6 +301,7 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE).
     - Managed rule groups (baseline bot/reputation/common attack protections).
     - CAPTCHA/challenge gates for suspicious traffic patterns.
   - Add tiered request limits (higher limits for authenticated/paid users).
+    - Test-backed policy helper implemented in `lib/binary2048/security-policy.ts` (`guest`, `authed`, `paid`).
   - Add billing tripwires (AWS Budgets + CloudWatch alarms) for request spikes and cost anomalies.
   - Route 53 hardening:
     - Avoid wildcard DNS records unless required.
