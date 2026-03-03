@@ -11,7 +11,7 @@ type Tile = { t: "n"; v: number } | { t: "z" } | { t: "w"; m: number };
 type Cell = Tile | null;
 type Dir = "up" | "down" | "left" | "right";
 type SpawnMode = "normal" | "ltfg" | "death";
-type ColorMode = "default" | "cb-protanopia" | "cb-deuteranopia";
+type ColorMode = "default" | "cb-protanopia" | "cb-deuteranopia" | "cb-tritanopia";
 type GameMode = "classic" | "bitstorm";
 
 type GameState = {
@@ -355,7 +355,12 @@ export default function Home() {
       setGameMode(savedGameMode);
     }
     const savedColorMode = window.localStorage.getItem(colorModeKey);
-    if (savedColorMode === "default" || savedColorMode === "cb-protanopia" || savedColorMode === "cb-deuteranopia") {
+    if (
+      savedColorMode === "default" ||
+      savedColorMode === "cb-protanopia" ||
+      savedColorMode === "cb-deuteranopia" ||
+      savedColorMode === "cb-tritanopia"
+    ) {
       setColorMode(savedColorMode);
     }
   }, []);
@@ -591,6 +596,7 @@ export default function Home() {
                       <option value="default">Default</option>
                       <option value="cb-protanopia">CB Protanopia</option>
                       <option value="cb-deuteranopia">CB Deuteranopia</option>
+                      <option value="cb-tritanopia">CB Tritanopia</option>
                     </select>
                   </label>
                 ) : null}
