@@ -3,7 +3,7 @@ import { toActionCode, type ActionCode } from "@/lib/binary2048/action";
 import type { Cell, Dir, GameState } from "@/lib/binary2048/types";
 
 export type EncodedCell = {
-  type: 0 | 1 | 2 | 3;
+  type: 0 | 1 | 2 | 3 | 4;
   value: number;
 };
 
@@ -15,7 +15,9 @@ export function encodeCell(cell: Cell): EncodedCell {
   if (!cell) return { type: 0, value: 0 };
   if (cell.t === "z") return { type: 1, value: 0 };
   if (cell.t === "n") return { type: 2, value: Math.max(0, Math.log2(Math.max(1, cell.v))) };
-  return { type: 3, value: Math.max(0, Math.log2(Math.max(1, cell.m))) };
+  if (cell.t === "w") return { type: 3, value: Math.max(0, Math.log2(Math.max(1, cell.m))) };
+  if (cell.t === "i") return { type: 4, value: 0 };
+  return { type: 0, value: 0 };
 }
 
 export function encodeState(state: Pick<GameState, "grid">): EncodedState {

@@ -106,7 +106,7 @@ export function applyMove(state: GameState, dir: Dir): { state: GameState; moved
   let gainedScore = 0;
 
   for (const line of lines) {
-    const { line: out, changed, gainedScore: lineScore } = resolveLine(line, events);
+    const { line: out, changed, gainedScore: lineScore } = resolveLine(line, events, before.turn);
     nextLines.push(out);
     if (changed) moved = true;
     gainedScore += lineScore;
@@ -214,7 +214,11 @@ function normalizeInitialGrid(initialGrid: Cell[][] | undefined, config: GameCon
   return initialGrid;
 }
 
-function resolveLine(line: Cell[], events: GameEvent[]): { line: Cell[]; changed: boolean; gainedScore: number } {
+function resolveLine(
+  line: Cell[],
+  events: GameEvent[],
+  turn: number
+): { line: Cell[]; changed: boolean; gainedScore: number } {
   const compact = line.filter((c) => c !== null);
   const out: Cell[] = [];
   let i = 0;
@@ -223,8 +227,11 @@ function resolveLine(line: Cell[], events: GameEvent[]): { line: Cell[]; changed
   while (i < compact.length) {
     const a = compact[i] as Tile;
     const b = compact[i + 1] as Tile | undefined;
-    if (b && canMerge(a, b)) {
-      const merged = mergePair(a, b);
+    if (b && canMerge(a, b, turn)) {
+      if ((a.t === "i" || b.t === "i") && canDestroyLockOnTurn(turn)) {
+        events.push({ type: "lock_break", at: [-1, -1], turn });
+      }
+      const merged = mergePair(a, b, turn);
       if (merged) {
         out.push(merged);
         events.push({ type: "merge", at: [-1, -1], into: merged });
@@ -232,6 +239,9 @@ function resolveLine(line: Cell[], events: GameEvent[]): { line: Cell[]; changed
       }
       i += 2;
     } else {
+      if (b && (a.t === "i" || b.t === "i") && !canDestroyLockOnTurn(turn)) {
+        events.push({ type: "lock_block", at: [-1, -1], turn });
+      }
       out.push(a);
       i += 1;
     }
@@ -248,24 +258,39 @@ function pointsForMerge(tile: Tile): number {
   return 0;
 }
 
-function canMerge(a: Tile, b: Tile): boolean {
-  if (a.t === "z" || b.t === "z") return true;
-  if (a.t === "n" && b.t === "n") return a.v === b.v;
-  if (a.t === "w" && b.t === "w") return a.m === b.m;
-  if ((a.t === "w" && b.t === "n") || (a.t === "n" && b.t === "w")) return true;
+function canDestroyLockOnTurn(turn: number): boolean {
+  return turn % 2 === 1;
+}
+
+function asZeroWhenDestroyed(tile: Tile, turn: number): Tile {
+  if (tile.t !== "i") return tile;
+  if (!canDestroyLockOnTurn(turn)) return tile;
+  return { t: "z" };
+}
+
+function canMerge(a: Tile, b: Tile, turn = 0): boolean {
+  if ((a.t === "i" || b.t === "i") && !canDestroyLockOnTurn(turn)) return false;
+  const left = asZeroWhenDestroyed(a, turn);
+  const right = asZeroWhenDestroyed(b, turn);
+  if (left.t === "z" || right.t === "z") return true;
+  if (left.t === "n" && right.t === "n") return left.v === right.v;
+  if (left.t === "w" && right.t === "w") return left.m === right.m;
+  if ((left.t === "w" && right.t === "n") || (left.t === "n" && right.t === "w")) return true;
   return false;
 }
 
-function mergePair(a: Tile, b: Tile): Tile | null {
-  if (a.t === "z" && b.t === "z") return null;
-  if ((a.t === "z" && b.t === "w") || (a.t === "w" && b.t === "z")) return null;
-  if (a.t === "z") return b;
-  if (b.t === "z") return a;
-  if (a.t === "n" && b.t === "n") return { t: "n", v: a.v * 2 };
-  if (a.t === "w" && b.t === "w") return { t: "w", m: a.m * 2 };
-  if (a.t === "w" && b.t === "n") return { t: "n", v: b.v * a.m };
-  if (a.t === "n" && b.t === "w") return { t: "n", v: a.v * b.m };
-  return a;
+function mergePair(a: Tile, b: Tile, turn = 0): Tile | null {
+  const left = asZeroWhenDestroyed(a, turn);
+  const right = asZeroWhenDestroyed(b, turn);
+  if (left.t === "z" && right.t === "z") return null;
+  if ((left.t === "z" && right.t === "w") || (left.t === "w" && right.t === "z")) return null;
+  if (left.t === "z") return right;
+  if (right.t === "z") return left;
+  if (left.t === "n" && right.t === "n") return { t: "n", v: left.v * 2 };
+  if (left.t === "w" && right.t === "w") return { t: "w", m: left.m * 2 };
+  if (left.t === "w" && right.t === "n") return { t: "n", v: right.v * left.m };
+  if (left.t === "n" && right.t === "w") return { t: "n", v: left.v * right.m };
+  return left;
 }
 
 function spawnN(state: GameState, n: number, events: GameEvent[]): GameState {
@@ -329,8 +354,8 @@ function isGameOver(grid: Cell[][]): boolean {
       const cur = grid[r][c];
       const right = c + 1 < w ? grid[r][c + 1] : null;
       const down = r + 1 < h ? grid[r + 1][c] : null;
-      if (cur && right && canMerge(cur, right)) return false;
-      if (cur && down && canMerge(cur, down)) return false;
+      if (cur && right && canMerge(cur, right, 1)) return false;
+      if (cur && down && canMerge(cur, down, 1)) return false;
     }
   }
   return true;
@@ -443,6 +468,7 @@ function serializeLine(line: Cell[]): string {
       if (!c) return "_";
       if (c.t === "n") return `n${c.v}`;
       if (c.t === "w") return `w${c.m}`;
+      if (c.t === "i") return "i";
       return "z";
     })
     .join("|");

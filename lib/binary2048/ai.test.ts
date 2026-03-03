@@ -32,6 +32,7 @@ describe("AI helpers", () => {
     expect(encodeCell({ t: "z" })).toEqual({ type: 1, value: 0 });
     expect(encodeCell({ t: "n", v: 8 })).toEqual({ type: 2, value: 3 });
     expect(encodeCell({ t: "w", m: 4 })).toEqual({ type: 3, value: 2 });
+    expect(encodeCell({ t: "i" })).toEqual({ type: 4, value: 0 });
   });
 
   it("encodes a full grid", () => {

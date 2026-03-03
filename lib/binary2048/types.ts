@@ -1,7 +1,8 @@
 export type NumberTile = { t: "n"; v: number };
 export type ZeroTile = { t: "z" };
 export type WildcardTile = { t: "w"; m: number };
-export type Tile = NumberTile | ZeroTile | WildcardTile;
+export type LockZeroTile = { t: "i" };
+export type Tile = NumberTile | ZeroTile | WildcardTile | LockZeroTile;
 export type Cell = Tile | null;
 export type Dir = "up" | "down" | "left" | "right";
 export type Coord = [number, number];
@@ -26,6 +27,8 @@ export type GameConfig = {
 export type GameEvent =
   | { type: "spawn"; at: Coord; tile: Tile }
   | { type: "merge"; at: Coord; into: Tile }
+  | { type: "lock_block"; at: Coord; turn: number }
+  | { type: "lock_break"; at: Coord; turn: number }
   | { type: "game_won"; at: Coord; tile: NumberTile }
   | { type: "game_over" };
 

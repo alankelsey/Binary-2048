@@ -243,8 +243,9 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE).
   - Theme and color mode system with persistence.
   - OpenAPI spec endpoint + in-app docs page.
   - Active-run controls policy in UI (new/undo/export/replay only while active).
+  - Lock-0 engine prototype with cooldown-gated annihilation + replay events (`lock_block`, `lock_break`).
 - Next implementation focus:
-  - Begin `Lock-0` impediment tile design behind engine tests first.
+  - Wire Lock-0 into gameplay surface (spawn rules, UI styling, and economy toggles).
   - Add optional compressed replay-code mode (e.g., lz-string) when uncompressed code exceeds guardrails.
 
 - App theming system: light/dark/theme packs, board backgrounds, and tile style presets.
