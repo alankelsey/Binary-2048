@@ -11,6 +11,7 @@ import { rarityCssClass, STORE_ITEM_ICONS } from "@/lib/binary2048/store-icons";
 import { getControlVisibility } from "@/lib/binary2048/control-visibility";
 import { getReplayCodeFromSearch } from "@/lib/binary2048/replay-link";
 import { buildReplayUrl } from "@/lib/binary2048/replay-share";
+import { replaySpeedToDelayMs } from "@/lib/binary2048/replay-autoplay";
 
 type Tile = { t: "n"; v: number } | { t: "z" } | { t: "w"; m: number } | { t: "i" };
 type Cell = Tile | null;
@@ -100,6 +101,8 @@ export default function Home() {
   const [cellEffects, setCellEffects] = useState<Record<string, CellEffect>>({});
   const [undo, setUndo] = useState<UndoMeta>({ limit: 2, used: 0, remaining: 2 });
   const [replay, setReplay] = useState<{ data: ReplayData; step: number; sourceName: string } | null>(null);
+  const [replayPlaying, setReplayPlaying] = useState(false);
+  const [replaySpeed, setReplaySpeed] = useState(5);
   const [shareMessage, setShareMessage] = useState<string>("");
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const effectTimerRef = useRef<number | null>(null);
@@ -335,6 +338,7 @@ export default function Home() {
       const parsed = parseReplayExport(payload);
       if (!parsed) throw new Error("Replay file is missing required export fields");
       setReplay({ data: parsed, step: 0, sourceName: file.name });
+      setReplayPlaying(false);
       setCellEffects({});
     } catch (error) {
       const msg = error instanceof Error ? error.message : "Failed to load replay";
@@ -376,6 +380,7 @@ export default function Home() {
       const parsed = parseReplayExport(replayExport);
       if (!parsed) throw new Error("Reconstructed replay payload is invalid");
       setReplay({ data: parsed, step: 0, sourceName: "Shared replay" });
+      setReplayPlaying(false);
       setCellEffects({});
     } catch (error) {
       const msg = error instanceof Error ? error.message : "Failed to load replay code";
@@ -480,6 +485,18 @@ export default function Home() {
       if (effectTimerRef.current) window.clearTimeout(effectTimerRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (!replay || !replayPlaying) return;
+    if (replay.step >= replay.data.steps.length) {
+      setReplayPlaying(false);
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      setReplay((prev) => (prev ? { ...prev, step: Math.min(prev.data.steps.length, prev.step + 1) } : prev));
+    }, replaySpeedToDelayMs(replaySpeed));
+    return () => window.clearTimeout(timer);
+  }, [replay, replayPlaying, replaySpeed]);
 
   function onBoardTouchStart(event: TouchEvent<HTMLDivElement>) {
     const touch = event.touches[0];
@@ -595,28 +612,75 @@ export default function Home() {
             <span>
               Replay step {replayStep}/{replayStepsTotal}
             </span>
-            <button disabled={busy || replayStep <= 0} onClick={() => setReplay((prev) => (prev ? { ...prev, step: 0 } : prev))}>
+            <button
+              disabled={busy}
+              onClick={() => {
+                setReplayPlaying((prevPlaying) => {
+                  const nextPlaying = !prevPlaying;
+                  if (nextPlaying && replayStep >= replayStepsTotal) {
+                    setReplay((prev) => (prev ? { ...prev, step: 0 } : prev));
+                  }
+                  return nextPlaying;
+                });
+              }}
+            >
+              {replayPlaying ? "Pause" : "Play"}
+            </button>
+            <label className="replay-speed-wrap">
+              <span>Speed {replaySpeed}</span>
+              <input
+                type="range"
+                min={1}
+                max={10}
+                step={1}
+                value={replaySpeed}
+                onChange={(event) => setReplaySpeed(Number(event.target.value))}
+                aria-label="Replay speed"
+              />
+            </label>
+            <button
+              disabled={busy || replayStep <= 0}
+              onClick={() => {
+                setReplayPlaying(false);
+                setReplay((prev) => (prev ? { ...prev, step: 0 } : prev));
+              }}
+            >
               First
             </button>
             <button
               disabled={busy || replayStep <= 0}
-              onClick={() => setReplay((prev) => (prev ? { ...prev, step: Math.max(0, prev.step - 1) } : prev))}
+              onClick={() => {
+                setReplayPlaying(false);
+                setReplay((prev) => (prev ? { ...prev, step: Math.max(0, prev.step - 1) } : prev));
+              }}
             >
               Prev
             </button>
             <button
               disabled={busy || replayStep >= replayStepsTotal}
-              onClick={() => setReplay((prev) => (prev ? { ...prev, step: Math.min(prev.data.steps.length, prev.step + 1) } : prev))}
+              onClick={() => {
+                setReplayPlaying(false);
+                setReplay((prev) => (prev ? { ...prev, step: Math.min(prev.data.steps.length, prev.step + 1) } : prev));
+              }}
             >
               Next
             </button>
             <button
               disabled={busy || replayStep >= replayStepsTotal}
-              onClick={() => setReplay((prev) => (prev ? { ...prev, step: prev.data.steps.length } : prev))}
+              onClick={() => {
+                setReplayPlaying(false);
+                setReplay((prev) => (prev ? { ...prev, step: prev.data.steps.length } : prev));
+              }}
             >
               Last
             </button>
-            <button disabled={busy} onClick={() => setReplay(null)}>
+            <button
+              disabled={busy}
+              onClick={() => {
+                setReplayPlaying(false);
+                setReplay(null);
+              }}
+            >
               Exit Replay
             </button>
           </div>

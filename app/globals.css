@@ -564,6 +564,18 @@ select:focus-visible {
   color: #dbeafb;
 }
 
+.replay-speed-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: #c7d9ef;
+}
+
+.replay-speed-wrap input[type="range"] {
+  width: 7.2rem;
+}
+
 .swipe-hint {
   margin: 0.45rem 0 0;
   font-size: 0.76rem;
