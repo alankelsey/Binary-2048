@@ -28,7 +28,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Mode support (`Classic`, `Bitstorm`)
 - [x] Theme persistence + dropdown
 - [ ] Accessibility pass for full tab/keyboard navigation map
-- [ ] Explicit replay timeline scrubber UI
+- [x] Explicit replay timeline scrubber UI
 
 ## Economy + Integrity
 

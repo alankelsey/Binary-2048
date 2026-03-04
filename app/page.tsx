@@ -13,6 +13,7 @@ import { getReplayCodeFromSearch } from "@/lib/binary2048/replay-link";
 import { buildReplayUrl } from "@/lib/binary2048/replay-share";
 import { replaySpeedToDelayMs } from "@/lib/binary2048/replay-autoplay";
 import { shouldStartNewGameOnReplayExit } from "@/lib/binary2048/replay-exit";
+import { parseReplayStepInput } from "@/lib/binary2048/replay-scrubber";
 
 type Tile = { t: "n"; v: number } | { t: "z" } | { t: "w"; m: number } | { t: "i" };
 type Cell = Tile | null;
@@ -650,6 +651,25 @@ export default function Home() {
             <span>
               Replay step {replayStep}/{replayStepsTotal}
             </span>
+            <label className="replay-scrubber-wrap">
+              <span>Timeline</span>
+              <input
+                type="range"
+                min={0}
+                max={Math.max(0, replayStepsTotal)}
+                step={1}
+                value={replayStep}
+                aria-label="Replay timeline scrubber"
+                onChange={(event) => {
+                  const nextStep = parseReplayStepInput(event.target.value, replayStepsTotal);
+                  setReplayPlaying(false);
+                  setReplay((prev) => (prev ? { ...prev, step: nextStep } : prev));
+                }}
+              />
+              <span className="replay-scrubber-readout">
+                {replayStep}/{replayStepsTotal}
+              </span>
+            </label>
             <button
               disabled={busy}
               onClick={() => {
