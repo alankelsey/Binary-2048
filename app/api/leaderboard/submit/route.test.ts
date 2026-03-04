@@ -128,6 +128,40 @@ describe("POST /api/leaderboard/submit", () => {
     expect(res.status).toBe(403);
   });
 
+  it("rejects boosted ranked runs (seeded start grid)", async () => {
+    const grid: Cell[][] = [
+      [{ t: "n", v: 1 }, { t: "n", v: 1 }, { t: "n", v: 2 }, null],
+      [null, null, null, null],
+      [null, null, null, null],
+      [null, null, null, null]
+    ];
+    const boosted = createSession(
+      {
+        seed: 604,
+        winTile: 2,
+        spawn: { pZero: 0.15, pOne: 0.72, pWildcard: 0.1, pLock: 0.03, wildcardMultipliers: [2, 4, 8] }
+      },
+      grid,
+      { sessionClass: "ranked" }
+    );
+    moveSession(boosted.current.id, "left");
+
+    const req = new Request("http://localhost/api/leaderboard/submit", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        ...authHeader("u_submitter", "authed")
+      },
+      body: JSON.stringify({ gameId: boosted.current.id })
+    });
+
+    const res = await POST(req);
+    const json = await res.json();
+    expect(res.status).toBe(403);
+    expect(String(json.error)).toContain("Seeded starts");
+    expect(json.bracket).toBe("ranked_boosted");
+  });
+
   it("rejects active ranked game submissions", async () => {
     const grid: Cell[][] = [
       [{ t: "n", v: 1 }, null, null, null],

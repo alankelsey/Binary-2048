@@ -30,6 +30,40 @@ const globalStore = globalThis as typeof globalThis & {
 const leaderboardStore = globalStore.__binary2048_leaderboard ?? new Map<string, LeaderboardEntry>();
 globalStore.__binary2048_leaderboard = leaderboardStore;
 
+type LeaderboardEligibility = {
+  eligible: boolean;
+  bracket: "ranked_pure" | "ranked_boosted";
+  reason?: string;
+};
+
+function countNonEmptyCells(session: GameSession): number {
+  let count = 0;
+  for (const row of session.initialState.grid) {
+    for (const cell of row) {
+      if (cell) count += 1;
+    }
+  }
+  return count;
+}
+
+export function getLeaderboardEligibility(session: GameSession): LeaderboardEligibility {
+  if (session.integrity.sessionClass !== "ranked" || session.integrity.source !== "created") {
+    return {
+      eligible: false,
+      bracket: "ranked_boosted",
+      reason: "Only ranked created sessions are eligible"
+    };
+  }
+  if (countNonEmptyCells(session) !== 2) {
+    return {
+      eligible: false,
+      bracket: "ranked_boosted",
+      reason: "Seeded starts are not eligible for ranked leaderboard"
+    };
+  }
+  return { eligible: true, bracket: "ranked_pure" };
+}
+
 function getMaxTile(session: GameSession): number {
   let max = 0;
   for (const row of session.current.grid) {

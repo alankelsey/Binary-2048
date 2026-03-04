@@ -241,6 +241,9 @@ DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
   - Requires authenticated auth-bridge claims
   - Server-authoritative: score/moves/state hash are derived from in-memory ranked game session, not from client payload
   - Only accepts ranked created sessions that are finished (`won` or `over`)
+  - Enforces ranked-vs-boosted separation:
+    - `ranked_pure` sessions are eligible
+    - boosted sessions (seeded start grids and other non-standard starts) are rejected from ranked leaderboard
 - `POST /api/bots/tournament`
   - Body (optional): `{ "seeds"?: number[], "seedStart"?: number, "seedCount"?: number, "maxMoves"?: number, "bots"?: ["priority" | "random" | "alternate"] }`
   - Runs same-seed AI-vs-AI tournament server-side and returns ranking + per-run summaries

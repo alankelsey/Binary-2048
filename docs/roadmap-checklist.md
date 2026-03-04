@@ -59,7 +59,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Store inventory + boost consumption ledger
 - [x] Paid boost packet SKU model
 - [x] Ranked server-authoritative leaderboard submission flow
-- [ ] Ranked vs boosted mode separation enforcement for leaderboard eligibility
+- [x] Ranked vs boosted mode separation enforcement for leaderboard eligibility
 - [ ] Undo entitlement accounting in audit trail (server-side consume + replay-visible usage)
 - [ ] Stripe webhook idempotency + grant-once purchase handling
 

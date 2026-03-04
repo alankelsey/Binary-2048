@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getVerifiedAuthClaims } from "@/lib/binary2048/auth-context";
 import { exportToCompactReplay } from "@/lib/binary2048/replay-format";
 import { createReplaySignature } from "@/lib/binary2048/replay-signature";
-import { submitLeaderboardEntry } from "@/lib/binary2048/leaderboard";
+import { getLeaderboardEligibility, submitLeaderboardEntry } from "@/lib/binary2048/leaderboard";
 import { exportSession, getSession } from "@/lib/binary2048/sessions";
 
 type SubmitBody = {
@@ -24,11 +24,12 @@ export async function POST(req: Request) {
   if (!session) {
     return NextResponse.json({ error: "Game not found" }, { status: 404 });
   }
-  if (session.integrity.sessionClass !== "ranked" || session.integrity.source !== "created") {
-    return NextResponse.json({ error: "Only ranked created sessions are eligible" }, { status: 403 });
-  }
   if (!session.current.over && !session.current.won) {
     return NextResponse.json({ error: "Game must be finished before submission" }, { status: 409 });
+  }
+  const eligibility = getLeaderboardEligibility(session);
+  if (!eligibility.eligible) {
+    return NextResponse.json({ error: eligibility.reason, bracket: eligibility.bracket }, { status: 403 });
   }
 
   const submitted = submitLeaderboardEntry({
