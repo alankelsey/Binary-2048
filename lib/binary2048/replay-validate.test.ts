@@ -70,4 +70,35 @@ describe("validateReplay", () => {
     expect(fail.ok).toBe(false);
     expect(fail.reason).toContain("Invalid replay signature");
   });
+
+  it("rejects replay when engine version pinning is exact and version mismatches", () => {
+    const exported = runScenario(config, initialGrid, ["left"]);
+    const result = validateReplay(exported, {
+      expectedEngineVersion: "1.2.3",
+      enginePinMode: "exact"
+    });
+    expect(result.ok).toBe(false);
+    expect(result.reason).toContain("Engine version mismatch");
+  });
+
+  it("allows replay when engine version pinning uses minor compatibility", () => {
+    const compactPayload = {
+      header: {
+        replayVersion: 1 as const,
+        rulesetId: "binary2048-v1",
+        engineVersion: "1.2.3",
+        size: 4,
+        seed: 4321,
+        createdAt: "2026-01-01T00:00:00.000Z"
+      },
+      config,
+      initialGrid,
+      moves: ["left"]
+    };
+    const result = validateReplay(compactPayload, {
+      expectedEngineVersion: "1.2.99",
+      enginePinMode: "minor"
+    });
+    expect(result.ok).toBe(true);
+  });
 });

@@ -29,6 +29,8 @@ describe("POST /api/replay/validate", () => {
 
   afterEach(() => {
     delete process.env.BINARY2048_REPLAY_CODE_SECRET;
+    delete process.env.BINARY2048_ENGINE_VERSION;
+    delete process.env.BINARY2048_REPLAY_ENGINE_PIN_MODE;
   });
 
   it("returns ok=true for valid replay payload", async () => {
@@ -88,5 +90,33 @@ describe("POST /api/replay/validate", () => {
     expect(badRes.status).toBe(200);
     expect(badJson.ok).toBe(false);
     expect(String(badJson.reason)).toContain("signature");
+  });
+
+  it("enforces engine pin mode from environment", async () => {
+    process.env.BINARY2048_ENGINE_VERSION = "1.9.0";
+    process.env.BINARY2048_REPLAY_ENGINE_PIN_MODE = "exact";
+    const compactPayload = {
+      header: {
+        replayVersion: 1,
+        rulesetId: "binary2048-v1",
+        engineVersion: "1.2.3",
+        size: 4,
+        seed: 5151,
+        createdAt: "2026-01-01T00:00:00.000Z"
+      },
+      config,
+      initialGrid,
+      moves: ["left"]
+    };
+    const req = new Request("http://localhost/api/replay/validate", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(compactPayload)
+    });
+    const res = await POST(req);
+    const json = await res.json();
+    expect(res.status).toBe(200);
+    expect(json.ok).toBe(false);
+    expect(String(json.reason)).toContain("Engine version mismatch");
   });
 });

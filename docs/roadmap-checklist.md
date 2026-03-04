@@ -29,7 +29,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] `validateReplay(header,moves)` API/utility with compatibility and deterministic rerun checks
 - [x] Signed replay tokens for ranked submissions (HMAC on replay payload; reject tampered metadata/moves)
 - [x] Replay URL oversize fallback: short-lived signed server-hosted replay when encoded URL exceeds safe length
-- [ ] Engine version pinning strategy for tournaments/replays across version upgrades
+- [x] Engine version pinning strategy for tournaments/replays across version upgrades
 - [ ] Replay storage strategy doc: no-DB default + Mongo migration model for top scores/contests
 
 ## Gameplay UX

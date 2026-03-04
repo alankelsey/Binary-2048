@@ -1,6 +1,7 @@
 import { runReplay } from "@/lib/binary2048/replay-run";
 import { toCompactReplayPayload } from "@/lib/binary2048/replay-format";
 import { verifyReplaySignature } from "@/lib/binary2048/replay-signature";
+import { isEngineVersionCompatible, type EnginePinMode } from "@/lib/binary2048/engine-version-policy";
 
 export type ReplayValidationResult = {
   ok: boolean;
@@ -19,6 +20,8 @@ export type ReplayValidationResult = {
 type ReplayValidationOptions = {
   signature?: string;
   signingSecret?: string;
+  expectedEngineVersion?: string;
+  enginePinMode?: EnginePinMode;
 };
 
 export function validateReplay(payload: unknown, options?: ReplayValidationOptions): ReplayValidationResult {
@@ -34,6 +37,21 @@ export function validateReplay(payload: unknown, options?: ReplayValidationOptio
     }
     if (compact.header.rulesetId !== "binary2048-v1") {
       return { ok: false, reason: `Unsupported rulesetId: ${compact.header.rulesetId}` };
+    }
+    const expectedEngineVersion = options?.expectedEngineVersion;
+    const enginePinMode = options?.enginePinMode ?? "exact";
+    if (typeof expectedEngineVersion === "string" && expectedEngineVersion.trim().length > 0) {
+      const isCompatible = isEngineVersionCompatible(
+        compact.header.engineVersion,
+        expectedEngineVersion,
+        enginePinMode
+      );
+      if (!isCompatible) {
+        return {
+          ok: false,
+          reason: `Engine version mismatch: replay=${compact.header.engineVersion}, expected=${expectedEngineVersion}, mode=${enginePinMode}`
+        };
+      }
     }
 
     const runA = runReplay(compact);

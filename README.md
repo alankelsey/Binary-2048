@@ -268,6 +268,9 @@ DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
   - Returns `{ "ok": boolean, "reason": string, "details"?: { ... } }`
   - Performs replay compatibility checks and deterministic rerun validation
   - Verifies signature when provided and signing secret is configured
+  - Supports engine version pinning via env:
+    - `BINARY2048_ENGINE_VERSION` (expected version)
+    - `BINARY2048_REPLAY_ENGINE_PIN_MODE` (`exact` | `minor` | `off`)
 - `POST /api/replay/code`
   - Body: replay/export payload
   - Returns replay `code` + length and guardrail flags
@@ -359,6 +362,7 @@ Trackable checklist source:
   - Replay-code signing/verification support via `BINARY2048_REPLAY_CODE_SECRET` to reject tampered signed replay links.
   - Replay code compression fallback (`r1z.`) when plain replay code exceeds length guardrails, with legacy replay-code decode compatibility.
   - Replay URL oversize fallback (`rs1.` short-lived hosted token) for oversized shareable replays.
+  - Replay validation engine-version pin mode (`exact`/`minor`/`off`) for tournament/replay upgrade safety.
   - Canonical replay endpoint (`GET /api/games/:id/replay`) for replay-only payload shape (`header`, `moves`).
   - Win celebration flow: large win overlay with `Continue`/`New Game` actions and ranked-default continue lockout.
 - Next implementation focus:

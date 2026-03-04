@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { normalizeEnginePinMode } from "@/lib/binary2048/engine-version-policy";
 import { validateReplay } from "@/lib/binary2048/replay-validate";
 
 export async function POST(req: Request) {
@@ -12,7 +13,9 @@ export async function POST(req: Request) {
       typeof body === "object" && body !== null && typeof body.signature === "string" ? body.signature : undefined;
     const payload = hasNestedPayload ? body.payload : body;
     const signingSecret = process.env.BINARY2048_REPLAY_CODE_SECRET;
-    const result = validateReplay(payload, { signature, signingSecret });
+    const expectedEngineVersion = process.env.BINARY2048_ENGINE_VERSION ?? process.env.NEXT_PUBLIC_APP_VERSION;
+    const enginePinMode = normalizeEnginePinMode(process.env.BINARY2048_REPLAY_ENGINE_PIN_MODE);
+    const result = validateReplay(payload, { signature, signingSecret, expectedEngineVersion, enginePinMode });
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     return NextResponse.json(
