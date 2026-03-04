@@ -276,6 +276,16 @@ QUERY_LOG_GROUP_NAME=/aws/route53/your-zone npm run ops:waf:nxdomain
     - `BINARY2048_TOURNAMENT_QUEUE_WAIT_TIMEOUT_MS` (default `15000`)
   - Emits telemetry to `/api/ops/telemetry`
   - Challenge risk profile: `high` (challenge required when enabled)
+- `POST /api/matches/same-seed`
+  - Creates an async same-seed PvP match
+  - Body (optional): `{ "createdBy"?: string, "opponentId"?: string, "seed"?: number, "config"?: Partial<GameConfig> }`
+  - Uses auth-bridge `sub` as fallback `createdBy` when omitted
+- `GET /api/matches/:id`
+  - Returns async match payload + standings
+- `POST /api/matches/:id/submit`
+  - Submits one player's move list for async same-seed scoring
+  - Body: `{ "playerId"?: string, "moves": Array<Dir | "L" | "R" | "U" | "D"> }`
+  - Uses auth-bridge `sub` as fallback `playerId` when omitted
 - `POST /api/marketing/track`
   - Body: `{ "type": "share_click" | "copy_share" | "copy_replay_link" | "landing_visit", "channel"?: "x" | "linkedin" | "copy" | "replay", "referralCode"?: string, "campaign"?: string }`
   - Stores lightweight marketing/share CTA event for rollout analytics

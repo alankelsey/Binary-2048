@@ -12,5 +12,6 @@ describe("GET /api/openapi", () => {
     expect(json?.paths?.["/api/ops/telemetry"]).toBeTruthy();
     expect(json?.paths?.["/api/user/data/export"]).toBeTruthy();
     expect(json?.paths?.["/api/user/data"]).toBeTruthy();
+    expect(json?.paths?.["/api/matches/same-seed"]).toBeTruthy();
   });
 });

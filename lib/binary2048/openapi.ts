@@ -112,6 +112,44 @@ export const OPENAPI_SPEC = {
         }
       }
     },
+    "/api/matches/same-seed": {
+      post: {
+        summary: "Create async same-seed PvP match",
+        requestBody: {
+          required: false,
+          content: { "application/json": { schema: { type: "object" } } }
+        },
+        responses: {
+          "200": { description: "Match created" },
+          "400": { description: "Invalid payload" }
+        }
+      }
+    },
+    "/api/matches/{id}": {
+      get: {
+        summary: "Get async match details and standings",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          "200": { description: "Match found" },
+          "404": { description: "Match not found" }
+        }
+      }
+    },
+    "/api/matches/{id}/submit": {
+      post: {
+        summary: "Submit moves for async same-seed PvP match",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { type: "object" } } }
+        },
+        responses: {
+          "200": { description: "Submission accepted" },
+          "400": { description: "Invalid submission payload" },
+          "404": { description: "Match not found" }
+        }
+      }
+    },
     "/api/marketing/track": {
       post: {
         summary: "Track marketing/share CTA events",

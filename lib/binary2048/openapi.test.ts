@@ -16,6 +16,9 @@ describe("OPENAPI_SPEC", () => {
     expect(OPENAPI_SPEC.paths["/api/leaderboard"]?.get?.summary).toContain("ranked leaderboard");
     expect(OPENAPI_SPEC.paths["/api/leaderboard/submit"]?.post?.summary).toContain("server-authoritative");
     expect(OPENAPI_SPEC.paths["/api/bots/tournament"]?.post?.summary).toContain("AI-vs-AI tournament");
+    expect(OPENAPI_SPEC.paths["/api/matches/same-seed"]?.post?.summary).toContain("same-seed PvP");
+    expect(OPENAPI_SPEC.paths["/api/matches/{id}"]?.get?.summary).toContain("standings");
+    expect(OPENAPI_SPEC.paths["/api/matches/{id}/submit"]?.post?.summary).toContain("Submit moves");
     expect(OPENAPI_SPEC.paths["/api/marketing/track"]?.post?.summary).toContain("marketing/share CTA");
     expect(OPENAPI_SPEC.paths["/api/marketing/events"]?.get?.summary).toContain("marketing events");
     expect(OPENAPI_SPEC.paths["/api/subscriptions"]?.post?.summary).toContain("notification subscription");

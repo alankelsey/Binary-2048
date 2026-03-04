@@ -81,9 +81,10 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 
 - [ ] Auth.js/OAuth provider wiring to issue auth-bridge claims from real sessions
 - [x] Notification subscriptions (app updates/player/leaderboard actions)
-- [ ] Async PvP same-seed mode
+- [x] Async PvP same-seed mode
 - [x] AI-vs-AI tournament orchestrator beyond smoke scripts
 - [x] Paid/guest feature gating matrix enforced by backend policy
 - [x] Admin/dev control panel for enabling/disabling UI controls
 - [x] Marketing rollout hooks (social share CTAs, referral tracking)
 - [x] Privacy/compliance essentials: privacy page + user data export/delete endpoints
+- [ ] GitHub Pages presence (repo landing page and playable-host strategy decision: iframe vs static mirror)
