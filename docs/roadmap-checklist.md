@@ -15,7 +15,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Batch simulation endpoint (`POST /api/simulate`)
 - [x] Canonical replay endpoint (`GET /api/games/:id/replay`)
 - [x] Compact production export mode (`header + moves` only)
-- [ ] Replay checksum chain per step for audit mode
+- [x] Replay checksum chain per step for audit mode
 
 ## Gameplay UX
 

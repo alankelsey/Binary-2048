@@ -91,6 +91,13 @@ export type GameExport = {
       wildcardMultipliers: number[];
     };
     integrity: SessionIntegrity;
+    audit?: {
+      mode: "sha256-chain-v1";
+      initialHash: string;
+      stepHashes: string[];
+      finalHash: string;
+      stepsHashed: number;
+    };
   };
   config: GameConfig;
   initial: GameState;

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { exportToCompactReplay } from "@/lib/binary2048/replay-format";
+import { buildReplayAudit } from "@/lib/binary2048/replay-audit";
 import { exportSession } from "@/lib/binary2048/sessions";
 
 export async function GET(req: Request, context: { params: Promise<{ id: string }> }) {
@@ -9,6 +10,12 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
   const url = new URL(req.url);
   const compact = url.searchParams.get("compact");
   const wantsCompact = compact === "1" || compact === "true";
+  const audit = url.searchParams.get("audit");
+  const wantsAudit = audit === "1" || audit === "true";
+
+  if (wantsAudit) {
+    exported.meta.audit = buildReplayAudit(exported);
+  }
 
   if (wantsCompact) {
     const replay = exportToCompactReplay(exported);

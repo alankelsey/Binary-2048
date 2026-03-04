@@ -1,4 +1,5 @@
 import { GET } from "@/app/api/games/[id]/export/route";
+import { POST as moveGame } from "@/app/api/games/[id]/move/route";
 import { createSession } from "@/lib/binary2048/sessions";
 import type { Cell, GameConfig } from "@/lib/binary2048/types";
 
@@ -71,5 +72,31 @@ describe("GET /api/games/:id/export", () => {
     expect(Array.isArray(json.moves)).toBe(true);
     expect(json.version).toBeUndefined();
     expect(json.config).toBeUndefined();
+  });
+
+  it("adds audit hash chain when audit=1 is requested", async () => {
+    const session = createSession(config, initialGrid);
+    const id = session.current.id;
+
+    await moveGame(
+      new Request("http://localhost/api/games/move", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ dir: "left" })
+      }),
+      { params: Promise.resolve({ id }) }
+    );
+
+    const res = await GET(new Request("http://localhost/api/games/x/export?audit=1"), {
+      params: Promise.resolve({ id })
+    });
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.meta?.audit?.mode).toBe("sha256-chain-v1");
+    expect(typeof json.meta?.audit?.initialHash).toBe("string");
+    expect(Array.isArray(json.meta?.audit?.stepHashes)).toBe(true);
+    expect(json.meta?.audit?.stepsHashed).toBe(json.steps.length);
+    expect(typeof json.meta?.audit?.finalHash).toBe("string");
   });
 });

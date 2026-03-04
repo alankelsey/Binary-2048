@@ -110,7 +110,8 @@ export const OPENAPI_SPEC = {
         summary: "Export game JSON",
         parameters: [
           { name: "id", in: "path", required: true, schema: { type: "string" } },
-          { name: "compact", in: "query", required: false, schema: { type: "string" } }
+          { name: "compact", in: "query", required: false, schema: { type: "string" } },
+          { name: "audit", in: "query", required: false, schema: { type: "string" } }
         ],
         responses: {
           "200": { description: "Export JSON" },

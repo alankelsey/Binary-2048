@@ -198,6 +198,7 @@ DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
   - Returns export JSON (download attachment)
   - Includes replay-critical metadata: `rulesetId`, `engineVersion`, `spawnProbs`, and compact replay (`seed`, `moves`, `movesApplied`)
   - Optional query: `?compact=1` to return replay-only payload (`header`, `moves`)
+  - Optional query: `?audit=1` to include deterministic replay audit hash chain at `meta.audit`
 - `GET /api/games/:id/replay`
   - Returns canonical replay payload with only:
     - `header`
