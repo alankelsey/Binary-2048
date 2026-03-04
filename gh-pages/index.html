@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Binary 2048</title>
+    <meta name="description" content="Binary 2048 playable page" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg0: #020815;
+        --bg1: #0c1730;
+        --txt: #e6eefb;
+        --muted: #8aa2c8;
+        --line: #284572;
+        --btn: #153765;
+        --btn-border: #2f7dd6;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Avenir Next", "Segoe UI", sans-serif;
+        color: var(--txt);
+        background: radial-gradient(circle at 30% 0%, #123062 0%, var(--bg0) 45%), var(--bg0);
+      }
+      .wrap {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 16px;
+      }
+      .head {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+      .title {
+        font-size: clamp(24px, 5vw, 36px);
+        font-weight: 900;
+      }
+      .sub {
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .cta {
+        border: 1px solid var(--btn-border);
+        background: var(--btn);
+        color: var(--txt);
+        padding: 10px 14px;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 700;
+      }
+      .frame {
+        width: 100%;
+        height: min(78vh, 920px);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: #061128;
+      }
+      .foot {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      @media (max-width: 720px) {
+        .head { flex-direction: column; align-items: flex-start; }
+        .frame { height: 72vh; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <header class="head">
+        <div>
+          <div class="title">Binary 2048</div>
+          <div class="sub">GitHub Pages landing with live app embed</div>
+        </div>
+        <a class="cta" href="https://binary2048.com" target="_blank" rel="noreferrer">Open Full App</a>
+      </header>
+      <iframe class="frame" src="https://binary2048.com" title="Binary 2048" loading="lazy"></iframe>
+      <p class="foot">If the embed is blocked by browser/site policy, use "Open Full App".</p>
+    </main>
+  </body>
+</html>

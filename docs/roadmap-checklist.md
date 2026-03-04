@@ -87,4 +87,4 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Admin/dev control panel for enabling/disabling UI controls
 - [x] Marketing rollout hooks (social share CTAs, referral tracking)
 - [x] Privacy/compliance essentials: privacy page + user data export/delete endpoints
-- [ ] GitHub Pages presence (repo landing page and playable-host strategy decision: iframe vs static mirror)
+- [x] GitHub Pages presence (repo landing page and playable-host strategy decision: iframe vs static mirror)
