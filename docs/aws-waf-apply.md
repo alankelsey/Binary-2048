@@ -202,12 +202,23 @@ BUDGET_AMOUNT_USD=50 \
 npm run ops:waf:budget
 ```
 
+Notes:
+
+- `ops:waf:budget` is idempotent (create or update budget).
+- Notification thresholds default to `50 80 100` and can be overridden with `NOTIFICATION_THRESHOLDS`.
+
 Verify tripwires:
 
 ```bash
 BUDGET_NAME=binary2048-monthly-cost \
 ALARM_NAME=WAFBlockedRequestsHigh \
 npm run ops:waf:tripwire-check
+```
+
+Optional strict check for configured alarm actions:
+
+```bash
+REQUIRE_ALARM_ACTIONS=1 npm run ops:waf:tripwire-check
 ```
 
 One-command health check (WAF + tripwire):

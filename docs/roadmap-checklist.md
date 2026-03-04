@@ -70,7 +70,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Security policy helper for tiered 5-min limits
 - [x] Tournament guardrails for `seedCount`/`maxMoves` bounds
 - [ ] WAF live association + verify in production
-- [ ] Billing alarm + budget tripwire fully wired and validated in AWS account
+- [x] Billing alarm + budget tripwire fully wired and validated in AWS account
 - [x] Route 53 NXDOMAIN anomaly detection runbook + alarms
 - [x] CAPTCHA/challenge policy wiring by endpoint risk profile
 - [x] Rate limits/quotas on heavy bot/tournament endpoints (per IP and/or per key)

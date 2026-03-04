@@ -32,5 +32,7 @@ describe("docs content", () => {
     expect(readme).toContain("http://localhost:3000/docs/user");
     expect(readme).toContain("http://localhost:3000/docs/developer");
     expect(readme).toContain("npm run ops:waf:nxdomain");
+    expect(readme).toContain("NOTIFICATION_THRESHOLDS");
+    expect(readme).toContain("REQUIRE_ALARM_ACTIONS=1");
   });
 });

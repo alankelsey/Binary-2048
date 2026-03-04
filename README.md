@@ -157,10 +157,22 @@ Billing tripwire helper:
 BUDGET_EMAIL=you@example.com BUDGET_AMOUNT_USD=50 npm run ops:waf:budget
 ```
 
+Tripwire notification thresholds default to `50 80 100`; override with:
+
+```bash
+NOTIFICATION_THRESHOLDS="40 70 95" npm run ops:waf:budget
+```
+
 Billing tripwire verification:
 
 ```bash
 BUDGET_NAME=binary2048-monthly-cost ALARM_NAME=WAFBlockedRequestsHigh npm run ops:waf:tripwire-check
+```
+
+Require alarm actions check:
+
+```bash
+REQUIRE_ALARM_ACTIONS=1 npm run ops:waf:tripwire-check
 ```
 
 One-command WAF/billing doctor:
