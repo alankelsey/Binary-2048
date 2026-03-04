@@ -56,6 +56,8 @@ const GAME_MODES: Record<GameMode, { label: string }> = {
   classic: { label: "Classic" },
   bitstorm: { label: "Bitstorm" }
 };
+const DIFFICULTY_HELP_TEXT =
+  "Difficulty changes wildcard/lock spawn rates: Normal = balanced, LTFG = more wildcards and fewer locks, Death by AI = fewer wildcards and more locks.";
 const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.1.0";
 const APP_COMMIT = process.env.NEXT_PUBLIC_APP_COMMIT ?? "dev";
 const UI_POLICY = getUiPolicy();
@@ -840,10 +842,16 @@ export default function Home() {
               <div className="options-grid">
                 {UI_POLICY.controls.difficulty ? (
                   <label className="difficulty-select-wrap">
-                    <span className="difficulty-label">Difficulty</span>
+                    <span className="difficulty-label">
+                      Difficulty
+                      <span className="field-help" aria-label="Difficulty help" title={DIFFICULTY_HELP_TEXT}>
+                        ?
+                      </span>
+                    </span>
                     <select
                       aria-label="Wildcard spawn mode"
                       className={`difficulty-select mode-${spawnMode}`}
+                      title={DIFFICULTY_HELP_TEXT}
                       value={spawnMode}
                       onChange={(event) => setSpawnMode(event.target.value as SpawnMode)}
                       disabled={busy || difficultyLocked}
