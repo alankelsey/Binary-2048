@@ -398,19 +398,21 @@ function spawnN(state: GameState, n: number, events: GameEvent[]): GameState {
 
 function sampleSpawnTile(state: GameState): { tile: Tile; state: GameState } {
   const a = nextRand(state);
+  // Fixed-draw contract: always consume a wildcard-slot draw for every spawn,
+  // even when the sampled tile is not a wildcard.
+  const b = nextInt(a.state, state.config.spawn.wildcardMultipliers.length);
   const pz = state.config.spawn.pZero;
   const po = pz + state.config.spawn.pOne;
   const pw = po + state.config.spawn.pWildcard;
-  if (a.value < pz) return { tile: { t: "z" }, state: a.state };
-  if (a.value < po) return { tile: { t: "n", v: 1 }, state: a.state };
+  if (a.value < pz) return { tile: { t: "z" }, state: b.state };
+  if (a.value < po) return { tile: { t: "n", v: 1 }, state: b.state };
   if (a.value < pw) {
-    const b = nextInt(a.state, state.config.spawn.wildcardMultipliers.length);
     return {
       tile: { t: "w", m: state.config.spawn.wildcardMultipliers[b.value] },
       state: b.state
     };
   }
-  return { tile: { t: "i" }, state: a.state };
+  return { tile: { t: "i" }, state: b.state };
 }
 
 function updateWinLose(state: GameState, events: GameEvent[]): GameState {
