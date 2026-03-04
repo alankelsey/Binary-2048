@@ -1,11 +1,16 @@
 import { POST } from "@/app/api/bots/tournament/route";
 import { resetRateLimitStore } from "@/lib/binary2048/rate-limit";
+import { acquireTournamentSlot, resetTournamentQueue } from "@/lib/binary2048/tournament-queue";
 
 describe("POST /api/bots/tournament", () => {
   beforeEach(() => {
     resetRateLimitStore();
+    resetTournamentQueue();
     delete process.env.BINARY2048_RATE_LIMIT_TOURNAMENT_MAX;
     delete process.env.BINARY2048_RATE_LIMIT_WINDOW_MS;
+    delete process.env.BINARY2048_TOURNAMENT_MAX_CONCURRENT;
+    delete process.env.BINARY2048_TOURNAMENT_MAX_QUEUE;
+    delete process.env.BINARY2048_TOURNAMENT_QUEUE_WAIT_TIMEOUT_MS;
   });
 
   it("runs default tournament payload", async () => {
@@ -65,5 +70,25 @@ describe("POST /api/bots/tournament", () => {
     expect(second.status).toBe(429);
     expect(secondJson.error).toBe("Rate limit exceeded");
     expect(secondJson.route).toBe("bots_tournament");
+  });
+
+  it("returns 503 when tournament queue is full", async () => {
+    process.env.BINARY2048_TOURNAMENT_MAX_CONCURRENT = "1";
+    process.env.BINARY2048_TOURNAMENT_MAX_QUEUE = "0";
+    process.env.BINARY2048_TOURNAMENT_QUEUE_WAIT_TIMEOUT_MS = "60000";
+    const slot = await acquireTournamentSlot({ maxConcurrent: 1, maxQueue: 0, waitTimeoutMs: 60000 });
+    try {
+      const req = new Request("http://localhost/api/bots/tournament", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-forwarded-for": "5.6.7.8" },
+        body: JSON.stringify({})
+      });
+      const res = await POST(req);
+      const json = await res.json();
+      expect(res.status).toBe(503);
+      expect(json.code).toBe("queue_full");
+    } finally {
+      slot.release();
+    }
   });
 });

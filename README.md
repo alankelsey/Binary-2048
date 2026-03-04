@@ -249,6 +249,11 @@ DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
   - Body (optional): `{ "seeds"?: number[], "seedStart"?: number, "seedCount"?: number, "maxMoves"?: number, "bots"?: ["priority" | "random" | "alternate"] }`
   - Runs same-seed AI-vs-AI tournament server-side and returns ranking + per-run summaries
   - Rate-limited per API key (or IP fallback) with `429` responses on quota exhaustion
+  - Concurrency-protected by bounded queue (`503` with `queue_full`/`queue_timeout` when saturated)
+  - Queue env knobs:
+    - `BINARY2048_TOURNAMENT_MAX_CONCURRENT` (default `2`)
+    - `BINARY2048_TOURNAMENT_MAX_QUEUE` (default `8`)
+    - `BINARY2048_TOURNAMENT_QUEUE_WAIT_TIMEOUT_MS` (default `15000`)
 - `POST /api/marketing/track`
   - Body: `{ "type": "share_click" | "copy_share" | "copy_replay_link" | "landing_visit", "channel"?: "x" | "linkedin" | "copy" | "replay", "referralCode"?: string, "campaign"?: string }`
   - Stores lightweight marketing/share CTA event for rollout analytics

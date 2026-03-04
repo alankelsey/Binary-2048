@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { runBotTournament, type BotId } from "@/lib/binary2048/bot-orchestrator";
 import { checkTournamentRateLimit } from "@/lib/binary2048/rate-limit";
+import {
+  acquireTournamentSlot,
+  getTournamentQueueStats,
+  resolveTournamentQueueOptions,
+  TournamentQueueFullError,
+  TournamentQueueTimeoutError
+} from "@/lib/binary2048/tournament-queue";
 import type { GameConfig } from "@/lib/binary2048/types";
 
 type TournamentBody = {
@@ -39,6 +46,7 @@ function parseBots(raw: unknown): BotId[] {
 }
 
 export async function POST(req: Request) {
+  let slot: Awaited<ReturnType<typeof acquireTournamentSlot>> | null = null;
   try {
     const quota = checkTournamentRateLimit(req);
     if (!quota.allowed) {
@@ -53,6 +61,7 @@ export async function POST(req: Request) {
         { status: 429, headers: { "retry-after": String(quota.retryAfterSeconds) } }
       );
     }
+    slot = await acquireTournamentSlot(resolveTournamentQueueOptions());
     const body = ((await req.json().catch(() => ({}))) as TournamentBody);
     const seeds = parseSeedList(body);
     if (seeds.length === 0) {
@@ -68,11 +77,39 @@ export async function POST(req: Request) {
       bots,
       config: body.config
     });
-    return NextResponse.json(result, { status: 200 });
+    return NextResponse.json(
+      {
+        ...result,
+        queue: getTournamentQueueStats()
+      },
+      { status: 200 }
+    );
   } catch (error) {
+    if (error instanceof TournamentQueueFullError) {
+      return NextResponse.json(
+        {
+          error: "Tournament capacity reached",
+          code: "queue_full",
+          queue: getTournamentQueueStats()
+        },
+        { status: 503 }
+      );
+    }
+    if (error instanceof TournamentQueueTimeoutError) {
+      return NextResponse.json(
+        {
+          error: "Tournament queue wait timeout",
+          code: "queue_timeout",
+          queue: getTournamentQueueStats()
+        },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Invalid tournament payload" },
       { status: 400 }
     );
+  } finally {
+    slot?.release();
   }
 }
