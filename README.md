@@ -15,6 +15,7 @@ Next.js App Router scaffold for a Binary 2048 web game with deterministic simula
 - Built-in social sharing actions (X, LinkedIn, copy share text)
 - Theme packs with persistent selection (`Midnight`, `Aurora`, `Ember`, `Light`)
 - Accessibility helper panel with keyboard shortcuts and tab-order map
+- Dev/admin control panel to toggle UI options visibility at runtime
 - Import integrity metadata (`created` vs `imported`, imported sessions flagged unranked)
 - Store icon system primitives with rarity color coding
 

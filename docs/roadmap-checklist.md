@@ -62,5 +62,5 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [ ] Async PvP same-seed mode
 - [ ] AI-vs-AI tournament orchestrator beyond smoke scripts
 - [x] Paid/guest feature gating matrix enforced by backend policy
-- [ ] Admin/dev control panel for enabling/disabling UI controls
+- [x] Admin/dev control panel for enabling/disabling UI controls
 - [ ] Marketing rollout hooks (social share CTAs, referral tracking)

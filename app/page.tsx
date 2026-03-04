@@ -16,6 +16,8 @@ import { shouldStartNewGameOnReplayExit } from "@/lib/binary2048/replay-exit";
 import { parseReplayStepInput } from "@/lib/binary2048/replay-scrubber";
 import { GameOverOverlay, WinOverlay } from "@/app/game-overlays";
 import { buildAccessibilityTabMap, keyboardShortcutMap } from "@/lib/binary2048/accessibility-map";
+import { applyUiPolicyOverrides, type UIControlOverrides } from "@/lib/binary2048/ui-policy-override";
+import type { UIControl } from "@/lib/binary2048/ui-policy";
 
 type Tile = { t: "n"; v: number } | { t: "z" } | { t: "w"; m: number } | { t: "i" };
 type Cell = Tile | null;
@@ -114,6 +116,7 @@ export default function Home() {
   const [sessionClass, setSessionClass] = useState<SessionClass>("unranked");
   const [canContinueAfterWin, setCanContinueAfterWin] = useState(true);
   const [continueAfterWin, setContinueAfterWin] = useState(false);
+  const [uiControlOverrides, setUiControlOverrides] = useState<UIControlOverrides>({});
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const effectTimerRef = useRef<number | null>(null);
   const importInputRef = useRef<HTMLInputElement | null>(null);
@@ -450,6 +453,23 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    const raw = window.localStorage.getItem("binary2048.uiControlOverrides");
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw) as UIControlOverrides;
+      if (parsed && typeof parsed === "object") {
+        setUiControlOverrides(parsed);
+      }
+    } catch {
+      // Ignore malformed local override payloads.
+    }
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem("binary2048.uiControlOverrides", JSON.stringify(uiControlOverrides));
+  }, [uiControlOverrides]);
+
+  useEffect(() => {
     const raw = window.sessionStorage.getItem(highScoreKey);
     const parsed = Number(raw ?? "0");
     if (!Number.isNaN(parsed) && parsed > 0) setHighScore(parsed);
@@ -555,11 +575,12 @@ export default function Home() {
   const winPending = Boolean(!replay && state?.won && !continueAfterWin);
   const isPlayable = Boolean(!replay && state && !state.over && !winPending);
   const isActiveRun = Boolean(!replay && state && !state.over && !winPending && (state.turn ?? 0) > 0);
+  const effectiveUiPolicy = applyUiPolicyOverrides(UI_POLICY, uiControlOverrides);
   const controlVisibility = getControlVisibility({
     replay: Boolean(replay),
     isPlayable,
     isActiveRun,
-    uiPolicy: UI_POLICY
+    uiPolicy: effectiveUiPolicy
   });
   const canUndo = Boolean(!replay && gameId && state && (state.turn ?? 0) > 0 && (undo.remaining ?? 0) > 0 && !busy);
   const accessibilityTabMap = buildAccessibilityTabMap({
@@ -846,7 +867,7 @@ export default function Home() {
             <details className="options-panel">
               <summary>Options</summary>
               <div className="options-grid">
-                {UI_POLICY.controls.difficulty ? (
+                {effectiveUiPolicy.controls.difficulty ? (
                   <label className="difficulty-select-wrap">
                     <span className="difficulty-label">
                       Difficulty
@@ -868,7 +889,7 @@ export default function Home() {
                     </select>
                   </label>
                 ) : null}
-                {UI_POLICY.controls.color ? (
+                {effectiveUiPolicy.controls.color ? (
                   <label className="color-mode-wrap">
                     <span className="difficulty-label">Color</span>
                     <select
@@ -884,7 +905,7 @@ export default function Home() {
                     </select>
                   </label>
                 ) : null}
-                {UI_POLICY.controls.color ? (
+                {effectiveUiPolicy.controls.color ? (
                   <label className="theme-mode-wrap">
                     <span className="difficulty-label">Theme</span>
                     <select
@@ -901,7 +922,7 @@ export default function Home() {
                     </select>
                   </label>
                 ) : null}
-                {UI_POLICY.controls.mode ? (
+                {effectiveUiPolicy.controls.mode ? (
                   <label className="mode-select-wrap">
                     <span className="difficulty-label">Mode</span>
                     <select
@@ -916,7 +937,7 @@ export default function Home() {
                     </select>
                   </label>
                 ) : null}
-                {UI_POLICY.controls.import ? (
+                {effectiveUiPolicy.controls.import ? (
                   <>
                     <button
                       disabled={busy}
@@ -936,7 +957,7 @@ export default function Home() {
                     </button>
                   </>
                 ) : null}
-                {UI_POLICY.controls.export ? (
+                {effectiveUiPolicy.controls.export ? (
                   <button
                     disabled={!gameId}
                     onClick={() => {
@@ -947,6 +968,36 @@ export default function Home() {
                     Export JSON
                   </button>
                 ) : null}
+              </div>
+            </details>
+          ) : null}
+          {UI_POLICY.allOnInDev || UI_POLICY.adminMode ? (
+            <details className="options-panel">
+              <summary>Dev Controls</summary>
+              <div className="options-grid">
+                {(["difficulty", "color", "mode", "import", "export"] as UIControl[]).map((control) => (
+                  <label key={control} className="difficulty-select-wrap">
+                    <span className="difficulty-label">{control}</span>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(effectiveUiPolicy.controls[control])}
+                      onChange={(event) =>
+                        setUiControlOverrides((prev) => ({
+                          ...prev,
+                          [control]: event.target.checked
+                        }))
+                      }
+                    />
+                  </label>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUiControlOverrides({});
+                  }}
+                >
+                  Reset
+                </button>
               </div>
             </details>
           ) : null}
