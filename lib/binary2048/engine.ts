@@ -83,17 +83,33 @@ function randomSeed(): number {
 
 function bitstormTileForStep(config: GameConfig, step: number): Tile {
   const roll = randomUnit(config.seed, step);
-  const zeroThreshold = Math.min(0.25, Math.max(0.05, config.spawn.pZero));
-  const oneThreshold = Math.min(0.9, zeroThreshold + Math.max(0.45, config.spawn.pOne * 0.55));
-  const twoThreshold = Math.min(0.97, oneThreshold + 0.2);
+  const zeroThreshold = Math.min(0.22, Math.max(0.04, config.spawn.pZero));
+  const wildcardThreshold = Math.min(0.98, zeroThreshold + Math.max(0.08, config.spawn.pWildcard * 0.9));
 
   if (roll < zeroThreshold) return { t: "z" };
-  if (roll < oneThreshold) return { t: "n", v: 1 };
-  if (roll < twoThreshold) return { t: "n", v: 2 };
+  if (roll < wildcardThreshold) {
+    const multiplierStep = step + 13;
+    const multiplierIndex = Math.floor(
+      randomUnit(config.seed, multiplierStep) * config.spawn.wildcardMultipliers.length
+    );
+    return { t: "w", m: config.spawn.wildcardMultipliers[multiplierIndex] };
+  }
 
-  const multiplierStep = step + 13;
-  const multiplierIndex = Math.floor(randomUnit(config.seed, multiplierStep) * config.spawn.wildcardMultipliers.length);
-  return { t: "w", m: config.spawn.wildcardMultipliers[multiplierIndex] };
+  // Bitstorm can open with a broader number range (1..1024) for seeded challenge starts.
+  // 2048 is intentionally excluded from generation.
+  const numberStep = step + 29;
+  const numberRoll = randomUnit(config.seed, numberStep);
+  if (numberRoll < 0.24) return { t: "n", v: 1 };
+  if (numberRoll < 0.44) return { t: "n", v: 2 };
+  if (numberRoll < 0.6) return { t: "n", v: 4 };
+  if (numberRoll < 0.72) return { t: "n", v: 8 };
+  if (numberRoll < 0.82) return { t: "n", v: 16 };
+  if (numberRoll < 0.89) return { t: "n", v: 32 };
+  if (numberRoll < 0.94) return { t: "n", v: 64 };
+  if (numberRoll < 0.97) return { t: "n", v: 128 };
+  if (numberRoll < 0.985) return { t: "n", v: 256 };
+  if (numberRoll < 0.995) return { t: "n", v: 512 };
+  return { t: "n", v: 1024 };
 }
 
 export function applyMove(state: GameState, dir: Dir): { state: GameState; moved: boolean; events: GameEvent[] } {
