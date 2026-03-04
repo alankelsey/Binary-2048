@@ -251,6 +251,14 @@ DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
     - `paid`: `app_updates`, `player_actions`, `leaderboard_actions`
 - `DELETE /api/subscriptions?id=...`
   - Deletes a subscription by id
+- `GET /api/store/inventory?subscriberId=...`
+  - Returns inventory balances + recent ledger entries
+- `POST /api/store/inventory`
+  - Grants inventory
+  - Body: `{ "subscriberId": string, "sku": "undo_charge" | "wild_boost_pack" | "lock_breaker", "quantity": number, "reason"?: "grant" | "consume" | "adjust" }`
+- `POST /api/store/consume`
+  - Consumes inventory and appends ledger entry
+  - Body: `{ "subscriberId": string, "sku": "undo_charge" | "wild_boost_pack" | "lock_breaker", "quantity": number, "reason"?: "grant" | "consume" | "adjust" }`
 
 ## Example Scenario Payload
 

@@ -78,6 +78,43 @@ export const OPENAPI_SPEC = {
         }
       }
     },
+    "/api/store/inventory": {
+      get: {
+        summary: "Get store inventory and recent ledger entries",
+        parameters: [
+          { name: "subscriberId", in: "query", required: true, schema: { type: "string" } },
+          { name: "limit", in: "query", required: false, schema: { type: "integer" } }
+        ],
+        responses: {
+          "200": { description: "Inventory and ledger" },
+          "400": { description: "Invalid query" }
+        }
+      },
+      post: {
+        summary: "Grant inventory to subscriber",
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { type: "object" } } }
+        },
+        responses: {
+          "200": { description: "Inventory granted" },
+          "400": { description: "Invalid payload" }
+        }
+      }
+    },
+    "/api/store/consume": {
+      post: {
+        summary: "Consume inventory for subscriber and append ledger entry",
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { type: "object" } } }
+        },
+        responses: {
+          "200": { description: "Inventory consumed" },
+          "400": { description: "Invalid consume payload or insufficient balance" }
+        }
+      }
+    },
     "/api/games": {
       post: {
         summary: "Create a game session",

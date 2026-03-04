@@ -9,6 +9,8 @@ describe("OPENAPI_SPEC", () => {
   });
 
   it("contains expected AI and docs routes", () => {
+    expect(OPENAPI_SPEC.paths["/api/store/inventory"]?.get?.summary).toContain("store inventory");
+    expect(OPENAPI_SPEC.paths["/api/store/consume"]?.post?.summary).toContain("Consume inventory");
     expect(OPENAPI_SPEC.paths["/api/subscriptions"]?.post?.summary).toContain("notification subscription");
     expect(OPENAPI_SPEC.paths["/api/auth/dev-token"]?.post?.summary).toContain("Dev-only auth bridge token");
     expect(OPENAPI_SPEC.paths["/api/auth/entitlements/proof"]?.post?.summary).toContain("Mint short-lived entitlement proof");
