@@ -32,12 +32,18 @@ function mergeConfig(config: Partial<GameConfig> | undefined): GameConfig {
   };
 }
 
+function randomSeed(): number {
+  return Math.floor(Math.random() * 2147483647) + 1;
+}
+
 export async function POST(req: Request) {
   try {
     const raw = await req.json().catch(() => ({}));
     const body = ((raw && typeof raw === "object" ? raw : {}) as CreateGameBody);
     let config = body.config;
     let initialGrid = body.initialGrid;
+    const requestedSeed = body.config?.seed;
+    const effectiveSeed = typeof requestedSeed === "number" ? requestedSeed : randomSeed();
     const mode = body.mode === "bitstorm" ? "bitstorm" : "classic";
     const sessionClass = body.economy?.sessionClass === "ranked" ? "ranked" : "unranked";
     const authClaims = getVerifiedAuthClaims(req);
@@ -56,13 +62,12 @@ export async function POST(req: Request) {
 
     if (!initialGrid && mode === "bitstorm") {
       const merged = mergeConfig(config);
-      const seeded = config?.seed === undefined ? Math.floor(Math.random() * 2147483647) + 1 : config.seed;
-      const effectiveConfig = applyLockEconomyPolicy({ ...merged, seed: seeded }, economyContext);
+      const effectiveConfig = applyLockEconomyPolicy({ ...merged, seed: effectiveSeed }, economyContext);
       initialGrid = generateBitstormInitialGrid(effectiveConfig);
       config = effectiveConfig;
     } else {
       const merged = mergeConfig(config);
-      config = applyLockEconomyPolicy(merged, economyContext);
+      config = applyLockEconomyPolicy({ ...merged, seed: effectiveSeed }, economyContext);
     }
 
     const session = createSession(config, initialGrid, { sessionClass });

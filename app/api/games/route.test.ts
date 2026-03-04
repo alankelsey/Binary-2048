@@ -50,6 +50,54 @@ describe("POST /api/games", () => {
     expect(json.economy?.canContinueAfterWin).toBe(true);
   });
 
+  it("randomizes seed for classic games when seed is omitted", async () => {
+    const randomSpy = jest
+      .spyOn(Math, "random")
+      .mockReturnValueOnce(0)
+      .mockReturnValueOnce(0.5);
+    try {
+      const reqA = new Request("http://localhost/api/games", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({})
+      });
+      const reqB = new Request("http://localhost/api/games", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({})
+      });
+
+      const resA = await POST(reqA);
+      const jsonA = await resA.json();
+      const resB = await POST(reqB);
+      const jsonB = await resB.json();
+
+      expect(resA.status).toBe(200);
+      expect(resB.status).toBe(200);
+      expect(jsonA.current?.seed).toBe(1);
+      expect(jsonB.current?.seed).toBe(1073741824);
+      expect(jsonA.current?.seed).not.toBe(jsonB.current?.seed);
+    } finally {
+      randomSpy.mockRestore();
+    }
+  });
+
+  it("respects explicit seed for classic games", async () => {
+    const req = new Request("http://localhost/api/games", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        config: {
+          seed: 9999
+        }
+      })
+    });
+    const res = await POST(req);
+    const json = await res.json();
+    expect(res.status).toBe(200);
+    expect(json.current?.seed).toBe(9999);
+  });
+
   it("creates bitstorm mode with a seeded prefilled board", async () => {
     const req = new Request("http://localhost/api/games", {
       method: "POST",
