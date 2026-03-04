@@ -7,10 +7,13 @@ describe("docs content", () => {
   it("contains user and developer markdown guides with expected sections", () => {
     const user = readFileSync(join(repoRoot, "docs", "user-guide.md"), "utf8");
     const dev = readFileSync(join(repoRoot, "docs", "developer-guide.md"), "utf8");
+    const replayStorage = readFileSync(join(repoRoot, "docs", "replay-storage-strategy.md"), "utf8");
     expect(user).toContain("# Binary-2048 User Guide");
     expect(user).toContain("## Replay and Sharing");
     expect(dev).toContain("# Binary-2048 Developer Guide");
     expect(dev).toContain("## Replay Model");
+    expect(replayStorage).toContain("# Binary-2048 Replay Storage Strategy");
+    expect(replayStorage).toContain("## Phase 1: No-DB Default (Current Lightweight Mode)");
   });
 
   it("links docs routes from api docs page and README", () => {

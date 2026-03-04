@@ -32,6 +32,7 @@ API docs UI: `http://localhost:3000/api-docs`.
 Docs hub: `http://localhost:3000/docs`.
 User docs: `http://localhost:3000/docs/user`.
 Developer docs: `http://localhost:3000/docs/developer`.
+Replay storage strategy: `docs/replay-storage-strategy.md`.
 Replay share UI: `http://localhost:3000/replay?code=...`.
 In-app share row includes `Copy Replay Link` for the current run.
 

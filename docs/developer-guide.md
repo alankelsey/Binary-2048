@@ -40,6 +40,10 @@ Key local URLs:
   - `scoreDelta`/`scoreTotal`
   - normalized event payloads
 
+Replay storage phases and migration notes are documented in:
+
+- `docs/replay-storage-strategy.md`
+
 ## API Surface (High Use)
 
 - Game lifecycle:
