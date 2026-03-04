@@ -76,6 +76,26 @@ In a second terminal:
 npm run smoke:auth-proof
 ```
 
+Auth.js OAuth wiring (for real-session bridge tokens):
+
+```bash
+AUTH_SECRET=replace-me \
+AUTH_GITHUB_ID=... \
+AUTH_GITHUB_SECRET=... \
+AUTH_GOOGLE_ID=... \
+AUTH_GOOGLE_SECRET=... \
+BINARY2048_AUTH_BRIDGE_SECRET=replace-me \
+npm run dev
+```
+
+Then mint bridge token from authenticated session:
+
+```bash
+curl -sS -X POST http://localhost:3000/api/auth/bridge-token \
+  -H "Content-Type: application/json" \
+  -d '{"ttlSeconds":300}'
+```
+
 Tiny same-seed multibot tournament:
 
 ```bash
@@ -254,6 +274,13 @@ QUERY_LOG_GROUP_NAME=/aws/route53/your-zone npm run ops:waf:nxdomain
     - `BINARY2048_ENABLE_DEV_AUTH_TOKEN=1`
     - `BINARY2048_AUTH_BRIDGE_SECRET`
   - Optional body: `{ "sub"?, "tier"?, "entitlements"?, "ttlSeconds"? }`
+  - Returns `{ token, exp, ttlSeconds, userTier, entitlements }`
+- `POST /api/auth/bridge-token`
+  - Mints auth-bridge bearer token from an authenticated Auth.js session (GitHub/Google OAuth)
+  - Requires:
+    - `BINARY2048_AUTH_BRIDGE_SECRET`
+    - Auth.js providers configured (example env vars below)
+  - Optional body: `{ "ttlSeconds"?: number }`
   - Returns `{ token, exp, ttlSeconds, userTier, entitlements }`
 - `GET /api/leaderboard?limit=20`
   - Lists ranked leaderboard entries sorted by score, max tile, and moves

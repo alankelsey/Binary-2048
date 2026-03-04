@@ -79,7 +79,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 
 ## Product Roadmap
 
-- [ ] Auth.js/OAuth provider wiring to issue auth-bridge claims from real sessions
+- [x] Auth.js/OAuth provider wiring to issue auth-bridge claims from real sessions
 - [x] Notification subscriptions (app updates/player/leaderboard actions)
 - [x] Async PvP same-seed mode
 - [x] AI-vs-AI tournament orchestrator beyond smoke scripts

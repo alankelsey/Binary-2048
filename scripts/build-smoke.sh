@@ -82,7 +82,7 @@ if [[ "${IMPORT_RESP}" != *'"id":"'* || "${IMPORT_RESP}" != *'"current"'* ]]; th
   exit 1
 fi
 
-SIM_RESP="$(curl -fsS -X POST "${BASE}/api/sim/run" -H "Content-Type: application/json" -d '{"config":{"width":4,"height":4,"seed":99,"winTile":2048,"zeroBehavior":"annihilate","spawnOnNoopMove":false,"spawn":{"pZero":0,"pOne":1,"pWildcard":0,"wildcardMultipliers":[2,4,8]}},"initialGrid":[[{"t":"w","m":2},{"t":"w","m":2},{"t":"n","v":1},null],[null,null,null,null],[null,null,null,null],[null,null,null,null]],"moves":["left"]}')"
+SIM_RESP="$(curl -fsS -X POST "${BASE}/api/sim/run" -H "Content-Type: application/json" -d '{"config":{"width":4,"height":4,"seed":99,"winTile":2048,"zeroBehavior":"annihilate","spawnOnNoopMove":false,"spawn":{"pZero":0,"pOne":1,"pWildcard":0,"pLock":0,"wildcardMultipliers":[2,4,8]}},"initialGrid":[[{"t":"w","m":2},{"t":"w","m":2},{"t":"n","v":1},null],[null,null,null,null],[null,null,null,null],[null,null,null,null]],"moves":["left"]}')"
 if [[ "${SIM_RESP}" != *'"version":1'* && "${SIM_RESP}" != *'"version": 1'* ]]; then
   echo "Smoke test failed: /api/sim/run missing version field"
   echo "response: ${SIM_RESP}"

@@ -36,6 +36,20 @@ export const OPENAPI_SPEC = {
         }
       }
     },
+    "/api/auth/bridge-token": {
+      post: {
+        summary: "Mint auth-bridge bearer token from authenticated Auth.js session",
+        requestBody: {
+          required: false,
+          content: { "application/json": { schema: { type: "object" } } }
+        },
+        responses: {
+          "200": { description: "Auth bridge token minted" },
+          "401": { description: "Authenticated session required" },
+          "503": { description: "Auth bridge secret not configured" }
+        }
+      }
+    },
     "/api/health": {
       get: {
         summary: "Health check",

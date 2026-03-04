@@ -23,6 +23,7 @@ describe("OPENAPI_SPEC", () => {
     expect(OPENAPI_SPEC.paths["/api/marketing/events"]?.get?.summary).toContain("marketing events");
     expect(OPENAPI_SPEC.paths["/api/subscriptions"]?.post?.summary).toContain("notification subscription");
     expect(OPENAPI_SPEC.paths["/api/auth/dev-token"]?.post?.summary).toContain("Dev-only auth bridge token");
+    expect(OPENAPI_SPEC.paths["/api/auth/bridge-token"]?.post?.summary).toContain("Auth.js session");
     expect(OPENAPI_SPEC.paths["/api/auth/entitlements/proof"]?.post?.summary).toContain("Mint short-lived entitlement proof");
     expect(OPENAPI_SPEC.paths["/api/games/{id}/encoded"]?.get?.summary).toBe("Get AI-friendly encoded state");
     expect(OPENAPI_SPEC.paths["/api/games/{id}/replay"]?.get?.summary).toContain("canonical replay payload");
