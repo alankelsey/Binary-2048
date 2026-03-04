@@ -47,6 +47,32 @@ export const OPENAPI_SPEC = {
         }
       }
     },
+    "/api/leaderboard": {
+      get: {
+        summary: "List ranked leaderboard entries",
+        parameters: [{ name: "limit", in: "query", required: false, schema: { type: "integer" } }],
+        responses: {
+          "200": { description: "Leaderboard entries" }
+        }
+      }
+    },
+    "/api/leaderboard/submit": {
+      post: {
+        summary: "Submit finished ranked game to leaderboard (server-authoritative)",
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { type: "object" } } }
+        },
+        responses: {
+          "200": { description: "Leaderboard entry submitted" },
+          "400": { description: "Missing game id" },
+          "401": { description: "Authenticated user required" },
+          "403": { description: "Session not eligible" },
+          "404": { description: "Game not found" },
+          "409": { description: "Game not finished" }
+        }
+      }
+    },
     "/api/subscriptions": {
       get: {
         summary: "List notification subscriptions for a subscriber",

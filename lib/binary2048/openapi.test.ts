@@ -13,6 +13,8 @@ describe("OPENAPI_SPEC", () => {
     expect(OPENAPI_SPEC.paths["/api/store/purchase"]?.post?.summary).toContain("Purchase a paid packet SKU");
     expect(OPENAPI_SPEC.paths["/api/store/inventory"]?.get?.summary).toContain("store inventory");
     expect(OPENAPI_SPEC.paths["/api/store/consume"]?.post?.summary).toContain("Consume inventory");
+    expect(OPENAPI_SPEC.paths["/api/leaderboard"]?.get?.summary).toContain("ranked leaderboard");
+    expect(OPENAPI_SPEC.paths["/api/leaderboard/submit"]?.post?.summary).toContain("server-authoritative");
     expect(OPENAPI_SPEC.paths["/api/subscriptions"]?.post?.summary).toContain("notification subscription");
     expect(OPENAPI_SPEC.paths["/api/auth/dev-token"]?.post?.summary).toContain("Dev-only auth bridge token");
     expect(OPENAPI_SPEC.paths["/api/auth/entitlements/proof"]?.post?.summary).toContain("Mint short-lived entitlement proof");

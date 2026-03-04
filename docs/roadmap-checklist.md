@@ -43,7 +43,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Ranked auth/economy smoke script
 - [x] Store inventory + boost consumption ledger
 - [x] Paid boost packet SKU model
-- [ ] Ranked server-authoritative leaderboard submission flow
+- [x] Ranked server-authoritative leaderboard submission flow
 
 ## Platform + Ops
 

@@ -218,6 +218,13 @@ DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
     - `BINARY2048_AUTH_BRIDGE_SECRET`
   - Optional body: `{ "sub"?, "tier"?, "entitlements"?, "ttlSeconds"? }`
   - Returns `{ token, exp, ttlSeconds, userTier, entitlements }`
+- `GET /api/leaderboard?limit=20`
+  - Lists ranked leaderboard entries sorted by score, max tile, and moves
+- `POST /api/leaderboard/submit`
+  - Body: `{ "gameId": "g_123" }`
+  - Requires authenticated auth-bridge claims
+  - Server-authoritative: score/moves/state hash are derived from in-memory ranked game session, not from client payload
+  - Only accepts ranked created sessions that are finished (`won` or `over`)
 - `POST /api/sim/run`
   - Body: `{ "config": GameConfig, "initialGrid": Cell[][], "moves": Dir[] }`
   - Runs deterministic scenario and returns export JSON

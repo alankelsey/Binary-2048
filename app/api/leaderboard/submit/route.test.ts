@@ -1,0 +1,134 @@
+import { createAuthBridgeToken } from "@/lib/binary2048/auth-bridge";
+import { POST } from "@/app/api/leaderboard/submit/route";
+import { resetLeaderboard } from "@/lib/binary2048/leaderboard";
+import { createSession, moveSession } from "@/lib/binary2048/sessions";
+import type { Cell } from "@/lib/binary2048/types";
+
+function authHeader(sub = "u_ranked", tier: "guest" | "authed" | "paid" = "authed") {
+  const secret = process.env.BINARY2048_AUTH_BRIDGE_SECRET ?? "";
+  const token = createAuthBridgeToken(
+    {
+      sub,
+      tier,
+      exp: Math.floor(Date.now() / 1000) + 60
+    },
+    secret
+  );
+  return { authorization: `Bearer ${token}` };
+}
+
+function createFinishedRankedGame() {
+  const grid: Cell[][] = [
+    [{ t: "n", v: 1 }, { t: "n", v: 1 }, null, null],
+    [null, null, null, null],
+    [null, null, null, null],
+    [null, null, null, null]
+  ];
+  const session = createSession(
+    {
+      seed: 601,
+      winTile: 2,
+      spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] }
+    },
+    grid,
+    { sessionClass: "ranked" }
+  );
+  moveSession(session.current.id, "left");
+  return session.current.id;
+}
+
+describe("POST /api/leaderboard/submit", () => {
+  beforeEach(() => {
+    process.env.BINARY2048_AUTH_BRIDGE_SECRET = "leaderboard-submit-secret";
+  });
+
+  afterEach(() => {
+    resetLeaderboard();
+    delete process.env.BINARY2048_AUTH_BRIDGE_SECRET;
+  });
+
+  it("rejects unauthenticated submissions", async () => {
+    const req = new Request("http://localhost/api/leaderboard/submit", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ gameId: "g_missing" })
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(401);
+  });
+
+  it("submits completed ranked game using server-derived score", async () => {
+    const gameId = createFinishedRankedGame();
+
+    const req = new Request("http://localhost/api/leaderboard/submit", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        ...authHeader("u_submitter", "authed")
+      },
+      body: JSON.stringify({ gameId })
+    });
+
+    const res = await POST(req);
+    const json = await res.json();
+    expect(res.status).toBe(200);
+    expect(json.submitted).toBe(true);
+    expect(json.rank).toBe(1);
+    expect(json.entry?.gameId).toBe(gameId);
+    expect(json.entry?.playerId).toBe("u_submitter");
+    expect(typeof json.entry?.score).toBe("number");
+  });
+
+  it("rejects unranked game submissions", async () => {
+    const grid: Cell[][] = [
+      [{ t: "n", v: 1 }, { t: "n", v: 1 }, null, null],
+      [null, null, null, null],
+      [null, null, null, null],
+      [null, null, null, null]
+    ];
+    const unranked = createSession(
+      {
+        seed: 602,
+        winTile: 2,
+        spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] }
+      },
+      grid
+    );
+    moveSession(unranked.current.id, "left");
+
+    const req = new Request("http://localhost/api/leaderboard/submit", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        ...authHeader("u_submitter", "authed")
+      },
+      body: JSON.stringify({ gameId: unranked.current.id })
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(403);
+  });
+
+  it("rejects active ranked game submissions", async () => {
+    const grid: Cell[][] = [
+      [{ t: "n", v: 1 }, null, null, null],
+      [null, null, null, null],
+      [null, null, null, null],
+      [null, null, null, null]
+    ];
+    const ranked = createSession({ seed: 603 }, grid, { sessionClass: "ranked" });
+
+    const req = new Request("http://localhost/api/leaderboard/submit", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        ...authHeader("u_submitter", "authed")
+      },
+      body: JSON.stringify({ gameId: ranked.current.id })
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(409);
+  });
+});
