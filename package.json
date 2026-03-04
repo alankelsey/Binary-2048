@@ -18,6 +18,7 @@
     "test:all": "npm run test:unit && npm run test:dev && npm run build",
     "test:routes": "npm run build",
     "test:dev": "bash ./scripts/dev-smoke.sh",
+    "smoke:auth-proof": "bash ./scripts/auth-proof-smoke.sh",
     "bot:smoke": "node ./scripts/bot-smoke.mjs",
     "bot:smoke:dev": "bash ./scripts/bot-smoke-dev.sh",
     "bot:tourney": "node ./scripts/bot-tournament.mjs",

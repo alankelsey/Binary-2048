@@ -53,6 +53,21 @@ KEEP_DEV_DIST=1 npm run bot:tourney:dev
 
 Dev helper scripts automatically normalize `next-env.d.ts` after they exit to reduce generated diff noise.
 
+Auth proof smoke (ranked entitlement flow):
+
+```bash
+BINARY2048_ENABLE_DEV_AUTH_TOKEN=1 \
+BINARY2048_AUTH_BRIDGE_SECRET=dev-auth-secret \
+BINARY2048_ENTITLEMENT_SECRET=dev-ent-proof-secret \
+npm run dev
+```
+
+In a second terminal:
+
+```bash
+npm run smoke:auth-proof
+```
+
 Tiny same-seed multibot tournament:
 
 ```bash
