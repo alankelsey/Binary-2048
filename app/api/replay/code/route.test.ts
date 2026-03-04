@@ -28,6 +28,7 @@ describe("api replay code", () => {
 
   afterEach(() => {
     delete process.env.BINARY2048_REPLAY_CODE_SECRET;
+    delete process.env.BINARY2048_REPLAY_SHARE_SECRET;
   });
 
   it("creates shareable replay code from export payload", async () => {
@@ -89,5 +90,41 @@ describe("api replay code", () => {
     const decodeBody = await decodeRes.json();
     expect(decodeRes.status).toBe(400);
     expect(String(decodeBody.error)).toContain("signature");
+  });
+
+  it("falls back to short-lived hosted replay code when replay URL is oversized", async () => {
+    process.env.BINARY2048_REPLAY_SHARE_SECRET = "hosted-route-secret";
+    const oversizedReplay = {
+      header: {
+        replayVersion: 1,
+        rulesetId: "binary2048-v1",
+        engineVersion: "test",
+        size: 4,
+        seed: 606,
+        createdAt: "2026-01-01T00:00:00.000Z"
+      },
+      config,
+      initialGrid,
+      moves: Array.from({ length: 5000 }, (_, i) => `left-${i}-${(i * 7919).toString(36)}`)
+    };
+
+    const encodedRes = await POST(
+      new Request("http://localhost/api/replay/code", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(oversizedReplay)
+      })
+    );
+    const encodedBody = await encodedRes.json();
+    expect(encodedRes.status).toBe(200);
+    expect(encodedBody.hosted).toBe(true);
+    expect(encodedBody.overLimit).toBe(false);
+    expect(typeof encodedBody.code).toBe("string");
+
+    const decodeRes = await GET(new Request(`http://localhost/api/replay/code?code=${encodeURIComponent(encodedBody.code)}`));
+    const decodeBody = await decodeRes.json();
+    expect(decodeRes.status).toBe(200);
+    expect(Array.isArray(decodeBody.moves)).toBe(true);
+    expect(decodeBody.moves.length).toBe(5000);
   });
 });

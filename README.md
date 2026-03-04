@@ -270,9 +270,11 @@ DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
   - Verifies signature when provided and signing secret is configured
 - `POST /api/replay/code`
   - Body: replay/export payload
-  - Returns base64url replay `code` + length and guardrail flags
+  - Returns replay `code` + length and guardrail flags
+  - If encoded replay exceeds URL limits, route falls back to a short-lived signed hosted replay token
 - `GET /api/replay/code?code=...`
   - Decodes replay code into compact replay payload (`header`, `config`, `initialGrid`, `moves`)
+  - Supports both inline encoded replay codes and hosted replay tokens
 - `GET /api/openapi`
   - Returns OpenAPI 3.1 JSON for current API surface
 - `GET /api/subscriptions?subscriberId=...`
@@ -356,6 +358,7 @@ Trackable checklist source:
   - Dev-only auth bridge token mint endpoint (`POST /api/auth/dev-token`) for local ranked/economy flow testing.
   - Replay-code signing/verification support via `BINARY2048_REPLAY_CODE_SECRET` to reject tampered signed replay links.
   - Replay code compression fallback (`r1z.`) when plain replay code exceeds length guardrails, with legacy replay-code decode compatibility.
+  - Replay URL oversize fallback (`rs1.` short-lived hosted token) for oversized shareable replays.
   - Canonical replay endpoint (`GET /api/games/:id/replay`) for replay-only payload shape (`header`, `moves`).
   - Win celebration flow: large win overlay with `Continue`/`New Game` actions and ranked-default continue lockout.
 - Next implementation focus:
