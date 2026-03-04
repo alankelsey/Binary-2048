@@ -13,6 +13,7 @@ Next.js App Router scaffold for a Binary 2048 web game with deterministic simula
 - Scenario simulation endpoint for tests
 - Replay JSON viewer: load export files and step through turns
 - Built-in social sharing actions (X, LinkedIn, copy share text)
+- Referral-aware share links with UTM campaign tags and marketing event hooks
 - Theme packs with persistent selection (`Midnight`, `Aurora`, `Ember`, `Light`)
 - Accessibility helper panel with keyboard shortcuts and tab-order map
 - Dev/admin control panel to toggle UI options visibility at runtime
@@ -227,6 +228,11 @@ DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
   - Requires authenticated auth-bridge claims
   - Server-authoritative: score/moves/state hash are derived from in-memory ranked game session, not from client payload
   - Only accepts ranked created sessions that are finished (`won` or `over`)
+- `POST /api/marketing/track`
+  - Body: `{ "type": "share_click" | "copy_share" | "copy_replay_link" | "landing_visit", "channel"?: "x" | "linkedin" | "copy" | "replay", "referralCode"?: string, "campaign"?: string }`
+  - Stores lightweight marketing/share CTA event for rollout analytics
+- `GET /api/marketing/events?limit=50`
+  - Lists recent tracked marketing events (newest first)
 - `POST /api/sim/run`
   - Body: `{ "config": GameConfig, "initialGrid": Cell[][], "moves": Dir[] }`
   - Runs deterministic scenario and returns export JSON

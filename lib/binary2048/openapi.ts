@@ -73,6 +73,28 @@ export const OPENAPI_SPEC = {
         }
       }
     },
+    "/api/marketing/track": {
+      post: {
+        summary: "Track marketing/share CTA events",
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { type: "object" } } }
+        },
+        responses: {
+          "200": { description: "Marketing event tracked" },
+          "400": { description: "Invalid marketing payload" }
+        }
+      }
+    },
+    "/api/marketing/events": {
+      get: {
+        summary: "List tracked marketing events",
+        parameters: [{ name: "limit", in: "query", required: false, schema: { type: "integer" } }],
+        responses: {
+          "200": { description: "Tracked marketing events" }
+        }
+      }
+    },
     "/api/subscriptions": {
       get: {
         summary: "List notification subscriptions for a subscriber",

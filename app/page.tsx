@@ -5,7 +5,7 @@ import { computeCellEffects, type CellEffect, type MoveEvent } from "@/lib/binar
 import { keyToDir, swipeToDir } from "@/lib/binary2048/input";
 import { getUiPolicy } from "@/lib/binary2048/ui-policy";
 import { parseReplayExport, replayStateAtStep, type ReplayData } from "@/lib/binary2048/replay";
-import { buildShareText, buildShareUrls } from "@/lib/binary2048/share";
+import { buildShareLandingUrl, buildShareText, buildShareUrls } from "@/lib/binary2048/share";
 import { isThemeMode, THEMES, type ThemeMode } from "@/lib/binary2048/theme";
 import { rarityCssClass, STORE_ITEM_ICONS } from "@/lib/binary2048/store-icons";
 import { getControlVisibility } from "@/lib/binary2048/control-visibility";
@@ -18,6 +18,7 @@ import { GameOverOverlay, WinOverlay } from "@/app/game-overlays";
 import { buildAccessibilityTabMap, keyboardShortcutMap } from "@/lib/binary2048/accessibility-map";
 import { applyUiPolicyOverrides, type UIControlOverrides } from "@/lib/binary2048/ui-policy-override";
 import type { UIControl } from "@/lib/binary2048/ui-policy";
+import { createReferralCode, type MarketingEventType } from "@/lib/binary2048/marketing";
 
 type Tile = { t: "n"; v: number } | { t: "z" } | { t: "w"; m: number } | { t: "i" };
 type Cell = Tile | null;
@@ -117,6 +118,7 @@ export default function Home() {
   const [canContinueAfterWin, setCanContinueAfterWin] = useState(true);
   const [continueAfterWin, setContinueAfterWin] = useState(false);
   const [uiControlOverrides, setUiControlOverrides] = useState<UIControlOverrides>({});
+  const [referralCode, setReferralCode] = useState("");
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const effectTimerRef = useRef<number | null>(null);
   const importInputRef = useRef<HTMLInputElement | null>(null);
@@ -453,6 +455,18 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    const key = "binary2048.referralCode";
+    const existing = window.localStorage.getItem(key);
+    if (existing) {
+      setReferralCode(existing);
+      return;
+    }
+    const next = createReferralCode();
+    window.localStorage.setItem(key, next);
+    setReferralCode(next);
+  }, []);
+
+  useEffect(() => {
     const raw = window.localStorage.getItem("binary2048.uiControlOverrides");
     if (!raw) return;
     try {
@@ -594,12 +608,38 @@ export default function Home() {
   const replayStepsTotal = replay?.data.steps.length ?? 0;
   const replayStep = replay?.step ?? 0;
   const shareText = buildShareText(viewState?.score ?? 0, highScore, viewState?.turn ?? 0);
-  const shareUrl = typeof window !== "undefined" ? window.location.origin : "https://binary2048.com";
+  const shareUrl =
+    typeof window !== "undefined"
+      ? buildShareLandingUrl(window.location.origin, {
+          referralCode,
+          campaign: "share",
+          source: "app",
+          medium: "social"
+        })
+      : "https://binary2048.com";
   const socialUrls = buildShareUrls(shareText, shareUrl);
+
+  async function trackMarketing(type: MarketingEventType, channel: "x" | "linkedin" | "copy" | "replay") {
+    try {
+      await fetch("/api/marketing/track", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          type,
+          channel,
+          campaign: "share",
+          referralCode
+        })
+      });
+    } catch {
+      // Keep share UX resilient even if tracking fails.
+    }
+  }
 
   async function copyShare() {
     try {
       await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
+      void trackMarketing("copy_share", "copy");
       setShareMessage("Share text copied");
       window.setTimeout(() => setShareMessage(""), 1800);
     } catch {
@@ -631,6 +671,7 @@ export default function Home() {
 
       const replayUrl = buildReplayUrl(window.location.origin, codeJson.code);
       await navigator.clipboard.writeText(replayUrl);
+      void trackMarketing("copy_replay_link", "replay");
       setShareMessage("Replay link copied");
       window.setTimeout(() => setShareMessage(""), 1800);
     } catch (error) {
@@ -1070,6 +1111,7 @@ export default function Home() {
           <button
             type="button"
             onClick={() => {
+              void trackMarketing("share_click", "x");
               window.open(socialUrls.x, "_blank", "noopener,noreferrer");
             }}
           >
@@ -1078,6 +1120,7 @@ export default function Home() {
           <button
             type="button"
             onClick={() => {
+              void trackMarketing("share_click", "linkedin");
               window.open(socialUrls.linkedin, "_blank", "noopener,noreferrer");
             }}
           >
