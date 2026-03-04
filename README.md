@@ -14,6 +14,7 @@ Next.js App Router scaffold for a Binary 2048 web game with deterministic simula
 - Replay JSON viewer: load export files and step through turns
 - Built-in social sharing actions (X, LinkedIn, copy share text)
 - Theme packs with persistent selection (`Midnight`, `Aurora`, `Ember`, `Light`)
+- Accessibility helper panel with keyboard shortcuts and tab-order map
 - Import integrity metadata (`created` vs `imported`, imported sessions flagged unranked)
 - Store icon system primitives with rarity color coding
 

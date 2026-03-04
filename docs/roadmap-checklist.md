@@ -27,7 +27,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Replay autoplay controls (play/pause/speed)
 - [x] Mode support (`Classic`, `Bitstorm`)
 - [x] Theme persistence + dropdown
-- [ ] Accessibility pass for full tab/keyboard navigation map
+- [x] Accessibility pass for full tab/keyboard navigation map
 - [x] Explicit replay timeline scrubber UI
 
 ## Economy + Integrity

@@ -14,6 +14,8 @@ import { buildReplayUrl } from "@/lib/binary2048/replay-share";
 import { replaySpeedToDelayMs } from "@/lib/binary2048/replay-autoplay";
 import { shouldStartNewGameOnReplayExit } from "@/lib/binary2048/replay-exit";
 import { parseReplayStepInput } from "@/lib/binary2048/replay-scrubber";
+import { GameOverOverlay, WinOverlay } from "@/app/game-overlays";
+import { buildAccessibilityTabMap, keyboardShortcutMap } from "@/lib/binary2048/accessibility-map";
 
 type Tile = { t: "n"; v: number } | { t: "z" } | { t: "w"; m: number } | { t: "i" };
 type Cell = Tile | null;
@@ -560,6 +562,14 @@ export default function Home() {
     uiPolicy: UI_POLICY
   });
   const canUndo = Boolean(!replay && gameId && state && (state.turn ?? 0) > 0 && (undo.remaining ?? 0) > 0 && !busy);
+  const accessibilityTabMap = buildAccessibilityTabMap({
+    replay: Boolean(replay),
+    showUndo: controlVisibility.showUndo,
+    showOptionsPanel: controlVisibility.showOptionsPanel,
+    showActiveExport: controlVisibility.showActiveExport,
+    showActiveReplay: controlVisibility.showActiveReplay
+  });
+  const accessibilityShortcuts = keyboardShortcutMap();
   const replayStepsTotal = replay?.data.steps.length ?? 0;
   const replayStep = replay?.step ?? 0;
   const shareText = buildShareText(viewState?.score ?? 0, highScore, viewState?.turn ?? 0);
@@ -784,48 +794,24 @@ export default function Home() {
               })
             )}
           </div>
-          {viewState?.over ? (
-            <div className="gameover-overlay" role="status" aria-live="polite">
-              <div className="gameover-title">GAME OVER</div>
-              <div className="gameover-stats">
-                <span>Score: {viewState.score}</span>
-                <span>High: {Math.max(highScore, viewState.score)}</span>
-              </div>
-            </div>
-          ) : null}
-          {winPending ? (
-            <div className="win-overlay" role="status" aria-live="polite">
-              <div className="win-burst" aria-hidden="true" />
-              <div className="win-title">YOU WIN</div>
-              <div className="win-stats">
-                <span>Score: {viewState?.score ?? 0}</span>
-                <span>High: {Math.max(highScore, viewState?.score ?? 0)}</span>
-                <span>Session: {sessionClass}</span>
-              </div>
-              <div className="win-actions">
-                {canContinueAfterWin ? (
-                  <button
-                    onClick={() => {
-                      setContinueAfterWin(true);
-                    }}
-                  >
-                    Continue
-                  </button>
-                ) : (
-                  <button disabled title="Continue disabled for ranked/vs sessions">
-                    Continue Disabled
-                  </button>
-                )}
-                <button
-                  onClick={() => {
-                    void newGame();
-                  }}
-                >
-                  New Game
-                </button>
-              </div>
-            </div>
-          ) : null}
+          <GameOverOverlay
+            visible={Boolean(viewState?.over)}
+            score={viewState?.score ?? 0}
+            highScore={Math.max(highScore, viewState?.score ?? 0)}
+          />
+          <WinOverlay
+            visible={winPending}
+            score={viewState?.score ?? 0}
+            highScore={Math.max(highScore, viewState?.score ?? 0)}
+            sessionClass={sessionClass}
+            canContinue={canContinueAfterWin}
+            onContinue={() => {
+              setContinueAfterWin(true);
+            }}
+            onNewGame={() => {
+              void newGame();
+            }}
+          />
         </div>
         <div className="actions" id="game-controls">
           <button disabled={busy} onClick={() => void newGame()}>
@@ -1009,6 +995,23 @@ export default function Home() {
                 ))}
               </div>
             </div>
+          </div>
+        </details>
+        <details className="game-hint">
+          <summary>Accessibility: Keyboard shortcuts and tab order map</summary>
+          <div className="game-hint-body">
+            <p>Tab order map:</p>
+            <ol>
+              {accessibilityTabMap.map((row) => (
+                <li key={row}>{row}</li>
+              ))}
+            </ol>
+            <p>Keyboard shortcuts:</p>
+            <ul>
+              {accessibilityShortcuts.map((row) => (
+                <li key={row}>{row}</li>
+              ))}
+            </ul>
           </div>
         </details>
         <div className="share-row" aria-label="share actions">
