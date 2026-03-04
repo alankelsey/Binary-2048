@@ -1,6 +1,11 @@
 import { POST } from "@/app/api/games/route";
+import { createEntitlementProof } from "@/lib/binary2048/entitlement-proof";
 
 describe("POST /api/games", () => {
+  afterEach(() => {
+    delete process.env.BINARY2048_ENTITLEMENT_SECRET;
+  });
+
   it("creates a classic game with undo metadata", async () => {
     const req = new Request("http://localhost/api/games", {
       method: "POST",
@@ -76,7 +81,7 @@ describe("POST /api/games", () => {
     expect(json.economy?.canContinueAfterWin).toBe(false);
   });
 
-  it("keeps lock spawn for ranked games with lock entitlement", async () => {
+  it("disables lock spawn for ranked games when only plain entitlements are sent", async () => {
     const req = new Request("http://localhost/api/games", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -85,6 +90,47 @@ describe("POST /api/games", () => {
           sessionClass: "ranked",
           userTier: "paid",
           entitlements: ["lock_tiles_ranked"]
+        },
+        config: {
+          spawn: {
+            pZero: 0.15,
+            pOne: 0.55,
+            pWildcard: 0.1,
+            pLock: 0.2,
+            wildcardMultipliers: [2]
+          }
+        }
+      })
+    });
+
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.integrity?.sessionClass).toBe("ranked");
+    expect(json.current?.config?.spawn?.pLock).toBe(0);
+    expect(json.economy?.lockTilesEnabled).toBe(false);
+    expect(json.economy?.canContinueAfterWin).toBe(false);
+  });
+
+  it("keeps lock spawn for ranked games with a valid entitlement proof", async () => {
+    process.env.BINARY2048_ENTITLEMENT_SECRET = "ranked-proof-secret";
+    const proof = createEntitlementProof(
+      {
+        entitlements: ["lock_tiles_ranked"],
+        exp: Math.floor(Date.now() / 1000) + 60
+      },
+      process.env.BINARY2048_ENTITLEMENT_SECRET
+    );
+
+    const req = new Request("http://localhost/api/games", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        economy: {
+          sessionClass: "ranked",
+          userTier: "paid",
+          proof
         },
         config: {
           spawn: {

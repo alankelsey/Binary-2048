@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { canContinueAfterWin } from "@/lib/binary2048/continue-policy";
 import { DEFAULT_CONFIG, generateBitstormInitialGrid } from "@/lib/binary2048/engine";
+import { verifyEntitlementProof } from "@/lib/binary2048/entitlement-proof";
 import { createSession, getUndoMeta } from "@/lib/binary2048/sessions";
 import { applyLockEconomyPolicy, type LockEconomyContext } from "@/lib/binary2048/lock-economy";
 import type { Cell, GameConfig } from "@/lib/binary2048/types";
@@ -14,6 +15,7 @@ type CreateGameBody = {
     sessionClass?: "ranked" | "unranked";
     userTier?: UserTier;
     entitlements?: string[];
+    proof?: string;
   };
 };
 
@@ -37,7 +39,10 @@ export async function POST(req: Request) {
     const mode = body.mode === "bitstorm" ? "bitstorm" : "classic";
     const sessionClass = body.economy?.sessionClass === "ranked" ? "ranked" : "unranked";
     const userTier = body.economy?.userTier ?? "guest";
-    const entitlements = Array.isArray(body.economy?.entitlements) ? body.economy?.entitlements : [];
+    const plainEntitlements = Array.isArray(body.economy?.entitlements) ? body.economy?.entitlements : [];
+    const proofSecret = process.env.BINARY2048_ENTITLEMENT_SECRET ?? "";
+    const proofEntitlements = verifyEntitlementProof(body.economy?.proof, proofSecret);
+    const entitlements = sessionClass === "ranked" ? proofEntitlements : plainEntitlements;
     const economyContext: LockEconomyContext = { sessionClass, userTier, entitlements };
 
     if (!initialGrid && mode === "bitstorm") {
