@@ -64,7 +64,8 @@ export const OPENAPI_SPEC = {
         },
         responses: {
           "200": { description: "Subscription upserted" },
-          "400": { description: "Invalid payload" }
+          "400": { description: "Invalid payload" },
+          "403": { description: "Requested topics denied for current user tier" }
         }
       },
       delete: {

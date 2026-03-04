@@ -245,6 +245,10 @@ DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
 - `POST /api/subscriptions`
   - Creates/updates notification subscriptions
   - Body: `{ "subscriberId": string, "transport": "email" | "webhook" | "inapp", "endpoint": string, "topics": ["app_updates" | "player_actions" | "leaderboard_actions"], "enabled"?: boolean }`
+  - Tier-based topic gating is enforced server-side:
+    - `guest`: `app_updates`
+    - `authed`: `app_updates`, `player_actions`
+    - `paid`: `app_updates`, `player_actions`, `leaderboard_actions`
 - `DELETE /api/subscriptions?id=...`
   - Deletes a subscription by id
 
