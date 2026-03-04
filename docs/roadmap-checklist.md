@@ -73,7 +73,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [ ] Billing alarm + budget tripwire fully wired and validated in AWS account
 - [ ] Route 53 NXDOMAIN anomaly detection runbook + alarms
 - [ ] CAPTCHA/challenge policy wiring by endpoint risk profile
-- [ ] Rate limits/quotas on heavy bot/tournament endpoints (per IP and/or per key)
+- [x] Rate limits/quotas on heavy bot/tournament endpoints (per IP and/or per key)
 - [ ] Tournament job-queue/concurrency limit strategy for CPU cost control
 - [ ] Replay/tournament telemetry + anomaly alarms (latency/cost/WAF spike visibility)
 

@@ -248,6 +248,7 @@ DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
 - `POST /api/bots/tournament`
   - Body (optional): `{ "seeds"?: number[], "seedStart"?: number, "seedCount"?: number, "maxMoves"?: number, "bots"?: ["priority" | "random" | "alternate"] }`
   - Runs same-seed AI-vs-AI tournament server-side and returns ranking + per-run summaries
+  - Rate-limited per API key (or IP fallback) with `429` responses on quota exhaustion
 - `POST /api/marketing/track`
   - Body: `{ "type": "share_click" | "copy_share" | "copy_replay_link" | "landing_visit", "channel"?: "x" | "linkedin" | "copy" | "replay", "referralCode"?: string, "campaign"?: string }`
   - Stores lightweight marketing/share CTA event for rollout analytics
@@ -259,6 +260,7 @@ DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
 - `POST /api/simulate`
   - Body: `{ "seed"?: number, "moves": Array<Dir | "L" | "R" | "U" | "D">, "config"?: Partial<GameConfig> & { size?: number }, "initialGrid"?: Cell[][], "includeSteps"?: boolean }`
   - Runs batch simulation and returns final state, score, and step summaries
+  - Rate-limited per API key (or IP fallback) with `429` responses on quota exhaustion
   - Includes compact terminal artifacts for bot clients:
     - `finalStateHash`
     - `finalEncodedFlat`

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { runBotTournament, type BotId } from "@/lib/binary2048/bot-orchestrator";
+import { checkTournamentRateLimit } from "@/lib/binary2048/rate-limit";
 import type { GameConfig } from "@/lib/binary2048/types";
 
 type TournamentBody = {
@@ -39,6 +40,19 @@ function parseBots(raw: unknown): BotId[] {
 
 export async function POST(req: Request) {
   try {
+    const quota = checkTournamentRateLimit(req);
+    if (!quota.allowed) {
+      return NextResponse.json(
+        {
+          error: "Rate limit exceeded",
+          route: "bots_tournament",
+          limit: quota.limit,
+          remaining: quota.remaining,
+          retryAfterSeconds: quota.retryAfterSeconds
+        },
+        { status: 429, headers: { "retry-after": String(quota.retryAfterSeconds) } }
+      );
+    }
     const body = ((await req.json().catch(() => ({}))) as TournamentBody);
     const seeds = parseSeedList(body);
     if (seeds.length === 0) {

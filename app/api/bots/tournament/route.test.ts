@@ -1,6 +1,13 @@
 import { POST } from "@/app/api/bots/tournament/route";
+import { resetRateLimitStore } from "@/lib/binary2048/rate-limit";
 
 describe("POST /api/bots/tournament", () => {
+  beforeEach(() => {
+    resetRateLimitStore();
+    delete process.env.BINARY2048_RATE_LIMIT_TOURNAMENT_MAX;
+    delete process.env.BINARY2048_RATE_LIMIT_WINDOW_MS;
+  });
+
   it("runs default tournament payload", async () => {
     const req = new Request("http://localhost/api/bots/tournament", {
       method: "POST",
@@ -34,5 +41,29 @@ describe("POST /api/bots/tournament", () => {
     expect(json.seeds).toEqual([501, 502]);
     expect(json.bots).toEqual(["priority", "alternate"]);
     expect(json.runs).toHaveLength(4);
+  });
+
+  it("returns 429 when tournament rate limit is exceeded for same ip", async () => {
+    process.env.BINARY2048_RATE_LIMIT_TOURNAMENT_MAX = "1";
+    process.env.BINARY2048_RATE_LIMIT_WINDOW_MS = "60000";
+    const req1 = new Request("http://localhost/api/bots/tournament", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-forwarded-for": "1.2.3.4" },
+      body: JSON.stringify({})
+    });
+    const req2 = new Request("http://localhost/api/bots/tournament", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-forwarded-for": "1.2.3.4" },
+      body: JSON.stringify({})
+    });
+
+    const first = await POST(req1);
+    const second = await POST(req2);
+    const secondJson = await second.json();
+
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(429);
+    expect(secondJson.error).toBe("Rate limit exceeded");
+    expect(secondJson.route).toBe("bots_tournament");
   });
 });
