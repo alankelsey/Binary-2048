@@ -108,7 +108,10 @@ export const OPENAPI_SPEC = {
     "/api/games/{id}/export": {
       get: {
         summary: "Export game JSON",
-        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" } },
+          { name: "compact", in: "query", required: false, schema: { type: "string" } }
+        ],
         responses: {
           "200": { description: "Export JSON" },
           "404": { description: "Game not found" }

@@ -55,4 +55,21 @@ describe("GET /api/games/:id/export", () => {
     expect(res.status).toBe(404);
     expect(json.error).toBe("Game not found");
   });
+
+  it("returns compact replay payload when compact=1 is requested", async () => {
+    const session = createSession(config, initialGrid);
+    const id = session.current.id;
+
+    const res = await GET(new Request("http://localhost/api/games/x/export?compact=1"), {
+      params: Promise.resolve({ id })
+    });
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.header?.replayVersion).toBe(1);
+    expect(json.header?.rulesetId).toBe("binary2048-v1");
+    expect(Array.isArray(json.moves)).toBe(true);
+    expect(json.version).toBeUndefined();
+    expect(json.config).toBeUndefined();
+  });
 });
