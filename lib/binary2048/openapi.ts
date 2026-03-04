@@ -7,6 +7,20 @@ export const OPENAPI_SPEC = {
   },
   servers: [{ url: "/" }],
   paths: {
+    "/api/auth/dev-token": {
+      post: {
+        summary: "Dev-only auth bridge token minting helper (env-gated)",
+        requestBody: {
+          required: false,
+          content: { "application/json": { schema: { type: "object" } } }
+        },
+        responses: {
+          "200": { description: "Dev auth token minted" },
+          "404": { description: "Endpoint disabled" },
+          "503": { description: "Auth bridge secret not configured" }
+        }
+      }
+    },
     "/api/auth/entitlements/proof": {
       post: {
         summary: "Mint short-lived entitlement proof from signed auth bridge token",
