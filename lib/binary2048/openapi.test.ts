@@ -9,6 +9,7 @@ describe("OPENAPI_SPEC", () => {
   });
 
   it("contains expected AI and docs routes", () => {
+    expect(OPENAPI_SPEC.paths["/api/auth/entitlements/proof"]?.post?.summary).toContain("Mint short-lived entitlement proof");
     expect(OPENAPI_SPEC.paths["/api/games/{id}/encoded"]?.get?.summary).toBe("Get AI-friendly encoded state");
     expect(OPENAPI_SPEC.paths["/api/simulate"]?.post?.summary).toBe("Batch simulation endpoint");
     expect(OPENAPI_SPEC.paths["/api/replay"]?.post?.summary).toContain("Deterministically reconstruct replay");

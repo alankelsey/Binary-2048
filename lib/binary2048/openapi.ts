@@ -7,6 +7,21 @@ export const OPENAPI_SPEC = {
   },
   servers: [{ url: "/" }],
   paths: {
+    "/api/auth/entitlements/proof": {
+      post: {
+        summary: "Mint short-lived entitlement proof from signed auth bridge token",
+        requestBody: {
+          required: false,
+          content: { "application/json": { schema: { type: "object" } } }
+        },
+        responses: {
+          "200": { description: "Entitlement proof minted" },
+          "401": { description: "Invalid auth token" },
+          "403": { description: "Authenticated user required" },
+          "503": { description: "Proof issuance not configured" }
+        }
+      }
+    },
     "/api/health": {
       get: {
         summary: "Health check",
