@@ -47,6 +47,36 @@ export const OPENAPI_SPEC = {
         }
       }
     },
+    "/api/subscriptions": {
+      get: {
+        summary: "List notification subscriptions for a subscriber",
+        parameters: [{ name: "subscriberId", in: "query", required: true, schema: { type: "string" } }],
+        responses: {
+          "200": { description: "Subscription list" },
+          "400": { description: "Missing subscriber id" }
+        }
+      },
+      post: {
+        summary: "Create or update notification subscription",
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { type: "object" } } }
+        },
+        responses: {
+          "200": { description: "Subscription upserted" },
+          "400": { description: "Invalid payload" }
+        }
+      },
+      delete: {
+        summary: "Delete notification subscription by id",
+        parameters: [{ name: "id", in: "query", required: true, schema: { type: "string" } }],
+        responses: {
+          "200": { description: "Subscription deleted" },
+          "400": { description: "Missing id" },
+          "404": { description: "Subscription not found" }
+        }
+      }
+    },
     "/api/games": {
       post: {
         summary: "Create a game session",

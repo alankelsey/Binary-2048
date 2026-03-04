@@ -240,6 +240,13 @@ DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
   - Decodes replay code into compact replay payload (`header`, `config`, `initialGrid`, `moves`)
 - `GET /api/openapi`
   - Returns OpenAPI 3.1 JSON for current API surface
+- `GET /api/subscriptions?subscriberId=...`
+  - Lists notification subscriptions for a subscriber id
+- `POST /api/subscriptions`
+  - Creates/updates notification subscriptions
+  - Body: `{ "subscriberId": string, "transport": "email" | "webhook" | "inapp", "endpoint": string, "topics": ["app_updates" | "player_actions" | "leaderboard_actions"], "enabled"?: boolean }`
+- `DELETE /api/subscriptions?id=...`
+  - Deletes a subscription by id
 
 ## Example Scenario Payload
 
