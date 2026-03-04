@@ -45,6 +45,7 @@ describe("POST /api/leaderboard/submit", () => {
   afterEach(() => {
     resetLeaderboard();
     delete process.env.BINARY2048_AUTH_BRIDGE_SECRET;
+    delete process.env.BINARY2048_REPLAY_CODE_SECRET;
   });
 
   it("rejects unauthenticated submissions", async () => {
@@ -78,6 +79,23 @@ describe("POST /api/leaderboard/submit", () => {
     expect(json.entry?.gameId).toBe(gameId);
     expect(json.entry?.playerId).toBe("u_submitter");
     expect(typeof json.entry?.score).toBe("number");
+  });
+
+  it("stores replay signature when replay signing secret is configured", async () => {
+    process.env.BINARY2048_REPLAY_CODE_SECRET = "leaderboard-replay-sign";
+    const gameId = createFinishedRankedGame();
+    const req = new Request("http://localhost/api/leaderboard/submit", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        ...authHeader("u_submitter", "authed")
+      },
+      body: JSON.stringify({ gameId })
+    });
+    const res = await POST(req);
+    const json = await res.json();
+    expect(res.status).toBe(200);
+    expect(typeof json.entry?.replaySignature).toBe("string");
   });
 
   it("rejects unranked game submissions", async () => {

@@ -1,4 +1,5 @@
 import { runScenario } from "@/lib/binary2048/engine";
+import { createReplaySignature } from "@/lib/binary2048/replay-signature";
 import { validateReplay } from "@/lib/binary2048/replay-validate";
 import type { Cell, GameConfig } from "@/lib/binary2048/types";
 
@@ -57,5 +58,16 @@ describe("validateReplay", () => {
     });
     expect(result.ok).toBe(false);
     expect(result.reason).toContain("Unsupported rulesetId");
+  });
+
+  it("verifies replay signature when provided", () => {
+    const exported = runScenario(config, initialGrid, ["left", "up"]);
+    const signature = createReplaySignature(exported, "sig-secret");
+    const ok = validateReplay(exported, { signature, signingSecret: "sig-secret" });
+    expect(ok.ok).toBe(true);
+
+    const fail = validateReplay(exported, { signature, signingSecret: "wrong-secret" });
+    expect(fail.ok).toBe(false);
+    expect(fail.reason).toContain("Invalid replay signature");
   });
 });

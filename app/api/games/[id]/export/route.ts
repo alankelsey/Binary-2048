@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { exportToCompactReplay } from "@/lib/binary2048/replay-format";
 import { buildReplayAudit } from "@/lib/binary2048/replay-audit";
+import { createReplaySignature } from "@/lib/binary2048/replay-signature";
 import { exportSession } from "@/lib/binary2048/sessions";
 
 export async function GET(req: Request, context: { params: Promise<{ id: string }> }) {
@@ -16,16 +17,22 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
   if (wantsAudit) {
     exported.meta.audit = buildReplayAudit(exported);
   }
+  const replay = exportToCompactReplay(exported);
+  const signingSecret = process.env.BINARY2048_REPLAY_CODE_SECRET ?? "";
+  const signature = signingSecret ? createReplaySignature(replay, signingSecret) : undefined;
+  if (signature) {
+    exported.meta.replay.signature = signature;
+  }
 
   if (wantsCompact) {
-    const replay = exportToCompactReplay(exported);
     return NextResponse.json({
       header: replay.header,
-      moves: replay.moves
+      moves: replay.moves,
+      signature
     });
   }
 
-  return new NextResponse(JSON.stringify(exported, null, 2), {
+  return new NextResponse(JSON.stringify({ ...exported, signature }, null, 2), {
     status: 200,
     headers: {
       "content-type": "application/json; charset=utf-8",

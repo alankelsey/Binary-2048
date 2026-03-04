@@ -83,6 +83,7 @@ export type GameExport = {
       moves: Dir[];
       movesApplied: number;
       stepLog: ReplayStepLog[];
+      signature?: string;
     };
     spawnProbs: {
       zero: number;

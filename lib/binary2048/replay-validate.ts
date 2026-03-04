@@ -1,5 +1,6 @@
 import { runReplay } from "@/lib/binary2048/replay-run";
 import { toCompactReplayPayload } from "@/lib/binary2048/replay-format";
+import { verifyReplaySignature } from "@/lib/binary2048/replay-signature";
 
 export type ReplayValidationResult = {
   ok: boolean;
@@ -15,9 +16,22 @@ export type ReplayValidationResult = {
   };
 };
 
-export function validateReplay(payload: unknown): ReplayValidationResult {
+type ReplayValidationOptions = {
+  signature?: string;
+  signingSecret?: string;
+};
+
+export function validateReplay(payload: unknown, options?: ReplayValidationOptions): ReplayValidationResult {
   try {
     const compact = toCompactReplayPayload(payload);
+    if (typeof options?.signature === "string") {
+      if (!options.signingSecret) {
+        return { ok: false, reason: "Replay signature cannot be verified (missing secret)" };
+      }
+      if (!verifyReplaySignature(compact, options.signature, options.signingSecret)) {
+        return { ok: false, reason: "Invalid replay signature" };
+      }
+    }
     if (compact.header.rulesetId !== "binary2048-v1") {
       return { ok: false, reason: `Unsupported rulesetId: ${compact.header.rulesetId}` };
     }

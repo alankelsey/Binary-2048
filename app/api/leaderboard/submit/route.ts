@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { getVerifiedAuthClaims } from "@/lib/binary2048/auth-context";
+import { exportToCompactReplay } from "@/lib/binary2048/replay-format";
+import { createReplaySignature } from "@/lib/binary2048/replay-signature";
 import { submitLeaderboardEntry } from "@/lib/binary2048/leaderboard";
-import { getSession } from "@/lib/binary2048/sessions";
+import { exportSession, getSession } from "@/lib/binary2048/sessions";
 
 type SubmitBody = {
   gameId?: string;
@@ -30,6 +32,13 @@ export async function POST(req: Request) {
   }
 
   const submitted = submitLeaderboardEntry({
+    replaySignature: (() => {
+      const signingSecret = process.env.BINARY2048_REPLAY_CODE_SECRET ?? "";
+      if (!signingSecret) return undefined;
+      const exported = exportSession(body.gameId);
+      if (!exported) return undefined;
+      return createReplaySignature(exportToCompactReplay(exported), signingSecret);
+    })(),
     playerId: claims.sub,
     userTier: claims.tier,
     gameId: body.gameId,

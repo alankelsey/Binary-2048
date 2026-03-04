@@ -211,6 +211,7 @@ DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
 - `GET /api/games/:id/export`
   - Returns export JSON (download attachment)
   - Includes replay-critical metadata: `rulesetId`, `engineVersion`, `spawnProbs`, and compact replay (`seed`, `moves`, `movesApplied`)
+  - When `BINARY2048_REPLAY_CODE_SECRET` is configured, includes replay HMAC `signature`
   - Optional query: `?compact=1` to return replay-only payload (`header`, `moves`)
   - Optional query: `?audit=1` to include deterministic replay audit hash chain at `meta.audit`
 - `GET /api/games/:id/replay`
@@ -263,9 +264,10 @@ DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
     - `{ "header"?: { "rulesetId"?: string, "seed"?: number }, "config": GameConfig, "initialGrid": Cell[][], "moves": Array<Dir | "L" | "R" | "U" | "D"> }`
   - Deterministically reconstructs a run and returns final state + step summaries
 - `POST /api/replay/validate`
-  - Body: replay/export payload
+  - Body: replay/export payload or `{ "payload": replayPayload, "signature": "..." }`
   - Returns `{ "ok": boolean, "reason": string, "details"?: { ... } }`
   - Performs replay compatibility checks and deterministic rerun validation
+  - Verifies signature when provided and signing secret is configured
 - `POST /api/replay/code`
   - Body: replay/export payload
   - Returns base64url replay `code` + length and guardrail flags

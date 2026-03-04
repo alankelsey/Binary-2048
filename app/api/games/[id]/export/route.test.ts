@@ -24,6 +24,10 @@ describe("GET /api/games/:id/export", () => {
     [null, null, null, null]
   ];
 
+  afterEach(() => {
+    delete process.env.BINARY2048_REPLAY_CODE_SECRET;
+  });
+
   it("returns downloadable export json for existing game", async () => {
     const session = createSession(config, initialGrid);
     const id = session.current.id;
@@ -98,5 +102,26 @@ describe("GET /api/games/:id/export", () => {
     expect(Array.isArray(json.meta?.audit?.stepHashes)).toBe(true);
     expect(json.meta?.audit?.stepsHashed).toBe(json.steps.length);
     expect(typeof json.meta?.audit?.finalHash).toBe("string");
+  });
+
+  it("includes replay signature when signing secret is configured", async () => {
+    process.env.BINARY2048_REPLAY_CODE_SECRET = "export-sign-secret";
+    const session = createSession(config, initialGrid);
+    const id = session.current.id;
+
+    const compactRes = await GET(new Request("http://localhost/api/games/x/export?compact=1"), {
+      params: Promise.resolve({ id })
+    });
+    const compactJson = await compactRes.json();
+    expect(compactRes.status).toBe(200);
+    expect(typeof compactJson.signature).toBe("string");
+
+    const fullRes = await GET(new Request("http://localhost/api/games/x/export"), {
+      params: Promise.resolve({ id })
+    });
+    const fullJson = await fullRes.json();
+    expect(fullRes.status).toBe(200);
+    expect(typeof fullJson.signature).toBe("string");
+    expect(fullJson.meta?.replay?.signature).toBe(fullJson.signature);
   });
 });

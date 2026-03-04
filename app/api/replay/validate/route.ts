@@ -3,8 +3,16 @@ import { validateReplay } from "@/lib/binary2048/replay-validate";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const result = validateReplay(body);
+    const body = (await req.json()) as { signature?: unknown; payload?: unknown };
+    const hasNestedPayload =
+      typeof body === "object" &&
+      body !== null &&
+      Object.prototype.hasOwnProperty.call(body, "payload");
+    const signature =
+      typeof body === "object" && body !== null && typeof body.signature === "string" ? body.signature : undefined;
+    const payload = hasNestedPayload ? body.payload : body;
+    const signingSecret = process.env.BINARY2048_REPLAY_CODE_SECRET;
+    const result = validateReplay(payload, { signature, signingSecret });
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     return NextResponse.json(

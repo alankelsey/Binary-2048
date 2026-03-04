@@ -11,6 +11,7 @@ export type LeaderboardEntry = {
   maxTile: number;
   stateHash: string;
   rulesetId: string;
+  replaySignature?: string;
   submittedAtISO: string;
 };
 
@@ -19,6 +20,7 @@ type SubmitLeaderboardParams = {
   userTier: "guest" | "authed" | "paid";
   gameId: string;
   session: GameSession;
+  replaySignature?: string;
 };
 
 const globalStore = globalThis as typeof globalThis & {
@@ -55,7 +57,7 @@ function entrySort(a: LeaderboardEntry, b: LeaderboardEntry) {
 }
 
 export function submitLeaderboardEntry(params: SubmitLeaderboardParams) {
-  const { session, playerId, userTier, gameId } = params;
+  const { session, playerId, userTier, gameId, replaySignature } = params;
   const entry: LeaderboardEntry = {
     id: `lb_${gameId}`,
     playerId,
@@ -66,6 +68,7 @@ export function submitLeaderboardEntry(params: SubmitLeaderboardParams) {
     maxTile: getMaxTile(session),
     stateHash: stateHash(session.current),
     rulesetId: "binary2048-v1",
+    replaySignature,
     submittedAtISO: new Date().toISOString()
   };
   leaderboardStore.set(entry.id, entry);
