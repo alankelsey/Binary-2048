@@ -303,6 +303,10 @@ DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
 - `POST /api/store/purchase`
   - Purchases packet SKU and grants all bundled inventory items
   - Body: `{ "subscriberId": string, "packetSku": string, "quantity"?: number }`
+- `POST /api/store/webhook`
+  - Idempotent webhook processor for payment completion events
+  - Supports grant-once behavior by event id and payment reference
+  - Optional shared-secret guard via `BINARY2048_STORE_WEBHOOK_SECRET` + `x-store-webhook-secret` header
 - `POST /api/store/inventory`
   - Grants inventory
   - Body: `{ "subscriberId": string, "sku": "undo_charge" | "wild_boost_pack" | "lock_breaker", "quantity": number, "reason"?: "grant" | "consume" | "adjust" }`

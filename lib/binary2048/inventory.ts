@@ -148,3 +148,9 @@ export function consumeInventory(input: {
   const ledgerEntry = appendLedgerEntry({ subscriberId, sku, delta: -quantity, reason });
   return { inventory: next, ledgerEntry };
 }
+
+export function resetInventoryStore() {
+  inventories.clear();
+  ledger.length = 0;
+  ledgerIdCounter = 1;
+}
