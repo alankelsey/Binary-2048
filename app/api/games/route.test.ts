@@ -1,9 +1,11 @@
+import { createAuthBridgeToken } from "@/lib/binary2048/auth-bridge";
 import { POST } from "@/app/api/games/route";
 import { createEntitlementProof } from "@/lib/binary2048/entitlement-proof";
 
 describe("POST /api/games", () => {
   afterEach(() => {
     delete process.env.BINARY2048_ENTITLEMENT_SECRET;
+    delete process.env.BINARY2048_AUTH_BRIDGE_SECRET;
   });
 
   it("creates a classic game with undo metadata", async () => {
@@ -152,5 +154,48 @@ describe("POST /api/games", () => {
     expect(json.current?.config?.spawn?.pLock).toBe(0.2);
     expect(json.economy?.lockTilesEnabled).toBe(true);
     expect(json.economy?.canContinueAfterWin).toBe(false);
+  });
+
+  it("keeps lock spawn for ranked games with valid auth-bridge token and no proof", async () => {
+    process.env.BINARY2048_AUTH_BRIDGE_SECRET = "auth-bridge-secret";
+    const token = createAuthBridgeToken(
+      {
+        sub: "u_paid",
+        exp: Math.floor(Date.now() / 1000) + 60,
+        tier: "paid"
+      },
+      process.env.BINARY2048_AUTH_BRIDGE_SECRET
+    );
+
+    const req = new Request("http://localhost/api/games", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        economy: {
+          sessionClass: "ranked"
+        },
+        config: {
+          spawn: {
+            pZero: 0.15,
+            pOne: 0.55,
+            pWildcard: 0.1,
+            pLock: 0.2,
+            wildcardMultipliers: [2]
+          }
+        }
+      })
+    });
+
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.integrity?.sessionClass).toBe("ranked");
+    expect(json.current?.config?.spawn?.pLock).toBe(0.2);
+    expect(json.economy?.lockTilesEnabled).toBe(true);
+    expect(json.economy?.userTier).toBe("paid");
   });
 });

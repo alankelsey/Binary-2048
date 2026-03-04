@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { verifyAuthBridgeToken } from "@/lib/binary2048/auth-bridge";
+import { deriveEntitlementsForTier } from "@/lib/binary2048/entitlements";
 import { canContinueAfterWin } from "@/lib/binary2048/continue-policy";
 import { DEFAULT_CONFIG, generateBitstormInitialGrid } from "@/lib/binary2048/engine";
 import { verifyEntitlementProof } from "@/lib/binary2048/entitlement-proof";
@@ -30,6 +32,12 @@ function mergeConfig(config: Partial<GameConfig> | undefined): GameConfig {
   };
 }
 
+function parseBearerToken(authHeader: string | null): string {
+  if (!authHeader) return "";
+  const match = authHeader.match(/^Bearer\s+(.+)$/i);
+  return match?.[1]?.trim() ?? "";
+}
+
 export async function POST(req: Request) {
   try {
     const raw = await req.json().catch(() => ({}));
@@ -38,11 +46,20 @@ export async function POST(req: Request) {
     let initialGrid = body.initialGrid;
     const mode = body.mode === "bitstorm" ? "bitstorm" : "classic";
     const sessionClass = body.economy?.sessionClass === "ranked" ? "ranked" : "unranked";
-    const userTier = body.economy?.userTier ?? "guest";
+    const authSecret = process.env.BINARY2048_AUTH_BRIDGE_SECRET ?? "";
+    const authToken = parseBearerToken(req.headers.get("authorization"));
+    const authClaims = verifyAuthBridgeToken(authToken, authSecret);
+    const userTier = authClaims?.tier ?? body.economy?.userTier ?? "guest";
     const plainEntitlements = Array.isArray(body.economy?.entitlements) ? body.economy?.entitlements : [];
     const proofSecret = process.env.BINARY2048_ENTITLEMENT_SECRET ?? "";
     const proofEntitlements = verifyEntitlementProof(body.economy?.proof, proofSecret);
-    const entitlements = sessionClass === "ranked" ? proofEntitlements : plainEntitlements;
+    const authEntitlements = authClaims
+      ? deriveEntitlementsForTier(authClaims.tier, authClaims.entitlements)
+      : [];
+    const entitlements =
+      sessionClass === "ranked"
+        ? (proofEntitlements.length > 0 ? proofEntitlements : authEntitlements)
+        : plainEntitlements;
     const economyContext: LockEconomyContext = { sessionClass, userTier, entitlements };
 
     if (!initialGrid && mode === "bitstorm") {

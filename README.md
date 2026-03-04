@@ -254,6 +254,7 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE).
   - Lock-0 gameplay wiring: spawn probability support (`pLock`) + board rendering (`⛓` lock tile styling).
   - Lock-0 economy policy in game creation: ranked sessions require `lock_tiles_ranked` entitlement to keep lock spawn enabled.
   - Auth-backed entitlement issuance endpoint for ranked sessions (`POST /api/auth/entitlements/proof`) using signed auth bridge token + short-lived signed proof.
+  - Ranked game creation can consume verified auth-bridge claims directly (no client tier trust) when proof is absent.
   - Replay-code signing/verification support via `BINARY2048_REPLAY_CODE_SECRET` to reject tampered signed replay links.
   - Replay code compression fallback (`r1z.`) when plain replay code exceeds length guardrails, with legacy replay-code decode compatibility.
   - Win celebration flow: large win overlay with `Continue`/`New Game` actions and ranked-default continue lockout.

@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyAuthBridgeToken } from "@/lib/binary2048/auth-bridge";
+import { deriveEntitlementsForTier } from "@/lib/binary2048/entitlements";
 import { createEntitlementProof } from "@/lib/binary2048/entitlement-proof";
-import { LOCK_RANKED_ENTITLEMENT } from "@/lib/binary2048/lock-economy";
-import type { UserTier } from "@/lib/binary2048/security-policy";
 
 type ProofBody = {
   sessionClass?: "ranked" | "unranked";
@@ -14,12 +13,6 @@ function parseBearerToken(authHeader: string | null): string {
   if (!authHeader) return "";
   const match = authHeader.match(/^Bearer\s+(.+)$/i);
   return match?.[1]?.trim() ?? "";
-}
-
-function toEntitlements(tier: UserTier, fromClaims: string[]) {
-  const set = new Set(fromClaims);
-  if (tier === "paid") set.add(LOCK_RANKED_ENTITLEMENT);
-  return Array.from(set);
 }
 
 export async function POST(req: Request) {
@@ -43,7 +36,7 @@ export async function POST(req: Request) {
 
   const body = await req.json().catch(() => ({} as ProofBody));
   const sessionClass = body?.sessionClass === "unranked" ? "unranked" : "ranked";
-  const entitlements = toEntitlements(claims.tier, claims.entitlements);
+  const entitlements = deriveEntitlementsForTier(claims.tier, claims.entitlements);
 
   const ttlSeconds = Number(process.env.BINARY2048_ENTITLEMENT_PROOF_TTL_SECONDS ?? DEFAULT_TTL_SECONDS);
   const expiresAt = Math.floor(Date.now() / 1000) + (Number.isFinite(ttlSeconds) && ttlSeconds > 0 ? ttlSeconds : DEFAULT_TTL_SECONDS);
@@ -63,8 +56,3 @@ export async function POST(req: Request) {
     entitlements
   });
 }
-
-export const __test__ = {
-  parseBearerToken,
-  toEntitlements
-};
