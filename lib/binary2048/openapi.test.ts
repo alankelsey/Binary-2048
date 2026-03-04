@@ -31,5 +31,7 @@ describe("OPENAPI_SPEC", () => {
     expect(OPENAPI_SPEC.paths["/api/openapi"]?.get?.summary).toBe("OpenAPI spec document");
     expect(OPENAPI_SPEC.paths["/api/health"]?.get?.summary).toBe("Health check");
     expect(OPENAPI_SPEC.paths["/api/ops/telemetry"]?.get?.summary).toContain("telemetry");
+    expect(OPENAPI_SPEC.paths["/api/user/data/export"]?.get?.summary).toContain("Export");
+    expect(OPENAPI_SPEC.paths["/api/user/data"]?.delete?.summary).toContain("Delete");
   });
 });

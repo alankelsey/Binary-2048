@@ -33,6 +33,7 @@ Docs hub: `http://localhost:3000/docs`.
 User docs: `http://localhost:3000/docs/user`.
 Developer docs: `http://localhost:3000/docs/developer`.
 Replay storage strategy: `docs/replay-storage-strategy.md`.
+Privacy page: `http://localhost:3000/privacy`.
 Replay share UI: `http://localhost:3000/replay?code=...`.
 In-app share row includes `Copy Replay Link` for the current run.
 
@@ -265,6 +266,10 @@ DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
 - `GET /api/ops/telemetry`
   - Returns in-memory telemetry snapshot for replay/tournament route latency/error/cost visibility
   - Includes anomaly flags (`latency_spike`, `error_rate_spike`, `cost_spike`) per route
+- `GET /api/user/data/export`
+  - Authenticated user data export bundle (inventory, ledger, subscriptions, leaderboard entries)
+- `DELETE /api/user/data`
+  - Authenticated user data deletion (inventory, ledger, subscriptions, leaderboard entries)
 - `POST /api/sim/run`
   - Body: `{ "config": GameConfig, "initialGrid": Cell[][], "moves": Dir[] }`
   - Runs deterministic scenario and returns export JSON

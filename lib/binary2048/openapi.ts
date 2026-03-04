@@ -55,6 +55,24 @@ export const OPENAPI_SPEC = {
         }
       }
     },
+    "/api/user/data/export": {
+      get: {
+        summary: "Export authenticated user data package",
+        responses: {
+          "200": { description: "User data export" },
+          "401": { description: "Authenticated user required" }
+        }
+      }
+    },
+    "/api/user/data": {
+      delete: {
+        summary: "Delete authenticated user data package",
+        responses: {
+          "200": { description: "User data deleted" },
+          "401": { description: "Authenticated user required" }
+        }
+      }
+    },
     "/api/leaderboard": {
       get: {
         summary: "List ranked leaderboard entries",

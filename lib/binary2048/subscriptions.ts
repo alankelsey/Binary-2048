@@ -104,3 +104,13 @@ export function upsertSubscription(input: {
 export function removeSubscription(id: string): boolean {
   return subscriptions.delete(id);
 }
+
+export function removeSubscriptionsBySubscriber(subscriberId: string): number {
+  let removed = 0;
+  for (const [id, record] of subscriptions.entries()) {
+    if (record.subscriberId !== subscriberId) continue;
+    subscriptions.delete(id);
+    removed += 1;
+  }
+  return removed;
+}

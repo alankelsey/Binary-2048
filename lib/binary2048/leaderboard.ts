@@ -120,6 +120,24 @@ export function listLeaderboardEntries(limit = 20) {
   return Array.from(leaderboardStore.values()).sort(entrySort).slice(0, safeLimit);
 }
 
+export function listLeaderboardEntriesByPlayer(playerId: string, limit = 100) {
+  const safeLimit = Number.isFinite(limit) ? Math.max(1, Math.floor(limit)) : 100;
+  return Array.from(leaderboardStore.values())
+    .filter((entry) => entry.playerId === playerId)
+    .sort(entrySort)
+    .slice(0, safeLimit);
+}
+
+export function removeLeaderboardEntriesByPlayer(playerId: string): number {
+  let removed = 0;
+  for (const [id, entry] of leaderboardStore.entries()) {
+    if (entry.playerId !== playerId) continue;
+    leaderboardStore.delete(id);
+    removed += 1;
+  }
+  return removed;
+}
+
 export function resetLeaderboard() {
   leaderboardStore.clear();
 }

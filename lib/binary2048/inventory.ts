@@ -89,6 +89,11 @@ export function getInventory(subscriberIdRaw: unknown): InventoryRecord {
   return created;
 }
 
+export function getExistingInventory(subscriberIdRaw: unknown): InventoryRecord | null {
+  const subscriberId = parseSubscriberId(subscriberIdRaw);
+  return inventories.get(subscriberId) ?? null;
+}
+
 export function listInventoryLedger(subscriberIdRaw: unknown, limitRaw?: unknown): InventoryLedgerEntry[] {
   const subscriberId = parseSubscriberId(subscriberIdRaw);
   const limit = typeof limitRaw === "number" && Number.isInteger(limitRaw) && limitRaw > 0 ? limitRaw : 50;
@@ -153,4 +158,19 @@ export function resetInventoryStore() {
   inventories.clear();
   ledger.length = 0;
   ledgerIdCounter = 1;
+}
+
+export function removeInventoryBySubscriber(subscriberIdRaw: unknown): {
+  removedInventory: boolean;
+  removedLedgerEntries: number;
+} {
+  const subscriberId = parseSubscriberId(subscriberIdRaw);
+  const removedInventory = inventories.delete(subscriberId);
+  let removedLedgerEntries = 0;
+  for (let i = ledger.length - 1; i >= 0; i -= 1) {
+    if (ledger[i]?.subscriberId !== subscriberId) continue;
+    ledger.splice(i, 1);
+    removedLedgerEntries += 1;
+  }
+  return { removedInventory, removedLedgerEntries };
 }

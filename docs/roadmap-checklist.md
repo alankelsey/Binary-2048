@@ -86,4 +86,4 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Paid/guest feature gating matrix enforced by backend policy
 - [x] Admin/dev control panel for enabling/disabling UI controls
 - [x] Marketing rollout hooks (social share CTAs, referral tracking)
-- [ ] Privacy/compliance essentials: privacy page + user data export/delete endpoints
+- [x] Privacy/compliance essentials: privacy page + user data export/delete endpoints
