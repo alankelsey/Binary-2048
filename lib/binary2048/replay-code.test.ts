@@ -68,4 +68,16 @@ describe("replay code helpers", () => {
   it("throws on malformed replay code", () => {
     expect(() => parseReplayCode("%%%bad%%%")).toThrow();
   });
+
+  it("round-trips signed replay code and rejects tampered signature", () => {
+    const exported = runScenario(config, initialGrid, ["left", "up", "right"]);
+    const created = createReplayCode(exported, "replay-secret");
+    expect(created.signed).toBe(true);
+
+    const parsed = parseReplayCode(created.code, "replay-secret");
+    expect(parsed.moves).toEqual(["left", "up", "right"]);
+
+    const tampered = `${created.code}x`;
+    expect(() => parseReplayCode(tampered, "replay-secret")).toThrow("invalid replay code signature");
+  });
 });

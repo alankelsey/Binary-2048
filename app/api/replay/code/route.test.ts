@@ -26,6 +26,10 @@ describe("api replay code", () => {
     [null, null, null, null]
   ];
 
+  afterEach(() => {
+    delete process.env.BINARY2048_REPLAY_CODE_SECRET;
+  });
+
   it("creates shareable replay code from export payload", async () => {
     const exported = runScenario(config, initialGrid, ["left", "up"]);
     const req = new Request("http://localhost/api/replay/code", {
@@ -64,5 +68,26 @@ describe("api replay code", () => {
     const json = await res.json();
     expect(res.status).toBe(400);
     expect(typeof json.error).toBe("string");
+  });
+
+  it("creates signed replay code when secret is configured and rejects tampered codes", async () => {
+    process.env.BINARY2048_REPLAY_CODE_SECRET = "route-replay-secret";
+    const exported = runScenario(config, initialGrid, ["left", "up"]);
+    const encodedRes = await POST(
+      new Request("http://localhost/api/replay/code", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(exported)
+      })
+    );
+    const encodedBody = await encodedRes.json();
+    expect(encodedRes.status).toBe(200);
+    expect(encodedBody.signed).toBe(true);
+
+    const tamperedCode = `${encodedBody.code}x`;
+    const decodeRes = await GET(new Request(`http://localhost/api/replay/code?code=${encodeURIComponent(tamperedCode)}`));
+    const decodeBody = await decodeRes.json();
+    expect(decodeRes.status).toBe(400);
+    expect(String(decodeBody.error)).toContain("signature");
   });
 });
