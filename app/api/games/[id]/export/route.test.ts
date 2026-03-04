@@ -1,5 +1,6 @@
 import { GET } from "@/app/api/games/[id]/export/route";
 import { POST as moveGame } from "@/app/api/games/[id]/move/route";
+import { POST as undoGame } from "@/app/api/games/[id]/undo/route";
 import { createSession } from "@/lib/binary2048/sessions";
 import type { Cell, GameConfig } from "@/lib/binary2048/types";
 
@@ -10,8 +11,8 @@ describe("GET /api/games/:id/export", () => {
     seed: 616,
     spawn: {
       pZero: 0,
-      pOne: 1,
-      pWildcard: 0,
+      pOne: 0.9,
+      pWildcard: 0.1,
       pLock: 0,
       wildcardMultipliers: [2]
     }
@@ -45,8 +46,8 @@ describe("GET /api/games/:id/export", () => {
     expect(json.meta?.rulesetId).toBe("binary2048-v1");
     expect(json.meta?.spawnProbs).toEqual({
       zero: 0,
-      one: 1,
-      wildcard: 0,
+      one: 0.9,
+      wildcard: 0.1,
       lock: 0,
       wildcardMultipliers: [2]
     });
@@ -123,5 +124,42 @@ describe("GET /api/games/:id/export", () => {
     expect(fullRes.status).toBe(200);
     expect(typeof fullJson.signature).toBe("string");
     expect(fullJson.meta?.replay?.signature).toBe(fullJson.signature);
+  });
+
+  it("includes undo accounting metadata in export", async () => {
+    const session = createSession(config, initialGrid);
+    const id = session.current.id;
+
+    await moveGame(
+      new Request("http://localhost/api/games/move", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ dir: "left" })
+      }),
+      { params: Promise.resolve({ id }) }
+    );
+
+    await undoGame(new Request("http://localhost/api/games/undo", { method: "POST" }), {
+      params: Promise.resolve({ id })
+    });
+
+    const res = await GET(new Request("http://localhost/api/games/x/export"), {
+      params: Promise.resolve({ id })
+    });
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.meta?.undo?.limit).toBe(2);
+    expect(json.meta?.undo?.used).toBe(1);
+    expect(json.meta?.undo?.remaining).toBe(1);
+    expect(Array.isArray(json.meta?.undo?.events)).toBe(true);
+    expect(json.meta?.undo?.events).toHaveLength(1);
+    expect(json.meta?.undo?.events[0]).toEqual(
+      expect.objectContaining({
+        i: 0,
+        undoneTurn: 1,
+        usedAfter: 1
+      })
+    );
   });
 });

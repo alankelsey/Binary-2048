@@ -47,6 +47,7 @@ export function createSession(config?: Partial<GameConfig>, initialGrid?: Cell[]
     steps: [],
     undoLimit: inferUndoLimit(created.state.config),
     undoUsed: 0,
+    undoEvents: [],
     integrity: { sessionClass: options?.sessionClass ?? "unranked", source: "created" }
   });
   return games.get(created.state.id)!;
@@ -87,6 +88,11 @@ export function undoSession(id: string) {
   if (!step) return { session, error: null };
   session.current = step.before;
   session.undoUsed += 1;
+  session.undoEvents.push({
+    i: session.undoEvents.length,
+    undoneTurn: step.turn,
+    usedAfter: session.undoUsed
+  });
   games.set(id, session);
   return { session, error: null };
 }
@@ -94,7 +100,19 @@ export function undoSession(id: string) {
 export function exportSession(id: string) {
   const session = games.get(id);
   if (!session) return null;
-  return buildExport(session.current.config, session.initialState, session.steps, session.current, session.integrity);
+  return buildExport(
+    session.current.config,
+    session.initialState,
+    session.steps,
+    session.current,
+    session.integrity,
+    {
+      limit: session.undoLimit,
+      used: session.undoUsed,
+      remaining: Math.max(0, session.undoLimit - session.undoUsed),
+      events: session.undoEvents
+    }
+  );
 }
 
 export function listSessionState(id: string) {
@@ -147,6 +165,7 @@ export function importSession(exported: GameExport) {
     steps,
     undoLimit: inferUndoLimit(exported.config),
     undoUsed: 0,
+    undoEvents: [],
     integrity: {
       sessionClass: "unranked",
       source: "imported",

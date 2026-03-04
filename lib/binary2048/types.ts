@@ -62,7 +62,14 @@ export type GameSession = {
   steps: StepRecord[];
   undoLimit: number;
   undoUsed: number;
+  undoEvents: UndoEvent[];
   integrity: SessionIntegrity;
+};
+
+export type UndoEvent = {
+  i: number;
+  undoneTurn: number;
+  usedAfter: number;
 };
 
 export type SessionIntegrity = {
@@ -91,6 +98,12 @@ export type GameExport = {
       wildcard: number;
       lock: number;
       wildcardMultipliers: number[];
+    };
+    undo: {
+      limit: number;
+      used: number;
+      remaining: number;
+      events: UndoEvent[];
     };
     integrity: SessionIntegrity;
     audit?: {

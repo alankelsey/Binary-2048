@@ -9,7 +9,8 @@ import type {
   ReplayStepLog,
   SessionIntegrity,
   StepRecord,
-  Tile
+  Tile,
+  UndoEvent
 } from "@/lib/binary2048/types";
 
 let idCounter = 1;
@@ -166,7 +167,13 @@ export function buildExport(
   initial: GameState,
   steps: StepRecord[],
   final: GameState,
-  integrity: SessionIntegrity = { sessionClass: "unranked", source: "created" }
+  integrity: SessionIntegrity = { sessionClass: "unranked", source: "created" },
+  undoMeta?: {
+    limit: number;
+    used: number;
+    remaining: number;
+    events: UndoEvent[];
+  }
 ): GameExport {
   const engineVersion = process.env.NEXT_PUBLIC_APP_COMMIT ?? "dev";
   const moves = steps.map((step) => step.dir);
@@ -190,6 +197,12 @@ export function buildExport(
         wildcard: config.spawn.pWildcard,
         lock: config.spawn.pLock,
         wildcardMultipliers: [...config.spawn.wildcardMultipliers]
+      },
+      undo: undoMeta ?? {
+        limit: 0,
+        used: 0,
+        remaining: 0,
+        events: []
       },
       integrity
     },

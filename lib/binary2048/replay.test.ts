@@ -65,6 +65,12 @@ describe("replay helpers", () => {
         ]
       },
       spawnProbs: { zero: 0.1, one: 0.8, wildcard: 0.1, lock: 0, wildcardMultipliers: [2] },
+      undo: {
+        limit: 2,
+        used: 0,
+        remaining: 2,
+        events: []
+      },
       integrity: { sessionClass: "unranked", source: "created" }
     },
     config: initial.config,

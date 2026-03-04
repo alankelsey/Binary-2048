@@ -56,6 +56,12 @@ describe("export replay metadata", () => {
       lock: 0,
       wildcardMultipliers: [2]
     });
+    expect(exported.meta.undo).toEqual({
+      limit: 0,
+      used: 0,
+      remaining: 0,
+      events: []
+    });
     expect(exported.meta.integrity.sessionClass).toBe("unranked");
     expect(exported.meta.integrity.source).toBe("created");
   });
