@@ -253,6 +253,11 @@ DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
   - Deletes a subscription by id
 - `GET /api/store/inventory?subscriberId=...`
   - Returns inventory balances + recent ledger entries
+- `GET /api/store/catalog`
+  - Returns active paid packet SKUs and their grant bundles
+- `POST /api/store/purchase`
+  - Purchases packet SKU and grants all bundled inventory items
+  - Body: `{ "subscriberId": string, "packetSku": string, "quantity"?: number }`
 - `POST /api/store/inventory`
   - Grants inventory
   - Body: `{ "subscriberId": string, "sku": "undo_charge" | "wild_boost_pack" | "lock_breaker", "quantity": number, "reason"?: "grant" | "consume" | "adjust" }`

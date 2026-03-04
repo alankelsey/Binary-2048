@@ -42,7 +42,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Dev token mint endpoint for local auth flow testing
 - [x] Ranked auth/economy smoke script
 - [x] Store inventory + boost consumption ledger
-- [ ] Paid boost packet SKU model
+- [x] Paid boost packet SKU model
 - [ ] Ranked server-authoritative leaderboard submission flow
 
 ## Platform + Ops

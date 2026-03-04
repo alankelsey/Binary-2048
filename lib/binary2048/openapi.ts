@@ -102,6 +102,27 @@ export const OPENAPI_SPEC = {
         }
       }
     },
+    "/api/store/catalog": {
+      get: {
+        summary: "List active paid packet SKUs",
+        responses: {
+          "200": { description: "Store packet catalog" }
+        }
+      }
+    },
+    "/api/store/purchase": {
+      post: {
+        summary: "Purchase a paid packet SKU and grant inventory bundle",
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { type: "object" } } }
+        },
+        responses: {
+          "200": { description: "Packet purchased and inventory granted" },
+          "400": { description: "Invalid purchase payload" }
+        }
+      }
+    },
     "/api/store/consume": {
       post: {
         summary: "Consume inventory for subscriber and append ledger entry",

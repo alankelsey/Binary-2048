@@ -9,6 +9,8 @@ describe("OPENAPI_SPEC", () => {
   });
 
   it("contains expected AI and docs routes", () => {
+    expect(OPENAPI_SPEC.paths["/api/store/catalog"]?.get?.summary).toContain("paid packet SKUs");
+    expect(OPENAPI_SPEC.paths["/api/store/purchase"]?.post?.summary).toContain("Purchase a paid packet SKU");
     expect(OPENAPI_SPEC.paths["/api/store/inventory"]?.get?.summary).toContain("store inventory");
     expect(OPENAPI_SPEC.paths["/api/store/consume"]?.post?.summary).toContain("Consume inventory");
     expect(OPENAPI_SPEC.paths["/api/subscriptions"]?.post?.summary).toContain("notification subscription");
