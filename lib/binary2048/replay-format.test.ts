@@ -48,7 +48,14 @@ describe("replay format helpers", () => {
 
   it("normalizes pre-compacted payload shape", () => {
     const compact = toCompactReplayPayload({
-      header: { rulesetId: "binary2048-v1", engineVersion: "dev", size: 4, seed: 808, createdAt: "x" },
+      header: {
+        replayVersion: 1,
+        rulesetId: "binary2048-v1",
+        engineVersion: "dev",
+        size: 4,
+        seed: 808,
+        createdAt: "2026-01-01T00:00:00.000Z"
+      },
       config,
       initialGrid,
       moves: ["L", "U", "R"]
@@ -56,5 +63,41 @@ describe("replay format helpers", () => {
     expect(compact.header.replayVersion).toBe(1);
     expect(compact.moves).toEqual(["L", "U", "R"]);
     expect(compact.config.width).toBe(4);
+  });
+
+  it("rejects compact payload when header size does not match config", () => {
+    expect(() =>
+      toCompactReplayPayload({
+        header: {
+          replayVersion: 1,
+          rulesetId: "binary2048-v1",
+          engineVersion: "dev",
+          size: 5,
+          seed: 808,
+          createdAt: "2026-01-01T00:00:00.000Z"
+        },
+        config,
+        initialGrid,
+        moves: ["L"]
+      })
+    ).toThrow(/size must match config/i);
+  });
+
+  it("rejects compact payload when createdAt is invalid", () => {
+    expect(() =>
+      toCompactReplayPayload({
+        header: {
+          replayVersion: 1,
+          rulesetId: "binary2048-v1",
+          engineVersion: "dev",
+          size: 4,
+          seed: 808,
+          createdAt: "not-a-date"
+        },
+        config,
+        initialGrid,
+        moves: ["L"]
+      })
+    ).toThrow(/createdAt/i);
   });
 });

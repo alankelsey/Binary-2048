@@ -17,6 +17,21 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Compact production export mode (`header + moves` only)
 - [x] Replay checksum chain per step for audit mode
 
+## Replay Hardening
+
+- [x] Canonical replay flow: seed + moves deterministically reconstructs final state
+- [x] Shareable replay links via encoded replay payload (`/replay?code=...`)
+- [x] Ranked leaderboard is server-authoritative (does not trust client-submitted scores/replays)
+- [x] Move endpoint optimistic concurrency guard (`stateHash` + `409` on stale clients)
+- [x] Replay header schema lock: include explicit `replayVersion`, `size`, `createdAt`, and compatibility checks
+- [ ] Step log schema lock: include `rngStep`, `scoreDelta`, `scoreTotal`, and normalized event payloads
+- [ ] RNG draw contract tests: enforce fixed draw count per spawn (type draw + position draw)
+- [ ] `validateReplay(header,moves)` API/utility with compatibility and deterministic rerun checks
+- [ ] Signed replay tokens for ranked submissions (HMAC on replay payload; reject tampered metadata/moves)
+- [ ] Replay URL oversize fallback: short-lived signed server-hosted replay when encoded URL exceeds safe length
+- [ ] Engine version pinning strategy for tournaments/replays across version upgrades
+- [ ] Replay storage strategy doc: no-DB default + Mongo migration model for top scores/contests
+
 ## Gameplay UX
 
 - [x] Swipe + Arrow + WASD movement support
@@ -44,16 +59,23 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Store inventory + boost consumption ledger
 - [x] Paid boost packet SKU model
 - [x] Ranked server-authoritative leaderboard submission flow
+- [ ] Ranked vs boosted mode separation enforcement for leaderboard eligibility
+- [ ] Undo entitlement accounting in audit trail (server-side consume + replay-visible usage)
+- [ ] Stripe webhook idempotency + grant-once purchase handling
 
 ## Platform + Ops
 
 - [x] OpenAPI endpoint + docs page
 - [x] WAF docs/checklists/scripts baseline
 - [x] Security policy helper for tiered 5-min limits
+- [x] Tournament guardrails for `seedCount`/`maxMoves` bounds
 - [ ] WAF live association + verify in production
 - [ ] Billing alarm + budget tripwire fully wired and validated in AWS account
 - [ ] Route 53 NXDOMAIN anomaly detection runbook + alarms
 - [ ] CAPTCHA/challenge policy wiring by endpoint risk profile
+- [ ] Rate limits/quotas on heavy bot/tournament endpoints (per IP and/or per key)
+- [ ] Tournament job-queue/concurrency limit strategy for CPU cost control
+- [ ] Replay/tournament telemetry + anomaly alarms (latency/cost/WAF spike visibility)
 
 ## Product Roadmap
 
@@ -64,3 +86,4 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Paid/guest feature gating matrix enforced by backend policy
 - [x] Admin/dev control panel for enabling/disabling UI controls
 - [x] Marketing rollout hooks (social share CTAs, referral tracking)
+- [ ] Privacy/compliance essentials: privacy page + user data export/delete endpoints

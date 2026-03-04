@@ -38,7 +38,14 @@ describe("runReplay", () => {
 
   it("reconstructs final state from replay request payload", () => {
     const replay = runReplay({
-      header: { rulesetId: "binary2048-v1", seed: 919 },
+      header: {
+        replayVersion: 1,
+        rulesetId: "binary2048-v1",
+        engineVersion: "dev",
+        size: 4,
+        seed: 919,
+        createdAt: "2026-01-01T00:00:00.000Z"
+      },
       config,
       initialGrid,
       moves: ["L", "U", "R"]
@@ -52,7 +59,14 @@ describe("runReplay", () => {
   it("rejects unsupported rulesets", () => {
     expect(() =>
       runReplay({
-        header: { rulesetId: "binary2048-v999" },
+        header: {
+          replayVersion: 1,
+          rulesetId: "binary2048-v999",
+          engineVersion: "dev",
+          size: 4,
+          seed: 919,
+          createdAt: "2026-01-01T00:00:00.000Z"
+        },
         config,
         initialGrid,
         moves: ["L"]

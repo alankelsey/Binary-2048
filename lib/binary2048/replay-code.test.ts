@@ -37,7 +37,14 @@ describe("replay code helpers", () => {
   it("auto-compresses oversized replay payloads to reduce code length", () => {
     const longMoves = Array.from({ length: 2500 }, () => "L");
     const created = createReplayCode({
-      header: { rulesetId: "binary2048-v1", engineVersion: "dev", size: 4, seed: 1, createdAt: "x" },
+      header: {
+        replayVersion: 1,
+        rulesetId: "binary2048-v1",
+        engineVersion: "dev",
+        size: 4,
+        seed: 333,
+        createdAt: "2026-01-01T00:00:00.000Z"
+      },
       config,
       initialGrid,
       moves: longMoves
@@ -51,7 +58,14 @@ describe("replay code helpers", () => {
 
   it("parses legacy replay codes without version prefix", () => {
     const legacyPayload = {
-      header: { rulesetId: "binary2048-v1", engineVersion: "dev", size: 4, seed: 1, createdAt: "x" },
+      header: {
+        replayVersion: 1,
+        rulesetId: "binary2048-v1",
+        engineVersion: "dev",
+        size: 4,
+        seed: 333,
+        createdAt: "2026-01-01T00:00:00.000Z"
+      },
       config,
       initialGrid,
       moves: ["L", "R"]

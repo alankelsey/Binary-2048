@@ -47,7 +47,14 @@ describe("POST /api/replay", () => {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        header: { rulesetId: "binary2048-v1", seed: 707 },
+        header: {
+          replayVersion: 1,
+          rulesetId: "binary2048-v1",
+          engineVersion: "dev",
+          size: 4,
+          seed: 707,
+          createdAt: "2026-01-01T00:00:00.000Z"
+        },
         config,
         initialGrid,
         moves: ["L", "U"]
@@ -73,5 +80,23 @@ describe("POST /api/replay", () => {
     const json = await res.json();
     expect(res.status).toBe(400);
     expect(typeof json.error).toBe("string");
+  });
+
+  it("returns 400 when compact replay header is missing locked fields", async () => {
+    const req = new Request("http://localhost/api/replay", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        header: { rulesetId: "binary2048-v1", seed: 707 },
+        config,
+        initialGrid,
+        moves: ["L"]
+      })
+    });
+
+    const res = await POST(req);
+    const json = await res.json();
+    expect(res.status).toBe(400);
+    expect(String(json.error)).toContain("replayVersion");
   });
 });
