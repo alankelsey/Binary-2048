@@ -60,7 +60,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [ ] Auth.js/OAuth provider wiring to issue auth-bridge claims from real sessions
 - [x] Notification subscriptions (app updates/player/leaderboard actions)
 - [ ] Async PvP same-seed mode
-- [ ] AI-vs-AI tournament orchestrator beyond smoke scripts
+- [x] AI-vs-AI tournament orchestrator beyond smoke scripts
 - [x] Paid/guest feature gating matrix enforced by backend policy
 - [x] Admin/dev control panel for enabling/disabling UI controls
 - [x] Marketing rollout hooks (social share CTAs, referral tracking)

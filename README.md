@@ -77,6 +77,14 @@ Tiny same-seed multibot tournament:
 npm run bot:tourney
 ```
 
+Tournament API (server-side orchestrator):
+
+```bash
+curl -sS -X POST http://localhost:3000/api/bots/tournament \
+  -H "Content-Type: application/json" \
+  -d '{"seedStart":100,"seedCount":3,"maxMoves":250}'
+```
+
 One-command tournament with temporary local dev server:
 
 ```bash
@@ -228,6 +236,9 @@ DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
   - Requires authenticated auth-bridge claims
   - Server-authoritative: score/moves/state hash are derived from in-memory ranked game session, not from client payload
   - Only accepts ranked created sessions that are finished (`won` or `over`)
+- `POST /api/bots/tournament`
+  - Body (optional): `{ "seeds"?: number[], "seedStart"?: number, "seedCount"?: number, "maxMoves"?: number, "bots"?: ["priority" | "random" | "alternate"] }`
+  - Runs same-seed AI-vs-AI tournament server-side and returns ranking + per-run summaries
 - `POST /api/marketing/track`
   - Body: `{ "type": "share_click" | "copy_share" | "copy_replay_link" | "landing_visit", "channel"?: "x" | "linkedin" | "copy" | "replay", "referralCode"?: string, "campaign"?: string }`
   - Stores lightweight marketing/share CTA event for rollout analytics

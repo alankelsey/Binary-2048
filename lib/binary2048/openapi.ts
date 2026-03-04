@@ -73,6 +73,19 @@ export const OPENAPI_SPEC = {
         }
       }
     },
+    "/api/bots/tournament": {
+      post: {
+        summary: "Run server-side AI-vs-AI tournament for configured seeds",
+        requestBody: {
+          required: false,
+          content: { "application/json": { schema: { type: "object" } } }
+        },
+        responses: {
+          "200": { description: "Tournament result with ranking and run summaries" },
+          "400": { description: "Invalid tournament payload" }
+        }
+      }
+    },
     "/api/marketing/track": {
       post: {
         summary: "Track marketing/share CTA events",
