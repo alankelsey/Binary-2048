@@ -25,6 +25,8 @@ describe("POST /api/games", () => {
     delete process.env.BINARY2048_ENTITLEMENT_SECRET;
     delete process.env.BINARY2048_AUTH_BRIDGE_SECRET;
     delete process.env.BINARY2048_AUTH_HEADER_SECRET;
+    delete process.env.BINARY2048_CHALLENGE_MODE;
+    delete process.env.BINARY2048_CHALLENGE_SECRET;
   });
 
   it("creates a classic game with undo metadata", async () => {
@@ -48,6 +50,21 @@ describe("POST /api/games", () => {
     expect(json.integrity?.source).toBe("created");
     expect(json.economy?.lockTilesEnabled).toBe(true);
     expect(json.economy?.canContinueAfterWin).toBe(true);
+  });
+
+  it("returns 403 for guest game creation when challenge is enforced and token missing", async () => {
+    process.env.BINARY2048_CHALLENGE_MODE = "enforce";
+    process.env.BINARY2048_CHALLENGE_SECRET = "challenge-secret";
+    const req = new Request("http://localhost/api/games", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({})
+    });
+
+    const res = await POST(req);
+    const json = await res.json();
+    expect(res.status).toBe(403);
+    expect(json.error).toBe("Challenge required");
   });
 
   it("randomizes seed for classic games when seed is omitted", async () => {

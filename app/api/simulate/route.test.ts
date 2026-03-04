@@ -6,6 +6,8 @@ describe("POST /api/simulate", () => {
     resetRateLimitStore();
     delete process.env.BINARY2048_RATE_LIMIT_SIMULATE_MAX;
     delete process.env.BINARY2048_RATE_LIMIT_WINDOW_MS;
+    delete process.env.BINARY2048_CHALLENGE_MODE;
+    delete process.env.BINARY2048_CHALLENGE_SECRET;
   });
 
   it("accepts compact actions and returns final artifacts", async () => {
@@ -81,5 +83,23 @@ describe("POST /api/simulate", () => {
     expect(second.status).toBe(429);
     expect(secondJson.error).toBe("Rate limit exceeded");
     expect(secondJson.route).toBe("simulate");
+  });
+
+  it("returns 403 when challenge is enforced and token is missing", async () => {
+    process.env.BINARY2048_CHALLENGE_MODE = "enforce";
+    process.env.BINARY2048_CHALLENGE_SECRET = "challenge-secret";
+    const req = new Request("http://localhost/api/simulate", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        seed: 77,
+        moves: ["L"],
+        config: { size: 4 }
+      })
+    });
+    const res = await POST(req);
+    const json = await res.json();
+    expect(res.status).toBe(403);
+    expect(json.error).toBe("Challenge required");
   });
 });

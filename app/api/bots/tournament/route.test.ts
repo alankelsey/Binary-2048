@@ -11,6 +11,8 @@ describe("POST /api/bots/tournament", () => {
     delete process.env.BINARY2048_TOURNAMENT_MAX_CONCURRENT;
     delete process.env.BINARY2048_TOURNAMENT_MAX_QUEUE;
     delete process.env.BINARY2048_TOURNAMENT_QUEUE_WAIT_TIMEOUT_MS;
+    delete process.env.BINARY2048_CHALLENGE_MODE;
+    delete process.env.BINARY2048_CHALLENGE_SECRET;
   });
 
   it("runs default tournament payload", async () => {
@@ -90,5 +92,19 @@ describe("POST /api/bots/tournament", () => {
     } finally {
       slot.release();
     }
+  });
+
+  it("returns 403 when challenge is enforced and token is missing", async () => {
+    process.env.BINARY2048_CHALLENGE_MODE = "enforce";
+    process.env.BINARY2048_CHALLENGE_SECRET = "challenge-secret";
+    const req = new Request("http://localhost/api/bots/tournament", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({})
+    });
+    const res = await POST(req);
+    const json = await res.json();
+    expect(res.status).toBe(403);
+    expect(json.error).toBe("Challenge required");
   });
 });

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { runBotTournament, type BotId } from "@/lib/binary2048/bot-orchestrator";
+import { evaluateChallenge } from "@/lib/binary2048/challenge-policy";
 import { recordRouteTelemetry } from "@/lib/binary2048/ops-telemetry";
 import { checkTournamentRateLimit } from "@/lib/binary2048/rate-limit";
 import {
@@ -51,6 +52,19 @@ export async function POST(req: Request) {
   let statusCode = 200;
   let slot: Awaited<ReturnType<typeof acquireTournamentSlot>> | null = null;
   try {
+    const challenge = evaluateChallenge({ req, route: "/api/bots/tournament", risk: "high", userTier: "guest" });
+    if (!challenge.allowed) {
+      statusCode = 403;
+      return NextResponse.json(
+        {
+          error: "Challenge required",
+          route: "/api/bots/tournament",
+          reason: challenge.reason,
+          mode: challenge.mode
+        },
+        { status: 403 }
+      );
+    }
     const quota = checkTournamentRateLimit(req);
     if (!quota.allowed) {
       statusCode = 429;

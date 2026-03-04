@@ -179,6 +179,7 @@ DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
 - `POST /api/games`
   - Body: `{ "config": Partial<GameConfig>, "initialGrid": Cell[][] }` (both optional)
   - Returns created game state
+  - Challenge risk profile: `medium` (guest requests may require challenge token when enabled)
 - `GET /api/games/:id`
   - Returns current game state
 - `POST /api/games/:id/move`
@@ -255,6 +256,7 @@ DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
     - `BINARY2048_TOURNAMENT_MAX_QUEUE` (default `8`)
     - `BINARY2048_TOURNAMENT_QUEUE_WAIT_TIMEOUT_MS` (default `15000`)
   - Emits telemetry to `/api/ops/telemetry`
+  - Challenge risk profile: `high` (challenge required when enabled)
 - `POST /api/marketing/track`
   - Body: `{ "type": "share_click" | "copy_share" | "copy_replay_link" | "landing_visit", "channel"?: "x" | "linkedin" | "copy" | "replay", "referralCode"?: string, "campaign"?: string }`
   - Stores lightweight marketing/share CTA event for rollout analytics
@@ -270,6 +272,7 @@ DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
   - Body: `{ "seed"?: number, "moves": Array<Dir | "L" | "R" | "U" | "D">, "config"?: Partial<GameConfig> & { size?: number }, "initialGrid"?: Cell[][], "includeSteps"?: boolean }`
   - Runs batch simulation and returns final state, score, and step summaries
   - Rate-limited per API key (or IP fallback) with `429` responses on quota exhaustion
+  - Challenge risk profile: `high` (challenge required when enabled)
   - Includes compact terminal artifacts for bot clients:
     - `finalStateHash`
     - `finalEncodedFlat`
@@ -288,6 +291,12 @@ DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
     - `BINARY2048_ENGINE_VERSION` (expected version)
     - `BINARY2048_REPLAY_ENGINE_PIN_MODE` (`exact` | `minor` | `off`)
   - Emits telemetry to `/api/ops/telemetry`
+
+Challenge policy env:
+
+- `BINARY2048_CHALLENGE_MODE=off|log|enforce` (default `off`)
+- `BINARY2048_CHALLENGE_SECRET=<token>` (required for effective enforcement)
+- Client header: `x-binary2048-challenge-token`
 - `POST /api/replay/code`
   - Body: replay/export payload
   - Returns replay `code` + length and guardrail flags

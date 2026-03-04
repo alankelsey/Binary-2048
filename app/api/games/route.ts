@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getVerifiedAuthClaims } from "@/lib/binary2048/auth-context";
+import { evaluateChallenge } from "@/lib/binary2048/challenge-policy";
 import { deriveEntitlementsForTier } from "@/lib/binary2048/entitlements";
 import { canContinueAfterWin } from "@/lib/binary2048/continue-policy";
 import { DEFAULT_CONFIG, generateBitstormInitialGrid } from "@/lib/binary2048/engine";
@@ -48,6 +49,18 @@ export async function POST(req: Request) {
     const sessionClass = body.economy?.sessionClass === "ranked" ? "ranked" : "unranked";
     const authClaims = getVerifiedAuthClaims(req);
     const userTier = authClaims?.tier ?? body.economy?.userTier ?? "guest";
+    const challenge = evaluateChallenge({ req, route: "/api/games", risk: "medium", userTier });
+    if (!challenge.allowed) {
+      return NextResponse.json(
+        {
+          error: "Challenge required",
+          route: "/api/games",
+          reason: challenge.reason,
+          mode: challenge.mode
+        },
+        { status: 403 }
+      );
+    }
     const plainEntitlements = Array.isArray(body.economy?.entitlements) ? body.economy?.entitlements : [];
     const proofSecret = process.env.BINARY2048_ENTITLEMENT_SECRET ?? "";
     const proofEntitlements = verifyEntitlementProof(body.economy?.proof, proofSecret);
