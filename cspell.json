@@ -1,0 +1,31 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "words": [
+    "Bitstorm",
+    "LTFG",
+    "Noop",
+    "Protanopia",
+    "Deuteranopia",
+    "Tritanopia",
+    "nextjs",
+    "roadmap",
+    "Wildcard",
+    "wildcards",
+    "NXDOMAIN",
+    "Codex",
+    "authed",
+    "inapp",
+    "json",
+    "webhook",
+    "sku",
+    "skus"
+  ],
+  "ignorePaths": [
+    "node_modules/**",
+    ".next/**",
+    ".next-dev/**",
+    ".next-build/**",
+    "package-lock.json"
+  ]
+}
