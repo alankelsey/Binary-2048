@@ -9,6 +9,7 @@ describe("docs content", () => {
     const dev = readFileSync(join(repoRoot, "docs", "developer-guide.md"), "utf8");
     const replayStorage = readFileSync(join(repoRoot, "docs", "replay-storage-strategy.md"), "utf8");
     const telemetry = readFileSync(join(repoRoot, "docs", "telemetry-alarms.md"), "utf8");
+    const nxdomain = readFileSync(join(repoRoot, "docs", "route53-nxdomain-runbook.md"), "utf8");
     expect(user).toContain("# Binary-2048 User Guide");
     expect(user).toContain("## Replay and Sharing");
     expect(dev).toContain("# Binary-2048 Developer Guide");
@@ -17,6 +18,8 @@ describe("docs content", () => {
     expect(replayStorage).toContain("## Phase 1: No-DB Default (Current Lightweight Mode)");
     expect(telemetry).toContain("# Telemetry And Anomaly Visibility");
     expect(telemetry).toContain("GET /api/ops/telemetry");
+    expect(nxdomain).toContain("# Route 53 NXDOMAIN Runbook");
+    expect(nxdomain).toContain("npm run ops:waf:nxdomain");
   });
 
   it("links docs routes from api docs page and README", () => {
@@ -28,5 +31,6 @@ describe("docs content", () => {
     expect(readme).toContain("http://localhost:3000/docs");
     expect(readme).toContain("http://localhost:3000/docs/user");
     expect(readme).toContain("http://localhost:3000/docs/developer");
+    expect(readme).toContain("npm run ops:waf:nxdomain");
   });
 });

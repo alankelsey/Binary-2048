@@ -33,6 +33,7 @@
     "ops:waf:verify": "bash ./scripts/waf-verify.sh",
     "ops:waf:rollback": "bash ./scripts/waf-rollback.sh",
     "ops:waf:alarm": "bash ./scripts/waf-create-alarm.sh",
+    "ops:waf:nxdomain": "bash ./scripts/waf-route53-nxdomain.sh",
     "ops:waf:budget": "bash ./scripts/waf-budget.sh",
     "ops:waf:sns": "bash ./scripts/waf-sns.sh",
     "ops:waf:tripwire-check": "bash ./scripts/waf-tripwire-check.sh",

@@ -175,6 +175,12 @@ End-to-end WAF smoke:
 DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
 ```
 
+Route 53 NXDOMAIN anomaly setup:
+
+```bash
+QUERY_LOG_GROUP_NAME=/aws/route53/your-zone npm run ops:waf:nxdomain
+```
+
 ## API
 
 - `POST /api/games`
