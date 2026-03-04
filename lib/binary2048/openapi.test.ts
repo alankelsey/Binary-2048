@@ -25,6 +25,7 @@ describe("OPENAPI_SPEC", () => {
     expect(OPENAPI_SPEC.paths["/api/games/{id}/replay"]?.get?.summary).toContain("canonical replay payload");
     expect(OPENAPI_SPEC.paths["/api/simulate"]?.post?.summary).toBe("Batch simulation endpoint");
     expect(OPENAPI_SPEC.paths["/api/replay"]?.post?.summary).toContain("Deterministically reconstruct replay");
+    expect(OPENAPI_SPEC.paths["/api/replay/validate"]?.post?.summary).toContain("Validate replay payload");
     expect(OPENAPI_SPEC.paths["/api/replay/code"]?.post?.summary).toContain("Create shareable replay code");
     expect(OPENAPI_SPEC.paths["/api/replay/code"]?.get?.summary).toContain("Decode shareable replay code");
     expect(OPENAPI_SPEC.paths["/api/openapi"]?.get?.summary).toBe("OpenAPI spec document");

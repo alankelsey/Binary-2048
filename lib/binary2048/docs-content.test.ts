@@ -1,0 +1,26 @@
+import { readFileSync } from "fs";
+import { join } from "path";
+
+describe("docs content", () => {
+  const repoRoot = join(__dirname, "..", "..");
+
+  it("contains user and developer markdown guides with expected sections", () => {
+    const user = readFileSync(join(repoRoot, "docs", "user-guide.md"), "utf8");
+    const dev = readFileSync(join(repoRoot, "docs", "developer-guide.md"), "utf8");
+    expect(user).toContain("# Binary-2048 User Guide");
+    expect(user).toContain("## Replay and Sharing");
+    expect(dev).toContain("# Binary-2048 Developer Guide");
+    expect(dev).toContain("## Replay Model");
+  });
+
+  it("links docs routes from api docs page and README", () => {
+    const apiDocsPage = readFileSync(join(repoRoot, "app", "api-docs", "page.tsx"), "utf8");
+    const readme = readFileSync(join(repoRoot, "README.md"), "utf8");
+    expect(apiDocsPage).toContain('href="/docs"');
+    expect(apiDocsPage).toContain('href="/docs/user"');
+    expect(apiDocsPage).toContain('href="/docs/developer"');
+    expect(readme).toContain("http://localhost:3000/docs");
+    expect(readme).toContain("http://localhost:3000/docs/user");
+    expect(readme).toContain("http://localhost:3000/docs/developer");
+  });
+});

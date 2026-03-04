@@ -29,6 +29,9 @@ npm run dev
 
 Open `http://localhost:3000`.
 API docs UI: `http://localhost:3000/api-docs`.
+Docs hub: `http://localhost:3000/docs`.
+User docs: `http://localhost:3000/docs/user`.
+Developer docs: `http://localhost:3000/docs/developer`.
 Replay share UI: `http://localhost:3000/replay?code=...`.
 In-app share row includes `Copy Replay Link` for the current run.
 
@@ -259,6 +262,10 @@ DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
     - Full export JSON payload, or
     - `{ "header"?: { "rulesetId"?: string, "seed"?: number }, "config": GameConfig, "initialGrid": Cell[][], "moves": Array<Dir | "L" | "R" | "U" | "D"> }`
   - Deterministically reconstructs a run and returns final state + step summaries
+- `POST /api/replay/validate`
+  - Body: replay/export payload
+  - Returns `{ "ok": boolean, "reason": string, "details"?: { ... } }`
+  - Performs replay compatibility checks and deterministic rerun validation
 - `POST /api/replay/code`
   - Body: replay/export payload
   - Returns base64url replay `code` + length and guardrail flags

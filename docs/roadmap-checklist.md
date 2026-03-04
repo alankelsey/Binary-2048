@@ -26,7 +26,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Replay header schema lock: include explicit `replayVersion`, `size`, `createdAt`, and compatibility checks
 - [x] Step log schema lock: include `rngStep`, `scoreDelta`, `scoreTotal`, and normalized event payloads
 - [x] RNG draw contract tests: enforce fixed draw count per spawn (type draw + position draw)
-- [ ] `validateReplay(header,moves)` API/utility with compatibility and deterministic rerun checks
+- [x] `validateReplay(header,moves)` API/utility with compatibility and deterministic rerun checks
 - [ ] Signed replay tokens for ranked submissions (HMAC on replay payload; reject tampered metadata/moves)
 - [ ] Replay URL oversize fallback: short-lived signed server-hosted replay when encoded URL exceeds safe length
 - [ ] Engine version pinning strategy for tournaments/replays across version upgrades

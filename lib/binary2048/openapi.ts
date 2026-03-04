@@ -331,6 +331,19 @@ export const OPENAPI_SPEC = {
         }
       }
     },
+    "/api/replay/validate": {
+      post: {
+        summary: "Validate replay payload compatibility and deterministic rerun",
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { type: "object" } } }
+        },
+        responses: {
+          "200": { description: "Replay validation result { ok, reason, details? }" },
+          "400": { description: "Invalid JSON payload" }
+        }
+      }
+    },
     "/api/replay/code": {
       post: {
         summary: "Create shareable replay code from replay payload",

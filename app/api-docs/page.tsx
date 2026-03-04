@@ -14,6 +14,10 @@ export default function ApiDocsPage() {
         <p>
           OpenAPI JSON source: <a href="/api/openapi">/api/openapi</a>
         </p>
+        <p>
+          Docs hub: <a href="/docs">/docs</a> | User guide: <a href="/docs/user">/docs/user</a> | Developer guide:{" "}
+          <a href="/docs/developer">/docs/developer</a>
+        </p>
 
         <div className="api-doc-grid">
           {entries.map((entry) => {
