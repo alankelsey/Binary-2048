@@ -80,6 +80,12 @@ One-command tournament with temporary local dev server:
 npm run bot:tourney:dev
 ```
 
+Roadmap completion status:
+
+```bash
+npm run roadmap:status
+```
+
 WAF setup helper (requires AWS CLI credentials + CloudFront distribution id):
 
 ```bash
@@ -191,6 +197,10 @@ DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
 - `GET /api/games/:id/export`
   - Returns export JSON (download attachment)
   - Includes replay-critical metadata: `rulesetId`, `engineVersion`, `spawnProbs`, and compact replay (`seed`, `moves`, `movesApplied`)
+- `GET /api/games/:id/replay`
+  - Returns canonical replay payload with only:
+    - `header`
+    - `moves`
 - `POST /api/auth/entitlements/proof`
   - Mints short-lived signed entitlement proof for ranked flows from a signed auth-bridge token
   - Requires:
@@ -263,6 +273,9 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE).
 
 ## Roadmap Additions
 
+Trackable checklist source:
+- [docs/roadmap-checklist.md](./docs/roadmap-checklist.md)
+
 ### Status Snapshot (March 3, 2026)
 
 - Completed foundations:
@@ -282,6 +295,7 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE).
   - Dev-only auth bridge token mint endpoint (`POST /api/auth/dev-token`) for local ranked/economy flow testing.
   - Replay-code signing/verification support via `BINARY2048_REPLAY_CODE_SECRET` to reject tampered signed replay links.
   - Replay code compression fallback (`r1z.`) when plain replay code exceeds length guardrails, with legacy replay-code decode compatibility.
+  - Canonical replay endpoint (`GET /api/games/:id/replay`) for replay-only payload shape (`header`, `moves`).
   - Win celebration flow: large win overlay with `Continue`/`New Game` actions and ranked-default continue lockout.
 - Next implementation focus:
   - Wire real auth provider claims (Auth.js/OAuth session) into auth-bridge issuance in production.

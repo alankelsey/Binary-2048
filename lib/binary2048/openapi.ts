@@ -115,6 +115,16 @@ export const OPENAPI_SPEC = {
         }
       }
     },
+    "/api/games/{id}/replay": {
+      get: {
+        summary: "Get canonical replay payload (header + moves)",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          "200": { description: "Replay payload" },
+          "404": { description: "Game not found" }
+        }
+      }
+    },
     "/api/games/import": {
       post: {
         summary: "Import game JSON",

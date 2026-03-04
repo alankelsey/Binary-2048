@@ -12,6 +12,7 @@ describe("OPENAPI_SPEC", () => {
     expect(OPENAPI_SPEC.paths["/api/auth/dev-token"]?.post?.summary).toContain("Dev-only auth bridge token");
     expect(OPENAPI_SPEC.paths["/api/auth/entitlements/proof"]?.post?.summary).toContain("Mint short-lived entitlement proof");
     expect(OPENAPI_SPEC.paths["/api/games/{id}/encoded"]?.get?.summary).toBe("Get AI-friendly encoded state");
+    expect(OPENAPI_SPEC.paths["/api/games/{id}/replay"]?.get?.summary).toContain("canonical replay payload");
     expect(OPENAPI_SPEC.paths["/api/simulate"]?.post?.summary).toBe("Batch simulation endpoint");
     expect(OPENAPI_SPEC.paths["/api/replay"]?.post?.summary).toContain("Deterministically reconstruct replay");
     expect(OPENAPI_SPEC.paths["/api/replay/code"]?.post?.summary).toContain("Create shareable replay code");
