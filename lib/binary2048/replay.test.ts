@@ -37,7 +37,33 @@ describe("replay helpers", () => {
       engine: "binary2048",
       rulesetId: "binary2048-v1",
       engineVersion: "test",
-      replay: { seed: 1, moves: ["right", "down"], movesApplied: 2 },
+      replay: {
+        seed: 1,
+        moves: ["right", "down"],
+        movesApplied: 2,
+        stepLog: [
+          {
+            i: 0,
+            dir: "right",
+            rngStepStart: 0,
+            rngStepEnd: 1,
+            scoreDelta: 1,
+            scoreTotal: 1,
+            spawned: null,
+            events: []
+          },
+          {
+            i: 1,
+            dir: "down",
+            rngStepStart: 1,
+            rngStepEnd: 2,
+            scoreDelta: 2,
+            scoreTotal: 3,
+            spawned: null,
+            events: []
+          }
+        ]
+      },
       spawnProbs: { zero: 0.1, one: 0.8, wildcard: 0.1, lock: 0, wildcardMultipliers: [2] },
       integrity: { sessionClass: "unranked", source: "created" }
     },

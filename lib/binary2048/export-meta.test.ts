@@ -32,6 +32,23 @@ describe("export replay metadata", () => {
     expect(exported.meta.replay.seed).toBe(123);
     expect(exported.meta.replay.moves).toEqual(exported.steps.map((step) => step.dir));
     expect(exported.meta.replay.movesApplied).toBe(exported.steps.length);
+    expect(Array.isArray(exported.meta.replay.stepLog)).toBe(true);
+    expect(exported.meta.replay.stepLog).toHaveLength(exported.steps.length);
+    const firstStep = exported.meta.replay.stepLog[0];
+    expect(typeof firstStep.i).toBe("number");
+    expect(firstStep.dir).toBe(exported.steps[0].dir);
+    expect(typeof firstStep.rngStepStart).toBe("number");
+    expect(typeof firstStep.rngStepEnd).toBe("number");
+    expect(typeof firstStep.scoreDelta).toBe("number");
+    expect(typeof firstStep.scoreTotal).toBe("number");
+    expect(firstStep.events).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          t: expect.any(String),
+          payload: expect.any(Object)
+        })
+      ])
+    );
     expect(exported.meta.spawnProbs).toEqual({
       zero: 0,
       one: 1,

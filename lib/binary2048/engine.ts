@@ -6,6 +6,7 @@ import type {
   GameEvent,
   GameExport,
   GameState,
+  ReplayStepLog,
   SessionIntegrity,
   StepRecord,
   Tile
@@ -169,6 +170,7 @@ export function buildExport(
 ): GameExport {
   const engineVersion = process.env.NEXT_PUBLIC_APP_COMMIT ?? "dev";
   const moves = steps.map((step) => step.dir);
+  const stepLog = buildReplayStepLog(steps);
   return {
     version: 1,
     meta: {
@@ -179,7 +181,8 @@ export function buildExport(
       replay: {
         seed: config.seed,
         moves,
-        movesApplied: moves.length
+        movesApplied: moves.length,
+        stepLog
       },
       spawnProbs: {
         zero: config.spawn.pZero,
@@ -195,6 +198,73 @@ export function buildExport(
     steps,
     final
   };
+}
+
+function normalizeReplayEvent(event: GameEvent): ReplayStepLog["events"][number] {
+  if (event.type === "spawn") {
+    return {
+      t: "spawn",
+      payload: {
+        r: event.at[0],
+        c: event.at[1],
+        tile: event.tile
+      }
+    };
+  }
+  if (event.type === "merge") {
+    return {
+      t: "merge",
+      payload: {
+        r: event.at[0],
+        c: event.at[1],
+        into: event.into
+      }
+    };
+  }
+  if (event.type === "lock_block" || event.type === "lock_break") {
+    return {
+      t: event.type,
+      payload: {
+        r: event.at[0],
+        c: event.at[1],
+        turn: event.turn
+      }
+    };
+  }
+  if (event.type === "game_won") {
+    return {
+      t: "game_won",
+      payload: {
+        r: event.at[0],
+        c: event.at[1],
+        tile: event.tile
+      }
+    };
+  }
+  return { t: "game_over", payload: {} };
+}
+
+function firstSpawnInStep(events: GameEvent[]): ReplayStepLog["spawned"] {
+  const spawn = events.find((event) => event.type === "spawn");
+  if (!spawn || spawn.type !== "spawn") return null;
+  return {
+    r: spawn.at[0],
+    c: spawn.at[1],
+    tile: spawn.tile
+  };
+}
+
+function buildReplayStepLog(steps: StepRecord[]): ReplayStepLog[] {
+  return steps.map((step, index) => ({
+    i: index,
+    dir: step.dir,
+    rngStepStart: step.before.rngStep,
+    rngStepEnd: step.after.rngStep,
+    scoreDelta: step.after.score - step.before.score,
+    scoreTotal: step.after.score,
+    spawned: firstSpawnInStep(step.events),
+    events: step.events.map(normalizeReplayEvent)
+  }));
 }
 
 function mergeConfig(partial: Partial<GameConfig> | undefined): GameConfig {

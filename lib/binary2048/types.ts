@@ -82,6 +82,7 @@ export type GameExport = {
       seed: number;
       moves: Dir[];
       movesApplied: number;
+      stepLog: ReplayStepLog[];
     };
     spawnProbs: {
       zero: number;
@@ -103,4 +104,20 @@ export type GameExport = {
   initial: GameState;
   steps: StepRecord[];
   final: GameState;
+};
+
+export type ReplayStepEvent = {
+  t: "spawn" | "merge" | "lock_block" | "lock_break" | "game_won" | "game_over";
+  payload: Record<string, unknown>;
+};
+
+export type ReplayStepLog = {
+  i: number;
+  dir: Dir;
+  rngStepStart: number;
+  rngStepEnd: number;
+  scoreDelta: number;
+  scoreTotal: number;
+  spawned: { r: number; c: number; tile: Tile } | null;
+  events: ReplayStepEvent[];
 };

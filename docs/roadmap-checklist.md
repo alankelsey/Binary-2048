@@ -24,7 +24,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Ranked leaderboard is server-authoritative (does not trust client-submitted scores/replays)
 - [x] Move endpoint optimistic concurrency guard (`stateHash` + `409` on stale clients)
 - [x] Replay header schema lock: include explicit `replayVersion`, `size`, `createdAt`, and compatibility checks
-- [ ] Step log schema lock: include `rngStep`, `scoreDelta`, `scoreTotal`, and normalized event payloads
+- [x] Step log schema lock: include `rngStep`, `scoreDelta`, `scoreTotal`, and normalized event payloads
 - [ ] RNG draw contract tests: enforce fixed draw count per spawn (type draw + position draw)
 - [ ] `validateReplay(header,moves)` API/utility with compatibility and deterministic rerun checks
 - [ ] Signed replay tokens for ranked submissions (HMAC on replay payload; reject tampered metadata/moves)
