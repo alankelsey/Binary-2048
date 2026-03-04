@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verifyAuthBridgeToken } from "@/lib/binary2048/auth-bridge";
+import { getVerifiedAuthClaims } from "@/lib/binary2048/auth-context";
 import { deriveEntitlementsForTier } from "@/lib/binary2048/entitlements";
 import { canContinueAfterWin } from "@/lib/binary2048/continue-policy";
 import { DEFAULT_CONFIG, generateBitstormInitialGrid } from "@/lib/binary2048/engine";
@@ -32,12 +32,6 @@ function mergeConfig(config: Partial<GameConfig> | undefined): GameConfig {
   };
 }
 
-function parseBearerToken(authHeader: string | null): string {
-  if (!authHeader) return "";
-  const match = authHeader.match(/^Bearer\s+(.+)$/i);
-  return match?.[1]?.trim() ?? "";
-}
-
 export async function POST(req: Request) {
   try {
     const raw = await req.json().catch(() => ({}));
@@ -46,9 +40,7 @@ export async function POST(req: Request) {
     let initialGrid = body.initialGrid;
     const mode = body.mode === "bitstorm" ? "bitstorm" : "classic";
     const sessionClass = body.economy?.sessionClass === "ranked" ? "ranked" : "unranked";
-    const authSecret = process.env.BINARY2048_AUTH_BRIDGE_SECRET ?? "";
-    const authToken = parseBearerToken(req.headers.get("authorization"));
-    const authClaims = verifyAuthBridgeToken(authToken, authSecret);
+    const authClaims = getVerifiedAuthClaims(req);
     const userTier = authClaims?.tier ?? body.economy?.userTier ?? "guest";
     const plainEntitlements = Array.isArray(body.economy?.entitlements) ? body.economy?.entitlements : [];
     const proofSecret = process.env.BINARY2048_ENTITLEMENT_SECRET ?? "";

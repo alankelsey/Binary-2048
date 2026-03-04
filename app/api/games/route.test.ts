@@ -1,11 +1,30 @@
+import { createHmac } from "crypto";
 import { createAuthBridgeToken } from "@/lib/binary2048/auth-bridge";
 import { POST } from "@/app/api/games/route";
 import { createEntitlementProof } from "@/lib/binary2048/entitlement-proof";
+
+function toBase64Url(input: string) {
+  return Buffer.from(input, "utf8")
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+}
+
+function signHeaderClaims(encodedClaims: string, secret: string) {
+  return createHmac("sha256", secret)
+    .update(encodedClaims)
+    .digest("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+}
 
 describe("POST /api/games", () => {
   afterEach(() => {
     delete process.env.BINARY2048_ENTITLEMENT_SECRET;
     delete process.env.BINARY2048_AUTH_BRIDGE_SECRET;
+    delete process.env.BINARY2048_AUTH_HEADER_SECRET;
   });
 
   it("creates a classic game with undo metadata", async () => {
@@ -194,6 +213,48 @@ describe("POST /api/games", () => {
 
     expect(res.status).toBe(200);
     expect(json.integrity?.sessionClass).toBe("ranked");
+    expect(json.current?.config?.spawn?.pLock).toBe(0.2);
+    expect(json.economy?.lockTilesEnabled).toBe(true);
+    expect(json.economy?.userTier).toBe("paid");
+  });
+
+  it("keeps lock spawn for ranked games with signed auth header claims", async () => {
+    process.env.BINARY2048_AUTH_HEADER_SECRET = "header-bridge-secret";
+    const encodedClaims = toBase64Url(
+      JSON.stringify({
+        sub: "u_header_paid",
+        exp: Math.floor(Date.now() / 1000) + 60,
+        tier: "paid"
+      })
+    );
+    const sig = signHeaderClaims(encodedClaims, process.env.BINARY2048_AUTH_HEADER_SECRET);
+
+    const req = new Request("http://localhost/api/games", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-binary2048-auth-claims": encodedClaims,
+        "x-binary2048-auth-sig": sig
+      },
+      body: JSON.stringify({
+        economy: {
+          sessionClass: "ranked"
+        },
+        config: {
+          spawn: {
+            pZero: 0.15,
+            pOne: 0.55,
+            pWildcard: 0.1,
+            pLock: 0.2,
+            wildcardMultipliers: [2]
+          }
+        }
+      })
+    });
+
+    const res = await POST(req);
+    const json = await res.json();
+    expect(res.status).toBe(200);
     expect(json.current?.config?.spawn?.pLock).toBe(0.2);
     expect(json.economy?.lockTilesEnabled).toBe(true);
     expect(json.economy?.userTier).toBe("paid");

@@ -194,8 +194,9 @@ DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
 - `POST /api/auth/entitlements/proof`
   - Mints short-lived signed entitlement proof for ranked flows from a signed auth-bridge token
   - Requires:
-    - `Authorization: Bearer <auth-bridge-token>`
-    - `BINARY2048_AUTH_BRIDGE_SECRET` and `BINARY2048_ENTITLEMENT_SECRET` on server
+    - either `Authorization: Bearer <auth-bridge-token>` with `BINARY2048_AUTH_BRIDGE_SECRET`, or
+    - signed upstream auth headers (`x-binary2048-auth-claims`, `x-binary2048-auth-sig`) with `BINARY2048_AUTH_HEADER_SECRET`
+    - `BINARY2048_ENTITLEMENT_SECRET` on server
   - Optional body: `{ "sessionClass": "ranked" | "unranked" }`
   - Returns `{ proof, exp, sessionClass, userTier, entitlements }`
 - `POST /api/auth/dev-token`
@@ -277,6 +278,7 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE).
   - Lock-0 economy policy in game creation: ranked sessions require `lock_tiles_ranked` entitlement to keep lock spawn enabled.
   - Auth-backed entitlement issuance endpoint for ranked sessions (`POST /api/auth/entitlements/proof`) using signed auth bridge token + short-lived signed proof.
   - Ranked game creation can consume verified auth-bridge claims directly (no client tier trust) when proof is absent.
+  - Signed header auth-bridge support for trusted upstream middleware/session bridge (`x-binary2048-auth-claims` + HMAC sig).
   - Dev-only auth bridge token mint endpoint (`POST /api/auth/dev-token`) for local ranked/economy flow testing.
   - Replay-code signing/verification support via `BINARY2048_REPLAY_CODE_SECRET` to reject tampered signed replay links.
   - Replay code compression fallback (`r1z.`) when plain replay code exceeds length guardrails, with legacy replay-code decode compatibility.

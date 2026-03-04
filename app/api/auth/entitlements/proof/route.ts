@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verifyAuthBridgeToken } from "@/lib/binary2048/auth-bridge";
+import { getVerifiedAuthClaims } from "@/lib/binary2048/auth-context";
 import { deriveEntitlementsForTier } from "@/lib/binary2048/entitlements";
 import { createEntitlementProof } from "@/lib/binary2048/entitlement-proof";
 
@@ -9,24 +9,18 @@ type ProofBody = {
 
 const DEFAULT_TTL_SECONDS = 300;
 
-function parseBearerToken(authHeader: string | null): string {
-  if (!authHeader) return "";
-  const match = authHeader.match(/^Bearer\s+(.+)$/i);
-  return match?.[1]?.trim() ?? "";
-}
-
 export async function POST(req: Request) {
   const authSecret = process.env.BINARY2048_AUTH_BRIDGE_SECRET ?? "";
+  const authHeaderSecret = process.env.BINARY2048_AUTH_HEADER_SECRET ?? "";
   const proofSecret = process.env.BINARY2048_ENTITLEMENT_SECRET ?? "";
-  if (!authSecret || !proofSecret) {
+  if ((!authSecret && !authHeaderSecret) || !proofSecret) {
     return NextResponse.json(
       { error: "Proof issuance is not configured on server" },
       { status: 503 }
     );
   }
 
-  const token = parseBearerToken(req.headers.get("authorization"));
-  const claims = verifyAuthBridgeToken(token, authSecret);
+  const claims = getVerifiedAuthClaims(req);
   if (!claims) {
     return NextResponse.json({ error: "Invalid auth token" }, { status: 401 });
   }
