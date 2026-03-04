@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { runBotTournament, type BotId } from "@/lib/binary2048/bot-orchestrator";
+import { recordRouteTelemetry } from "@/lib/binary2048/ops-telemetry";
 import { checkTournamentRateLimit } from "@/lib/binary2048/rate-limit";
 import {
   acquireTournamentSlot,
@@ -46,10 +47,13 @@ function parseBots(raw: unknown): BotId[] {
 }
 
 export async function POST(req: Request) {
+  const startedAtMs = Date.now();
+  let statusCode = 200;
   let slot: Awaited<ReturnType<typeof acquireTournamentSlot>> | null = null;
   try {
     const quota = checkTournamentRateLimit(req);
     if (!quota.allowed) {
+      statusCode = 429;
       return NextResponse.json(
         {
           error: "Rate limit exceeded",
@@ -86,6 +90,7 @@ export async function POST(req: Request) {
     );
   } catch (error) {
     if (error instanceof TournamentQueueFullError) {
+      statusCode = 503;
       return NextResponse.json(
         {
           error: "Tournament capacity reached",
@@ -96,6 +101,7 @@ export async function POST(req: Request) {
       );
     }
     if (error instanceof TournamentQueueTimeoutError) {
+      statusCode = 503;
       return NextResponse.json(
         {
           error: "Tournament queue wait timeout",
@@ -105,11 +111,18 @@ export async function POST(req: Request) {
         { status: 503 }
       );
     }
+    statusCode = 400;
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Invalid tournament payload" },
       { status: 400 }
     );
   } finally {
     slot?.release();
+    recordRouteTelemetry({
+      route: "/api/bots/tournament",
+      status: statusCode,
+      durationMs: Date.now() - startedAtMs,
+      costUnits: 5
+    });
   }
 }

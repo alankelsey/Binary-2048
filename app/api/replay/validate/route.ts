@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { normalizeEnginePinMode } from "@/lib/binary2048/engine-version-policy";
+import { recordRouteTelemetry } from "@/lib/binary2048/ops-telemetry";
 import { validateReplay } from "@/lib/binary2048/replay-validate";
 
 export async function POST(req: Request) {
+  const startedAtMs = Date.now();
+  let statusCode = 200;
   try {
     const body = (await req.json()) as { signature?: unknown; payload?: unknown };
     const hasNestedPayload =
@@ -18,9 +21,17 @@ export async function POST(req: Request) {
     const result = validateReplay(payload, { signature, signingSecret, expectedEngineVersion, enginePinMode });
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
+    statusCode = 400;
     return NextResponse.json(
       { ok: false, reason: error instanceof Error ? error.message : "Invalid replay payload" },
       { status: 400 }
     );
+  } finally {
+    recordRouteTelemetry({
+      route: "/api/replay/validate",
+      status: statusCode,
+      durationMs: Date.now() - startedAtMs,
+      costUnits: 2
+    });
   }
 }

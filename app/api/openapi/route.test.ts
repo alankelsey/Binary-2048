@@ -9,5 +9,6 @@ describe("GET /api/openapi", () => {
     expect(json?.info?.title).toBe("Binary-2048 API");
     expect(json?.paths?.["/api/games"]).toBeTruthy();
     expect(json?.paths?.["/api/openapi"]).toBeTruthy();
+    expect(json?.paths?.["/api/ops/telemetry"]).toBeTruthy();
   });
 });

@@ -75,7 +75,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [ ] CAPTCHA/challenge policy wiring by endpoint risk profile
 - [x] Rate limits/quotas on heavy bot/tournament endpoints (per IP and/or per key)
 - [x] Tournament job-queue/concurrency limit strategy for CPU cost control
-- [ ] Replay/tournament telemetry + anomaly alarms (latency/cost/WAF spike visibility)
+- [x] Replay/tournament telemetry + anomaly alarms (latency/cost/WAF spike visibility)
 
 ## Product Roadmap
 

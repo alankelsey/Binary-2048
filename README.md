@@ -254,11 +254,15 @@ DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
     - `BINARY2048_TOURNAMENT_MAX_CONCURRENT` (default `2`)
     - `BINARY2048_TOURNAMENT_MAX_QUEUE` (default `8`)
     - `BINARY2048_TOURNAMENT_QUEUE_WAIT_TIMEOUT_MS` (default `15000`)
+  - Emits telemetry to `/api/ops/telemetry`
 - `POST /api/marketing/track`
   - Body: `{ "type": "share_click" | "copy_share" | "copy_replay_link" | "landing_visit", "channel"?: "x" | "linkedin" | "copy" | "replay", "referralCode"?: string, "campaign"?: string }`
   - Stores lightweight marketing/share CTA event for rollout analytics
 - `GET /api/marketing/events?limit=50`
   - Lists recent tracked marketing events (newest first)
+- `GET /api/ops/telemetry`
+  - Returns in-memory telemetry snapshot for replay/tournament route latency/error/cost visibility
+  - Includes anomaly flags (`latency_spike`, `error_rate_spike`, `cost_spike`) per route
 - `POST /api/sim/run`
   - Body: `{ "config": GameConfig, "initialGrid": Cell[][], "moves": Dir[] }`
   - Runs deterministic scenario and returns export JSON
@@ -283,6 +287,7 @@ DIST_ID=E123ABC456XYZ APP_DOMAIN=binary2048.com npm run ops:waf:smoke
   - Supports engine version pinning via env:
     - `BINARY2048_ENGINE_VERSION` (expected version)
     - `BINARY2048_REPLAY_ENGINE_PIN_MODE` (`exact` | `minor` | `off`)
+  - Emits telemetry to `/api/ops/telemetry`
 - `POST /api/replay/code`
   - Body: replay/export payload
   - Returns replay `code` + length and guardrail flags

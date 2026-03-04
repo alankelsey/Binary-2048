@@ -47,6 +47,14 @@ export const OPENAPI_SPEC = {
         }
       }
     },
+    "/api/ops/telemetry": {
+      get: {
+        summary: "Get lightweight route telemetry and anomaly flags",
+        responses: {
+          "200": { description: "Telemetry snapshot" }
+        }
+      }
+    },
     "/api/leaderboard": {
       get: {
         summary: "List ranked leaderboard entries",
