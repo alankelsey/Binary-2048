@@ -234,6 +234,12 @@ BASE_URL=http://localhost:3000 npm run load:spike
 BASE_URL=http://localhost:3000 SOAK_DURATION=10m SOAK_VUS=30 npm run load:soak
 ```
 
+Staged gameplay load + pass/fail report:
+
+```bash
+BASE_URL=http://localhost:3000 npm run load:stage:gameplay
+```
+
 ## API
 
 - `POST /api/games`

@@ -1,0 +1,121 @@
+{
+  "generatedAt": "2026-03-07T16:37:40.057Z",
+  "baseUrl": "https://www.binary2048.com",
+  "overallPass": false,
+  "stages": [
+    {
+      "stage": "baseline",
+      "startedAt": "2026-03-07T16:37:29.881Z",
+      "finishedAt": "2026-03-07T16:37:34.865Z",
+      "config": {
+        "name": "baseline",
+        "concurrency": 8,
+        "iterations": 80
+      },
+      "slo": {
+        "p95Ms": 400,
+        "errorRate": 0.01
+      },
+      "passed": false,
+      "metrics": {
+        "requests": 80,
+        "successes": 62,
+        "failures": 18,
+        "errorRate": 0.225,
+        "durationMs": 4983.62170791626,
+        "throughputRps": 16.05258277788693,
+        "create": {
+          "p50": 122.16620898246765,
+          "p95": 2437.9168330430984,
+          "avg": 351.0425458446145
+        },
+        "move": {
+          "p50": 121.20070803165436,
+          "p95": 176.06754100322723,
+          "avg": 134.97869163304568
+        },
+        "total": {
+          "p50": 240.63787388801575,
+          "p95": 2668.0865420103073,
+          "avg": 486.0212374776602
+        }
+      }
+    },
+    {
+      "stage": "ramp",
+      "startedAt": "2026-03-07T16:37:34.866Z",
+      "finishedAt": "2026-03-07T16:37:37.381Z",
+      "config": {
+        "name": "ramp",
+        "concurrency": 16,
+        "iterations": 160
+      },
+      "slo": {
+        "p95Ms": 400,
+        "errorRate": 0.01
+      },
+      "passed": false,
+      "metrics": {
+        "requests": 160,
+        "successes": 99,
+        "failures": 61,
+        "errorRate": 0.38125,
+        "durationMs": 2514.862583041191,
+        "throughputRps": 63.62176648495603,
+        "create": {
+          "p50": 114.11666691303253,
+          "p95": 174.4033750295639,
+          "avg": 122.46032971665264
+        },
+        "move": {
+          "p50": 114.48641705513,
+          "p95": 132.82879197597504,
+          "avg": 118.59151871427893
+        },
+        "total": {
+          "p50": 230.10608303546906,
+          "p95": 339.68937599658966,
+          "avg": 241.05184843093156
+        }
+      }
+    },
+    {
+      "stage": "stress-lite",
+      "startedAt": "2026-03-07T16:37:37.382Z",
+      "finishedAt": "2026-03-07T16:37:40.056Z",
+      "config": {
+        "name": "stress-lite",
+        "concurrency": 24,
+        "iterations": 240
+      },
+      "slo": {
+        "p95Ms": 400,
+        "errorRate": 0.01
+      },
+      "passed": false,
+      "metrics": {
+        "requests": 240,
+        "successes": 130,
+        "failures": 110,
+        "errorRate": 0.4583333333333333,
+        "durationMs": 2673.5697079896927,
+        "throughputRps": 89.76762389354737,
+        "create": {
+          "p50": 116.16979205608368,
+          "p95": 155.46070802211761,
+          "avg": 138.92297830432653
+        },
+        "move": {
+          "p50": 116.47883307933807,
+          "p95": 137.16391599178314,
+          "avg": 119.31708558648825
+        },
+        "total": {
+          "p50": 235.30937492847443,
+          "p95": 305.4704999923706,
+          "avg": 258.2400638908148
+        }
+      }
+    }
+  ]
+}

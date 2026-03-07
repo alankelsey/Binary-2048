@@ -25,6 +25,12 @@ BASE_URL=http://localhost:3000 npm run load:spike
 BASE_URL=http://localhost:3000 SOAK_DURATION=10m SOAK_VUS=30 npm run load:soak
 ```
 
+No-k6 staged gameplay check (writes pass/fail evidence to `docs/load-results/`):
+
+```bash
+BASE_URL=http://localhost:3000 npm run load:stage:gameplay
+```
+
 ## Profiles
 
 - `load:baseline`
@@ -63,6 +69,11 @@ For each profile store:
 - route-level p95/p99 from app telemetry (`/api/ops/telemetry`)
 - WAF request/action deltas
 - CloudWatch cost/usage snapshots during test window
+
+Staged gameplay script writes:
+
+- `docs/load-results/staged-gameplay-latest.json`
+- `docs/load-results/staged-gameplay-latest.md`
 
 ## Notes
 
