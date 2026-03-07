@@ -38,6 +38,7 @@ Replay share UI: `http://localhost:3000/replay?code=...`.
 In-app share row includes `Copy Replay Link` for the current run.
 GitHub Pages setup guide: `docs/github-pages.md`.
 Feature review checklist runbook: `docs/feature-review-runbook.md`.
+Load test runbook: `docs/load-test-runbook.md`.
 
 Controls: swipe on mobile, arrow keys, and `W/A/S/D`.
 
@@ -213,6 +214,15 @@ Route 53 NXDOMAIN anomaly setup:
 
 ```bash
 QUERY_LOG_GROUP_NAME=/aws/route53/your-zone npm run ops:waf:nxdomain
+```
+
+Load testing profiles (requires `k6`):
+
+```bash
+BASE_URL=http://localhost:3000 npm run load:baseline
+BASE_URL=http://localhost:3000 npm run load:ramp
+BASE_URL=http://localhost:3000 npm run load:spike
+BASE_URL=http://localhost:3000 SOAK_DURATION=10m SOAK_VUS=30 npm run load:soak
 ```
 
 ## API

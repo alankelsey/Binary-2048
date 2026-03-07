@@ -79,7 +79,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 
 ## Public Launch Readiness + Cost Guardrails
 
-- [ ] Publish load-test runbook + scripts (baseline, ramp, spike, soak)
+- [x] Publish load-test runbook + scripts (baseline, ramp, spike, soak)
 - [ ] Define and document launch SLOs/SLIs (p50/p95 latency, error rate, saturation thresholds)
 - [ ] Run staged load test against gameplay routes (`/api/games`, `/api/games/:id/move`) and record pass/fail
 - [ ] Run abuse test against heavy routes (`/api/simulate`, `/api/bots/tournament`) with invalid/oversized payload mix
