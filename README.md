@@ -410,6 +410,11 @@ BASE_URL=http://localhost:3000 npm run load:stage:abuse
 - `POST /api/replay/postmortem`
   - Body: replay/export payload (same shape as `/api/replay`)
   - Returns top costly moves with per-turn opportunity cost analysis
+- `GET /api/challenges/daily`
+  - Returns today’s `Bitstorm Daily` challenge seed/config/initial grid and daily leaderboard window
+- `POST /api/challenges/daily/submit`
+  - Body: `{ "playerId": string, "replay": <export-or-compact-replay-payload> }`
+  - Verifies replay seed matches today’s challenge and records score in daily leaderboard
 
 Challenge policy env:
 

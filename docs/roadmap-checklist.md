@@ -111,7 +111,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add bot benchmark suite and publish seed-based benchmark table in docs
 - [x] Lock RNG draw contract for wildcard multiplier selection and add strict replay-compat tests
 - [x] Define Mongo/session-store migration trigger thresholds (active sessions, memory, replay volume) and execution plan
-- [ ] Add daily seeded challenge mode (`Bitstorm Daily`) with per-day leaderboard window
+- [x] Add daily seeded challenge mode (`Bitstorm Daily`) with per-day leaderboard window
 - [ ] Add ghost replay race mode (human vs best bot replay on same seed)
 - [x] Add replay postmortem analyzer (top 3-5 highest-cost moves from a finished run)
 - [x] Add API quickstart for external bot authors (Python starter + encoded state/action-mask example)

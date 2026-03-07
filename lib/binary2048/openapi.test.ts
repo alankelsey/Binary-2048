@@ -33,6 +33,8 @@ describe("OPENAPI_SPEC", () => {
     expect(OPENAPI_SPEC.paths["/api/replay/code"]?.post?.summary).toContain("Create shareable replay code");
     expect(OPENAPI_SPEC.paths["/api/replay/code"]?.get?.summary).toContain("Decode shareable replay code");
     expect(OPENAPI_SPEC.paths["/api/replay/postmortem"]?.post?.summary).toContain("postmortem analyzer");
+    expect(OPENAPI_SPEC.paths["/api/challenges/daily"]?.get?.summary).toContain("Bitstorm Daily");
+    expect(OPENAPI_SPEC.paths["/api/challenges/daily/submit"]?.post?.summary).toContain("Bitstorm Daily leaderboard");
     expect(OPENAPI_SPEC.paths["/api/openapi"]?.get?.summary).toBe("OpenAPI spec document");
     expect(OPENAPI_SPEC.paths["/api/health"]?.get?.summary).toBe("Health check");
     expect(OPENAPI_SPEC.paths["/api/ops/telemetry"]?.get?.summary).toContain("telemetry");

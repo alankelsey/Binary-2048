@@ -474,6 +474,27 @@ export const OPENAPI_SPEC = {
         }
       }
     },
+    "/api/challenges/daily": {
+      get: {
+        summary: "Get Bitstorm Daily challenge and daily leaderboard window",
+        responses: {
+          "200": { description: "Daily challenge payload" }
+        }
+      }
+    },
+    "/api/challenges/daily/submit": {
+      post: {
+        summary: "Submit replay for Bitstorm Daily leaderboard",
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { type: "object" } } }
+        },
+        responses: {
+          "200": { description: "Daily replay submission result" },
+          "400": { description: "Invalid submission payload" }
+        }
+      }
+    },
     "/api/openapi": {
       get: {
         summary: "OpenAPI spec document",

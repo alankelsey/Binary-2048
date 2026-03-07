@@ -57,6 +57,9 @@ Replay storage phases and migration notes are documented in:
   - `POST /api/replay`
   - `POST /api/replay/postmortem`
   - `POST/GET /api/replay/code`
+- Daily challenge:
+  - `GET /api/challenges/daily`
+  - `POST /api/challenges/daily/submit`
 - AI:
   - `GET /api/games/:id/encoded`
   - `POST /api/simulate`
