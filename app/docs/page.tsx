@@ -19,6 +19,13 @@ export default function DocsHomePage() {
               <a href="/docs/developer">Open developer docs</a>
             </p>
           </section>
+          <section className="api-doc-card">
+            <h2>Monetization Policy</h2>
+            <p>Player-facing policy for paid features, cosmetics, and non-pay-to-win guarantees.</p>
+            <p>
+              <a href="/monetization">Open monetization policy</a>
+            </p>
+          </section>
         </div>
       </div>
     </main>

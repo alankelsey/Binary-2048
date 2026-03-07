@@ -33,6 +33,11 @@ export default function UserDocsPage() {
         <h2>Accessibility</h2>
         <p>Use the in-app accessibility section for keyboard shortcut and tab-order map details.</p>
 
+        <h2>Monetization Policy</h2>
+        <p>
+          Player-facing monetization commitments are published at <a href="/monetization">/monetization</a>.
+        </p>
+
         <p>
           Full markdown copy: <a href="https://github.com/alankelsey/Binary-2048/blob/main/docs/user-guide.md">docs/user-guide.md</a>
         </p>

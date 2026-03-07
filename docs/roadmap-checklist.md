@@ -103,7 +103,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] If ads are enabled: server-verified reward grants + anti-fraud checks + daily caps/cooldowns
 - [x] Keep ranked integrity: ad rewards cannot affect `ranked_pure` leaderboard outcomes
 - [x] Ship subscription-first fallback plan if ad economics are poor
-- [ ] Create player-facing monetization policy (what is paid, what is cosmetic, what is never pay-to-win)
+- [x] Create player-facing monetization policy (what is paid, what is cosmetic, what is never pay-to-win)
 
 ## Bot-First Differentiation + Competitive Depth
 

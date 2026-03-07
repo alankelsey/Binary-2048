@@ -34,6 +34,7 @@ User docs: `http://localhost:3000/docs/user`.
 Developer docs: `http://localhost:3000/docs/developer`.
 Replay storage strategy: `docs/replay-storage-strategy.md`.
 Privacy page: `http://localhost:3000/privacy`.
+Monetization policy page: `http://localhost:3000/monetization`.
 Replay share UI: `http://localhost:3000/replay?code=...`.
 In-app share row includes `Copy Replay Link` for the current run.
 GitHub Pages setup guide: `docs/github-pages.md`.
@@ -45,6 +46,7 @@ Monetization telemetry baseline: `docs/monetization-telemetry-baseline.md`.
 Ad payout research snapshot: `docs/ad-network-payout-research-2026-03.md`.
 Ads decision + format policy: `docs/ads-decision-and-format-policy.md`.
 Subscription-first fallback: `docs/subscription-first-fallback.md`.
+Player monetization policy: `docs/player-monetization-policy.md`.
 
 Controls: swipe on mobile, arrow keys, and `W/A/S/D`.
 

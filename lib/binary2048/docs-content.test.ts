@@ -10,6 +10,7 @@ describe("docs content", () => {
     const replayStorage = readFileSync(join(repoRoot, "docs", "replay-storage-strategy.md"), "utf8");
     const telemetry = readFileSync(join(repoRoot, "docs", "telemetry-alarms.md"), "utf8");
     const nxdomain = readFileSync(join(repoRoot, "docs", "route53-nxdomain-runbook.md"), "utf8");
+    const monetization = readFileSync(join(repoRoot, "docs", "player-monetization-policy.md"), "utf8");
     expect(user).toContain("# Binary-2048 User Guide");
     expect(user).toContain("## Replay and Sharing");
     expect(dev).toContain("# Binary-2048 Developer Guide");
@@ -20,6 +21,8 @@ describe("docs content", () => {
     expect(telemetry).toContain("GET /api/ops/telemetry");
     expect(nxdomain).toContain("# Route 53 NXDOMAIN Runbook");
     expect(nxdomain).toContain("npm run ops:waf:nxdomain");
+    expect(monetization).toContain("# Player Monetization Policy");
+    expect(monetization).toContain("never pay-to-win");
   });
 
   it("links docs routes from api docs page and README", () => {
@@ -31,8 +34,10 @@ describe("docs content", () => {
     expect(readme).toContain("http://localhost:3000/docs");
     expect(readme).toContain("http://localhost:3000/docs/user");
     expect(readme).toContain("http://localhost:3000/docs/developer");
+    expect(readme).toContain("http://localhost:3000/monetization");
     expect(readme).toContain("npm run ops:waf:nxdomain");
     expect(readme).toContain("NOTIFICATION_THRESHOLDS");
     expect(readme).toContain("REQUIRE_ALARM_ACTIONS=1");
+    expect(apiDocsPage).toContain('href="/docs/user"');
   });
 });
