@@ -39,6 +39,7 @@ In-app share row includes `Copy Replay Link` for the current run.
 GitHub Pages setup guide: `docs/github-pages.md`.
 Feature review checklist runbook: `docs/feature-review-runbook.md`.
 Load test runbook: `docs/load-test-runbook.md`.
+Launch SLO/SLI targets: `docs/launch-slo-sli.md`.
 
 Controls: swipe on mobile, arrow keys, and `W/A/S/D`.
 
