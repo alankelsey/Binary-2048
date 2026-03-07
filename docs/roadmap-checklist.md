@@ -87,7 +87,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Enforce strict per-endpoint cost caps (max moves, max seeds, max batch size) with explicit `400`/`429` errors
 - [x] Add guest-vs-authed-vs-paid rate-limit matrix doc with concrete per-5-minute limits
 - [x] Implement emergency degrade mode toggles (disable heavy endpoints first under attack)
-- [ ] Add load-shed/circuit-breaker policy for sustained high error/latency windows
+- [x] Add load-shed/circuit-breaker policy for sustained high error/latency windows
 - [ ] Add pre-launch cost simulation checklist and expected max daily spend envelope
 - [ ] Validate billing tripwire by forced threshold test in non-prod and capture evidence
 - [ ] Define bot-abuse incident playbook (detect, throttle, block, recover, postmortem)
