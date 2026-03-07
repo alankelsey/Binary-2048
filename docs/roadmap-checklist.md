@@ -94,7 +94,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 
 ## Monetization Decision Track (Cost-Coverage First)
 
-- [ ] Define monthly cost target and break-even revenue target (hosting + tooling + support margin)
+- [x] Define monthly cost target and break-even revenue target (hosting + tooling + support margin)
 - [ ] Implement monetization telemetry baseline (ARPDAU proxy, conversion, retention, churn impact)
 - [ ] Run ad-network payout research (rewarded video eCPM/fill by target geos/platforms)
 - [ ] Decision gate: only ship in-game ads if projected net revenue exceeds UX cost threshold
