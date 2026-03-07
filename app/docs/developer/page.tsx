@@ -22,7 +22,7 @@ export default function DeveloperDocsPage() {
         <h2>Common APIs</h2>
         <ul>
           <li>Game lifecycle: `/api/games`, `/api/games/:id`, `/api/games/:id/move`, `/api/games/:id/undo`</li>
-          <li>Replay: `/api/games/:id/export`, `/api/games/:id/replay`, `/api/replay`, `/api/replay/code`</li>
+          <li>Replay: `/api/games/:id/export`, `/api/games/:id/replay`, `/api/replay`, `/api/replay/postmortem`, `/api/replay/code`</li>
           <li>AI: `/api/games/:id/encoded`, `/api/simulate`, `/api/bots/tournament`</li>
           <li>Ranked/security: `/api/leaderboard/submit`, `/api/auth/entitlements/proof`</li>
         </ul>

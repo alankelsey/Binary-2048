@@ -461,6 +461,19 @@ export const OPENAPI_SPEC = {
         }
       }
     },
+    "/api/replay/postmortem": {
+      post: {
+        summary: "Replay postmortem analyzer for highest-cost moves",
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { type: "object" } } }
+        },
+        responses: {
+          "200": { description: "Replay postmortem result" },
+          "400": { description: "Invalid replay payload" }
+        }
+      }
+    },
     "/api/openapi": {
       get: {
         summary: "OpenAPI spec document",

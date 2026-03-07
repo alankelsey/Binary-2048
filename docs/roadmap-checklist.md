@@ -113,7 +113,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Define Mongo/session-store migration trigger thresholds (active sessions, memory, replay volume) and execution plan
 - [ ] Add daily seeded challenge mode (`Bitstorm Daily`) with per-day leaderboard window
 - [ ] Add ghost replay race mode (human vs best bot replay on same seed)
-- [ ] Add replay postmortem analyzer (top 3-5 highest-cost moves from a finished run)
+- [x] Add replay postmortem analyzer (top 3-5 highest-cost moves from a finished run)
 - [x] Add API quickstart for external bot authors (Python starter + encoded state/action-mask example)
 - [x] Create bot-first launch package (Show HN post draft + Reddit/Discord technical announcement assets)
 

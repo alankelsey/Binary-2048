@@ -407,6 +407,9 @@ BASE_URL=http://localhost:3000 npm run load:stage:abuse
     - `BINARY2048_ENGINE_VERSION` (expected version)
     - `BINARY2048_REPLAY_ENGINE_PIN_MODE` (`exact` | `minor` | `off`)
   - Emits telemetry to `/api/ops/telemetry`
+- `POST /api/replay/postmortem`
+  - Body: replay/export payload (same shape as `/api/replay`)
+  - Returns top costly moves with per-turn opportunity cost analysis
 
 Challenge policy env:
 

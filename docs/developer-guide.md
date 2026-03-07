@@ -55,6 +55,7 @@ Replay storage phases and migration notes are documented in:
   - `GET /api/games/:id/export`
   - `GET /api/games/:id/replay`
   - `POST /api/replay`
+  - `POST /api/replay/postmortem`
   - `POST/GET /api/replay/code`
 - AI:
   - `GET /api/games/:id/encoded`
