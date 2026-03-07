@@ -37,6 +37,7 @@ Privacy page: `http://localhost:3000/privacy`.
 Replay share UI: `http://localhost:3000/replay?code=...`.
 In-app share row includes `Copy Replay Link` for the current run.
 GitHub Pages setup guide: `docs/github-pages.md`.
+Feature review checklist runbook: `docs/feature-review-runbook.md`.
 
 Controls: swipe on mobile, arrow keys, and `W/A/S/D`.
 

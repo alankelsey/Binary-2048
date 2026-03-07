@@ -700,7 +700,7 @@ export default function Home() {
           <p className="brand-subtitle">Merge bits. Control chaos. Reach 2048.</p>
         </div>
       </header>
-      <p>Arrow keys or WASD combine tiles. Bonus tiles: zero annihilator + wildcard multipliers.</p>
+      <p>Made mostly for bots by mostly bots: Bonus tiles: zero annihilator + wildcard multipliers.</p>
       <div className="card">
         <div className="meta">
           <span>Game: {replay ? `Replay (${replay.sourceName})` : gameId || "-"}</span>

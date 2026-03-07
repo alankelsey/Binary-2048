@@ -69,13 +69,53 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] WAF docs/checklists/scripts baseline
 - [x] Security policy helper for tiered 5-min limits
 - [x] Tournament guardrails for `seedCount`/`maxMoves` bounds
-- [ ] WAF live association + verify in production
+- [x] WAF live association + verify in production
 - [x] Billing alarm + budget tripwire fully wired and validated in AWS account
 - [x] Route 53 NXDOMAIN anomaly detection runbook + alarms
 - [x] CAPTCHA/challenge policy wiring by endpoint risk profile
 - [x] Rate limits/quotas on heavy bot/tournament endpoints (per IP and/or per key)
 - [x] Tournament job-queue/concurrency limit strategy for CPU cost control
 - [x] Replay/tournament telemetry + anomaly alarms (latency/cost/WAF spike visibility)
+
+## Public Launch Readiness + Cost Guardrails
+
+- [ ] Publish load-test runbook + scripts (baseline, ramp, spike, soak)
+- [ ] Define and document launch SLOs/SLIs (p50/p95 latency, error rate, saturation thresholds)
+- [ ] Run staged load test against gameplay routes (`/api/games`, `/api/games/:id/move`) and record pass/fail
+- [ ] Run abuse test against heavy routes (`/api/simulate`, `/api/bots/tournament`) with invalid/oversized payload mix
+- [ ] Enforce hard request-body limits on replay/sim endpoints (reject with `413`)
+- [ ] Enforce strict per-endpoint cost caps (max moves, max seeds, max batch size) with explicit `400`/`429` errors
+- [ ] Add guest-vs-authed-vs-paid rate-limit matrix doc with concrete per-5-minute limits
+- [ ] Implement emergency degrade mode toggles (disable heavy endpoints first under attack)
+- [ ] Add load-shed/circuit-breaker policy for sustained high error/latency windows
+- [ ] Add pre-launch cost simulation checklist and expected max daily spend envelope
+- [ ] Validate billing tripwire by forced threshold test in non-prod and capture evidence
+- [ ] Define bot-abuse incident playbook (detect, throttle, block, recover, postmortem)
+
+## Monetization Decision Track (Cost-Coverage First)
+
+- [ ] Define monthly cost target and break-even revenue target (hosting + tooling + support margin)
+- [ ] Implement monetization telemetry baseline (ARPDAU proxy, conversion, retention, churn impact)
+- [ ] Run ad-network payout research (rewarded video eCPM/fill by target geos/platforms)
+- [ ] Decision gate: only ship in-game ads if projected net revenue exceeds UX cost threshold
+- [ ] If ads are enabled: rewarded ads only (no forced gameplay-interrupt ads)
+- [ ] If ads are enabled: free-tier only, paid tiers remove ads
+- [ ] If ads are enabled: server-verified reward grants + anti-fraud checks + daily caps/cooldowns
+- [ ] Keep ranked integrity: ad rewards cannot affect `ranked_pure` leaderboard outcomes
+- [ ] Ship subscription-first fallback plan if ad economics are poor
+- [ ] Create player-facing monetization policy (what is paid, what is cosmetic, what is never pay-to-win)
+
+## Bot-First Differentiation + Competitive Depth
+
+- [ ] Add stronger reference bot (expectimax and/or Monte Carlo rollout) for meaningful tournament baselines
+- [ ] Add bot benchmark suite and publish seed-based benchmark table in docs
+- [ ] Lock RNG draw contract for wildcard multiplier selection and add strict replay-compat tests
+- [ ] Define Mongo/session-store migration trigger thresholds (active sessions, memory, replay volume) and execution plan
+- [ ] Add daily seeded challenge mode (`Bitstorm Daily`) with per-day leaderboard window
+- [ ] Add ghost replay race mode (human vs best bot replay on same seed)
+- [ ] Add replay postmortem analyzer (top 3-5 highest-cost moves from a finished run)
+- [ ] Add API quickstart for external bot authors (Python starter + encoded state/action-mask example)
+- [ ] Create bot-first launch package (Show HN post draft + Reddit/Discord technical announcement assets)
 
 ## Product Roadmap
 
