@@ -559,6 +559,7 @@ Trackable checklist source:
     - Add DNS query logging + anomaly alarms for NXDOMAIN/subdomain abuse patterns.
   - Track rollout in [docs/aws-waf-baseline.md](./docs/aws-waf-baseline.md).
   - Apply checklist in [docs/aws-waf-apply.md](./docs/aws-waf-apply.md).
+  - Use concrete per-tier/per-endpoint limits from [docs/rate-limit-matrix.md](./docs/rate-limit-matrix.md).
 
 ## AI / Multibot Roadmap
 
