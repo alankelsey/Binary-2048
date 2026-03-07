@@ -61,6 +61,13 @@ export function getLeaderboardEligibility(session: GameSession): LeaderboardElig
       reason: "Seeded starts are not eligible for ranked leaderboard"
     };
   }
+  if (session.undoUsed > 0) {
+    return {
+      eligible: false,
+      bracket: "ranked_boosted",
+      reason: "Undo-assisted runs are not eligible for ranked_pure"
+    };
+  }
   return { eligible: true, bracket: "ranked_pure" };
 }
 

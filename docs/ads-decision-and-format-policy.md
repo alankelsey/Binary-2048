@@ -45,6 +45,7 @@ Not allowed:
   - Rewards are granted only through `POST /api/ads/reward`.
   - Requires server-side HMAC signature verification (`x-binary2048-ad-sig`).
   - Anti-fraud checks enforce nonce replay protection, payload freshness, cooldown, and daily cap.
+  - Ranked integrity rule: undo-assisted runs are excluded from `ranked_pure` leaderboard bracket.
 
 ## 4) Review cadence
 

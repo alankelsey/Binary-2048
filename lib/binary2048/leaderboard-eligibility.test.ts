@@ -1,5 +1,5 @@
 import { getLeaderboardEligibility } from "@/lib/binary2048/leaderboard";
-import { createSession, moveSession } from "@/lib/binary2048/sessions";
+import { createSession, moveSession, undoSession } from "@/lib/binary2048/sessions";
 import type { Cell } from "@/lib/binary2048/types";
 
 describe("leaderboard eligibility", () => {
@@ -50,5 +50,14 @@ describe("leaderboard eligibility", () => {
     const result = getLeaderboardEligibility(session);
     expect(result.eligible).toBe(false);
     expect(result.reason).toContain("Seeded starts");
+  });
+
+  it("marks undo-assisted ranked runs as boosted", async () => {
+    const session = finishRankedSession(7004);
+    undoSession(session.current.id);
+    moveSession(session.current.id, "left");
+    const latest = getLeaderboardEligibility(session);
+    expect(latest.eligible).toBe(false);
+    expect(latest.reason).toContain("Undo-assisted");
   });
 });

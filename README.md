@@ -44,6 +44,7 @@ Monetization targets: `docs/monetization-targets.md`.
 Monetization telemetry baseline: `docs/monetization-telemetry-baseline.md`.
 Ad payout research snapshot: `docs/ad-network-payout-research-2026-03.md`.
 Ads decision + format policy: `docs/ads-decision-and-format-policy.md`.
+Subscription-first fallback: `docs/subscription-first-fallback.md`.
 
 Controls: swipe on mobile, arrow keys, and `W/A/S/D`.
 
@@ -334,7 +335,7 @@ BASE_URL=http://localhost:3000 npm run load:stage:abuse
   - Only accepts ranked created sessions that are finished (`won` or `over`)
   - Enforces ranked-vs-boosted separation:
     - `ranked_pure` sessions are eligible
-    - boosted sessions (seeded start grids and other non-standard starts) are rejected from ranked leaderboard
+    - boosted sessions (seeded start grids, undo-assisted runs, and other non-standard starts) are rejected from ranked leaderboard
 - `POST /api/bots/tournament`
   - Body (optional): `{ "seeds"?: number[], "seedStart"?: number, "seedCount"?: number, "maxMoves"?: number, "bots"?: ["priority" | "random" | "alternate"] }`
   - Runs same-seed AI-vs-AI tournament server-side and returns ranking + per-run summaries

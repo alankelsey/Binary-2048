@@ -1,7 +1,7 @@
 import { createAuthBridgeToken } from "@/lib/binary2048/auth-bridge";
 import { POST } from "@/app/api/leaderboard/submit/route";
 import { resetLeaderboard } from "@/lib/binary2048/leaderboard";
-import { createSession, moveSession } from "@/lib/binary2048/sessions";
+import { createSession, moveSession, undoSession } from "@/lib/binary2048/sessions";
 import type { Cell } from "@/lib/binary2048/types";
 
 function authHeader(sub = "u_ranked", tier: "guest" | "authed" | "paid" = "authed") {
@@ -28,7 +28,7 @@ function createFinishedRankedGame() {
     {
       seed: 601,
       winTile: 2,
-      spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] }
+      spawn: { pZero: 0, pOne: 0.9, pWildcard: 0.1, pLock: 0, wildcardMultipliers: [2] }
     },
     grid,
     { sessionClass: "ranked" }
@@ -159,6 +159,27 @@ describe("POST /api/leaderboard/submit", () => {
     const json = await res.json();
     expect(res.status).toBe(403);
     expect(String(json.error)).toContain("Seeded starts");
+    expect(json.bracket).toBe("ranked_boosted");
+  });
+
+  it("rejects undo-assisted ranked runs", async () => {
+    const gameId = createFinishedRankedGame();
+    undoSession(gameId);
+    moveSession(gameId, "left");
+
+    const req = new Request("http://localhost/api/leaderboard/submit", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        ...authHeader("u_submitter", "authed")
+      },
+      body: JSON.stringify({ gameId })
+    });
+
+    const res = await POST(req);
+    const json = await res.json();
+    expect(res.status).toBe(403);
+    expect(String(json.error)).toContain("Undo-assisted");
     expect(json.bracket).toBe("ranked_boosted");
   });
 
