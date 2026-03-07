@@ -11,6 +11,9 @@ describe("docs content", () => {
     const telemetry = readFileSync(join(repoRoot, "docs", "telemetry-alarms.md"), "utf8");
     const nxdomain = readFileSync(join(repoRoot, "docs", "route53-nxdomain-runbook.md"), "utf8");
     const monetization = readFileSync(join(repoRoot, "docs", "player-monetization-policy.md"), "utf8");
+    const botQuickstart = readFileSync(join(repoRoot, "docs", "bot-api-quickstart.md"), "utf8");
+    const botBenchmark = readFileSync(join(repoRoot, "docs", "bot-benchmark-suite.md"), "utf8");
+    const launchPackage = readFileSync(join(repoRoot, "docs", "bot-first-launch-package.md"), "utf8");
     expect(user).toContain("# Binary-2048 User Guide");
     expect(user).toContain("## Replay and Sharing");
     expect(dev).toContain("# Binary-2048 Developer Guide");
@@ -23,6 +26,10 @@ describe("docs content", () => {
     expect(nxdomain).toContain("npm run ops:waf:nxdomain");
     expect(monetization).toContain("# Player Monetization Policy");
     expect(monetization).toContain("never pay-to-win");
+    expect(botQuickstart).toContain("# Bot API Quickstart");
+    expect(botQuickstart).toContain("Python starter");
+    expect(botBenchmark).toContain("# Bot Benchmark Suite");
+    expect(launchPackage).toContain("# Bot-First Launch Package");
   });
 
   it("links docs routes from api docs page and README", () => {

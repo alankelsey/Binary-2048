@@ -97,3 +97,7 @@ Current suite includes:
 - WAF helpers and templates live in `docs/` + `scripts/`.
 - Use `npm run roadmap:status` to check roadmap progress.
 - Keep `tsconfig.json` stable (avoid committing transient `.next-dev-####` paths).
+- Bot integration docs:
+  - `docs/bot-api-quickstart.md`
+  - `docs/bot-benchmark-suite.md`
+  - `docs/mongo-migration-triggers.md`

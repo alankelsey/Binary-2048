@@ -44,4 +44,14 @@ describe("engine RNG draw contract", () => {
     const created = createGame(configFor("one"));
     expect(created.state.rngStep).toBe(6);
   });
+
+  it("keeps wildcard multiplier replay-compatible for fixed seed", () => {
+    const cfg = configFor("wild");
+    const a = runScenario(cfg, movableGrid, ["right", "left", "right"]);
+    const b = runScenario(cfg, movableGrid, ["right", "left", "right"]);
+    expect(a.meta.replay.stepLog.map((s) => s.spawned?.tile)).toEqual(b.meta.replay.stepLog.map((s) => s.spawned?.tile));
+    expect(a.meta.replay.stepLog.map((s) => [s.rngStepStart, s.rngStepEnd])).toEqual(
+      b.meta.replay.stepLog.map((s) => [s.rngStepStart, s.rngStepEnd])
+    );
+  });
 });

@@ -47,6 +47,10 @@ Ad payout research snapshot: `docs/ad-network-payout-research-2026-03.md`.
 Ads decision + format policy: `docs/ads-decision-and-format-policy.md`.
 Subscription-first fallback: `docs/subscription-first-fallback.md`.
 Player monetization policy: `docs/player-monetization-policy.md`.
+Bot API quickstart: `docs/bot-api-quickstart.md`.
+Bot benchmark suite: `docs/bot-benchmark-suite.md`.
+Mongo migration triggers: `docs/mongo-migration-triggers.md`.
+Bot-first launch package: `docs/bot-first-launch-package.md`.
 
 Controls: swipe on mobile, arrow keys, and `W/A/S/D`.
 
@@ -111,6 +115,12 @@ Tiny same-seed multibot tournament:
 
 ```bash
 npm run bot:tourney
+```
+
+Bot benchmark suite (fixed seeds):
+
+```bash
+npm run bot:benchmark
 ```
 
 Tournament API (server-side orchestrator):

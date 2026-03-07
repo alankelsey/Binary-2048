@@ -23,6 +23,7 @@
     "bot:smoke": "node ./scripts/bot-smoke.mjs",
     "bot:smoke:dev": "bash ./scripts/bot-smoke-dev.sh",
     "bot:tourney": "node ./scripts/bot-tournament.mjs",
+    "bot:benchmark": "node ./scripts/bot-benchmark.mjs",
     "bot:tourney:dev": "bash ./scripts/bot-tournament-dev.sh",
     "ops:waf:setup": "bash ./scripts/waf-setup.sh",
     "ops:waf:discover": "bash ./scripts/waf-discover.sh",
