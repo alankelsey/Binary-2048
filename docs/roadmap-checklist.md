@@ -97,8 +97,8 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Define monthly cost target and break-even revenue target (hosting + tooling + support margin)
 - [x] Implement monetization telemetry baseline (ARPDAU proxy, conversion, retention, churn impact)
 - [x] Run ad-network payout research (rewarded video eCPM/fill by target geos/platforms)
-- [ ] Decision gate: only ship in-game ads if projected net revenue exceeds UX cost threshold
-- [ ] If ads are enabled: rewarded ads only (no forced gameplay-interrupt ads)
+- [x] Decision gate: only ship in-game ads if projected net revenue exceeds UX cost threshold
+- [x] If ads are enabled: rewarded ads only (no forced gameplay-interrupt ads)
 - [ ] If ads are enabled: free-tier only, paid tiers remove ads
 - [ ] If ads are enabled: server-verified reward grants + anti-fraud checks + daily caps/cooldowns
 - [ ] Keep ranked integrity: ad rewards cannot affect `ranked_pure` leaderboard outcomes
