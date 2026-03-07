@@ -8,7 +8,7 @@ export type InventoryRecord = {
   updatedAtISO: string;
 };
 
-export type LedgerReason = "grant" | "consume" | "adjust";
+export type LedgerReason = "grant" | "consume" | "adjust" | "ad_reward";
 
 export type InventoryLedgerEntry = {
   id: string;

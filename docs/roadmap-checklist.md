@@ -100,7 +100,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Decision gate: only ship in-game ads if projected net revenue exceeds UX cost threshold
 - [x] If ads are enabled: rewarded ads only (no forced gameplay-interrupt ads)
 - [x] If ads are enabled: free-tier only, paid tiers remove ads
-- [ ] If ads are enabled: server-verified reward grants + anti-fraud checks + daily caps/cooldowns
+- [x] If ads are enabled: server-verified reward grants + anti-fraud checks + daily caps/cooldowns
 - [ ] Keep ranked integrity: ad rewards cannot affect `ranked_pure` leaderboard outcomes
 - [ ] Ship subscription-first fallback plan if ad economics are poor
 - [ ] Create player-facing monetization policy (what is paid, what is cosmetic, what is never pay-to-win)

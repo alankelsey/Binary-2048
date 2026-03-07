@@ -41,6 +41,10 @@ Not allowed:
   - `guest` users may see opt-in rewarded ads (if ads are enabled).
   - `authed` users may see opt-in rewarded ads unless they are paid.
   - `paid` users must always receive ad-free gameplay.
+- Server-verified reward grant path:
+  - Rewards are granted only through `POST /api/ads/reward`.
+  - Requires server-side HMAC signature verification (`x-binary2048-ad-sig`).
+  - Anti-fraud checks enforce nonce replay protection, payload freshness, cooldown, and daily cap.
 
 ## 4) Review cadence
 

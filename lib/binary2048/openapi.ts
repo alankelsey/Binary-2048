@@ -275,6 +275,23 @@ export const OPENAPI_SPEC = {
         }
       }
     },
+    "/api/ads/reward": {
+      post: {
+        summary: "Grant rewarded-ad inventory after server-side signature and anti-fraud checks",
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { type: "object" } } }
+        },
+        responses: {
+          "200": { description: "Reward granted" },
+          "400": { description: "Invalid payload" },
+          "401": { description: "Invalid reward signature" },
+          "403": { description: "Ad rewards disabled or paid-tier blocked" },
+          "409": { description: "Replay nonce detected" },
+          "429": { description: "Cooldown or daily cap reached" }
+        }
+      }
+    },
     "/api/games": {
       post: {
         summary: "Create a game session",

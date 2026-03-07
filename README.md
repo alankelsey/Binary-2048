@@ -437,6 +437,9 @@ Challenge policy env:
 - `POST /api/store/consume`
   - Consumes inventory and appends ledger entry
   - Body: `{ "subscriberId": string, "sku": "undo_charge" | "wild_boost_pack" | "lock_breaker", "quantity": number, "reason"?: "grant" | "consume" | "adjust" }`
+- `POST /api/ads/reward`
+  - Server-verified rewarded-ad grant endpoint (HMAC-signed payload required).
+  - Anti-fraud enforcement: nonce replay detection, freshness window, cooldown, and daily cap.
 
 ## Example Scenario Payload
 
