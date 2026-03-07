@@ -8,6 +8,8 @@ describe("POST /api/simulate", () => {
     delete process.env.BINARY2048_RATE_LIMIT_WINDOW_MS;
     delete process.env.BINARY2048_CHALLENGE_MODE;
     delete process.env.BINARY2048_CHALLENGE_SECRET;
+    delete process.env.BINARY2048_DEGRADE_MODE;
+    delete process.env.BINARY2048_DEGRADE_DISABLE_SIMULATE;
   });
 
   it("accepts compact actions and returns final artifacts", async () => {
@@ -119,6 +121,24 @@ describe("POST /api/simulate", () => {
     expect(json.code).toBe("cost_cap_exceeded");
     expect(json.field).toBe("moves");
     expect(json.limit).toBe(2000);
+  });
+
+  it("returns 503 when degrade mode disables simulate endpoint", async () => {
+    process.env.BINARY2048_DEGRADE_DISABLE_SIMULATE = "1";
+    const req = new Request("http://localhost/api/simulate", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        seed: 77,
+        moves: ["L"],
+        config: { size: 4 }
+      })
+    });
+    const res = await POST(req);
+    const json = await res.json();
+    expect(res.status).toBe(503);
+    expect(json.code).toBe("degrade_mode");
+    expect(json.route).toBe("simulate");
   });
 
   it("returns 413 for oversized payload", async () => {

@@ -554,6 +554,10 @@ Trackable checklist source:
   - Add tiered request limits (higher limits for authenticated/paid users).
     - Test-backed policy helper implemented in `lib/binary2048/security-policy.ts` (`guest`, `authed`, `paid`).
   - Add billing tripwires (AWS Budgets + CloudWatch alarms) for request spikes and cost anomalies.
+  - Emergency degrade toggles (heavy endpoint kill-switches):
+    - `BINARY2048_DEGRADE_MODE=1` disables heavy endpoints globally.
+    - `BINARY2048_DEGRADE_DISABLE_SIMULATE=1` disables `/api/simulate`.
+    - `BINARY2048_DEGRADE_DISABLE_TOURNAMENT=1` disables `/api/bots/tournament`.
   - Route 53 hardening:
     - Avoid wildcard DNS records unless required.
     - Add DNS query logging + anomaly alarms for NXDOMAIN/subdomain abuse patterns.

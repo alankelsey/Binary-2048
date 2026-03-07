@@ -13,6 +13,8 @@ describe("POST /api/bots/tournament", () => {
     delete process.env.BINARY2048_TOURNAMENT_QUEUE_WAIT_TIMEOUT_MS;
     delete process.env.BINARY2048_CHALLENGE_MODE;
     delete process.env.BINARY2048_CHALLENGE_SECRET;
+    delete process.env.BINARY2048_DEGRADE_MODE;
+    delete process.env.BINARY2048_DEGRADE_DISABLE_TOURNAMENT;
   });
 
   it("runs default tournament payload", async () => {
@@ -148,5 +150,19 @@ describe("POST /api/bots/tournament", () => {
     expect(json.code).toBe("cost_cap_exceeded");
     expect(json.field).toBe("maxMoves");
     expect(json.limit).toBe(2000);
+  });
+
+  it("returns 503 when degrade mode disables tournament endpoint", async () => {
+    process.env.BINARY2048_DEGRADE_DISABLE_TOURNAMENT = "1";
+    const req = new Request("http://localhost/api/bots/tournament", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({})
+    });
+    const res = await POST(req);
+    const json = await res.json();
+    expect(res.status).toBe(503);
+    expect(json.code).toBe("degrade_mode");
+    expect(json.route).toBe("bots_tournament");
   });
 });

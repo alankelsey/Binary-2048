@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { runBotTournament, type BotId } from "@/lib/binary2048/bot-orchestrator";
 import { evaluateChallenge } from "@/lib/binary2048/challenge-policy";
 import { EndpointCostCapError, TOURNAMENT_MAX_MOVES, TOURNAMENT_MAX_SEEDS } from "@/lib/binary2048/cost-caps";
+import { getDegradeState } from "@/lib/binary2048/degrade-mode";
 import { recordRouteTelemetry } from "@/lib/binary2048/ops-telemetry";
 import { checkTournamentRateLimit } from "@/lib/binary2048/rate-limit";
 import {
@@ -57,6 +58,19 @@ export async function POST(req: Request) {
   let statusCode = 200;
   let slot: Awaited<ReturnType<typeof acquireTournamentSlot>> | null = null;
   try {
+    const degrade = getDegradeState("bots_tournament");
+    if (degrade.disabled) {
+      statusCode = 503;
+      return NextResponse.json(
+        {
+          error: "Endpoint temporarily disabled",
+          code: "degrade_mode",
+          route: "bots_tournament",
+          reason: degrade.reason
+        },
+        { status: 503, headers: { "retry-after": "60" } }
+      );
+    }
     const challenge = evaluateChallenge({ req, route: "/api/bots/tournament", risk: "high", userTier: "guest" });
     if (!challenge.allowed) {
       statusCode = 403;
