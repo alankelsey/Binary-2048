@@ -107,4 +107,46 @@ describe("POST /api/bots/tournament", () => {
     expect(res.status).toBe(403);
     expect(json.error).toBe("Challenge required");
   });
+
+  it("returns 400 when seedCount exceeds endpoint cap", async () => {
+    const req = new Request("http://localhost/api/bots/tournament", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ seedCount: 101 })
+    });
+    const res = await POST(req);
+    const json = await res.json();
+    expect(res.status).toBe(400);
+    expect(json.code).toBe("cost_cap_exceeded");
+    expect(json.field).toBe("seedCount");
+    expect(json.limit).toBe(100);
+  });
+
+  it("returns 400 when explicit seed list exceeds endpoint cap", async () => {
+    const req = new Request("http://localhost/api/bots/tournament", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ seeds: Array.from({ length: 101 }, (_, i) => i + 1) })
+    });
+    const res = await POST(req);
+    const json = await res.json();
+    expect(res.status).toBe(400);
+    expect(json.code).toBe("cost_cap_exceeded");
+    expect(json.field).toBe("seeds");
+    expect(json.limit).toBe(100);
+  });
+
+  it("returns 400 when maxMoves exceeds endpoint cap", async () => {
+    const req = new Request("http://localhost/api/bots/tournament", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ maxMoves: 2001 })
+    });
+    const res = await POST(req);
+    const json = await res.json();
+    expect(res.status).toBe(400);
+    expect(json.code).toBe("cost_cap_exceeded");
+    expect(json.field).toBe("maxMoves");
+    expect(json.limit).toBe(2000);
+  });
 });

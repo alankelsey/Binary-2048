@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { evaluateChallenge } from "@/lib/binary2048/challenge-policy";
 import { checkSimulateRateLimit } from "@/lib/binary2048/rate-limit";
+import { EndpointCostCapError } from "@/lib/binary2048/cost-caps";
 import { parseJsonWithLimit, RequestBodyTooLargeError } from "@/lib/binary2048/request-body-limit";
 import { simulateBatch, type SimulateBatchRequest } from "@/lib/binary2048/simulate";
 
@@ -39,6 +40,12 @@ export async function POST(req: Request) {
   } catch (error) {
     if (error instanceof RequestBodyTooLargeError) {
       return NextResponse.json({ error: error.message }, { status: 413 });
+    }
+    if (error instanceof EndpointCostCapError) {
+      return NextResponse.json(
+        { error: error.message, code: error.code, field: error.field, limit: error.limit, value: error.value },
+        { status: 400 }
+      );
     }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Invalid simulation request" },

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { runBotTournament, type BotId } from "@/lib/binary2048/bot-orchestrator";
 import { evaluateChallenge } from "@/lib/binary2048/challenge-policy";
+import { EndpointCostCapError, TOURNAMENT_MAX_MOVES, TOURNAMENT_MAX_SEEDS } from "@/lib/binary2048/cost-caps";
 import { recordRouteTelemetry } from "@/lib/binary2048/ops-telemetry";
 import { checkTournamentRateLimit } from "@/lib/binary2048/rate-limit";
 import {
@@ -28,15 +29,19 @@ const DEFAULT_BOTS: BotId[] = ["priority", "random", "alternate"];
 
 function parseSeedList(body: TournamentBody) {
   if (Array.isArray(body.seeds) && body.seeds.length > 0) {
+    if (body.seeds.length > TOURNAMENT_MAX_SEEDS) {
+      throw new EndpointCostCapError("seeds", TOURNAMENT_MAX_SEEDS, body.seeds.length);
+    }
     return body.seeds
       .map((seed) => Number(seed))
       .filter((seed) => Number.isFinite(seed))
       .map((seed) => Math.floor(seed));
   }
   const seedStart = Number.isFinite(Number(body.seedStart)) ? Math.floor(Number(body.seedStart)) : DEFAULT_SEED_START;
-  const seedCount = Number.isFinite(Number(body.seedCount))
-    ? Math.max(1, Math.min(100, Math.floor(Number(body.seedCount))))
-    : DEFAULT_SEED_COUNT;
+  const seedCount = Number.isFinite(Number(body.seedCount)) ? Math.max(1, Math.floor(Number(body.seedCount))) : DEFAULT_SEED_COUNT;
+  if (seedCount > TOURNAMENT_MAX_SEEDS) {
+    throw new EndpointCostCapError("seedCount", TOURNAMENT_MAX_SEEDS, seedCount);
+  }
   return Array.from({ length: seedCount }, (_, index) => seedStart + index);
 }
 
@@ -85,9 +90,10 @@ export async function POST(req: Request) {
     if (seeds.length === 0) {
       return NextResponse.json({ error: "No valid seeds provided" }, { status: 400 });
     }
-    const maxMoves = Number.isFinite(Number(body.maxMoves))
-      ? Math.max(1, Math.min(2000, Math.floor(Number(body.maxMoves))))
-      : DEFAULT_MAX_MOVES;
+    const maxMoves = Number.isFinite(Number(body.maxMoves)) ? Math.max(1, Math.floor(Number(body.maxMoves))) : DEFAULT_MAX_MOVES;
+    if (maxMoves > TOURNAMENT_MAX_MOVES) {
+      throw new EndpointCostCapError("maxMoves", TOURNAMENT_MAX_MOVES, maxMoves);
+    }
     const bots = parseBots(body.bots);
     const result = runBotTournament({
       seeds,
@@ -103,6 +109,13 @@ export async function POST(req: Request) {
       { status: 200 }
     );
   } catch (error) {
+    if (error instanceof EndpointCostCapError) {
+      statusCode = 400;
+      return NextResponse.json(
+        { error: error.message, code: error.code, field: error.field, limit: error.limit, value: error.value },
+        { status: 400 }
+      );
+    }
     if (error instanceof TournamentQueueFullError) {
       statusCode = 503;
       return NextResponse.json(

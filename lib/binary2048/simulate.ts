@@ -1,6 +1,7 @@
 import { applyMove, createGame, DEFAULT_CONFIG } from "@/lib/binary2048/engine";
 import { parseAction, toActionCode, type ActionCode, type AnyAction } from "@/lib/binary2048/action";
 import { actionMask, flattenEncodedState, legalActionCodes, stateHash, encodeState } from "@/lib/binary2048/ai";
+import { EndpointCostCapError, SIMULATE_MAX_MOVES } from "@/lib/binary2048/cost-caps";
 import type { Cell, Dir, GameConfig, GameState, Tile } from "@/lib/binary2048/types";
 
 export type SimulateStepSummary = {
@@ -60,6 +61,9 @@ function firstSpawn(events: Array<{ type: string; at?: [number, number]; tile?: 
 export function simulateBatch(req: SimulateBatchRequest): SimulateBatchResult {
   if (!Array.isArray(req.moves) || req.moves.length === 0) {
     throw new Error("moves must be a non-empty array");
+  }
+  if (req.moves.length > SIMULATE_MAX_MOVES) {
+    throw new EndpointCostCapError("moves", SIMULATE_MAX_MOVES, req.moves.length);
   }
   const normalizedMoves: Dir[] = [];
   for (const move of req.moves) {

@@ -103,6 +103,24 @@ describe("POST /api/simulate", () => {
     expect(json.error).toBe("Challenge required");
   });
 
+  it("returns 400 when moves exceed endpoint cap", async () => {
+    const req = new Request("http://localhost/api/simulate", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        seed: 77,
+        moves: Array.from({ length: 2001 }, () => "L"),
+        config: { size: 4 }
+      })
+    });
+    const res = await POST(req);
+    const json = await res.json();
+    expect(res.status).toBe(400);
+    expect(json.code).toBe("cost_cap_exceeded");
+    expect(json.field).toBe("moves");
+    expect(json.limit).toBe(2000);
+  });
+
   it("returns 413 for oversized payload", async () => {
     const hugeMoves = Array.from({ length: 80_000 }, () => "L");
     const req = new Request("http://localhost/api/simulate", {
