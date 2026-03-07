@@ -38,6 +38,7 @@
     "ops:waf:budget": "bash ./scripts/waf-budget.sh",
     "ops:waf:sns": "bash ./scripts/waf-sns.sh",
     "ops:waf:tripwire-check": "bash ./scripts/waf-tripwire-check.sh",
+    "ops:waf:tripwire-validate": "bash ./scripts/waf-tripwire-validate.sh",
     "load:baseline": "k6 run ./scripts/load/k6-baseline.js",
     "load:ramp": "k6 run ./scripts/load/k6-ramp.js",
     "load:spike": "k6 run ./scripts/load/k6-spike.js",

@@ -201,6 +201,12 @@ Billing tripwire verification:
 BUDGET_NAME=binary2048-monthly-cost ALARM_NAME=WAFBlockedRequestsHigh npm run ops:waf:tripwire-check
 ```
 
+Forced tripwire validation + evidence capture (non-prod recommended):
+
+```bash
+AWS_REGION=us-east-1 npm run ops:waf:tripwire-validate
+```
+
 Require alarm actions check:
 
 ```bash

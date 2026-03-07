@@ -47,6 +47,7 @@ Companion scripts:
 - `npm run ops:waf:budget` (create monthly billing tripwire budget)
 - `npm run ops:waf:sns` (create billing alerts SNS topic and optional email subscription)
 - `npm run ops:waf:tripwire-check` (verify budget + CloudWatch alarm existence)
+- `npm run ops:waf:tripwire-validate` (force alarm-state test + SNS test publish + evidence artifacts)
 
 Quick status check:
 
@@ -213,6 +214,12 @@ Verify tripwires:
 BUDGET_NAME=binary2048-monthly-cost \
 ALARM_NAME=WAFBlockedRequestsHigh \
 npm run ops:waf:tripwire-check
+```
+
+Forced validation (recommended in non-prod first):
+
+```bash
+AWS_REGION=us-east-1 npm run ops:waf:tripwire-validate
 ```
 
 Optional strict check for configured alarm actions:

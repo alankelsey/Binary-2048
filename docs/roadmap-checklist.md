@@ -89,7 +89,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Implement emergency degrade mode toggles (disable heavy endpoints first under attack)
 - [x] Add load-shed/circuit-breaker policy for sustained high error/latency windows
 - [x] Add pre-launch cost simulation checklist and expected max daily spend envelope
-- [ ] Validate billing tripwire by forced threshold test in non-prod and capture evidence
+- [x] Validate billing tripwire by forced threshold test in non-prod and capture evidence
 - [ ] Define bot-abuse incident playbook (detect, throttle, block, recover, postmortem)
 
 ## Monetization Decision Track (Cost-Coverage First)

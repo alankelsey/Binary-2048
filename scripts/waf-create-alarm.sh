@@ -18,14 +18,17 @@ sed -i.bak "s/\"Value\": \"binary2048-web-acl\"/\"Value\": \"${WEB_ACL_NAME}\"/"
 sed -i.bak "s/\"Threshold\": [0-9]*/\"Threshold\": ${THRESHOLD}/" "${TMP_JSON}"
 rm -f "${TMP_JSON}.bak"
 
-if [[ -n "${SNS_TOPIC_ARN}" ]]; then
-  echo "warning: SNS_TOPIC_ARN is currently informational only; add alarm actions in AWS Console or extend template." >&2
-fi
-
 echo "==> Creating/updating CloudWatch alarm ${ALARM_NAME}"
-aws cloudwatch put-metric-alarm \
-  --region "${AWS_REGION}" \
-  --cli-input-json "file://${TMP_JSON}"
+if [[ -n "${SNS_TOPIC_ARN}" ]]; then
+  aws cloudwatch put-metric-alarm \
+    --region "${AWS_REGION}" \
+    --cli-input-json "file://${TMP_JSON}" \
+    --alarm-actions "${SNS_TOPIC_ARN}"
+else
+  aws cloudwatch put-metric-alarm \
+    --region "${AWS_REGION}" \
+    --cli-input-json "file://${TMP_JSON}"
+fi
 
 rm -f "${TMP_JSON}"
 echo "==> Done"
