@@ -112,7 +112,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Lock RNG draw contract for wildcard multiplier selection and add strict replay-compat tests
 - [x] Define Mongo/session-store migration trigger thresholds (active sessions, memory, replay volume) and execution plan
 - [x] Add daily seeded challenge mode (`Bitstorm Daily`) with per-day leaderboard window
-- [ ] Add ghost replay race mode (human vs best bot replay on same seed)
+- [x] Add ghost replay race mode (human vs best bot replay on same seed)
 - [x] Add replay postmortem analyzer (top 3-5 highest-cost moves from a finished run)
 - [x] Add API quickstart for external bot authors (Python starter + encoded state/action-mask example)
 - [x] Create bot-first launch package (Show HN post draft + Reddit/Discord technical announcement assets)
@@ -125,6 +125,9 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] AI-vs-AI tournament orchestrator beyond smoke scripts
 - [x] Paid/guest feature gating matrix enforced by backend policy
 - [x] Admin/dev control panel for enabling/disabling UI controls
+- [x] Add developer-mode top navigation shell for quick switching between core app/admin/data views
+- [x] Add dedicated Store page/view (`/store`) with catalog + inventory panes
+- [x] Add dedicated Leaderboard page/view (`/leaderboard`) with ranked/daily tabs and filters
 - [x] Marketing rollout hooks (social share CTAs, referral tracking)
 - [x] Privacy/compliance essentials: privacy page + user data export/delete endpoints
 - [x] GitHub Pages presence (repo landing page and playable-host strategy decision: iframe vs static mirror)

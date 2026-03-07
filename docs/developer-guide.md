@@ -60,6 +60,9 @@ Replay storage phases and migration notes are documented in:
 - Daily challenge:
   - `GET /api/challenges/daily`
   - `POST /api/challenges/daily/submit`
+- Ghost race:
+  - `GET /api/challenges/ghost-race`
+  - `POST /api/challenges/ghost-race/submit`
 - AI:
   - `GET /api/games/:id/encoded`
   - `POST /api/simulate`

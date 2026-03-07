@@ -495,6 +495,27 @@ export const OPENAPI_SPEC = {
         }
       }
     },
+    "/api/challenges/ghost-race": {
+      get: {
+        summary: "Get ghost race challenge (rollout bot replay on selected seed)",
+        responses: {
+          "200": { description: "Ghost race challenge payload" }
+        }
+      }
+    },
+    "/api/challenges/ghost-race/submit": {
+      post: {
+        summary: "Submit replay for ghost race comparison",
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { type: "object" } } }
+        },
+        responses: {
+          "200": { description: "Ghost race submission result" },
+          "400": { description: "Invalid submission payload" }
+        }
+      }
+    },
     "/api/openapi": {
       get: {
         summary: "OpenAPI spec document",

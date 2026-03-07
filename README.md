@@ -415,6 +415,11 @@ BASE_URL=http://localhost:3000 npm run load:stage:abuse
 - `POST /api/challenges/daily/submit`
   - Body: `{ "playerId": string, "replay": <export-or-compact-replay-payload> }`
   - Verifies replay seed matches today’s challenge and records score in daily leaderboard
+- `GET /api/challenges/ghost-race?seed=2048&maxMoves=250`
+  - Returns rollout-bot ghost replay target for same-seed race mode
+- `POST /api/challenges/ghost-race/submit`
+  - Body: `{ "playerId": string, "replay": <export-or-compact-replay-payload> }`
+  - Replays user run and returns beat/tie result against rollout ghost baseline
 
 Challenge policy env:
 
