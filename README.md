@@ -565,6 +565,7 @@ Trackable checklist source:
     - `BINARY2048_DEGRADE_DISABLE_SIMULATE=1` disables `/api/simulate`.
     - `BINARY2048_DEGRADE_DISABLE_TOURNAMENT=1` disables `/api/bots/tournament`.
   - Follow [docs/load-shed-policy.md](./docs/load-shed-policy.md) for sustained latency/error events.
+  - Use [docs/bot-abuse-incident-playbook.md](./docs/bot-abuse-incident-playbook.md) for incident detect/throttle/block/recover/postmortem workflow.
   - Use [docs/prelaunch-cost-simulation.md](./docs/prelaunch-cost-simulation.md) to define launch spend envelope and go/no-go gates.
   - Route 53 hardening:
     - Avoid wildcard DNS records unless required.

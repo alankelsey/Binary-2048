@@ -90,7 +90,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add load-shed/circuit-breaker policy for sustained high error/latency windows
 - [x] Add pre-launch cost simulation checklist and expected max daily spend envelope
 - [x] Validate billing tripwire by forced threshold test in non-prod and capture evidence
-- [ ] Define bot-abuse incident playbook (detect, throttle, block, recover, postmortem)
+- [x] Define bot-abuse incident playbook (detect, throttle, block, recover, postmortem)
 
 ## Monetization Decision Track (Cost-Coverage First)
 
