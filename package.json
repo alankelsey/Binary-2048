@@ -43,6 +43,7 @@
     "load:spike": "k6 run ./scripts/load/k6-spike.js",
     "load:soak": "k6 run ./scripts/load/k6-soak.js",
     "load:stage:gameplay": "node ./scripts/load/staged-gameplay.mjs",
+    "load:stage:abuse": "node ./scripts/load/staged-heavy-abuse.mjs",
     "roadmap:status": "node ./scripts/roadmap-progress.mjs",
     "lint": "next lint",
     "lint:warn": "next lint || true",

@@ -1,0 +1,40 @@
+{
+  "generatedAt": "2026-03-07T17:05:00.415Z",
+  "baseUrl": "https://www.binary2048.com",
+  "concurrency": 12,
+  "iterations": 180,
+  "allowedStatuses": [
+    200,
+    400,
+    401,
+    403,
+    404,
+    409,
+    413,
+    429,
+    503
+  ],
+  "passed": true,
+  "metrics": {
+    "requests": 180,
+    "durationMs": 27180.7282910347,
+    "throughputRps": 6.622339109999906,
+    "p50Ms": 276.8333749771118,
+    "p95Ms": 6400.867874979973,
+    "avgMs": 1626.2233666439852,
+    "fiveXx": 0,
+    "fiveXxRate": 0,
+    "disallowedResponses": 0,
+    "statusCounts": {
+      "200": 85,
+      "400": 46,
+      "403": 49
+    },
+    "kindCounts": {
+      "simulate_oversized_payload": 49,
+      "simulate_invalid_move": 46,
+      "tournament_bounded": 45,
+      "tournament_oversized": 40
+    }
+  }
+}

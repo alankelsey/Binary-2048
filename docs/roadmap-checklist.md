@@ -82,7 +82,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Publish load-test runbook + scripts (baseline, ramp, spike, soak)
 - [x] Define and document launch SLOs/SLIs (p50/p95 latency, error rate, saturation thresholds)
 - [x] Run staged load test against gameplay routes (`/api/games`, `/api/games/:id/move`) and record pass/fail
-- [ ] Run abuse test against heavy routes (`/api/simulate`, `/api/bots/tournament`) with invalid/oversized payload mix
+- [x] Run abuse test against heavy routes (`/api/simulate`, `/api/bots/tournament`) with invalid/oversized payload mix
 - [ ] Enforce hard request-body limits on replay/sim endpoints (reject with `413`)
 - [ ] Enforce strict per-endpoint cost caps (max moves, max seeds, max batch size) with explicit `400`/`429` errors
 - [ ] Add guest-vs-authed-vs-paid rate-limit matrix doc with concrete per-5-minute limits

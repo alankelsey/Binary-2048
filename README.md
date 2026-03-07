@@ -240,6 +240,12 @@ Staged gameplay load + pass/fail report:
 BASE_URL=http://localhost:3000 npm run load:stage:gameplay
 ```
 
+Staged heavy abuse load + pass/fail report:
+
+```bash
+BASE_URL=http://localhost:3000 npm run load:stage:abuse
+```
+
 ## API
 
 - `POST /api/games`

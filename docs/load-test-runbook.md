@@ -31,6 +31,12 @@ No-k6 staged gameplay check (writes pass/fail evidence to `docs/load-results/`):
 BASE_URL=http://localhost:3000 npm run load:stage:gameplay
 ```
 
+No-k6 staged heavy abuse check (invalid/oversized payload mix):
+
+```bash
+BASE_URL=http://localhost:3000 npm run load:stage:abuse
+```
+
 ## Profiles
 
 - `load:baseline`
@@ -74,6 +80,11 @@ Staged gameplay script writes:
 
 - `docs/load-results/staged-gameplay-latest.json`
 - `docs/load-results/staged-gameplay-latest.md`
+
+Staged heavy abuse script writes:
+
+- `docs/load-results/heavy-abuse-latest.json`
+- `docs/load-results/heavy-abuse-latest.md`
 
 ## Notes
 
