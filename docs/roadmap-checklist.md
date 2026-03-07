@@ -95,8 +95,8 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 ## Monetization Decision Track (Cost-Coverage First)
 
 - [x] Define monthly cost target and break-even revenue target (hosting + tooling + support margin)
-- [ ] Implement monetization telemetry baseline (ARPDAU proxy, conversion, retention, churn impact)
-- [ ] Run ad-network payout research (rewarded video eCPM/fill by target geos/platforms)
+- [x] Implement monetization telemetry baseline (ARPDAU proxy, conversion, retention, churn impact)
+- [x] Run ad-network payout research (rewarded video eCPM/fill by target geos/platforms)
 - [ ] Decision gate: only ship in-game ads if projected net revenue exceeds UX cost threshold
 - [ ] If ads are enabled: rewarded ads only (no forced gameplay-interrupt ads)
 - [ ] If ads are enabled: free-tier only, paid tiers remove ads

@@ -41,6 +41,8 @@ Feature review checklist runbook: `docs/feature-review-runbook.md`.
 Load test runbook: `docs/load-test-runbook.md`.
 Launch SLO/SLI targets: `docs/launch-slo-sli.md`.
 Monetization targets: `docs/monetization-targets.md`.
+Monetization telemetry baseline: `docs/monetization-telemetry-baseline.md`.
+Ad payout research snapshot: `docs/ad-network-payout-research-2026-03.md`.
 
 Controls: swipe on mobile, arrow keys, and `W/A/S/D`.
 
