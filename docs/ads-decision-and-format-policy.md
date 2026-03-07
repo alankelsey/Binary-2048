@@ -37,7 +37,10 @@ Not allowed:
 - Hard cap rewarded views per user/day.
 - Cooldown between rewarded views.
 - No ad prompts on game-over/win overlay by default (opt-in button only).
-- Provide ad-free experience for paid tier.
+- Free-tier only ads policy:
+  - `guest` users may see opt-in rewarded ads (if ads are enabled).
+  - `authed` users may see opt-in rewarded ads unless they are paid.
+  - `paid` users must always receive ad-free gameplay.
 
 ## 4) Review cadence
 
