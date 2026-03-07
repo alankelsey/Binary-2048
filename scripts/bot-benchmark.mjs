@@ -48,7 +48,7 @@ async function main() {
     body: JSON.stringify({
       seeds: SEEDS,
       maxMoves: MAX_MOVES,
-      bots: ["priority", "random", "alternate"]
+      bots: ["priority", "random", "alternate", "rollout"]
     })
   });
 

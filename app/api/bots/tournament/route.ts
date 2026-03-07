@@ -26,7 +26,7 @@ type TournamentBody = {
 const DEFAULT_SEED_START = 100;
 const DEFAULT_SEED_COUNT = 3;
 const DEFAULT_MAX_MOVES = 250;
-const DEFAULT_BOTS: BotId[] = ["priority", "random", "alternate"];
+const DEFAULT_BOTS: BotId[] = ["priority", "random", "alternate", "rollout"];
 
 function parseSeedList(body: TournamentBody) {
   if (Array.isArray(body.seeds) && body.seeds.length > 0) {
@@ -48,7 +48,7 @@ function parseSeedList(body: TournamentBody) {
 
 function parseBots(raw: unknown): BotId[] {
   if (!Array.isArray(raw) || raw.length === 0) return DEFAULT_BOTS;
-  const allowed: BotId[] = ["priority", "random", "alternate"];
+  const allowed: BotId[] = ["priority", "random", "alternate", "rollout"];
   const bots = raw.filter((bot): bot is BotId => allowed.includes(bot as BotId));
   return bots.length > 0 ? bots : DEFAULT_BOTS;
 }

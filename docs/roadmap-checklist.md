@@ -107,7 +107,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 
 ## Bot-First Differentiation + Competitive Depth
 
-- [ ] Add stronger reference bot (expectimax and/or Monte Carlo rollout) for meaningful tournament baselines
+- [x] Add stronger reference bot (expectimax and/or Monte Carlo rollout) for meaningful tournament baselines
 - [x] Add bot benchmark suite and publish seed-based benchmark table in docs
 - [x] Lock RNG draw contract for wildcard multiplier selection and add strict replay-compat tests
 - [x] Define Mongo/session-store migration trigger thresholds (active sessions, memory, replay volume) and execution plan

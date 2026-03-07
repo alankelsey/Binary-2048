@@ -29,6 +29,7 @@ describe("POST /api/bots/tournament", () => {
     expect(json.rulesetId).toBe("binary2048-v1");
     expect(Array.isArray(json.seeds)).toBe(true);
     expect(Array.isArray(json.bots)).toBe(true);
+    expect(json.bots).toContain("rollout");
     expect(Array.isArray(json.ranking)).toBe(true);
     expect(Array.isArray(json.runs)).toBe(true);
     expect(json.runs.length).toBe(json.seeds.length * json.bots.length);

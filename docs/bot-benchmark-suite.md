@@ -25,6 +25,13 @@ Metrics:
 - avg max tile
 - wins
 
+Reference bots:
+
+- `priority`
+- `random`
+- `alternate`
+- `rollout` (Monte Carlo rollout baseline)
+
 ## Notes
 
 - Keep the same seed list when comparing bot changes.

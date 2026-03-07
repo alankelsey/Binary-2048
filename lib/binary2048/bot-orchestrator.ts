@@ -3,7 +3,7 @@ import { legalActionCodes, stateHash } from "@/lib/binary2048/ai";
 import { applyMove, createGame, DEFAULT_CONFIG } from "@/lib/binary2048/engine";
 import type { Dir, GameConfig, GameState } from "@/lib/binary2048/types";
 
-export type BotId = "priority" | "random" | "alternate";
+export type BotId = "priority" | "random" | "alternate" | "rollout";
 
 export type TournamentRun = {
   bot: BotId;
@@ -47,14 +47,48 @@ type BotContext = {
 };
 
 type BotPolicy = {
-  pick: (legalActions: ActionCode[], ctx: BotContext) => ActionCode | null;
+  pick: (state: GameState, legalActions: ActionCode[], ctx: BotContext) => ActionCode | null;
 };
 
 const ACTION_SPACE: ActionCode[] = ["U", "L", "R", "D"];
 
+function countEmptyCells(state: GameState) {
+  let empty = 0;
+  for (const row of state.grid) {
+    for (const cell of row) {
+      if (cell === null) empty += 1;
+    }
+  }
+  return empty;
+}
+
+function evaluateState(state: GameState) {
+  const max = maxTile(state);
+  const empties = countEmptyCells(state);
+  const terminalPenalty = state.over ? -1500 : 0;
+  return state.score + max * 12 + empties * 8 + terminalPenalty;
+}
+
+function simulateRollout(start: GameState, rand: () => number, rolloutDepth: number) {
+  let current = start;
+  for (let i = 0; i < rolloutDepth && !current.over && !current.won; i++) {
+    const legal = legalActionCodes(current);
+    if (legal.length === 0) break;
+    const idx = Math.floor(rand() * legal.length);
+    const code = legal[idx];
+    if (!code) break;
+    const dir = parseAction(code) as Dir | null;
+    if (!dir) break;
+    current = applyMove(current, dir).state;
+  }
+  return evaluateState(current);
+}
+
+export const BOT_IDS = ["priority", "random", "alternate", "rollout"] as const;
+
 const BOT_POLICIES: Record<BotId, BotPolicy> = {
   priority: {
-    pick(legalActions) {
+    pick(_state, legalActions) {
       for (const action of ACTION_SPACE) {
         if (legalActions.includes(action)) return action;
       }
@@ -62,14 +96,14 @@ const BOT_POLICIES: Record<BotId, BotPolicy> = {
     }
   },
   random: {
-    pick(legalActions, ctx) {
+    pick(_state, legalActions, ctx) {
       if (legalActions.length === 0) return null;
       const idx = Math.floor(ctx.rand() * legalActions.length);
       return legalActions[idx] ?? null;
     }
   },
   alternate: {
-    pick(legalActions, ctx) {
+    pick(_state, legalActions, ctx) {
       if (legalActions.length === 0) return null;
       const preferred: ActionCode = ctx.lastAction === "L" ? "R" : "L";
       if (legalActions.includes(preferred)) return preferred;
@@ -77,6 +111,30 @@ const BOT_POLICIES: Record<BotId, BotPolicy> = {
         if (legalActions.includes(action)) return action;
       }
       return legalActions[0] ?? null;
+    }
+  },
+  rollout: {
+    pick(state, legalActions, ctx) {
+      if (legalActions.length === 0) return null;
+      const rolloutsPerAction = 6;
+      const rolloutDepth = 10;
+      let bestAction: ActionCode | null = null;
+      let bestScore = Number.NEGATIVE_INFINITY;
+      for (const action of legalActions) {
+        const dir = parseAction(action) as Dir | null;
+        if (!dir) continue;
+        const first = applyMove(state, dir).state;
+        let total = evaluateState(first);
+        for (let i = 0; i < rolloutsPerAction; i++) {
+          total += simulateRollout(first, ctx.rand, rolloutDepth);
+        }
+        const avgScore = total / (rolloutsPerAction + 1);
+        if (avgScore > bestScore) {
+          bestScore = avgScore;
+          bestAction = action;
+        }
+      }
+      return bestAction ?? legalActions[0] ?? null;
     }
   }
 };
@@ -134,7 +192,7 @@ function runOneGame(bot: BotId, seed: number, maxMoves: number, config?: Partial
   while (!current.over && !current.won && moves < maxMoves) {
     const legal = legalActionCodes(current);
     const policy = BOT_POLICIES[bot];
-    const action = policy.pick(legal, ctx);
+    const action = policy.pick(current, legal, ctx);
     if (!action) break;
     const dir = parseAction(action) as Dir | null;
     if (!dir) break;
