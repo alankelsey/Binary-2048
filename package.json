@@ -15,6 +15,7 @@
     "build": "NEXT_DIST_DIR=${NEXT_DIST_DIR:-.next} next build && bash ./scripts/build-smoke.sh",
     "start": "NEXT_DIST_DIR=${NEXT_DIST_DIR:-.next} next start",
     "test:unit": "jest --runInBand",
+    "verify": "npm run test:unit && npm run build",
     "test:all": "npm run test:unit && npm run lint:warn && npm run spell:warn && npm run test:dev && npm run build",
     "test:routes": "npm run build",
     "test:dev": "bash ./scripts/dev-smoke.sh",

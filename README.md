@@ -126,6 +126,14 @@ Roadmap completion status:
 npm run roadmap:status
 ```
 
+Recommended pre-push verification:
+
+```bash
+npm run verify
+```
+
+CI is automated in GitHub Actions (`.github/workflows/ci.yml`) and runs unit tests + production build on every push/PR to `main`.
+
 WAF setup helper (requires AWS CLI credentials + CloudFront distribution id):
 
 ```bash
