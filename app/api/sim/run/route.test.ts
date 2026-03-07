@@ -53,4 +53,34 @@ describe("POST /api/sim/run", () => {
     expect(res.status).toBe(400);
     expect(typeof json.error).toBe("string");
   });
+
+  it("returns 413 for oversized payload", async () => {
+    const hugeMoves = Array.from({ length: 80_000 }, () => "left");
+    const req = new Request("http://localhost/api/sim/run", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        config: {
+          width: 4,
+          height: 4,
+          seed: 99,
+          winTile: 2048,
+          zeroBehavior: "annihilate",
+          spawnOnNoopMove: false,
+          spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] }
+        },
+        initialGrid: [
+          [null, null, null, null],
+          [null, null, null, null],
+          [null, null, null, null],
+          [null, null, null, null]
+        ],
+        moves: hugeMoves
+      })
+    });
+    const res = await POST(req);
+    const json = await res.json();
+    expect(res.status).toBe(413);
+    expect(json.error).toBe("Request body too large");
+  });
 });

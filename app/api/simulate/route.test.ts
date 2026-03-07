@@ -102,4 +102,21 @@ describe("POST /api/simulate", () => {
     expect(res.status).toBe(403);
     expect(json.error).toBe("Challenge required");
   });
+
+  it("returns 413 for oversized payload", async () => {
+    const hugeMoves = Array.from({ length: 80_000 }, () => "L");
+    const req = new Request("http://localhost/api/simulate", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        seed: 77,
+        moves: hugeMoves,
+        config: { size: 4 }
+      })
+    });
+    const res = await POST(req);
+    const json = await res.json();
+    expect(res.status).toBe(413);
+    expect(json.error).toBe("Request body too large");
+  });
 });

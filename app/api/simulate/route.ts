@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { evaluateChallenge } from "@/lib/binary2048/challenge-policy";
 import { checkSimulateRateLimit } from "@/lib/binary2048/rate-limit";
+import { parseJsonWithLimit, RequestBodyTooLargeError } from "@/lib/binary2048/request-body-limit";
 import { simulateBatch, type SimulateBatchRequest } from "@/lib/binary2048/simulate";
+
+const MAX_SIMULATE_BODY_BYTES = 128 * 1024;
 
 export async function POST(req: Request) {
   try {
@@ -30,10 +33,13 @@ export async function POST(req: Request) {
         { status: 429, headers: { "retry-after": String(quota.retryAfterSeconds) } }
       );
     }
-    const body = (await req.json()) as SimulateBatchRequest;
+    const body = await parseJsonWithLimit<SimulateBatchRequest>(req, MAX_SIMULATE_BODY_BYTES);
     const result = simulateBatch(body);
     return NextResponse.json(result);
   } catch (error) {
+    if (error instanceof RequestBodyTooLargeError) {
+      return NextResponse.json({ error: error.message }, { status: 413 });
+    }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Invalid simulation request" },
       { status: 400 }

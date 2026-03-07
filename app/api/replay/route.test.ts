@@ -99,4 +99,17 @@ describe("POST /api/replay", () => {
     expect(res.status).toBe(400);
     expect(String(json.error)).toContain("replayVersion");
   });
+
+  it("returns 413 for oversized payload", async () => {
+    const huge = "x".repeat(140 * 1024);
+    const req = new Request("http://localhost/api/replay", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: `{"blob":"${huge}"}`
+    });
+    const res = await POST(req);
+    const json = await res.json();
+    expect(res.status).toBe(413);
+    expect(json.error).toBe("Request body too large");
+  });
 });
