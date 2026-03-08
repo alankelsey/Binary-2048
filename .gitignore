@@ -9,5 +9,7 @@ coverage
 .DS_Store
 *.log
 .vscode
+.env
+.env.local
 docs/COLORBLIND_PLAN.local.md
 docs/waf-exports/*.json

@@ -28,6 +28,43 @@ npm run dev
 ```
 
 Open `http://localhost:3000`.
+
+## Required auth env
+
+`AUTH_SECRET` must be set for production-mode runs (`npm run build` smoke + `npm run start`) and Amplify SSR.
+
+Local:
+
+```bash
+cp .env.example .env.local
+# then set AUTH_SECRET in .env.local
+```
+
+Generate a strong secret:
+
+```bash
+openssl rand -base64 48
+```
+
+Amplify (main branch, us-east-2):
+
+```bash
+aws amplify update-branch \
+  --app-id dzxvs1esr22z9 \
+  --branch-name main \
+  --region us-east-2 \
+  --environment-variables AUTH_SECRET="<paste-strong-secret>"
+```
+
+Verify:
+
+```bash
+aws amplify get-branch \
+  --app-id dzxvs1esr22z9 \
+  --branch-name main \
+  --region us-east-2 \
+  --query "branch.environmentVariables.AUTH_SECRET"
+```
 API docs UI: `http://localhost:3000/api-docs`.
 Docs hub: `http://localhost:3000/docs`.
 User docs: `http://localhost:3000/docs/user`.
