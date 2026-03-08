@@ -12,9 +12,14 @@
  *   limit     (int, default 20)   — rows per page, max 100
  *   bot       (string)            — priority | random | alternate | rollout (default rollout)
  *   minScore  (int, default 0)    — only include runs with final_score >= minScore
+ *
+ * Rate limit: BINARY2048_RATE_LIMIT_TRAINING_MAX per BINARY2048_RATE_LIMIT_WINDOW_MS
+ * (defaults: 20 requests / 5 minutes per client)
  */
 
 import { NextResponse } from "next/server";
+import { evaluateChallenge } from "@/lib/binary2048/challenge-policy";
+import { checkTrainingRateLimit } from "@/lib/binary2048/rate-limit";
 import { generateTrainingReplays } from "@/lib/binary2048/training-data";
 import type { BotId } from "@/lib/binary2048/bot-orchestrator";
 
@@ -22,6 +27,28 @@ const ENGINE_VERSION = process.env.NEXT_PUBLIC_APP_COMMIT ?? "dev";
 const ALLOWED_BOTS: BotId[] = ["priority", "random", "alternate", "rollout"];
 
 export async function GET(req: Request) {
+  const challenge = evaluateChallenge({ req, route: "/api/training/replays", risk: "high", userTier: "guest" });
+  if (!challenge.allowed) {
+    return NextResponse.json(
+      { error: "Challenge required", route: "/api/training/replays", reason: challenge.reason, mode: challenge.mode },
+      { status: 403 }
+    );
+  }
+
+  const quota = checkTrainingRateLimit(req);
+  if (!quota.allowed) {
+    return NextResponse.json(
+      {
+        error: "Rate limit exceeded",
+        route: "training",
+        limit: quota.limit,
+        remaining: quota.remaining,
+        retryAfterSeconds: quota.retryAfterSeconds
+      },
+      { status: 429, headers: { "retry-after": String(quota.retryAfterSeconds) } }
+    );
+  }
+
   try {
     const { searchParams } = new URL(req.url);
 

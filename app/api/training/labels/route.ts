@@ -18,6 +18,9 @@
  *   minTile   (int, default 0)          — only include steps from games that
  *               reached this tile value or higher (e.g. 128 for mid-game data)
  *
+ * Rate limit: shared training bucket — BINARY2048_RATE_LIMIT_TRAINING_MAX per
+ * BINARY2048_RATE_LIMIT_WINDOW_MS (defaults: 20 requests / 5 minutes per client)
+ *
  * Response shape:
  *   flat_state   number[32]  — same encoding as /api/games/:id/encoded → encodedFlat
  *   action_mask  number[4]   — [L, R, U, D] legality flags (1=legal, 0=illegal)
@@ -27,11 +30,35 @@
  */
 
 import { NextResponse } from "next/server";
+import { evaluateChallenge } from "@/lib/binary2048/challenge-policy";
+import { checkTrainingRateLimit } from "@/lib/binary2048/rate-limit";
 import { generateTrainingLabels, type LabelStrategy } from "@/lib/binary2048/training-data";
 
 const ALLOWED_STRATEGIES: LabelStrategy[] = ["score_delta", "rollout"];
 
 export async function GET(req: Request) {
+  const challenge = evaluateChallenge({ req, route: "/api/training/labels", risk: "high", userTier: "guest" });
+  if (!challenge.allowed) {
+    return NextResponse.json(
+      { error: "Challenge required", route: "/api/training/labels", reason: challenge.reason, mode: challenge.mode },
+      { status: 403 }
+    );
+  }
+
+  const quota = checkTrainingRateLimit(req);
+  if (!quota.allowed) {
+    return NextResponse.json(
+      {
+        error: "Rate limit exceeded",
+        route: "training",
+        limit: quota.limit,
+        remaining: quota.remaining,
+        retryAfterSeconds: quota.retryAfterSeconds
+      },
+      { status: 429, headers: { "retry-after": String(quota.retryAfterSeconds) } }
+    );
+  }
+
   try {
     const { searchParams } = new URL(req.url);
 
