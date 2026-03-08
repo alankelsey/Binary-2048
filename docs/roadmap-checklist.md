@@ -190,4 +190,4 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [ ] Add browser synthetic checks (Playwright against prod) for critical UI actions
 - [ ] Add rollback trigger policy for repeated prod smoke failures within rolling window
 - [ ] Add release checklist item: verify auth/session endpoints before announcing deploy
-- [ ] Add incident evidence bundle script (curl snapshots + headers + log links) for fast triage
+- [x] Add incident evidence bundle script (curl snapshots + headers + log links) for fast triage

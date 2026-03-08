@@ -49,6 +49,8 @@
     "ops:prod:verify": "bash ./scripts/post-deploy-verify.sh",
     "ops:prod:fingerprints": "bash ./scripts/prod-digest-fingerprints.sh",
     "ops:release:auth-check": "bash ./scripts/release-auth-check.sh",
+    "ops:auth:amplify-fix": "bash ./scripts/auth-amplify-fix.sh",
+    "ops:incident:bundle": "bash ./scripts/incident-evidence-bundle.sh",
     "load:baseline": "k6 run ./scripts/load/k6-baseline.js",
     "load:ramp": "k6 run ./scripts/load/k6-ramp.js",
     "load:spike": "k6 run ./scripts/load/k6-spike.js",
