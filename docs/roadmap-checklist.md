@@ -146,7 +146,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add `/api/runs/:id` + `/api/runs/:id/replay` backed by persistent storage
 - [x] Add deterministic training dataset export job (Parquet/JSONL) for ML with PII-safe schema
 - [x] Add feature extractor job for model inputs (encoded state/action mask + outcome labels)
-- [ ] Add baseline offline ML pipeline (train/eval/report) using persisted runs
+- [x] Add baseline offline ML pipeline (train/eval/report) using persisted runs
 - [x] Add model registry/version pinning for bot policies and tournament fairness
 - [x] Add inference safety gate (model timeout + fallback policy + deterministic seed logging)
 - [ ] Add storage/cost guardrails for Mongo/S3 (budgets, lifecycle rules, object count alarms)

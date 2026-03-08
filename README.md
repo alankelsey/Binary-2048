@@ -211,6 +211,12 @@ Extract numeric features for offline training/eval:
 npm run runs:extract:features
 ```
 
+Run baseline offline train/eval report:
+
+```bash
+npm run ml:baseline
+```
+
 Tournament API (server-side orchestrator):
 
 ```bash
