@@ -77,7 +77,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Rate limits/quotas on heavy bot/tournament endpoints (per IP and/or per key)
 - [x] Tournament job-queue/concurrency limit strategy for CPU cost control
 - [x] Replay/tournament telemetry + anomaly alarms (latency/cost/WAF spike visibility)
-- [ ] Stand up dedicated `dev` environment (separate Amplify branch/domain + secrets + optional test data) for rapid iteration without impacting `main`/prod
+- [x] Stand up dedicated `dev` environment (separate Amplify branch/domain + secrets + optional test data) for rapid iteration without impacting `main`/prod
 
 ## Public Launch Readiness + Cost Guardrails
 
@@ -165,21 +165,21 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add baseline offline ML pipeline (train/eval/report) using persisted runs
 - [x] Add model registry/version pinning for bot policies and tournament fairness
 - [x] Add inference safety gate (model timeout + fallback policy + deterministic seed logging)
-- [ ] Add storage/cost guardrails for Mongo/S3 (budgets, lifecycle rules, object count alarms)
-- [ ] Add disaster recovery runbook for replay storage (restore drills + checksum verification)
+- [x] Add storage/cost guardrails for Mongo/S3 (budgets, lifecycle rules, object count alarms)
+- [x] Add disaster recovery runbook for replay storage (restore drills + checksum verification)
 
 ## Telemetry + SEO + Product Learning
 
-- [ ] Add event taxonomy spec (session, move, replay, share, store, auth, error) with stable schema versions
-- [ ] Add privacy-safe analytics pipeline (client events -> API ingest -> warehouse/S3) with PII minimization
-- [ ] Add interaction telemetry dashboards (funnel: land -> new game -> move -> replay/share -> return)
-- [ ] Add gameplay friction analysis (rage-quit points, no-op rates, undo usage, loss reasons by mode/difficulty)
+- [x] Add event taxonomy spec (session, move, replay, share, store, auth, error) with stable schema versions
+- [x] Add privacy-safe analytics pipeline (client events -> API ingest -> warehouse/S3) with PII minimization
+- [x] Add interaction telemetry dashboards (funnel: land -> new game -> move -> replay/share -> return)
+- [x] Add gameplay friction analysis (rage-quit points, no-op rates, undo usage, loss reasons by mode/difficulty)
 - [x] Add SEO baseline for marketing pages (meta tags, OpenGraph/Twitter cards, sitemap.xml, robots.txt, canonical tags)
 - [x] Add structured data (Organization, WebSite, SoftwareApplication) on public landing/docs pages
-- [ ] Add search indexing/health checks (GSC/Bing verification + crawl error monitoring)
-- [ ] Add experimentation framework for UI improvements (A/B flags + guardrails + holdout tracking)
-- [ ] Add ML training-data policy for telemetry joins (consent classes, retention window, anonymization constraints)
-- [ ] Add bot-vs-human behavior segmentation metrics to guide balancing and anti-abuse tuning
+- [x] Add search indexing/health checks (GSC/Bing verification + crawl error monitoring)
+- [x] Add experimentation framework for UI improvements (A/B flags + guardrails + holdout tracking)
+- [x] Add ML training-data policy for telemetry joins (consent classes, retention window, anonymization constraints)
+- [x] Add bot-vs-human behavior segmentation metrics to guide balancing and anti-abuse tuning
 
 ## Production Test Coverage Brainstorm
 
