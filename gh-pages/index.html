@@ -4,37 +4,46 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Binary 2048</title>
-    <meta name="description" content="Binary 2048 playable page" />
+    <meta name="description" content="Binary 2048 intro page with animated board demo and launch link" />
     <style>
       :root {
         color-scheme: dark;
-        --bg0: #020815;
-        --bg1: #0c1730;
+        --bg0: #030815;
+        --bg1: #0f2045;
         --txt: #e6eefb;
         --muted: #8aa2c8;
-        --line: #284572;
-        --btn: #153765;
-        --btn-border: #2f7dd6;
+        --line: #2b4a7f;
+        --btn: #174078;
+        --btn-border: #3f8bed;
+        --tile0: #f5cf59;
+        --tile1: #1b5ca1;
+        --tile2: #189ebf;
+        --tile4: #16a26f;
+        --tile8: #db7632;
+        --tile16: #cc4f3f;
+        --empty: #1e2a3d;
       }
-      * { box-sizing: border-box; }
+      * {
+        box-sizing: border-box;
+      }
       body {
         margin: 0;
         min-height: 100vh;
         font-family: "Avenir Next", "Segoe UI", sans-serif;
         color: var(--txt);
-        background: radial-gradient(circle at 30% 0%, #123062 0%, var(--bg0) 45%), var(--bg0);
+        background: radial-gradient(circle at 30% 0%, #163971 0%, var(--bg0) 45%), var(--bg0);
       }
       .wrap {
-        max-width: 1200px;
+        max-width: 1000px;
         margin: 0 auto;
-        padding: 16px;
+        padding: 20px 16px 36px;
       }
       .head {
         display: flex;
-        gap: 12px;
+        gap: 16px;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 12px;
+        margin-bottom: 18px;
       }
       .title {
         font-size: clamp(24px, 5vw, 36px);
@@ -44,30 +53,95 @@
         color: var(--muted);
         font-size: 14px;
       }
+      .pitch {
+        margin-top: 8px;
+        color: #c9d8f1;
+        font-size: 20px;
+        font-weight: 600;
+      }
       .cta {
         border: 1px solid var(--btn-border);
         background: var(--btn);
         color: var(--txt);
-        padding: 10px 14px;
+        padding: 12px 18px;
         border-radius: 10px;
         text-decoration: none;
         font-weight: 700;
       }
-      .frame {
+      .cta:hover {
+        filter: brightness(1.1);
+      }
+      .demo {
         width: 100%;
-        height: min(78vh, 920px);
         border: 1px solid var(--line);
         border-radius: 14px;
-        background: #061128;
+        background: #0a1629;
+        padding: 18px;
+      }
+      .demo-grid {
+        width: min(92vw, 540px);
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+      }
+      .cell {
+        aspect-ratio: 1;
+        border-radius: 12px;
+        border: 1px solid #3a5888;
+        background: var(--empty);
+        display: grid;
+        place-items: center;
+        font-size: 30px;
+        font-weight: 800;
+        color: #eef4ff;
+        transition: background-color 220ms ease, transform 220ms ease, box-shadow 220ms ease, opacity 220ms ease;
+      }
+      .cell.pop {
+        transform: scale(1.1);
+        box-shadow: 0 0 18px rgba(156, 220, 255, 0.42);
+      }
+      .cell.v0 {
+        background: linear-gradient(145deg, #7f690f, var(--tile0));
+        color: #221800;
+      }
+      .cell.v1 { background: var(--tile1); }
+      .cell.v2 { background: var(--tile2); }
+      .cell.v4 { background: var(--tile4); }
+      .cell.v8 { background: var(--tile8); }
+      .cell.v16 { background: var(--tile16); }
+      .controls {
+        margin-top: 16px;
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+      }
+      .chip {
+        border: 1px solid #3a5888;
+        background: #0f2646;
+        color: #bdd2f4;
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 12px;
+        font-weight: 600;
       }
       .foot {
-        margin-top: 10px;
+        margin-top: 14px;
         color: var(--muted);
         font-size: 12px;
+        text-align: center;
       }
       @media (max-width: 720px) {
-        .head { flex-direction: column; align-items: flex-start; }
-        .frame { height: 72vh; }
+        .head {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .pitch {
+          font-size: 17px;
+        }
+        .cell {
+          font-size: 24px;
+        }
       }
     </style>
   </head>
@@ -76,12 +150,66 @@
       <header class="head">
         <div>
           <div class="title">Binary 2048</div>
-          <div class="sub">GitHub Pages landing with live app embed</div>
+          <div class="sub">Bot-first binary puzzle with zero annihilators and wildcard multipliers.</div>
+          <div class="pitch">Made mostly for bots by mostly bots.</div>
         </div>
         <a class="cta" href="https://binary2048.com" target="_blank" rel="noreferrer">Open Full App</a>
       </header>
-      <iframe class="frame" src="https://binary2048.com" title="Binary 2048" loading="lazy"></iframe>
-      <p class="foot">If the embed is blocked by browser/site policy, use "Open Full App".</p>
+      <section class="demo" aria-label="Binary 2048 animated demo">
+        <div id="demo-grid" class="demo-grid"></div>
+        <div class="controls">
+          <span class="chip">Animated Demo</span>
+          <span class="chip">Non-playable</span>
+          <span class="chip">Tap Open Full App to play</span>
+        </div>
+      </section>
+      <p class="foot">This demo loops automatically to preview gameplay flow.</p>
     </main>
+    <script>
+      const states = [
+        [null, 1, null, null, null, 1, null, null, null, null, null, null, null, null, null, null],
+        [null, null, 2, null, null, null, null, null, null, null, null, 0, null, null, null, null],
+        [null, null, 2, null, null, null, null, null, null, null, null, null, null, 4, null, null],
+        [null, null, 2, null, null, null, null, null, null, null, null, null, 8, null, null, null],
+        [null, null, null, null, null, null, null, null, null, null, 16, null, null, null, null, 0],
+        [null, null, null, null, null, null, null, null, 8, null, null, null, null, null, 2, null]
+      ];
+
+      const grid = document.getElementById("demo-grid");
+      const cells = [];
+      for (let i = 0; i < 16; i += 1) {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        grid.appendChild(cell);
+        cells.push(cell);
+      }
+
+      let frame = 0;
+      function render(next) {
+        for (let i = 0; i < cells.length; i += 1) {
+          const value = next[i];
+          const cell = cells[i];
+          cell.className = "cell";
+          cell.textContent = "";
+          if (value === null) continue;
+          if (value === 0) {
+            cell.classList.add("v0");
+            cell.textContent = "0";
+          } else {
+            const tone = value <= 16 ? value : 16;
+            cell.classList.add(`v${tone}`);
+            cell.textContent = String(value);
+          }
+          cell.classList.add("pop");
+          setTimeout(() => cell.classList.remove("pop"), 180);
+        }
+      }
+
+      render(states[0]);
+      setInterval(() => {
+        frame = (frame + 1) % states.length;
+        render(states[frame]);
+      }, 700);
+    </script>
   </body>
 </html>

@@ -1,6 +1,6 @@
 # GitHub Pages Setup
 
-This repo includes a static Pages site in `gh-pages/` that embeds the live app (`https://binary2048.com`) in an iframe.
+This repo includes a static Pages site in `gh-pages/` that acts as a product intro page and links into the live app (`https://binary2048.com`).
 
 ## Enable once in GitHub
 
@@ -20,10 +20,10 @@ This repo includes a static Pages site in `gh-pages/` that embeds the live app (
 - Entry file: `gh-pages/index.html`
 - UX behavior:
   - shows branded landing page
-  - attempts playable embed of `https://binary2048.com`
-  - provides "Open Full App" fallback if embed is blocked
+  - runs a short non-playable animated board demo (JS loop)
+  - provides direct `Open Full App` CTA to production app
 
 ## Notes
 
-- If your primary domain sends restrictive `X-Frame-Options` or `Content-Security-Policy frame-ancestors`, iframe embedding may fail.
-- In that case, keep the Pages site as a launch/marketing page and route users via the full-app link.
+- This avoids iframe policy issues (`X-Frame-Options`, `CSP frame-ancestors`) by design.
+- Keep this page lightweight and static so it remains reliable even when app/API incidents occur.

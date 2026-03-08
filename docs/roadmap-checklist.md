@@ -134,6 +134,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Marketing rollout hooks (social share CTAs, referral tracking)
 - [x] Privacy/compliance essentials: privacy page + user data export/delete endpoints
 - [x] GitHub Pages presence (repo landing page and playable-host strategy decision: iframe vs static mirror)
+- [x] GitHub Pages animated intro page with non-playable board demo + production deep-link CTA
 
 ## Persistence + ML Backlog (Post-100 Expansion)
 
