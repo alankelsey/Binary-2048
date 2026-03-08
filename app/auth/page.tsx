@@ -3,7 +3,12 @@ import { authOptions } from "@/auth";
 import { buildAuthUiState } from "@/lib/binary2048/auth-ui";
 
 export default async function AuthPage() {
-  const session = await getServerSession(authOptions);
+  let session = null;
+  try {
+    session = await getServerSession(authOptions);
+  } catch {
+    session = null;
+  }
   const state = buildAuthUiState(session, authOptions.providers?.length ?? 0);
   return (
     <main>

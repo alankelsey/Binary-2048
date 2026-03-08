@@ -4,7 +4,12 @@ import { authOptions } from "@/auth";
 import { buildAuthUiState } from "@/lib/binary2048/auth-ui";
 
 export async function AuthShell() {
-  const session = await getServerSession(authOptions);
+  let session = null;
+  try {
+    session = await getServerSession(authOptions);
+  } catch {
+    session = null;
+  }
   const state = buildAuthUiState(session, authOptions.providers?.length ?? 0);
   return (
     <div className="auth-shell" aria-label="Authentication status">
