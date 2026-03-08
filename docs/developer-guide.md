@@ -63,6 +63,9 @@ Replay storage phases and migration notes are documented in:
 - Ghost race:
   - `GET /api/challenges/ghost-race`
   - `POST /api/challenges/ghost-race/submit`
+- Run persistence:
+  - `GET /api/runs/:id`
+  - `GET /api/runs/:id/replay`
 - AI:
   - `GET /api/games/:id/encoded`
   - `POST /api/simulate`

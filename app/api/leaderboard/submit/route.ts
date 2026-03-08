@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getVerifiedAuthClaims } from "@/lib/binary2048/auth-context";
 import { exportToCompactReplay } from "@/lib/binary2048/replay-format";
 import { createReplaySignature } from "@/lib/binary2048/replay-signature";
+import { buildCanonicalRunRecord } from "@/lib/binary2048/run-record";
+import { getRunStore } from "@/lib/binary2048/run-store";
 import { getLeaderboardEligibility, submitLeaderboardEntry } from "@/lib/binary2048/leaderboard";
 import { exportSession, getSession } from "@/lib/binary2048/sessions";
 
@@ -32,19 +34,33 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: eligibility.reason, bracket: eligibility.bracket }, { status: 403 });
   }
 
+  const exported = exportSession(body.gameId);
+  const replaySignature = (() => {
+    const signingSecret = process.env.BINARY2048_REPLAY_CODE_SECRET ?? "";
+    if (!signingSecret || !exported) return undefined;
+    return createReplaySignature(exportToCompactReplay(exported), signingSecret);
+  })();
+
   const submitted = submitLeaderboardEntry({
-    replaySignature: (() => {
-      const signingSecret = process.env.BINARY2048_REPLAY_CODE_SECRET ?? "";
-      if (!signingSecret) return undefined;
-      const exported = exportSession(body.gameId);
-      if (!exported) return undefined;
-      return createReplaySignature(exportToCompactReplay(exported), signingSecret);
-    })(),
+    replaySignature,
     playerId: claims.sub,
     userTier: claims.tier,
     gameId: body.gameId,
     session
   });
+
+  if (exported) {
+    const runRecord = buildCanonicalRunRecord({
+      id: `run_${body.gameId}`,
+      playerId: claims.sub,
+      userTier: claims.tier,
+      gameId: body.gameId,
+      exported,
+      integrity: session.integrity,
+      replaySignature
+    });
+    await getRunStore().upsertRun(runRecord);
+  }
 
   return NextResponse.json(
     {

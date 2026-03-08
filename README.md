@@ -103,6 +103,19 @@ BINARY2048_AUTH_BRIDGE_SECRET=replace-me \
 npm run dev
 ```
 
+Run persistence backing store:
+
+```bash
+# default
+export BINARY2048_RUN_STORE=memory
+
+# optional mongo backing
+export BINARY2048_RUN_STORE=mongo
+export BINARY2048_MONGO_URI="mongodb://..."
+export BINARY2048_MONGO_DB="binary2048"
+export BINARY2048_MONGO_RUN_COLLECTION="runs"
+```
+
 Then mint bridge token from authenticated session:
 
 ```bash
@@ -420,6 +433,10 @@ BASE_URL=http://localhost:3000 npm run load:stage:abuse
 - `POST /api/challenges/ghost-race/submit`
   - Body: `{ "playerId": string, "replay": <export-or-compact-replay-payload> }`
   - Replays user run and returns beat/tie result against rollout ghost baseline
+- `GET /api/runs/{id}`
+  - Returns canonical persisted run metadata and score envelope
+- `GET /api/runs/{id}/replay`
+  - Returns persisted compact replay payload for the run
 
 Challenge policy env:
 

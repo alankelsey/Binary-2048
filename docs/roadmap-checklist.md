@@ -138,12 +138,12 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 ## Persistence + ML Backlog (Post-100 Expansion)
 
 - [ ] Add MongoDB persistence layer for sessions/runs (replace in-memory store behind interface)
-- [ ] Persist canonical run records (`seed`, `moves`, `score`, `maxTile`, `engineVersion`, `rulesetId`, `integrity`, `createdAt`)
+- [x] Persist canonical run records (`seed`, `moves`, `score`, `maxTile`, `engineVersion`, `rulesetId`, `integrity`, `createdAt`)
 - [ ] Store top/contest replay artifacts in S3 (compressed payload + checksum + metadata) and keep Mongo pointer
 - [ ] Add replay retention policy (TTL tiers: hot in Mongo, warm in S3, purge policy for guest data)
 - [ ] Add idempotent replay ingest worker for async tournament uploads (API -> queue -> persistence)
 - [ ] Add run index strategy (playerId/date, score desc, rulesetId, contestId) and query latency SLO
-- [ ] Add `/api/runs/:id` + `/api/runs/:id/replay` backed by persistent storage
+- [x] Add `/api/runs/:id` + `/api/runs/:id/replay` backed by persistent storage
 - [ ] Add deterministic training dataset export job (Parquet/JSONL) for ML with PII-safe schema
 - [ ] Add feature extractor job for model inputs (encoded state/action mask + outcome labels)
 - [ ] Add baseline offline ML pipeline (train/eval/report) using persisted runs

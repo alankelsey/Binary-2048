@@ -1,6 +1,7 @@
 import { createAuthBridgeToken } from "@/lib/binary2048/auth-bridge";
 import { POST } from "@/app/api/leaderboard/submit/route";
 import { resetLeaderboard } from "@/lib/binary2048/leaderboard";
+import { getRunStore, resetRunStoreForTests } from "@/lib/binary2048/run-store";
 import { createSession, moveSession, undoSession } from "@/lib/binary2048/sessions";
 import type { Cell } from "@/lib/binary2048/types";
 
@@ -44,6 +45,7 @@ describe("POST /api/leaderboard/submit", () => {
 
   afterEach(() => {
     resetLeaderboard();
+    resetRunStoreForTests();
     delete process.env.BINARY2048_AUTH_BRIDGE_SECRET;
     delete process.env.BINARY2048_REPLAY_CODE_SECRET;
   });
@@ -79,6 +81,10 @@ describe("POST /api/leaderboard/submit", () => {
     expect(json.entry?.gameId).toBe(gameId);
     expect(json.entry?.playerId).toBe("u_submitter");
     expect(typeof json.entry?.score).toBe("number");
+    const stored = await getRunStore().getRun(`run_${gameId}`);
+    expect(stored?.gameId).toBe(gameId);
+    expect(stored?.playerId).toBe("u_submitter");
+    expect(Array.isArray(stored?.replay.moves)).toBe(true);
   });
 
   it("stores replay signature when replay signing secret is configured", async () => {

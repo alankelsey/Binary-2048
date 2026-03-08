@@ -25,6 +25,7 @@ export default function DeveloperDocsPage() {
           <li>Replay: `/api/games/:id/export`, `/api/games/:id/replay`, `/api/replay`, `/api/replay/postmortem`, `/api/replay/code`</li>
           <li>Daily challenge: `/api/challenges/daily`, `/api/challenges/daily/submit`</li>
           <li>Ghost race: `/api/challenges/ghost-race`, `/api/challenges/ghost-race/submit`</li>
+          <li>Runs: `/api/runs/:id`, `/api/runs/:id/replay`</li>
           <li>AI: `/api/games/:id/encoded`, `/api/simulate`, `/api/bots/tournament`</li>
           <li>Ranked/security: `/api/leaderboard/submit`, `/api/auth/entitlements/proof`</li>
         </ul>

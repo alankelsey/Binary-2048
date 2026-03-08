@@ -516,6 +516,26 @@ export const OPENAPI_SPEC = {
         }
       }
     },
+    "/api/runs/{id}": {
+      get: {
+        summary: "Get canonical persisted run record by id",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          "200": { description: "Canonical run record" },
+          "404": { description: "Run not found" }
+        }
+      }
+    },
+    "/api/runs/{id}/replay": {
+      get: {
+        summary: "Get persisted compact replay payload for run id",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          "200": { description: "Compact replay payload" },
+          "404": { description: "Run replay not found" }
+        }
+      }
+    },
     "/api/openapi": {
       get: {
         summary: "OpenAPI spec document",
