@@ -52,6 +52,8 @@
     "ops:auth:amplify-fix": "bash ./scripts/auth-amplify-fix.sh",
     "ops:iam:amplify-ssm-check": "bash ./scripts/iam-amplify-ssm-check.sh",
     "ops:incident:bundle": "bash ./scripts/incident-evidence-bundle.sh",
+    "ops:prod:browser": "playwright test -c playwright.prod.config.ts",
+    "ops:prod:regional": "bash ./scripts/prod-regional-check.sh",
     "load:baseline": "k6 run ./scripts/load/k6-baseline.js",
     "load:ramp": "k6 run ./scripts/load/k6-ramp.js",
     "load:spike": "k6 run ./scripts/load/k6-spike.js",
@@ -72,6 +74,7 @@
     "react-dom": "19.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "1.55.0",
     "@types/jest": "29.5.14",
     "@types/node": "22.13.10",
     "@types/react": "19.0.10",

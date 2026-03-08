@@ -188,8 +188,9 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add synthetic gameplay canary in prod (create game + one move + export) with strict timeout budget
 - [x] Add post-deploy verification gate (block rollout completion until smoke + canary pass)
 - [x] Add digest/error fingerprint tracker (collect unique Next.js digests and correlate to deploy id)
+- [x] Add regional POP probe scaffold workflow (`x-amz-cf-pop` capture + scheduled checks)
 - [ ] Add regional checks (at least 2 POP/regions) to catch edge-specific failures
-- [ ] Add browser synthetic checks (Playwright against prod) for critical UI actions
+- [x] Add browser synthetic checks (Playwright against prod) for critical UI actions
 - [x] Add rollback trigger policy for repeated prod smoke failures within rolling window
 - [x] Add release checklist item: verify auth/session endpoints before announcing deploy
 - [x] Add incident evidence bundle script (curl snapshots + headers + log links) for fast triage

@@ -1,0 +1,23 @@
+name: Production Regional POP Check
+
+on:
+  schedule:
+    - cron: "45 4,10,16,22 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regional-pop-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run regional/POP probe
+        env:
+          PROD_BASE: https://www.binary2048.com
+          REGIONAL_CHECK_REQUESTS: 10
+        run: bash ./scripts/prod-regional-check.sh
