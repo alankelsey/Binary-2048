@@ -169,7 +169,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 ## Production Test Coverage Brainstorm
 
 - [x] Add lightweight prod smoke script (`/`, `/auth`, `/api/health`) to verify live HTML/API responses
-- [ ] Add scheduled prod smoke workflow (every 5-15 min) with alerting on failure
+- [x] Add scheduled prod smoke workflow (4 checks/day: 2 day, 2 night) with alerting on failure
 - [ ] Add synthetic gameplay canary in prod (create game + one move + export) with strict timeout budget
 - [ ] Add post-deploy verification gate (block rollout completion until smoke + canary pass)
 - [ ] Add digest/error fingerprint tracker (collect unique Next.js digests and correlate to deploy id)

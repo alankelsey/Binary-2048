@@ -1,0 +1,22 @@
+name: Production Smoke
+
+on:
+  schedule:
+    # 4 checks/day in UTC:
+    # 04:00, 10:00, 16:00, 22:00
+    # Boise roughly maps to 2 daytime + 2 nighttime checks.
+    - cron: "0 4,10,16,22 * * *"
+  workflow_dispatch:
+
+jobs:
+  prod-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run production smoke checks
+        env:
+          PROD_BASE: https://www.binary2048.com
+        run: bash ./scripts/prod-smoke.sh

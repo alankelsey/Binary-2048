@@ -88,6 +88,8 @@ npm run ops:prod:smoke
 # or:
 PROD_BASE=https://binary2048.com npm run ops:prod:smoke
 ```
+
+Automated prod smoke is also scheduled in GitHub Actions 4x/day via `.github/workflows/prod-smoke.yml`.
 API docs UI: `http://localhost:3000/api-docs`.
 Docs hub: `http://localhost:3000/docs`.
 User docs: `http://localhost:3000/docs/user`.
