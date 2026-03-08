@@ -4,6 +4,7 @@ set -euo pipefail
 
 BASE="${PROD_BASE:-https://www.binary2048.com}"
 CURL_OPTS=(--connect-timeout 8 --max-time 20)
+EXPECT_PROVIDER="${EXPECT_PROVIDER:-github}"
 
 check_endpoint() {
   local path="$1"
@@ -61,4 +62,20 @@ echo "Running release auth/session checks against: ${BASE}"
 check_endpoint "/auth" "200"
 check_endpoint "/api/auth/signin" "200_or_302"
 check_endpoint "/api/auth/session" "200"
+
+PROVIDERS_JSON="$(curl -sS "${CURL_OPTS[@]}" "${BASE}/api/auth/providers" || true)"
+if echo "${PROVIDERS_JSON}" | grep -qiE 'NO_SECRET|MissingSecretError|There is a problem with the server configuration'; then
+  echo "release auth check failed: /api/auth/providers returned server config error signature"
+  echo "${PROVIDERS_JSON}" | sed -n '1,40p'
+  exit 1
+fi
+if [[ -n "${EXPECT_PROVIDER}" ]]; then
+  if ! echo "${PROVIDERS_JSON}" | grep -q "\"${EXPECT_PROVIDER}\""; then
+    echo "release auth check failed: expected provider '${EXPECT_PROVIDER}' not present in /api/auth/providers"
+    echo "${PROVIDERS_JSON}" | sed -n '1,60p'
+    exit 1
+  fi
+  echo "ok /api/auth/providers includes provider=${EXPECT_PROVIDER}"
+fi
+
 echo "Release auth/session checks passed."

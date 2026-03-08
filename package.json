@@ -50,6 +50,7 @@
     "ops:prod:fingerprints": "bash ./scripts/prod-digest-fingerprints.sh",
     "ops:release:auth-check": "bash ./scripts/release-auth-check.sh",
     "ops:auth:amplify-fix": "bash ./scripts/auth-amplify-fix.sh",
+    "ops:iam:amplify-ssm-check": "bash ./scripts/iam-amplify-ssm-check.sh",
     "ops:incident:bundle": "bash ./scripts/incident-evidence-bundle.sh",
     "load:baseline": "k6 run ./scripts/load/k6-baseline.js",
     "load:ramp": "k6 run ./scripts/load/k6-ramp.js",

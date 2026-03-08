@@ -37,9 +37,16 @@ jobs:
           PROD_VERIFY_SLEEP_SECONDS: 20
         run: npm run ops:prod:verify
 
+      - name: Verify Amplify service role SSM access
+        env:
+          APP_ID: dzxvs1esr22z9
+          AWS_REGION: us-east-2
+        run: npm run ops:iam:amplify-ssm-check
+
       - name: Release auth/session verification
         env:
           PROD_BASE: https://www.binary2048.com
+          EXPECT_PROVIDER: github
         run: npm run ops:release:auth-check
 
       - name: Collect prod digest fingerprints
