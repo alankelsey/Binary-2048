@@ -80,6 +80,14 @@ Local/manual check:
 ```bash
 APP_ID=dzxvs1esr22z9 BRANCH_NAME=main AWS_REGION=us-east-2 npm run ops:amplify:watch
 ```
+
+Production endpoint smoke:
+
+```bash
+npm run ops:prod:smoke
+# or:
+PROD_BASE=https://binary2048.com npm run ops:prod:smoke
+```
 API docs UI: `http://localhost:3000/api-docs`.
 Docs hub: `http://localhost:3000/docs`.
 User docs: `http://localhost:3000/docs/user`.
@@ -103,6 +111,7 @@ Bot API quickstart: `docs/bot-api-quickstart.md`.
 Bot benchmark suite: `docs/bot-benchmark-suite.md`.
 Mongo migration triggers: `docs/mongo-migration-triggers.md`.
 Bot-first launch package: `docs/bot-first-launch-package.md`.
+Telemetry/SEO learning plan: `docs/telemetry-seo-learning-plan.md`.
 
 Controls: swipe on mobile, arrow keys, and `W/A/S/D`.
 

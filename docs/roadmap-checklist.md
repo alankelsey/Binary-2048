@@ -152,3 +152,29 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add inference safety gate (model timeout + fallback policy + deterministic seed logging)
 - [ ] Add storage/cost guardrails for Mongo/S3 (budgets, lifecycle rules, object count alarms)
 - [ ] Add disaster recovery runbook for replay storage (restore drills + checksum verification)
+
+## Telemetry + SEO + Product Learning
+
+- [ ] Add event taxonomy spec (session, move, replay, share, store, auth, error) with stable schema versions
+- [ ] Add privacy-safe analytics pipeline (client events -> API ingest -> warehouse/S3) with PII minimization
+- [ ] Add interaction telemetry dashboards (funnel: land -> new game -> move -> replay/share -> return)
+- [ ] Add gameplay friction analysis (rage-quit points, no-op rates, undo usage, loss reasons by mode/difficulty)
+- [ ] Add SEO baseline for marketing pages (meta tags, OpenGraph/Twitter cards, sitemap.xml, robots.txt, canonical tags)
+- [ ] Add structured data (Organization, WebSite, SoftwareApplication) on public landing/docs pages
+- [ ] Add search indexing/health checks (GSC/Bing verification + crawl error monitoring)
+- [ ] Add experimentation framework for UI improvements (A/B flags + guardrails + holdout tracking)
+- [ ] Add ML training-data policy for telemetry joins (consent classes, retention window, anonymization constraints)
+- [ ] Add bot-vs-human behavior segmentation metrics to guide balancing and anti-abuse tuning
+
+## Production Test Coverage Brainstorm
+
+- [x] Add lightweight prod smoke script (`/`, `/auth`, `/api/health`) to verify live HTML/API responses
+- [ ] Add scheduled prod smoke workflow (every 5-15 min) with alerting on failure
+- [ ] Add synthetic gameplay canary in prod (create game + one move + export) with strict timeout budget
+- [ ] Add post-deploy verification gate (block rollout completion until smoke + canary pass)
+- [ ] Add digest/error fingerprint tracker (collect unique Next.js digests and correlate to deploy id)
+- [ ] Add regional checks (at least 2 POP/regions) to catch edge-specific failures
+- [ ] Add browser synthetic checks (Playwright against prod) for critical UI actions
+- [ ] Add rollback trigger policy for repeated prod smoke failures within rolling window
+- [ ] Add release checklist item: verify auth/session endpoints before announcing deploy
+- [ ] Add incident evidence bundle script (curl snapshots + headers + log links) for fast triage
