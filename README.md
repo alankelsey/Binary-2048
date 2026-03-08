@@ -575,6 +575,17 @@ Challenge policy env:
 - `POST /api/store/consume`
   - Consumes inventory and appends ledger entry
   - Body: `{ "subscriberId": string, "sku": "undo_charge" | "wild_boost_pack" | "lock_breaker", "quantity": number, "reason"?: "grant" | "consume" | "adjust" }`
+- `GET /api/training/replays?page=&limit=&bot=&minScore=`
+  - Returns paginated deterministic bot replay records (no persistent storage required — seeds derived from page number)
+  - Query params: `page` (default `1`), `limit` (default `20`, max `100`), `bot` (`priority`|`random`|`alternate`|`rollout`, default `rollout`), `minScore` (default `0`)
+  - Response includes `seed`, `bot`, `final_score`, `max_tile`, `turns`, `engine_version`
+- `GET /api/training/labels?page=&limit=&strategy=&minTile=`
+  - Returns per-step `(flat_state, action_mask, best_action)` tuples for supervised pretraining
+  - Query params: `page` (default `1`), `limit` (default `100`, max `500`), `strategy` (`score_delta`|`rollout`, default `score_delta`), `minTile` (filter steps only from games reaching this tile or higher, default `0`)
+  - `flat_state`: 32-float encoding aligned to `flattenEncodedState`
+  - `action_mask`: 4-element `[0/1]` array aligned to `["L","R","U","D"]`
+  - `best_action`: index into action space (`0`=L, `1`=R, `2`=U, `3`=D)
+  - `source`: `score_delta` (1-step lookahead) or `rollout` (short random rollouts)
 - `POST /api/ads/reward`
   - Server-verified rewarded-ad grant endpoint (HMAC-signed payload required).
   - Anti-fraud enforcement: nonce replay detection, freshness window, cooldown, and daily cap.
@@ -718,6 +729,293 @@ Trackable checklist source:
   - Track rollout in [docs/aws-waf-baseline.md](./docs/aws-waf-baseline.md).
   - Apply checklist in [docs/aws-waf-apply.md](./docs/aws-waf-apply.md).
   - Use concrete per-tier/per-endpoint limits from [docs/rate-limit-matrix.md](./docs/rate-limit-matrix.md).
+
+## ML Training Pipeline
+
+Binary-2048 includes a full Python reinforcement-learning pipeline for training agents to
+play the game. It is intentionally self-contained so that researchers can run it without
+touching the Next.js server code.
+
+> **Background for new ML practitioners:** Reinforcement learning (RL) is a way to train
+> a program ("agent") by letting it play a game thousands of times and rewarding it for
+> good outcomes. The agent learns a *policy* — a function that maps board states to
+> actions. Deep Q-Networks (DQN) are a classic RL algorithm that approximates this
+> policy with a neural network.
+
+### Concepts used here
+
+| Term | What it means in this project |
+|---|---|
+| **State** | The 4×4 board encoded as 32 numbers (2 per cell: `type` and `log2(value)`) |
+| **Action** | One of 4 moves: `L`, `R`, `U`, `D` |
+| **Reward** | Score delta from one move (how much the score increased) |
+| **Action mask** | A 4-element `[0/1]` array telling the agent which moves are legal |
+| **Episode** | One full game from start to game-over |
+| **Replay buffer** | A pool of past transitions used to train from; avoids overfitting to recent play |
+| **MCTS-lite** | Monte Carlo Tree Search: for each candidate move, simulate N random continuations and average their outcomes to estimate move quality |
+| **DQN** | Deep Q-Network: a neural net that predicts expected future score for each action |
+
+### Quick start
+
+```bash
+# 1. Install Python dependencies (all optional except requests + numpy)
+pip install requests numpy torch pandas pyarrow
+
+# 2. Start the game server
+npm run dev   # in another terminal
+
+# 3. Collect self-play experience (500 games, MCTS-lite policy)
+python binary2048_pipeline.py --phase collect --base-url http://localhost:3000 \
+    --collect-games 500 --collect-mode mcts --mcts-sims 20
+
+# 4. Train a DQN on the collected data
+python binary2048_pipeline.py --phase train --train-steps 20000
+
+# 5. Evaluate the trained agent
+python binary2048_pipeline.py --phase submit --submit-games 20
+
+# 6. Export data for sharing / Hugging Face
+python binary2048_pipeline.py --phase export --format csv
+```
+
+### Phase reference
+
+```bash
+python binary2048_pipeline.py [options]
+
+--phase           all | collect | train | submit | export
+--base-url        Server base URL (default: http://localhost:3000)
+--collect-games   Number of self-play games to collect (default: 200)
+--collect-mode    mcts | priority | random  (policy used during collection)
+--mcts-sims       Rollout simulations per candidate move (default: 20)
+--train-steps     Training gradient steps (default: 10000)
+--batch-size      Mini-batch size (default: 32)
+--state-dim       32 (raw) or 256 (one-hot expanded, richer tile features)
+--model-path      Path to save/load model (default: dqn_model.pt / dqn_model_numpy.pkl)
+--buffer-path     Replay buffer file (default: replay_buffer.pkl)
+--submit-games    Games to evaluate during submit phase (default: 20)
+--format          Export format: huggingface | csv (default: csv)
+```
+
+### Training data API endpoints
+
+The server exposes two endpoints specifically for ML pipelines:
+
+#### `GET /api/training/replays`
+
+Returns deterministic bot replay records. Fully reproducible — same `page` and `bot`
+always return the same data because seeds are derived from page number.
+
+```
+GET /api/training/replays?page=1&limit=20&bot=rollout&minScore=0
+```
+
+Response:
+```json
+{
+  "data": [
+    {
+      "seed": 1,
+      "bot": "rollout",
+      "final_score": 9800,
+      "max_tile": 256,
+      "turns": 140,
+      "engine_version": "dev"
+    }
+  ],
+  "page": 1,
+  "limit": 20,
+  "count": 20
+}
+```
+
+#### `GET /api/training/labels`
+
+Returns per-step `(state, action_mask, best_action)` tuples for supervised pretraining.
+The `best_action` is labeled using either `score_delta` (fastest: pick whichever move
+had the highest 1-step score gain) or `rollout` (run short random rollouts from each
+candidate and pick the best average outcome).
+
+```
+GET /api/training/labels?page=1&limit=100&strategy=score_delta&minTile=0
+```
+
+Response:
+```json
+{
+  "data": [
+    {
+      "flat_state": [0, 1, 0, 1.58, ...],
+      "action_mask": [1, 0, 1, 1],
+      "best_action": 0,
+      "confidence": 0.6,
+      "source": "score_delta"
+    }
+  ],
+  "page": 1,
+  "limit": 100,
+  "count": 100
+}
+```
+
+`best_action` is an index into `["L", "R", "U", "D"]`:
+- `0` = Left
+- `1` = Right
+- `2` = Up
+- `3` = Down
+
+### State encoding
+
+Each cell in the 4×4 grid is encoded as two numbers `[type, value]`:
+
+| `type` | Meaning | `value` |
+|---|---|---|
+| `0` | Empty cell | `0` |
+| `1` | Zero tile | `0` |
+| `2` | Number tile | `log2(tile_value)` (e.g. tile 8 → 3.0) |
+| `3` | Wildcard tile | `log2(multiplier)` |
+| `4` | Lock tile | `0` |
+
+The full 4×4 board → `4 × 4 × 2 = 32` floats (`--state-dim 32`, default).
+
+With `--state-dim 256`, the pipeline one-hot encodes each cell's value into 16 buckets
+(log2 tile 0–15), giving `4 × 4 × 16 = 256` floats. This is richer for neural nets
+but slower to compute.
+
+### Network architecture (DQN)
+
+```
+Input(32) → Linear(128) → ReLU → Linear(128) → ReLU → Linear(4)
+```
+
+Output: 4 Q-values, one per action. Before taking `argmax`, illegal moves are masked
+to `-1e9` so the agent never attempts a no-op move.
+
+### Output files
+
+| File | Contents |
+|---|---|
+| `replay_buffer.pkl` | Collected transitions `(s, a, r, s', done, mask)` |
+| `dqn_model.pt` | Trained PyTorch weights |
+| `dqn_model_numpy.pkl` | Trained weights (numpy fallback when torch unavailable) |
+| `replays.parquet` / `replays.csv` | Bot replay records from export phase |
+| `labels.parquet` / `labels.csv` | Labeled step tuples from export phase |
+| `dataset_card.md` | Hugging Face dataset README template |
+
+### Research notes
+
+This environment has several properties that make it interesting for RL research:
+
+- **Binary merge rule** (`1+1=2`, not `2+2=4`): reward sparsity differs from standard
+  2048 because early tiles merge for no score; score only accumulates after the first
+  merge cascade. This creates a harder credit-assignment problem.
+- **Lock-0 tiles**: a constrained-action-space mechanic with deterministic cooldown.
+  The agent must learn to avoid triggering lock tiles on consecutive turns.
+- **Deterministic RNG**: every game is reproducible from `seed + rngStep`. This enables
+  exact replication of any training run, which is rare in game-based RL benchmarks.
+- **`actionMask`**: legal-move masking is a first-class API field, matching Gymnasium
+  `MaskablePPO` conventions. The DQN here uses it to avoid illegal-action Q-values.
+
+See `docs/ml-pipeline.md` for extended notes on reward shaping, Gymnasium integration,
+and the N-tuple network baseline planned as a stronger reference bot.
+
+## ML Training Human Oversight Roadmap
+
+The following gaps exist in human visibility and control over the training pipeline.
+Each item is ranked by severity and whether it blocks research publication.
+
+### 1. Training log persistence (Critical — blocks paper)
+
+**Problem:** The Python pipeline only prints to stdout. If the terminal closes
+mid-training, the full loss curve and episode score history are lost.
+
+**Required for:** Every ML paper shows a loss-vs-step graph. Without a log file
+there is nothing to plot.
+
+**Plan:**
+- Add `--log-path training_log.jsonl` flag to `binary2048_pipeline.py`
+- Each training step appends: `{ "step", "loss", "epsilon", "buffer_size", "ts" }`
+- Each completed episode appends: `{ "episode", "score", "max_tile", "ts" }`
+- Add `--plot` flag (requires `matplotlib`) that renders loss and score curves
+  after training completes
+
+### 2. Visual label inspector (Critical — blocks dataset QA)
+
+**Problem:** `/api/training/labels` returns `flat_state` as 32 raw numbers.
+There is no tool to decode those back into a readable 4×4 board and display
+which direction was labeled `best_action`.
+
+**Required for:** Label quality is the first thing a dataset reviewer checks.
+If `score_delta` labels are clearly wrong on obvious boards you need to catch
+that before claiming dataset quality in a paper.
+
+**Plan:**
+- Add a `/training` page to the Next.js app
+- Fetch a page of labels from `/api/training/labels`
+- Decode `flat_state` back to a 4×4 grid using the same type/value encoding
+- Render each board using the existing tile CSS
+- Highlight the labeled `best_action` direction with an arrow indicator
+- Controls: choose strategy (`score_delta` | `rollout`), page, minTile filter
+
+### 3. Training dashboard page (High)
+
+**Problem:** No browser UI for the new training endpoints. Developers must
+hand-write `curl` commands to inspect what data the pipeline is working with.
+The new routes also do not appear in the existing `/docs/developer` page.
+
+**Plan:**
+- Extend the `/training` page (built in gap #2) with a second tab:
+  - Replay records table: seed, bot, score, maxTile, turns
+  - Controls: bot selector, page, minScore filter
+  - Download link that hits the CSV export directly
+- Update `app/docs/developer/page.tsx` to list `/api/training/replays`
+  and `/api/training/labels` alongside the existing AI endpoints
+
+### 4. Bot baseline reference (Medium — blocks paper Table 1)
+
+**Problem:** There is no pinned, committed reference that answers "what does
+the `rollout` bot score on a fixed seed set?" without re-running a tournament.
+You cannot claim "our agent beats the baseline" without a reproducible baseline
+number to compare against.
+
+**Plan:**
+- Add `npm run ml:baseline:bots` script
+- Calls `runBotTournament` across 50 fixed seeds for all 4 bots
+- Saves result to `docs/bot-baseline.json` with seeds, per-bot stats,
+  engine version, and timestamp
+- This file is committed and becomes Table 1 in any derived paper
+
+### 5. Agent watch mode (Medium)
+
+**Problem:** After training, `--phase submit` plays games headlessly.
+There is no way to *watch* the agent play in the browser to understand
+its emergent strategy (corner preference, lock tile avoidance, etc.)
+
+**Plan:**
+- Add `--phase watch` to `binary2048_pipeline.py`
+- Creates a live game via `POST /api/games`, prints the game URL
+- Plays moves with a configurable `--watch-delay` (default 500 ms)
+- User opens `http://localhost:3000` in a browser to follow along
+- Works with the existing browser game UI — no new server code needed
+
+### 6. Developer docs training section (Low)
+
+**Problem:** `app/docs/developer/page.tsx` lists AI endpoints but omits
+`/api/training/replays` and `/api/training/labels`.
+
+**Plan:** Add a "Training API" section to the developer docs page listing
+both endpoints with their query parameters and response shapes.
+
+---
+
+| Gap | Severity | Blocks paper | Size |
+|---|---|---|---|
+| Training log + plot | Critical | Yes | Small (Python) |
+| Visual label inspector | Critical | Yes | Medium (UI) |
+| Training dashboard | High | Indirectly | Medium (UI) |
+| Bot baseline script | Medium | Yes | Small (JS) |
+| Agent watch mode | Medium | No | Small (Python) |
+| Developer docs update | Low | No | Tiny |
 
 ## AI / Multibot Roadmap
 

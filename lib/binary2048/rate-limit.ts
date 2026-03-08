@@ -94,6 +94,15 @@ export function checkSimulateRateLimit(req: Request) {
   });
 }
 
+export function checkTrainingRateLimit(req: Request) {
+  return checkRateLimit({
+    req,
+    route: "training",
+    max: parsePositiveInt(process.env.BINARY2048_RATE_LIMIT_TRAINING_MAX, 20),
+    windowMs: parsePositiveInt(process.env.BINARY2048_RATE_LIMIT_WINDOW_MS, 5 * 60 * 1000)
+  });
+}
+
 export function resetRateLimitStore() {
   buckets.clear();
 }
