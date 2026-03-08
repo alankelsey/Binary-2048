@@ -4,6 +4,8 @@ set -euo pipefail
 PORT=4110
 LOG_FILE="/tmp/binary2048-smoke.log"
 BASE="http://localhost:${PORT}"
+AUTH_SECRET="${AUTH_SECRET:-build-smoke-secret}"
+NEXTAUTH_URL="${NEXTAUTH_URL:-${BASE}}"
 
 cleanup() {
   if [[ -n "${SERVER_PID:-}" ]]; then
@@ -12,7 +14,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-npm run start -- -p "${PORT}" >"${LOG_FILE}" 2>&1 &
+AUTH_SECRET="${AUTH_SECRET}" NEXTAUTH_URL="${NEXTAUTH_URL}" npm run start -- -p "${PORT}" >"${LOG_FILE}" 2>&1 &
 SERVER_PID=$!
 
 for _ in $(seq 1 40); do
@@ -22,7 +24,13 @@ for _ in $(seq 1 40); do
   sleep 0.25
 done
 
-HOME_HTML="$(curl -fsS "${BASE}/")"
+HOME_HTML="$(curl -fsS "${BASE}/")" || {
+  echo "Smoke test failed: GET ${BASE}/ returned non-200"
+  echo "--- begin server log ---"
+  cat "${LOG_FILE}" || true
+  echo "--- end server log ---"
+  exit 1
+}
 if [[ "${HOME_HTML}" != *"Binary 2048"* ]]; then
   echo "Smoke test failed: / did not return expected app markup"
   exit 1

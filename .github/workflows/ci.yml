@@ -16,6 +16,7 @@ jobs:
     timeout-minutes: 30
     env:
       AUTH_SECRET: ci-build-secret
+      NEXTAUTH_URL: http://localhost:3000
     steps:
       - name: Checkout
         uses: actions/checkout@v4
