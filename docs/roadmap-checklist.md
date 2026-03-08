@@ -76,6 +76,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Rate limits/quotas on heavy bot/tournament endpoints (per IP and/or per key)
 - [x] Tournament job-queue/concurrency limit strategy for CPU cost control
 - [x] Replay/tournament telemetry + anomaly alarms (latency/cost/WAF spike visibility)
+- [ ] Stand up dedicated `dev` environment (separate Amplify branch/domain + secrets + optional test data) for rapid iteration without impacting `main`/prod
 
 ## Public Launch Readiness + Cost Guardrails
 
@@ -188,6 +189,6 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add digest/error fingerprint tracker (collect unique Next.js digests and correlate to deploy id)
 - [ ] Add regional checks (at least 2 POP/regions) to catch edge-specific failures
 - [ ] Add browser synthetic checks (Playwright against prod) for critical UI actions
-- [ ] Add rollback trigger policy for repeated prod smoke failures within rolling window
-- [ ] Add release checklist item: verify auth/session endpoints before announcing deploy
+- [x] Add rollback trigger policy for repeated prod smoke failures within rolling window
+- [x] Add release checklist item: verify auth/session endpoints before announcing deploy
 - [x] Add incident evidence bundle script (curl snapshots + headers + log links) for fast triage
