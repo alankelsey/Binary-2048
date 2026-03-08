@@ -116,6 +116,15 @@ export BINARY2048_MONGO_DB="binary2048"
 export BINARY2048_MONGO_RUN_COLLECTION="runs"
 ```
 
+Mongo auth/connection smoke test:
+
+```bash
+BINARY2048_MONGO_URI="mongodb+srv://<user>:<pass>@<cluster>/<db>?retryWrites=true&w=majority" \
+BINARY2048_MONGO_DB="binary2048" \
+BINARY2048_MONGO_RUN_COLLECTION="runs" \
+npm run mongo:smoke
+```
+
 Then mint bridge token from authenticated session:
 
 ```bash

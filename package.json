@@ -25,6 +25,7 @@
     "bot:tourney": "node ./scripts/bot-tournament.mjs",
     "bot:benchmark": "node ./scripts/bot-benchmark.mjs",
     "bot:tourney:dev": "bash ./scripts/bot-tournament-dev.sh",
+    "mongo:smoke": "node ./scripts/mongo-smoke.mjs",
     "ops:waf:setup": "bash ./scripts/waf-setup.sh",
     "ops:waf:discover": "bash ./scripts/waf-discover.sh",
     "ops:waf:smoke": "bash ./scripts/waf-smoke.sh",
@@ -53,6 +54,7 @@
     "curl:local": "BASE=http://localhost:3000; RESP=$(curl -sS -X POST \"$BASE/api/games\" -H \"Content-Type: application/json\" -d '{}'); echo \"$RESP\"; if command -v jq >/dev/null 2>&1; then ID=$(echo \"$RESP\" | jq -r '.id'); else ID=$(echo \"$RESP\" | sed -n 's/.*\"id\":\"\\([^\"]*\\)\".*/\\1/p'); fi; echo \"id=$ID\"; curl -sS \"$BASE/api/games/$ID/export\""
   },
   "dependencies": {
+    "mongodb": "^6.20.0",
     "next": "15.5.12",
     "next-auth": "^4.24.13",
     "react": "19.0.0",

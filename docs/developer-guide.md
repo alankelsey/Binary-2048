@@ -83,6 +83,7 @@ See `/api/openapi` for up-to-date route definitions.
 ```bash
 npm run test:unit
 npm run test:all
+npm run mongo:smoke
 ```
 
 Current suite includes:
