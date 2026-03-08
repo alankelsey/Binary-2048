@@ -142,7 +142,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [ ] Store top/contest replay artifacts in S3 (compressed payload + checksum + metadata) and keep Mongo pointer
 - [ ] Add replay retention policy (TTL tiers: hot in Mongo, warm in S3, purge policy for guest data)
 - [ ] Add idempotent replay ingest worker for async tournament uploads (API -> queue -> persistence)
-- [ ] Add run index strategy (playerId/date, score desc, rulesetId, contestId) and query latency SLO
+- [x] Add run index strategy (playerId/date, score desc, rulesetId, contestId) and query latency SLO
 - [x] Add `/api/runs/:id` + `/api/runs/:id/replay` backed by persistent storage
 - [ ] Add deterministic training dataset export job (Parquet/JSONL) for ML with PII-safe schema
 - [ ] Add feature extractor job for model inputs (encoded state/action mask + outcome labels)

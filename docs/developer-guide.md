@@ -66,6 +66,7 @@ Replay storage phases and migration notes are documented in:
 - Run persistence:
   - `GET /api/runs/:id`
   - `GET /api/runs/:id/replay`
+  - Index + latency SLO doc: `docs/run-index-slo.md`
 - AI:
   - `GET /api/games/:id/encoded`
   - `POST /api/simulate`

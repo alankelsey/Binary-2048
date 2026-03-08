@@ -446,6 +446,7 @@ BASE_URL=http://localhost:3000 npm run load:stage:abuse
   - Returns canonical persisted run metadata and score envelope
 - `GET /api/runs/{id}/replay`
   - Returns persisted compact replay payload for the run
+  - Run index and query latency targets are documented in `docs/run-index-slo.md`
 
 Challenge policy env:
 

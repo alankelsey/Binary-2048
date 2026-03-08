@@ -6,6 +6,7 @@ export type CanonicalRunRecord = {
   playerId: string;
   userTier: "guest" | "authed" | "paid";
   gameId: string;
+  contestId?: string;
   score: number;
   maxTile: number;
   moves: number;
@@ -23,6 +24,18 @@ export type RunStore = {
   getRun: (id: string) => Promise<CanonicalRunRecord | null>;
   getRunReplay: (id: string) => Promise<CompactReplayPayload | null>;
 };
+
+export type RunIndexSpec = {
+  key: Record<string, 1 | -1>;
+  name: string;
+};
+
+export const RUN_INDEX_SPECS: RunIndexSpec[] = [
+  { name: "uniq_run_id", key: { id: 1 } },
+  { name: "player_created_desc", key: { playerId: 1, createdAtISO: -1 } },
+  { name: "ruleset_score_desc", key: { rulesetId: 1, score: -1, createdAtISO: -1 } },
+  { name: "contest_score_desc", key: { contestId: 1, score: -1, createdAtISO: -1 } }
+];
 
 class MemoryRunStore implements RunStore {
   private readonly runs = new Map<string, CanonicalRunRecord>();
@@ -48,6 +61,7 @@ class MongoRunStore implements RunStore {
     collection: {
       updateOne: (filter: Record<string, unknown>, update: Record<string, unknown>, opts: Record<string, unknown>) => Promise<unknown>;
       findOne: (filter: Record<string, unknown>) => Promise<Record<string, unknown> | null>;
+      createIndexes: (indexes: Array<{ key: Record<string, 1 | -1>; name: string; unique?: boolean }>) => Promise<unknown>;
     };
   }> | null = null;
 
@@ -61,18 +75,35 @@ class MongoRunStore implements RunStore {
     if (!this.clientPromise) {
       this.clientPromise = (async () => {
         const dynamicImport = new Function("m", "return import(m)") as (moduleName: string) => Promise<{
-          MongoClient: new (uri: string) => { connect: () => Promise<void>; db: (name: string) => { collection: (name: string) => { updateOne: (...args: unknown[]) => Promise<unknown>; findOne: (...args: unknown[]) => Promise<Record<string, unknown> | null> } } };
+          MongoClient: new (uri: string) => {
+            connect: () => Promise<void>;
+            db: (name: string) => {
+              collection: (name: string) => {
+                updateOne: (...args: unknown[]) => Promise<unknown>;
+                findOne: (...args: unknown[]) => Promise<Record<string, unknown> | null>;
+                createIndexes: (...args: unknown[]) => Promise<unknown>;
+              };
+            };
+          };
         }>;
         const mongodb = await dynamicImport("mongodb");
         const client = new mongodb.MongoClient(this.uri);
         await client.connect();
         const db = client.db(this.dbName);
+        const collection = db.collection(this.collectionName);
+        await collection.createIndexes(
+          RUN_INDEX_SPECS.map((index) => ({
+            key: index.key,
+            name: index.name,
+            unique: index.name === "uniq_run_id"
+          }))
+        );
         return {
-          collection: db.collection(this.collectionName)
+          collection
         };
       })();
     }
-    return this.clientPromise;
+    return this.clientPromise!;
   }
 
   async upsertRun(record: CanonicalRunRecord) {

@@ -1,4 +1,4 @@
-import { getRunStore, resetRunStoreForTests } from "@/lib/binary2048/run-store";
+import { getRunStore, resetRunStoreForTests, RUN_INDEX_SPECS } from "@/lib/binary2048/run-store";
 
 describe("run-store", () => {
   const originalEnv = process.env;
@@ -57,5 +57,14 @@ describe("run-store", () => {
     process.env.BINARY2048_RUN_STORE = "mongo";
     delete process.env.BINARY2048_MONGO_URI;
     expect(() => getRunStore()).toThrow("BINARY2048_MONGO_URI is required");
+  });
+
+  it("defines index strategy for player/date, score, ruleset, and contest", () => {
+    const names = RUN_INDEX_SPECS.map((index) => index.name);
+    expect(names).toContain("player_created_desc");
+    expect(names).toContain("ruleset_score_desc");
+    expect(names).toContain("contest_score_desc");
+    const contest = RUN_INDEX_SPECS.find((index) => index.name === "contest_score_desc");
+    expect(contest?.key).toEqual({ contestId: 1, score: -1, createdAtISO: -1 });
   });
 });
