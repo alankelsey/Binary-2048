@@ -65,6 +65,21 @@ aws amplify get-branch \
   --region us-east-2 \
   --query "branch.environmentVariables.AUTH_SECRET"
 ```
+
+## Prevent silent prod deploy failures
+
+This repo includes `.github/workflows/amplify-deploy-watch.yml` to check real Amplify deploy status after each push to `main`.
+
+Required GitHub repo secrets:
+
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+
+Local/manual check:
+
+```bash
+APP_ID=dzxvs1esr22z9 BRANCH_NAME=main AWS_REGION=us-east-2 npm run ops:amplify:watch
+```
 API docs UI: `http://localhost:3000/api-docs`.
 Docs hub: `http://localhost:3000/docs`.
 User docs: `http://localhost:3000/docs/user`.
