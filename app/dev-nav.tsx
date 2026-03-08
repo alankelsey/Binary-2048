@@ -4,6 +4,7 @@ const NAV_LINKS = [
   { href: "/", label: "Game" },
   { href: "/leaderboard", label: "Leaderboard" },
   { href: "/store", label: "Store" },
+  { href: "/auth", label: "Auth" },
   { href: "/ghost-race", label: "Ghost Race" },
   { href: "/docs", label: "Docs" },
   { href: "/api-docs", label: "API Docs" }

@@ -1,4 +1,8 @@
 import Link from "next/link";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/auth";
+import { buildAuthUiState } from "@/lib/binary2048/auth-ui";
+import { getAuthUxMessages } from "@/lib/binary2048/auth-ux";
 import { getDailyChallenge, listDailyChallengeEntries } from "@/lib/binary2048/daily-challenge";
 import { listLeaderboardEntries } from "@/lib/binary2048/leaderboard";
 
@@ -14,6 +18,9 @@ function parseLimit(raw: string | undefined) {
 
 export default async function LeaderboardPage({ searchParams }: LeaderboardPageProps) {
   const params = (await searchParams) ?? {};
+  const session = await getServerSession(authOptions);
+  const authState = buildAuthUiState(session, authOptions.providers?.length ?? 0);
+  const authUx = getAuthUxMessages(authState);
   const tab = params.tab === "daily" ? "daily" : "ranked";
   const limit = parseLimit(params.limit);
   const ranked = listLeaderboardEntries(limit);
@@ -25,6 +32,7 @@ export default async function LeaderboardPage({ searchParams }: LeaderboardPageP
       <div className="card">
         <h1>Leaderboard</h1>
         <p className="brand-subtitle">Ranked and Bitstorm Daily views with simple filters.</p>
+        <p className="meta-text">{authUx.rankedSubmit}</p>
         <div className="row">
           <Link href={`/leaderboard?tab=ranked&limit=${limit}`} className="button">
             Ranked

@@ -435,6 +435,8 @@ Challenge policy env:
   - Supports both inline encoded replay codes and hosted replay tokens
 - `GET /api/openapi`
   - Returns OpenAPI 3.1 JSON for current API surface
+- `/auth` UI page
+  - Shows session/tier/provider status and links for sign in/out + bridge-token helper
 - `GET /api/subscriptions?subscriberId=...`
   - Lists notification subscriptions for a subscriber id
 - `POST /api/subscriptions`

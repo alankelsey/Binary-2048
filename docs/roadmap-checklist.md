@@ -120,6 +120,9 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 ## Product Roadmap
 
 - [x] Auth.js/OAuth provider wiring to issue auth-bridge claims from real sessions
+- [x] Add auth UI shell (sign in/out controls + session/tier badge in app navigation)
+- [x] Add auth-required UX messaging for protected actions (ranked submit, paid store actions, data export/delete)
+- [x] Add `/auth` account page with provider/session diagnostics and bridge-token helper
 - [x] Notification subscriptions (app updates/player/leaderboard actions)
 - [x] Async PvP same-seed mode
 - [x] AI-vs-AI tournament orchestrator beyond smoke scripts
@@ -131,3 +134,20 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Marketing rollout hooks (social share CTAs, referral tracking)
 - [x] Privacy/compliance essentials: privacy page + user data export/delete endpoints
 - [x] GitHub Pages presence (repo landing page and playable-host strategy decision: iframe vs static mirror)
+
+## Persistence + ML Backlog (Post-100 Expansion)
+
+- [ ] Add MongoDB persistence layer for sessions/runs (replace in-memory store behind interface)
+- [ ] Persist canonical run records (`seed`, `moves`, `score`, `maxTile`, `engineVersion`, `rulesetId`, `integrity`, `createdAt`)
+- [ ] Store top/contest replay artifacts in S3 (compressed payload + checksum + metadata) and keep Mongo pointer
+- [ ] Add replay retention policy (TTL tiers: hot in Mongo, warm in S3, purge policy for guest data)
+- [ ] Add idempotent replay ingest worker for async tournament uploads (API -> queue -> persistence)
+- [ ] Add run index strategy (playerId/date, score desc, rulesetId, contestId) and query latency SLO
+- [ ] Add `/api/runs/:id` + `/api/runs/:id/replay` backed by persistent storage
+- [ ] Add deterministic training dataset export job (Parquet/JSONL) for ML with PII-safe schema
+- [ ] Add feature extractor job for model inputs (encoded state/action mask + outcome labels)
+- [ ] Add baseline offline ML pipeline (train/eval/report) using persisted runs
+- [ ] Add model registry/version pinning for bot policies and tournament fairness
+- [ ] Add inference safety gate (model timeout + fallback policy + deterministic seed logging)
+- [ ] Add storage/cost guardrails for Mongo/S3 (budgets, lifecycle rules, object count alarms)
+- [ ] Add disaster recovery runbook for replay storage (restore drills + checksum verification)
