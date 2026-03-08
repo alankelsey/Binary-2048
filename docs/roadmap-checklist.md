@@ -140,14 +140,14 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [ ] Add MongoDB persistence layer for sessions/runs (replace in-memory store behind interface)
 - [x] Persist canonical run records (`seed`, `moves`, `score`, `maxTile`, `engineVersion`, `rulesetId`, `integrity`, `createdAt`)
 - [ ] Store top/contest replay artifacts in S3 (compressed payload + checksum + metadata) and keep Mongo pointer
-- [ ] Add replay retention policy (TTL tiers: hot in Mongo, warm in S3, purge policy for guest data)
+- [x] Add replay retention policy (TTL tiers: hot in Mongo, warm in S3, purge policy for guest data)
 - [ ] Add idempotent replay ingest worker for async tournament uploads (API -> queue -> persistence)
 - [x] Add run index strategy (playerId/date, score desc, rulesetId, contestId) and query latency SLO
 - [x] Add `/api/runs/:id` + `/api/runs/:id/replay` backed by persistent storage
-- [ ] Add deterministic training dataset export job (Parquet/JSONL) for ML with PII-safe schema
-- [ ] Add feature extractor job for model inputs (encoded state/action mask + outcome labels)
+- [x] Add deterministic training dataset export job (Parquet/JSONL) for ML with PII-safe schema
+- [x] Add feature extractor job for model inputs (encoded state/action mask + outcome labels)
 - [ ] Add baseline offline ML pipeline (train/eval/report) using persisted runs
-- [ ] Add model registry/version pinning for bot policies and tournament fairness
-- [ ] Add inference safety gate (model timeout + fallback policy + deterministic seed logging)
+- [x] Add model registry/version pinning for bot policies and tournament fairness
+- [x] Add inference safety gate (model timeout + fallback policy + deterministic seed logging)
 - [ ] Add storage/cost guardrails for Mongo/S3 (budgets, lifecycle rules, object count alarms)
 - [ ] Add disaster recovery runbook for replay storage (restore drills + checksum verification)

@@ -145,6 +145,20 @@ Bot benchmark suite (fixed seeds):
 npm run bot:benchmark
 ```
 
+ML pipeline notes: `docs/ml-pipeline.md`.
+
+Export PII-safe run dataset from Mongo:
+
+```bash
+npm run runs:export:dataset
+```
+
+Extract numeric features for offline training/eval:
+
+```bash
+npm run runs:extract:features
+```
+
 Tournament API (server-side orchestrator):
 
 ```bash

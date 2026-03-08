@@ -67,6 +67,7 @@ Replay storage phases and migration notes are documented in:
   - `GET /api/runs/:id`
   - `GET /api/runs/:id/replay`
   - Index + latency SLO doc: `docs/run-index-slo.md`
+  - Replay retention policy: `docs/replay-retention-policy.md`
 - AI:
   - `GET /api/games/:id/encoded`
   - `POST /api/simulate`
@@ -93,6 +94,7 @@ Current suite includes:
 - Replay parsing/audit and schema lock tests
 - API route tests
 - Bot orchestration tests
+- ML utility tests (feature extraction, model registry, inference safety gate)
 
 ## Environment Notes
 
@@ -113,3 +115,5 @@ Current suite includes:
   - `docs/bot-api-quickstart.md`
   - `docs/bot-benchmark-suite.md`
   - `docs/mongo-migration-triggers.md`
+- ML pipeline docs:
+  - `docs/ml-pipeline.md`

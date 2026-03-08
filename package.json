@@ -26,6 +26,8 @@
     "bot:benchmark": "node ./scripts/bot-benchmark.mjs",
     "bot:tourney:dev": "bash ./scripts/bot-tournament-dev.sh",
     "mongo:smoke": "node ./scripts/mongo-smoke.mjs",
+    "runs:export:dataset": "node ./scripts/export-runs-dataset.mjs",
+    "runs:extract:features": "node ./scripts/extract-ml-features.mjs",
     "ops:waf:setup": "bash ./scripts/waf-setup.sh",
     "ops:waf:discover": "bash ./scripts/waf-discover.sh",
     "ops:waf:smoke": "bash ./scripts/waf-smoke.sh",
