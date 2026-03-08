@@ -37,6 +37,11 @@ jobs:
           PROD_VERIFY_SLEEP_SECONDS: 20
         run: npm run ops:prod:verify
 
+      - name: Release auth/session verification
+        env:
+          PROD_BASE: https://www.binary2048.com
+        run: npm run ops:release:auth-check
+
       - name: Collect prod digest fingerprints
         env:
           PROD_BASE: https://www.binary2048.com
