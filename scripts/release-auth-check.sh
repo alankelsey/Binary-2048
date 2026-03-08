@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Release auth/session smoke check — runs post-deploy to verify NextAuth is healthy.
 set -euo pipefail
 
 BASE="${PROD_BASE:-https://www.binary2048.com}"
