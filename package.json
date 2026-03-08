@@ -46,6 +46,7 @@
     "ops:waf:tripwire-check": "bash ./scripts/waf-tripwire-check.sh",
     "ops:waf:tripwire-validate": "bash ./scripts/waf-tripwire-validate.sh",
     "ops:prod:smoke": "bash ./scripts/prod-smoke.sh",
+    "ops:prod:verify": "bash ./scripts/post-deploy-verify.sh",
     "load:baseline": "k6 run ./scripts/load/k6-baseline.js",
     "load:ramp": "k6 run ./scripts/load/k6-ramp.js",
     "load:spike": "k6 run ./scripts/load/k6-spike.js",

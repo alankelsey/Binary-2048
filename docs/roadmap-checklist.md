@@ -136,6 +136,19 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] GitHub Pages presence (repo landing page and playable-host strategy decision: iframe vs static mirror)
 - [x] GitHub Pages animated intro page with non-playable board demo + production deep-link CTA
 
+## Championship/League Safe Testing Brainstorm
+
+- [ ] Add `sandbox` competition namespace (separate tables/collections from production leaderboard state)
+- [ ] Add `isPractice`/`isSandbox` flags on submissions; exclude by default from ranked/global queries
+- [ ] Add `preview season` mode (real rules + fake prizes + isolated standings)
+- [ ] Add admin toggle to mirror production configs into sandbox without enabling write-back
+- [ ] Add replay validation/load tests against sandbox seasons before enabling production season windows
+- [ ] Add “shadow write” option: process championship submissions fully but store results only in sandbox
+- [ ] Add separate API keys/rate limits for league test clients and bot tournament rehearsals
+- [ ] Add one-click “promote config only” flow (rules/seed pool/limits) from sandbox to production
+- [ ] Add synthetic league simulator script that runs full brackets against sandbox endpoints
+- [ ] Add explicit UI badge/watermark for sandbox seasons so users cannot confuse test vs live standings
+
 ## Persistence + ML Backlog (Post-100 Expansion)
 
 - [ ] Add MongoDB persistence layer for sessions/runs (replace in-memory store behind interface)
@@ -171,7 +184,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add lightweight prod smoke script (`/`, `/auth`, `/api/health`) to verify live HTML/API responses
 - [x] Add scheduled prod smoke workflow (4 checks/day: 2 day, 2 night) with alerting on failure
 - [x] Add synthetic gameplay canary in prod (create game + one move + export) with strict timeout budget
-- [ ] Add post-deploy verification gate (block rollout completion until smoke + canary pass)
+- [x] Add post-deploy verification gate (block rollout completion until smoke + canary pass)
 - [ ] Add digest/error fingerprint tracker (collect unique Next.js digests and correlate to deploy id)
 - [ ] Add regional checks (at least 2 POP/regions) to catch edge-specific failures
 - [ ] Add browser synthetic checks (Playwright against prod) for critical UI actions

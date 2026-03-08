@@ -28,3 +28,10 @@ jobs:
           TIMEOUT_SECONDS: 1200
           POLL_SECONDS: 15
         run: npm run ops:amplify:watch
+
+      - name: Post-deploy production verification gate
+        env:
+          PROD_BASE: https://www.binary2048.com
+          PROD_VERIFY_ATTEMPTS: 20
+          PROD_VERIFY_SLEEP_SECONDS: 20
+        run: npm run ops:prod:verify
