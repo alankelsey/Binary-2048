@@ -21,6 +21,7 @@ jobs:
           aws-region: us-east-2
 
       - name: Watch latest Amplify deployment for main
+        id: watch
         env:
           APP_ID: dzxvs1esr22z9
           BRANCH_NAME: main
@@ -35,3 +36,19 @@ jobs:
           PROD_VERIFY_ATTEMPTS: 20
           PROD_VERIFY_SLEEP_SECONDS: 20
         run: npm run ops:prod:verify
+
+      - name: Collect prod digest fingerprints
+        env:
+          PROD_BASE: https://www.binary2048.com
+          AMPLIFY_JOB_ID: ${{ steps.watch.outputs.job_id }}
+          AMPLIFY_COMMIT_ID: ${{ steps.watch.outputs.commit_id }}
+          PROD_FINGERPRINT_ARTIFACT_DIR: artifacts
+        run: npm run ops:prod:fingerprints
+
+      - name: Upload prod digest artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prod-digest-fingerprints
+          path: artifacts/prod-digest-fingerprints-*.json
+          if-no-files-found: warn

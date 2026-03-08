@@ -61,6 +61,13 @@ if [[ -z "${JOB_ID}" || "${JOB_ID}" == "None" ]]; then
   exit 1
 fi
 
+if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
+  {
+    echo "job_id=${JOB_ID}"
+    echo "commit_id=$(job_commit "${JOB_ID}")"
+  } >> "${GITHUB_OUTPUT}"
+fi
+
 echo "Watching Amplify job ${JOB_ID} for ${APP_ID}/${BRANCH_NAME} in ${AWS_REGION}"
 START_EPOCH="$(date +%s)"
 
@@ -75,6 +82,12 @@ while true; do
   case "${STATUS}" in
     SUCCEED)
       echo "Amplify deploy succeeded for job ${JOB_ID}"
+      if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
+        {
+          echo "job_id=${JOB_ID}"
+          echo "commit_id=${COMMIT_ID}"
+        } >> "${GITHUB_OUTPUT}"
+      fi
       exit 0
       ;;
     FAILED|CANCELLED)
