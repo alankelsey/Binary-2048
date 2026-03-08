@@ -18,7 +18,14 @@ const nextConfig = {
   devIndicators: false,
   env: {
     NEXT_PUBLIC_APP_VERSION: String(packageJson.version ?? "0.1.0"),
-    NEXT_PUBLIC_APP_COMMIT: commitSha
+    NEXT_PUBLIC_APP_COMMIT: commitSha,
+    // Amplify WEB_COMPUTE does not forward SSM-sourced env vars to the SSR
+    // Lambda runtime, so we bake auth secrets into the server bundle here.
+    AUTH_SECRET: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET ?? "",
+    NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET ?? "",
+    AUTH_GITHUB_ID: process.env.AUTH_GITHUB_ID ?? "",
+    AUTH_GITHUB_SECRET: process.env.AUTH_GITHUB_SECRET ?? "",
+    NEXTAUTH_URL: process.env.NEXTAUTH_URL ?? ""
   },
   webpack: (config, { dev }) => {
     if (dev) {
