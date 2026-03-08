@@ -174,8 +174,8 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [ ] Add privacy-safe analytics pipeline (client events -> API ingest -> warehouse/S3) with PII minimization
 - [ ] Add interaction telemetry dashboards (funnel: land -> new game -> move -> replay/share -> return)
 - [ ] Add gameplay friction analysis (rage-quit points, no-op rates, undo usage, loss reasons by mode/difficulty)
-- [ ] Add SEO baseline for marketing pages (meta tags, OpenGraph/Twitter cards, sitemap.xml, robots.txt, canonical tags)
-- [ ] Add structured data (Organization, WebSite, SoftwareApplication) on public landing/docs pages
+- [x] Add SEO baseline for marketing pages (meta tags, OpenGraph/Twitter cards, sitemap.xml, robots.txt, canonical tags)
+- [x] Add structured data (Organization, WebSite, SoftwareApplication) on public landing/docs pages
 - [ ] Add search indexing/health checks (GSC/Bing verification + crawl error monitoring)
 - [ ] Add experimentation framework for UI improvements (A/B flags + guardrails + holdout tracking)
 - [ ] Add ML training-data policy for telemetry joins (consent classes, retention window, anonymization constraints)
