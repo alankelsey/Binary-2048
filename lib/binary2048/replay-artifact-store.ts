@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { gunzipSync, gzipSync } from "node:zlib";
 import type { CompactReplayPayload } from "@/lib/binary2048/replay-format";
+import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
 export type ReplayArtifactRef =
   | {
@@ -52,13 +53,7 @@ class S3ReplayArtifactStore implements ReplayArtifactStore {
   private readonly bucket: string;
   private readonly region: string;
   private readonly prefix: string;
-  private clientPromise: Promise<{
-    send: (command: unknown) => Promise<{
-      Body?: { transformToByteArray?: () => Promise<Uint8Array> };
-    }>;
-    PutObjectCommand: new (input: Record<string, unknown>) => unknown;
-    GetObjectCommand: new (input: Record<string, unknown>) => unknown;
-  }> | null = null;
+  private clientPromise: Promise<S3Client> | null = null;
 
   constructor(bucket: string, region: string, prefix: string) {
     this.bucket = bucket;
@@ -68,22 +63,7 @@ class S3ReplayArtifactStore implements ReplayArtifactStore {
 
   private async getClient() {
     if (!this.clientPromise) {
-      this.clientPromise = (async () => {
-        const dynamicImport = new Function("m", "return import(m)") as (moduleName: string) => Promise<{
-          S3Client: new (input: Record<string, unknown>) => { send: (command: unknown) => Promise<unknown> };
-          PutObjectCommand: new (input: Record<string, unknown>) => unknown;
-          GetObjectCommand: new (input: Record<string, unknown>) => unknown;
-        }>;
-        const s3 = await dynamicImport("@aws-sdk/client-s3");
-        const client = new s3.S3Client({ region: this.region });
-        return {
-          send: client.send.bind(client) as (command: unknown) => Promise<{
-            Body?: { transformToByteArray?: () => Promise<Uint8Array> };
-          }>,
-          PutObjectCommand: s3.PutObjectCommand,
-          GetObjectCommand: s3.GetObjectCommand
-        };
-      })();
+      this.clientPromise = Promise.resolve(new S3Client({ region: this.region }));
     }
     return this.clientPromise;
   }
@@ -107,8 +87,8 @@ class S3ReplayArtifactStore implements ReplayArtifactStore {
     const checksumSha256 = createHash("sha256").update(compressed).digest("hex");
     const key = this.objectKey(runId);
 
-    const { send, PutObjectCommand } = await this.getClient();
-    await send(
+    const client = await this.getClient();
+    await client.send(
       new PutObjectCommand({
         Bucket: this.bucket,
         Key: key,
@@ -133,8 +113,8 @@ class S3ReplayArtifactStore implements ReplayArtifactStore {
 
   async load(ref: ReplayArtifactRef) {
     if (ref.kind !== "s3") return null;
-    const { send, GetObjectCommand } = await this.getClient();
-    const output = await send(
+    const client = await this.getClient();
+    const output = await client.send(
       new GetObjectCommand({
         Bucket: ref.bucket,
         Key: ref.key

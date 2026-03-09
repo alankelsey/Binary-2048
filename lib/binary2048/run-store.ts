@@ -1,6 +1,7 @@
 import type { CompactReplayPayload } from "@/lib/binary2048/replay-format";
 import { getReplayArtifactStore, type ReplayArtifactRef } from "@/lib/binary2048/replay-artifact-store";
 import type { SessionIntegrity } from "@/lib/binary2048/types";
+import { MongoClient } from "mongodb";
 
 export type CanonicalRunRecord = {
   id: string;
@@ -76,20 +77,7 @@ class MongoRunStore implements RunStore {
   private async getCollection() {
     if (!this.clientPromise) {
       this.clientPromise = (async () => {
-        const dynamicImport = new Function("m", "return import(m)") as (moduleName: string) => Promise<{
-          MongoClient: new (uri: string) => {
-            connect: () => Promise<void>;
-            db: (name: string) => {
-              collection: (name: string) => {
-                updateOne: (...args: unknown[]) => Promise<unknown>;
-                findOne: (...args: unknown[]) => Promise<Record<string, unknown> | null>;
-                createIndexes: (...args: unknown[]) => Promise<unknown>;
-              };
-            };
-          };
-        }>;
-        const mongodb = await dynamicImport("mongodb");
-        const client = new mongodb.MongoClient(this.uri);
+        const client = new MongoClient(this.uri);
         await client.connect();
         const db = client.db(this.dbName);
         const collection = db.collection(this.collectionName);

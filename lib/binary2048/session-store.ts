@@ -1,4 +1,5 @@
 import type { GameSession } from "@/lib/binary2048/types";
+import { MongoClient } from "mongodb";
 
 export type SessionStore = {
   set: (id: string, session: GameSession) => void;
@@ -45,16 +46,7 @@ class MongoSessionStore extends MemorySessionStore {
   private async getCollection() {
     if (!this.collectionPromise) {
       this.collectionPromise = (async () => {
-        const dynamicImport = new Function("m", "return import(m)") as (moduleName: string) => Promise<{
-          MongoClient: new (uri: string) => {
-            connect: () => Promise<void>;
-            db: (name: string) => {
-              collection: (name: string) => MongoCollectionLike;
-            };
-          };
-        }>;
-        const mongodb = await dynamicImport("mongodb");
-        const client = new mongodb.MongoClient(this.uri);
+        const client = new MongoClient(this.uri);
         await client.connect();
         const collection = client.db(this.dbName).collection(this.collectionName);
         await collection.createIndexes([
@@ -144,4 +136,3 @@ export function getSessionStore() {
 export function resetSessionStoreForTests() {
   delete globalStore.__binary2048_session_store;
 }
-
