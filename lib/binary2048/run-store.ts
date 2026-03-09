@@ -1,4 +1,5 @@
 import type { CompactReplayPayload } from "@/lib/binary2048/replay-format";
+import { getReplayArtifactStore, type ReplayArtifactRef } from "@/lib/binary2048/replay-artifact-store";
 import type { SessionIntegrity } from "@/lib/binary2048/types";
 
 export type CanonicalRunRecord = {
@@ -16,7 +17,8 @@ export type CanonicalRunRecord = {
   integrity: SessionIntegrity;
   createdAtISO: string;
   replaySignature?: string;
-  replay: CompactReplayPayload;
+  replay?: CompactReplayPayload;
+  replayRef?: ReplayArtifactRef;
 };
 
 export type RunStore = {
@@ -107,10 +109,23 @@ class MongoRunStore implements RunStore {
   }
 
   async upsertRun(record: CanonicalRunRecord) {
+    const artifactStore = getReplayArtifactStore();
+    const toPersist: CanonicalRunRecord = { ...record };
+    if (record.replay) {
+      const replayRef = await artifactStore.persistIfConfigured(record.id, record.replay, {
+        score: record.score,
+        contestId: record.contestId
+      });
+      if (replayRef.kind === "s3") {
+        toPersist.replayRef = replayRef;
+        delete toPersist.replay;
+      }
+    }
+
     const { collection } = await this.getCollection();
     await collection.updateOne(
       { id: record.id },
-      { $set: record },
+      { $set: toPersist },
       { upsert: true }
     );
   }
@@ -123,7 +138,12 @@ class MongoRunStore implements RunStore {
 
   async getRunReplay(id: string) {
     const found = await this.getRun(id);
-    return found?.replay ?? null;
+    if (!found) return null;
+    if (found.replay) return found.replay;
+    if (found.replayRef) {
+      return getReplayArtifactStore().load(found.replayRef);
+    }
+    return null;
   }
 }
 

@@ -155,7 +155,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 
 - [ ] Add MongoDB persistence layer for sessions/runs (replace in-memory store behind interface)
 - [x] Persist canonical run records (`seed`, `moves`, `score`, `maxTile`, `engineVersion`, `rulesetId`, `integrity`, `createdAt`)
-- [ ] Store top/contest replay artifacts in S3 (compressed payload + checksum + metadata) and keep Mongo pointer
+- [x] Store top/contest replay artifacts in S3 (compressed payload + checksum + metadata) and keep Mongo pointer
 - [x] Add replay retention policy (TTL tiers: hot in Mongo, warm in S3, purge policy for guest data)
 - [ ] Add idempotent replay ingest worker for async tournament uploads (API -> queue -> persistence)
 - [x] Add run index strategy (playerId/date, score desc, rulesetId, contestId) and query latency SLO
