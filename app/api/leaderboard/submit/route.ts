@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getVerifiedAuthClaims } from "@/lib/binary2048/auth-context";
+import { resolveSandboxSubmissionMode, verifySandboxSubmissionAccess } from "@/lib/binary2048/league-sandbox";
 import { exportToCompactReplay } from "@/lib/binary2048/replay-format";
 import { createReplaySignature } from "@/lib/binary2048/replay-signature";
 import { buildCanonicalRunRecord } from "@/lib/binary2048/run-record";
@@ -9,6 +10,11 @@ import { exportSession, getSession } from "@/lib/binary2048/sessions";
 
 type SubmitBody = {
   gameId?: string;
+  namespace?: "production" | "sandbox";
+  isSandbox?: boolean;
+  isPractice?: boolean;
+  seasonMode?: "live" | "preview";
+  shadowWrite?: boolean;
 };
 
 export async function POST(req: Request) {
@@ -21,6 +27,11 @@ export async function POST(req: Request) {
   if (!body.gameId) {
     return NextResponse.json({ error: "gameId is required" }, { status: 400 });
   }
+  const sandboxAccess = verifySandboxSubmissionAccess(req, body);
+  if (!sandboxAccess.ok) {
+    return NextResponse.json({ error: sandboxAccess.error }, { status: sandboxAccess.status ?? 400 });
+  }
+  const submitMode = resolveSandboxSubmissionMode(body);
 
   const session = getSession(body.gameId);
   if (!session) {
@@ -42,6 +53,10 @@ export async function POST(req: Request) {
   })();
 
   const submitted = submitLeaderboardEntry({
+    namespace: submitMode.namespace,
+    isSandbox: submitMode.isSandbox,
+    isPractice: submitMode.isPractice,
+    seasonMode: submitMode.seasonMode,
     replaySignature,
     playerId: claims.sub,
     userTier: claims.tier,
@@ -67,6 +82,8 @@ export async function POST(req: Request) {
       submitted: true,
       rank: submitted.rank,
       total: submitted.total,
+      storedNamespace: submitMode.namespace,
+      shadowWrite: submitMode.shadowWrite,
       entry: submitted.entry
     },
     { status: 200 }

@@ -185,6 +185,12 @@ export BINARY2048_REPLAY_S3_REGION="us-east-2"
 export BINARY2048_REPLAY_S3_PREFIX="replays"
 export BINARY2048_REPLAY_S3_MIN_SCORE=2048
 export BINARY2048_REPLAY_S3_CONTEST_ONLY=false
+
+# optional sandbox/league rehearsal controls
+export BINARY2048_ADMIN_TOKEN="replace-me"
+export BINARY2048_LEAGUE_SHADOW_WRITE=false
+export BINARY2048_SANDBOX_API_KEYS="sandbox-key-1,sandbox-key-2"
+export BINARY2048_SANDBOX_RATE_LIMIT_PER_5M=120
 ```
 
 Mongo auth/connection smoke test:
@@ -208,6 +214,13 @@ Tiny same-seed multibot tournament:
 
 ```bash
 npm run bot:tourney
+```
+
+Sandbox league simulator (preview season rehearsals):
+
+```bash
+# TOKEN should be a valid auth bridge token from /api/auth/bridge-token or /api/auth/dev-token
+TOKEN="..." LEAGUE_KEY="sandbox-key-1" npm run league:sandbox:sim
 ```
 
 Bot benchmark suite (fixed seeds):

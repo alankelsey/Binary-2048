@@ -38,4 +38,36 @@ describe("GET /api/leaderboard", () => {
     expect(json.entries).toHaveLength(1);
     expect(json.entries[0]?.playerId).toBe("u_high");
   });
+
+  it("filters sandbox namespace explicitly", async () => {
+    const grid: Cell[][] = [
+      [{ t: "n", v: 2 }, { t: "n", v: 2 }, null, null],
+      [null, null, null, null],
+      [null, null, null, null],
+      [null, null, null, null]
+    ];
+    const prod = createSession({ seed: 511, spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] } }, grid, { sessionClass: "ranked" });
+    moveSession(prod.current.id, "left");
+    submitLeaderboardEntry({ playerId: "u_prod", userTier: "authed", gameId: prod.current.id, session: prod });
+
+    const sandbox = createSession({ seed: 512, spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] } }, grid, { sessionClass: "ranked" });
+    moveSession(sandbox.current.id, "left");
+    submitLeaderboardEntry({
+      namespace: "sandbox",
+      isSandbox: true,
+      seasonMode: "preview",
+      playerId: "u_sandbox",
+      userTier: "authed",
+      gameId: sandbox.current.id,
+      session: sandbox
+    });
+
+    const sandboxReq = new Request("http://localhost/api/leaderboard?namespace=sandbox&seasonMode=preview");
+    const sandboxRes = await GET(sandboxReq);
+    const sandboxJson = await sandboxRes.json();
+    expect(sandboxRes.status).toBe(200);
+    expect(sandboxJson.namespace).toBe("sandbox");
+    expect(sandboxJson.entries).toHaveLength(1);
+    expect(sandboxJson.entries[0]?.playerId).toBe("u_sandbox");
+  });
 });

@@ -24,6 +24,7 @@
     "bot:smoke:dev": "bash ./scripts/bot-smoke-dev.sh",
     "bot:tourney": "node ./scripts/bot-tournament.mjs",
     "bot:benchmark": "node ./scripts/bot-benchmark.mjs",
+    "league:sandbox:sim": "node ./scripts/league-sandbox-sim.mjs",
     "bot:tourney:dev": "bash ./scripts/bot-tournament-dev.sh",
     "mongo:smoke": "node ./scripts/mongo-smoke.mjs",
     "ops:amplify:watch": "bash ./scripts/amplify-deploy-watch.sh",

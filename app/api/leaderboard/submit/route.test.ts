@@ -1,6 +1,8 @@
 import { createAuthBridgeToken } from "@/lib/binary2048/auth-bridge";
 import { POST } from "@/app/api/leaderboard/submit/route";
+import { POST as validateReplayPOST } from "@/app/api/replay/validate/route";
 import { resetLeaderboard } from "@/lib/binary2048/leaderboard";
+import { resetSandboxRateLimitForTests } from "@/lib/binary2048/league-sandbox";
 import { getRunStore, resetRunStoreForTests } from "@/lib/binary2048/run-store";
 import { createSession, moveSession, undoSession } from "@/lib/binary2048/sessions";
 import type { Cell } from "@/lib/binary2048/types";
@@ -46,8 +48,12 @@ describe("POST /api/leaderboard/submit", () => {
   afterEach(() => {
     resetLeaderboard();
     resetRunStoreForTests();
+    resetSandboxRateLimitForTests();
     delete process.env.BINARY2048_AUTH_BRIDGE_SECRET;
     delete process.env.BINARY2048_REPLAY_CODE_SECRET;
+    delete process.env.BINARY2048_SANDBOX_API_KEYS;
+    delete process.env.BINARY2048_SANDBOX_RATE_LIMIT_PER_5M;
+    delete process.env.BINARY2048_LEAGUE_SHADOW_WRITE;
   });
 
   it("rejects unauthenticated submissions", async () => {
@@ -84,7 +90,7 @@ describe("POST /api/leaderboard/submit", () => {
     const stored = await getRunStore().getRun(`run_${gameId}`);
     expect(stored?.gameId).toBe(gameId);
     expect(stored?.playerId).toBe("u_submitter");
-    expect(Array.isArray(stored?.replay.moves)).toBe(true);
+    expect(Array.isArray(stored?.replay?.moves)).toBe(true);
   });
 
   it("stores replay signature when replay signing secret is configured", async () => {
@@ -209,5 +215,80 @@ describe("POST /api/leaderboard/submit", () => {
 
     const res = await POST(req);
     expect(res.status).toBe(409);
+  });
+
+  it("requires sandbox API key when submitting sandbox runs", async () => {
+    process.env.BINARY2048_SANDBOX_API_KEYS = "sandbox-key-1";
+    const gameId = createFinishedRankedGame();
+
+    const deniedReq = new Request("http://localhost/api/leaderboard/submit", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        ...authHeader("u_submitter", "authed")
+      },
+      body: JSON.stringify({ gameId, isSandbox: true, seasonMode: "preview" })
+    });
+    const deniedRes = await POST(deniedReq);
+    expect(deniedRes.status).toBe(401);
+
+    const allowedReq = new Request("http://localhost/api/leaderboard/submit", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-league-client-key": "sandbox-key-1",
+        ...authHeader("u_submitter", "authed")
+      },
+      body: JSON.stringify({ gameId, isSandbox: true, seasonMode: "preview" })
+    });
+    const allowedRes = await POST(allowedReq);
+    const allowedJson = await allowedRes.json();
+    expect(allowedRes.status).toBe(200);
+    expect(allowedJson.storedNamespace).toBe("sandbox");
+  });
+
+  it("supports shadow-write toggle to route entries into sandbox", async () => {
+    process.env.BINARY2048_LEAGUE_SHADOW_WRITE = "true";
+    const gameId = createFinishedRankedGame();
+    const req = new Request("http://localhost/api/leaderboard/submit", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        ...authHeader("u_submitter", "authed")
+      },
+      body: JSON.stringify({ gameId })
+    });
+    const res = await POST(req);
+    const json = await res.json();
+    expect(res.status).toBe(200);
+    expect(json.shadowWrite).toBe(true);
+    expect(json.storedNamespace).toBe("sandbox");
+  });
+
+  it("validates replay payloads loaded from sandbox preview submissions", async () => {
+    const gameId = createFinishedRankedGame();
+    const submitReq = new Request("http://localhost/api/leaderboard/submit", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        ...authHeader("u_submitter", "authed")
+      },
+      body: JSON.stringify({ gameId, isSandbox: true, seasonMode: "preview" })
+    });
+    const submitRes = await POST(submitReq);
+    expect(submitRes.status).toBe(200);
+
+    const stored = await getRunStore().getRun(`run_${gameId}`);
+    expect(stored?.replay).toBeDefined();
+
+    const validateReq = new Request("http://localhost/api/replay/validate", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(stored?.replay)
+    });
+    const validateRes = await validateReplayPOST(validateReq);
+    const validateJson = await validateRes.json();
+    expect(validateRes.status).toBe(200);
+    expect(validateJson.ok).toBe(true);
   });
 });

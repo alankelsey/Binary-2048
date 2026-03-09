@@ -140,16 +140,16 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 
 ## Championship/League Safe Testing Brainstorm
 
-- [ ] Add `sandbox` competition namespace (separate tables/collections from production leaderboard state)
-- [ ] Add `isPractice`/`isSandbox` flags on submissions; exclude by default from ranked/global queries
-- [ ] Add `preview season` mode (real rules + fake prizes + isolated standings)
-- [ ] Add admin toggle to mirror production configs into sandbox without enabling write-back
-- [ ] Add replay validation/load tests against sandbox seasons before enabling production season windows
-- [ ] Add “shadow write” option: process championship submissions fully but store results only in sandbox
-- [ ] Add separate API keys/rate limits for league test clients and bot tournament rehearsals
-- [ ] Add one-click “promote config only” flow (rules/seed pool/limits) from sandbox to production
-- [ ] Add synthetic league simulator script that runs full brackets against sandbox endpoints
-- [ ] Add explicit UI badge/watermark for sandbox seasons so users cannot confuse test vs live standings
+- [x] Add `sandbox` competition namespace (separate tables/collections from production leaderboard state)
+- [x] Add `isPractice`/`isSandbox` flags on submissions; exclude by default from ranked/global queries
+- [x] Add `preview season` mode (real rules + fake prizes + isolated standings)
+- [x] Add admin toggle to mirror production configs into sandbox without enabling write-back
+- [x] Add replay validation/load tests against sandbox seasons before enabling production season windows
+- [x] Add “shadow write” option: process championship submissions fully but store results only in sandbox
+- [x] Add separate API keys/rate limits for league test clients and bot tournament rehearsals
+- [x] Add one-click “promote config only” flow (rules/seed pool/limits) from sandbox to production
+- [x] Add synthetic league simulator script that runs full brackets against sandbox endpoints
+- [x] Add explicit UI badge/watermark for sandbox seasons so users cannot confuse test vs live standings
 
 ## Persistence + ML Backlog (Post-100 Expansion)
 

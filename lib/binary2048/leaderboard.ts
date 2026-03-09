@@ -3,6 +3,10 @@ import type { GameSession } from "@/lib/binary2048/types";
 
 export type LeaderboardEntry = {
   id: string;
+  namespace: "production" | "sandbox";
+  isSandbox: boolean;
+  isPractice: boolean;
+  seasonMode: "live" | "preview";
   playerId: string;
   userTier: "guest" | "authed" | "paid";
   gameId: string;
@@ -16,6 +20,10 @@ export type LeaderboardEntry = {
 };
 
 type SubmitLeaderboardParams = {
+  namespace?: "production" | "sandbox";
+  isSandbox?: boolean;
+  isPractice?: boolean;
+  seasonMode?: "live" | "preview";
   playerId: string;
   userTier: "guest" | "authed" | "paid";
   gameId: string;
@@ -97,10 +105,25 @@ function entrySort(a: LeaderboardEntry, b: LeaderboardEntry) {
   return a.submittedAtISO.localeCompare(b.submittedAtISO);
 }
 
+type ListLeaderboardOptions = {
+  namespace?: "production" | "sandbox";
+  includeSandbox?: boolean;
+  includePractice?: boolean;
+  seasonMode?: "live" | "preview";
+};
+
 export function submitLeaderboardEntry(params: SubmitLeaderboardParams) {
   const { session, playerId, userTier, gameId, replaySignature } = params;
+  const namespace = params.namespace ?? (params.isSandbox ? "sandbox" : "production");
+  const isSandbox = namespace === "sandbox";
+  const isPractice = Boolean(params.isPractice);
+  const seasonMode = params.seasonMode ?? (isSandbox ? "preview" : "live");
   const entry: LeaderboardEntry = {
-    id: `lb_${gameId}`,
+    id: `lb_${namespace}_${gameId}`,
+    namespace,
+    isSandbox,
+    isPractice,
+    seasonMode,
     playerId,
     userTier,
     gameId,
@@ -113,7 +136,7 @@ export function submitLeaderboardEntry(params: SubmitLeaderboardParams) {
     submittedAtISO: new Date().toISOString()
   };
   leaderboardStore.set(entry.id, entry);
-  const entries = listLeaderboardEntries();
+  const entries = listLeaderboardEntries(20, { namespace, includePractice: true, includeSandbox: isSandbox, seasonMode });
   const rank = entries.findIndex((item) => item.id === entry.id) + 1;
   return {
     entry,
@@ -122,9 +145,25 @@ export function submitLeaderboardEntry(params: SubmitLeaderboardParams) {
   };
 }
 
-export function listLeaderboardEntries(limit = 20) {
+export function listLeaderboardEntries(limit = 20, options: ListLeaderboardOptions = {}) {
   const safeLimit = Number.isFinite(limit) ? Math.max(1, Math.floor(limit)) : 20;
-  return Array.from(leaderboardStore.values()).sort(entrySort).slice(0, safeLimit);
+  const namespace = options.namespace;
+  const includeSandbox = options.includeSandbox ?? false;
+  const includePractice = options.includePractice ?? false;
+  const seasonMode = options.seasonMode;
+  return Array.from(leaderboardStore.values())
+    .filter((entry) => {
+      if (namespace && entry.namespace !== namespace) return false;
+      if (!namespace) {
+        if (!includeSandbox && entry.isSandbox) return false;
+        if (includeSandbox && !entry.isSandbox) return false;
+      }
+      if (!includePractice && entry.isPractice) return false;
+      if (seasonMode && entry.seasonMode !== seasonMode) return false;
+      return true;
+    })
+    .sort(entrySort)
+    .slice(0, safeLimit);
 }
 
 export function listLeaderboardEntriesByPlayer(playerId: string, limit = 100) {

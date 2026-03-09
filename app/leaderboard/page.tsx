@@ -7,7 +7,7 @@ import { getDailyChallenge, listDailyChallengeEntries } from "@/lib/binary2048/d
 import { listLeaderboardEntries } from "@/lib/binary2048/leaderboard";
 
 type LeaderboardPageProps = {
-  searchParams?: Promise<{ tab?: string; limit?: string }>;
+  searchParams?: Promise<{ tab?: string; limit?: string; namespace?: string; seasonMode?: string }>;
 };
 
 function parseLimit(raw: string | undefined) {
@@ -22,8 +22,15 @@ export default async function LeaderboardPage({ searchParams }: LeaderboardPageP
   const authState = buildAuthUiState(session, authOptions.providers?.length ?? 0);
   const authUx = getAuthUxMessages(authState);
   const tab = params.tab === "daily" ? "daily" : "ranked";
+  const namespace = params.namespace === "sandbox" ? "sandbox" : "production";
+  const seasonMode = params.seasonMode === "preview" ? "preview" : "live";
   const limit = parseLimit(params.limit);
-  const ranked = listLeaderboardEntries(limit);
+  const ranked = listLeaderboardEntries(limit, {
+    namespace,
+    includePractice: true,
+    includeSandbox: namespace === "sandbox",
+    seasonMode
+  });
   const dailyChallenge = getDailyChallenge();
   const daily = listDailyChallengeEntries(dailyChallenge.challengeId, limit);
 
@@ -34,14 +41,34 @@ export default async function LeaderboardPage({ searchParams }: LeaderboardPageP
         <p className="brand-subtitle">Ranked and Bitstorm Daily views with simple filters.</p>
         <p className="meta-text">{authUx.rankedSubmit}</p>
         <div className="row">
-          <Link href={`/leaderboard?tab=ranked&limit=${limit}`} className="button">
+          <Link href={`/leaderboard?tab=ranked&limit=${limit}&namespace=production&seasonMode=live`} className="button">
             Ranked
           </Link>
-          <Link href={`/leaderboard?tab=daily&limit=${limit}`} className="button">
+          <Link href={`/leaderboard?tab=daily&limit=${limit}&namespace=production&seasonMode=live`} className="button">
             Daily
+          </Link>
+          <Link href={`/leaderboard?tab=ranked&limit=${limit}&namespace=sandbox&seasonMode=preview`} className="button">
+            Preview Season
           </Link>
           <span className="meta-text">Limit: {limit}</span>
         </div>
+        {(namespace === "sandbox" || seasonMode === "preview") && (
+          <div
+            style={{
+              marginTop: "0.75rem",
+              marginBottom: "0.75rem",
+              padding: "0.5rem 0.75rem",
+              borderRadius: "0.5rem",
+              border: "1px dashed #f7c873",
+              background: "rgba(247, 200, 115, 0.12)",
+              color: "#f7c873",
+              fontWeight: 700,
+              letterSpacing: "0.02em"
+            }}
+          >
+            SANDBOX PREVIEW: standings are isolated and do not affect live ranked leaderboards.
+          </div>
+        )}
 
         {tab === "ranked" ? (
           <>

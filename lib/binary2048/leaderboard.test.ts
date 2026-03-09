@@ -64,4 +64,37 @@ describe("leaderboard", () => {
     });
     expect(submitted.entry.moves).toBe(1);
   });
+
+  it("isolates sandbox namespace from production listings by default", () => {
+    const initial: Cell[][] = [
+      [{ t: "n", v: 2 }, { t: "n", v: 2 }, null, null],
+      [null, null, null, null],
+      [null, null, null, null],
+      [null, null, null, null]
+    ];
+    const prod = createSession({ seed: 404, spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] } }, initial, { sessionClass: "ranked" });
+    moveSession(prod.current.id, "left");
+    submitLeaderboardEntry({
+      playerId: "u_prod",
+      userTier: "authed",
+      gameId: prod.current.id,
+      session: prod
+    });
+
+    const sandbox = createSession({ seed: 405, spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] } }, initial, { sessionClass: "ranked" });
+    moveSession(sandbox.current.id, "left");
+    submitLeaderboardEntry({
+      namespace: "sandbox",
+      isSandbox: true,
+      seasonMode: "preview",
+      playerId: "u_sandbox",
+      userTier: "authed",
+      gameId: sandbox.current.id,
+      session: sandbox
+    });
+
+    expect(listLeaderboardEntries()).toHaveLength(1);
+    expect(listLeaderboardEntries()[0]?.playerId).toBe("u_prod");
+    expect(listLeaderboardEntries(20, { namespace: "sandbox", includeSandbox: true, includePractice: true })).toHaveLength(1);
+  });
 });
