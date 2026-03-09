@@ -177,6 +177,14 @@ export BINARY2048_RUN_STORE=mongo
 export BINARY2048_MONGO_URI="mongodb://..."
 export BINARY2048_MONGO_DB="binary2048"
 export BINARY2048_MONGO_RUN_COLLECTION="runs"
+
+# optional replay artifact offload (keeps Mongo pointer)
+export BINARY2048_REPLAY_ARTIFACT_STORE=s3
+export BINARY2048_REPLAY_S3_BUCKET="binary2048-replays"
+export BINARY2048_REPLAY_S3_REGION="us-east-2"
+export BINARY2048_REPLAY_S3_PREFIX="replays"
+export BINARY2048_REPLAY_S3_MIN_SCORE=2048
+export BINARY2048_REPLAY_S3_CONTEST_ONLY=false
 ```
 
 Mongo auth/connection smoke test:
