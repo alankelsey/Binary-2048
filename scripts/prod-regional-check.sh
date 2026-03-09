@@ -3,6 +3,7 @@ set -euo pipefail
 
 BASE="${PROD_BASE:-https://www.binary2048.com}"
 REQUESTS="${REGIONAL_CHECK_REQUESTS:-8}"
+POPS_OUT="${REGIONAL_POPS_OUT:-}"
 CURL_OPTS=(--connect-timeout 8 --max-time 20)
 
 if ! command -v awk >/dev/null 2>&1; then
@@ -44,10 +45,23 @@ unique_pop_count="$(
 )"
 echo "unique_pop_count=${unique_pop_count}"
 
+if [[ -n "${POPS_OUT}" ]]; then
+  awk '
+    {
+      for (i = 1; i <= NF; i++) {
+        if ($i ~ /^pop=/) {
+          split($i, a, "=");
+          if (a[2] != "unknown" && a[2] != "") print a[2];
+        }
+      }
+    }
+  ' "${tmp}" | sort -u > "${POPS_OUT}"
+fi
+
 if [[ "${unique_pop_count}" -lt 1 ]]; then
-  echo "Regional check failed: could not detect any CloudFront POP headers."
+  echo "Regional check failed: could not detect any CloudFront POP headers in this region."
   exit 1
 fi
 
 echo "Regional/POP probe complete."
-echo "NOTE: This is a single-runner probe scaffold; add multi-runner or external probes for strict multi-region guarantees."
+echo "NOTE: this script validates one execution region; use matrix workflows for multi-region validation."

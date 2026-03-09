@@ -153,11 +153,11 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 
 ## Persistence + ML Backlog (Post-100 Expansion)
 
-- [ ] Add MongoDB persistence layer for sessions/runs (replace in-memory store behind interface)
+- [x] Add MongoDB persistence layer for sessions/runs (replace in-memory store behind interface)
 - [x] Persist canonical run records (`seed`, `moves`, `score`, `maxTile`, `engineVersion`, `rulesetId`, `integrity`, `createdAt`)
 - [x] Store top/contest replay artifacts in S3 (compressed payload + checksum + metadata) and keep Mongo pointer
 - [x] Add replay retention policy (TTL tiers: hot in Mongo, warm in S3, purge policy for guest data)
-- [ ] Add idempotent replay ingest worker for async tournament uploads (API -> queue -> persistence)
+- [x] Add idempotent replay ingest worker for async tournament uploads (API -> queue -> persistence)
 - [x] Add run index strategy (playerId/date, score desc, rulesetId, contestId) and query latency SLO
 - [x] Add `/api/runs/:id` + `/api/runs/:id/replay` backed by persistent storage
 - [x] Add deterministic training dataset export job (Parquet/JSONL) for ML with PII-safe schema
@@ -189,7 +189,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add post-deploy verification gate (block rollout completion until smoke + canary pass)
 - [x] Add digest/error fingerprint tracker (collect unique Next.js digests and correlate to deploy id)
 - [x] Add regional POP probe scaffold workflow (`x-amz-cf-pop` capture + scheduled checks)
-- [ ] Add regional checks (at least 2 POP/regions) to catch edge-specific failures
+- [x] Add regional checks (at least 2 POP/regions) to catch edge-specific failures
 - [x] Add browser synthetic checks (Playwright against prod) for critical UI actions
 - [x] Add rollback trigger policy for repeated prod smoke failures within rolling window
 - [x] Add release checklist item: verify auth/session endpoints before announcing deploy

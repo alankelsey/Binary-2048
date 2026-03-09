@@ -1,13 +1,7 @@
 import { applyMove, buildExport, createGame } from "@/lib/binary2048/engine";
 import { canContinueAfterWin } from "@/lib/binary2048/continue-policy";
+import { getSessionStore } from "@/lib/binary2048/session-store";
 import type { Cell, Dir, GameConfig, GameExport, GameSession } from "@/lib/binary2048/types";
-
-const globalStore = globalThis as typeof globalThis & {
-  __binary2048_games?: Map<string, GameSession>;
-};
-
-const games = globalStore.__binary2048_games ?? new Map<string, GameSession>();
-globalStore.__binary2048_games = games;
 
 const UNDO_MODES = {
   normal: { pWildcard: 0.1, undoLimit: 2 },
@@ -41,7 +35,7 @@ type CreateSessionOptions = {
 
 export function createSession(config?: Partial<GameConfig>, initialGrid?: Cell[][], options?: CreateSessionOptions) {
   const created = createGame(config, initialGrid);
-  games.set(created.state.id, {
+  const session: GameSession = {
     initialState: created.state,
     current: created.state,
     steps: [],
@@ -49,16 +43,17 @@ export function createSession(config?: Partial<GameConfig>, initialGrid?: Cell[]
     undoUsed: 0,
     undoEvents: [],
     integrity: { sessionClass: options?.sessionClass ?? "unranked", source: "created" }
-  });
-  return games.get(created.state.id)!;
+  };
+  getSessionStore().set(created.state.id, session);
+  return session;
 }
 
 export function getSession(id: string) {
-  return games.get(id) ?? null;
+  return getSessionStore().get(id) ?? null;
 }
 
 export function moveSession(id: string, dir: Dir) {
-  const session = games.get(id);
+  const session = getSessionStore().get(id);
   if (!session) return null;
 
   const before = session.current;
@@ -74,12 +69,12 @@ export function moveSession(id: string, dir: Dir) {
 
   session.steps.push(step);
   session.current = move.state;
-  games.set(id, session);
+  getSessionStore().set(id, session);
   return session;
 }
 
 export function undoSession(id: string) {
-  const session = games.get(id);
+  const session = getSessionStore().get(id);
   if (!session) return { session: null, error: "NOT_FOUND" as const };
   if (session.steps.length === 0) return { session, error: null };
   if (session.undoUsed >= session.undoLimit) return { session, error: "LIMIT_REACHED" as const };
@@ -93,12 +88,12 @@ export function undoSession(id: string) {
     undoneTurn: step.turn,
     usedAfter: session.undoUsed
   });
-  games.set(id, session);
+  getSessionStore().set(id, session);
   return { session, error: null };
 }
 
 export function exportSession(id: string) {
-  const session = games.get(id);
+  const session = getSessionStore().get(id);
   if (!session) return null;
   return buildExport(
     session.current.config,
@@ -116,7 +111,7 @@ export function exportSession(id: string) {
 }
 
 export function listSessionState(id: string) {
-  const session = games.get(id);
+  const session = getSessionStore().get(id);
   if (!session) return null;
   return {
     id,
@@ -172,6 +167,6 @@ export function importSession(exported: GameExport) {
       importedFromRulesetId: exported.meta?.rulesetId
     }
   };
-  games.set(current.id, session);
+  getSessionStore().set(current.id, session);
   return session;
 }

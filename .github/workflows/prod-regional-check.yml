@@ -10,7 +10,11 @@ permissions:
 
 jobs:
   regional-pop-check:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 10
     steps:
       - name: Checkout
@@ -20,4 +24,41 @@ jobs:
         env:
           PROD_BASE: https://www.binary2048.com
           REGIONAL_CHECK_REQUESTS: 10
+          REGIONAL_POPS_OUT: pops.txt
         run: bash ./scripts/prod-regional-check.sh
+
+      - name: Collect POP output
+        shell: bash
+        run: |
+          tr '\n' ' ' < pops.txt | sed 's/[[:space:]]*$//' > "pops-${{ matrix.runner }}.txt"
+
+      - name: Upload POP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pops-${{ matrix.runner }}
+          path: pops-${{ matrix.runner }}.txt
+          if-no-files-found: error
+
+  regional-pop-aggregate:
+    needs: regional-pop-check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Download POP artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: .
+
+      - name: Validate at least 2 unique POPs across runner regions
+        shell: bash
+        run: |
+          set -euo pipefail
+          ls -la
+          all="$(cat pops-*/*.txt | tr ' ' '\n' | sed '/^$/d' | sort -u)"
+          count="$(printf '%s\n' "$all" | sed '/^$/d' | wc -l | tr -d ' ')"
+          echo "Detected POPs:"
+          printf '%s\n' "$all"
+          if [ "$count" -lt 2 ]; then
+            echo "Expected at least 2 unique POPs across regions, found $count"
+            exit 1
+          fi

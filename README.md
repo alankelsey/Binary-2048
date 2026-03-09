@@ -171,12 +171,15 @@ Run persistence backing store:
 ```bash
 # default
 export BINARY2048_RUN_STORE=memory
+export BINARY2048_SESSION_STORE=memory
 
 # optional mongo backing
 export BINARY2048_RUN_STORE=mongo
+export BINARY2048_SESSION_STORE=mongo
 export BINARY2048_MONGO_URI="mongodb://..."
 export BINARY2048_MONGO_DB="binary2048"
 export BINARY2048_MONGO_RUN_COLLECTION="runs"
+export BINARY2048_MONGO_SESSION_COLLECTION="sessions"
 
 # optional replay artifact offload (keeps Mongo pointer)
 export BINARY2048_REPLAY_ARTIFACT_STORE=s3
@@ -221,6 +224,12 @@ Sandbox league simulator (preview season rehearsals):
 ```bash
 # TOKEN should be a valid auth bridge token from /api/auth/bridge-token or /api/auth/dev-token
 TOKEN="..." LEAGUE_KEY="sandbox-key-1" npm run league:sandbox:sim
+```
+
+Idempotent replay ingest worker (batch file -> API upsert):
+
+```bash
+BATCH_FILE=./artifacts/replay-batch.json npm run replay:ingest:worker
 ```
 
 Bot benchmark suite (fixed seeds):
