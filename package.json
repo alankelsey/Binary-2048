@@ -49,6 +49,7 @@
     "ops:waf:tripwire-validate": "bash ./scripts/waf-tripwire-validate.sh",
     "ops:prod:smoke": "bash ./scripts/prod-smoke.sh",
     "ops:prod:verify": "bash ./scripts/post-deploy-verify.sh",
+    "ops:prod:storage-rollout": "bash ./scripts/prod-storage-rollout.sh",
     "ops:prod:fingerprints": "bash ./scripts/prod-digest-fingerprints.sh",
     "ops:release:auth-check": "bash ./scripts/release-auth-check.sh",
     "ops:auth:amplify-fix": "bash ./scripts/auth-amplify-fix.sh",
