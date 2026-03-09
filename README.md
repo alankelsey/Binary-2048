@@ -196,6 +196,14 @@ export BINARY2048_SANDBOX_API_KEYS="sandbox-key-1,sandbox-key-2"
 export BINARY2048_SANDBOX_RATE_LIMIT_PER_5M=120
 ```
 
+Production storage verification (Mongo+S3 path smoke):
+
+```bash
+PROD_BASE=https://www.binary2048.com \
+BINARY2048_ADMIN_TOKEN="replace-me" \
+npm run ops:prod:storage-check
+```
+
 Mongo auth/connection smoke test:
 
 ```bash
