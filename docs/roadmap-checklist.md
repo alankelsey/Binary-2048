@@ -78,6 +78,10 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Tournament job-queue/concurrency limit strategy for CPU cost control
 - [x] Replay/tournament telemetry + anomaly alarms (latency/cost/WAF spike visibility)
 - [x] Stand up dedicated `dev` environment (separate Amplify branch/domain + secrets + optional test data) for rapid iteration without impacting `main`/prod
+- [ ] Add egress architecture note for Amplify WEB_COMPUTE vs fixed-egress runtimes (what currently has no stable outbound IP and why it matters)
+- [ ] Decide and document production database egress strategy (open allowlist temporary vs NAT/VPC fixed egress vs Atlas PrivateLink)
+- [ ] Add costed egress decision memo with monthly floor estimate for NAT/VPC and Atlas PrivateLink paths
+- [ ] Reduce Atlas network access from broad temporary allowlist to approved fixed egress path once runtime is migrated
 
 ## Public Launch Readiness + Cost Guardrails
 
@@ -194,3 +198,19 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add rollback trigger policy for repeated prod smoke failures within rolling window
 - [x] Add release checklist item: verify auth/session endpoints before announcing deploy
 - [x] Add incident evidence bundle script (curl snapshots + headers + log links) for fast triage
+
+## Content + Community + LLM Ops Track (New)
+
+- [ ] Add weekly/monthly LLM-generated blog pipeline (topic seed list, draft, fact-check, publish queue)
+- [ ] Add editorial guardrails: politically/religiously neutral tone enforcement and rejection tests
+- [ ] Add blog topic packs for game-adjacent categories: bots, leaderboard interviews, social, tech, game culture, math, science
+- [ ] Add player/guest bot spotlight format with template + moderation checklist
+- [ ] Add game analytics dashboard (active games, runs/minute, mode/difficulty split, move rates, replay exports)
+- [ ] Add leaderboard operations dashboard (submission volume, rejection reasons, sandbox vs live share)
+- [ ] Add LLM tile ideation workflow (weekly tile proposal with mechanics + icon prompt + safety constraints)
+- [ ] Add “tile of the week” feature flag system with start/end window and automatic expiry
+- [ ] Add entitlement policy for weekly tiles (paid users + local dev toggle controls)
+- [ ] Add multi-agent content pipeline: proposer LLM -> implementer agent -> reviewer agent -> merge gate
+- [ ] Add automated PR quality gate for LLM-generated tile changes (tests, lint, replay compatibility checks)
+- [ ] Add community voting flow for tile ideas (submit, vote window, anti-spam/rate limit, winner promotion)
+- [ ] Add governance for community winner rollout (manual override, safety kill switch, rollback path)

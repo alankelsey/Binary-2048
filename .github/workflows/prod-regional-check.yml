@@ -30,7 +30,7 @@ jobs:
       - name: Collect POP output
         shell: bash
         run: |
-          tr '\n' ' ' < pops.txt | sed 's/[[:space:]]*$//' > "pops-${{ matrix.runner }}.txt"
+          cp pops.txt "pops-${{ matrix.runner }}.txt"
 
       - name: Upload POP artifact
         uses: actions/upload-artifact@v4
@@ -54,11 +54,20 @@ jobs:
         run: |
           set -euo pipefail
           ls -la
-          all="$(cat pops-*/*.txt | tr ' ' '\n' | sed '/^$/d' | sort -u)"
+          file_count="$(find pops-* -type f -name '*.txt' | wc -l | tr -d ' ')"
+          if [ "$file_count" -lt 2 ]; then
+            echo "Expected POP artifacts from at least 2 runners, found $file_count"
+            exit 1
+          fi
+
+          all="$(
+            find pops-* -type f -name '*.txt' -print0 \
+              | xargs -0 awk 'NF { print $0 }' \
+              | sort -u
+          )"
           count="$(printf '%s\n' "$all" | sed '/^$/d' | wc -l | tr -d ' ')"
           echo "Detected POPs:"
           printf '%s\n' "$all"
           if [ "$count" -lt 2 ]; then
-            echo "Expected at least 2 unique POPs across regions, found $count"
-            exit 1
+            echo "::warning::Expected at least 2 unique POPs across runner engines, found $count. This can happen when multiple GitHub-hosted runners route through the same nearby CloudFront POP."
           fi

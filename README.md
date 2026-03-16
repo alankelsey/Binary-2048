@@ -204,6 +204,26 @@ BINARY2048_ADMIN_TOKEN="replace-me" \
 npm run ops:prod:storage-check
 ```
 
+One-shot production storage verification using the live Amplify branch env token:
+
+```bash
+APP_ID=dzxvs1esr22z9 \
+BRANCH_NAME=main \
+AWS_REGION=us-east-2 \
+PROD_BASE=https://www.binary2048.com \
+npm run ops:prod:storage-check:amplify
+```
+
+If the branch does not yet have `BINARY2048_ADMIN_TOKEN`, bootstrap or rotate it and verify in one shot:
+
+```bash
+APP_ID=dzxvs1esr22z9 \
+BRANCH_NAME=main \
+AWS_REGION=us-east-2 \
+PROD_BASE=https://www.binary2048.com \
+npm run ops:prod:admin-token:sync
+```
+
 Mongo auth/connection smoke test:
 
 ```bash
