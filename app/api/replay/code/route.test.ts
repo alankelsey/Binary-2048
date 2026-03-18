@@ -64,6 +64,26 @@ describe("api replay code", () => {
     expect(json?.moves).toEqual(["left", "up"]);
   });
 
+  it("creates hosted replay code on demand for normal-sized payloads", async () => {
+    process.env.BINARY2048_REPLAY_SHARE_SECRET = "hosted-route-secret";
+    const exported = runScenario(config, initialGrid, ["left", "up"]);
+    const encoded = await POST(
+      new Request("http://localhost/api/replay/code?hosted=1", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(exported)
+      })
+    );
+    const body = await encoded.json();
+    expect(encoded.status).toBe(200);
+    expect(body.hosted).toBe(true);
+
+    const res = await GET(new Request(`http://localhost/api/replay/code?code=${encodeURIComponent(body.code)}`));
+    const json = await res.json();
+    expect(res.status).toBe(200);
+    expect(json?.moves).toEqual(["left", "up"]);
+  });
+
   it("returns 400 for invalid replay code", async () => {
     const res = await GET(new Request("http://localhost/api/replay/code?code=%%%bad%%%"));
     const json = await res.json();

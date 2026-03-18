@@ -6,6 +6,7 @@ describe("getAuthUxMessages", () => {
     const guest: AuthUiState = {
       authenticated: false,
       displayName: "Guest",
+      showDisplayName: false,
       email: null,
       tier: "guest",
       providersConfigured: true
@@ -20,6 +21,7 @@ describe("getAuthUxMessages", () => {
     const paid: AuthUiState = {
       authenticated: true,
       displayName: "Paid User",
+      showDisplayName: true,
       email: "paid@example.com",
       tier: "paid",
       providersConfigured: true

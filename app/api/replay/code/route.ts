@@ -5,11 +5,16 @@ import { createHostedReplayCode, isHostedReplayCode, parseHostedReplayCode } fro
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+    const url = new URL(req.url);
+    const hostedRequested =
+      url.searchParams.get("hosted") === "1" ||
+      url.searchParams.get("hosted") === "true" ||
+      body?.hosted === true;
     const signingSecret = process.env.BINARY2048_REPLAY_CODE_SECRET;
     const hostedSecret = process.env.BINARY2048_REPLAY_SHARE_SECRET || signingSecret;
     const result = createReplayCode(body, signingSecret);
-    if (result.overLimit && hostedSecret) {
-      const hosted = createHostedReplayCode(result.payload, hostedSecret);
+    if ((result.overLimit || hostedRequested) && hostedSecret) {
+      const hosted = await createHostedReplayCode(result.payload, hostedSecret);
       return NextResponse.json({
         code: hosted.code,
         length: hosted.code.length,
@@ -45,7 +50,7 @@ export async function GET(req: Request) {
     const signingSecret = process.env.BINARY2048_REPLAY_CODE_SECRET;
     const hostedSecret = process.env.BINARY2048_REPLAY_SHARE_SECRET || signingSecret;
     const payload = isHostedReplayCode(code ?? "")
-      ? parseHostedReplayCode(code ?? "", hostedSecret ?? "")
+      ? await parseHostedReplayCode(code ?? "", hostedSecret ?? "")
       : parseReplayCode(code ?? "", signingSecret);
     return NextResponse.json(payload);
   } catch (error) {

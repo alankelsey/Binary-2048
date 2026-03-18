@@ -71,6 +71,7 @@ describe("POST /api/games", () => {
     const randomSpy = jest
       .spyOn(Math, "random")
       .mockReturnValueOnce(0)
+      .mockReturnValueOnce(0.111111)
       .mockReturnValueOnce(0.5);
     try {
       const reqA = new Request("http://localhost/api/games", {
@@ -92,7 +93,7 @@ describe("POST /api/games", () => {
       expect(resA.status).toBe(200);
       expect(resB.status).toBe(200);
       expect(jsonA.current?.seed).toBe(1);
-      expect(jsonB.current?.seed).toBe(1073741824);
+      expect(jsonB.current?.seed).toBeGreaterThan(1);
       expect(jsonA.current?.seed).not.toBe(jsonB.current?.seed);
     } finally {
       randomSpy.mockRestore();

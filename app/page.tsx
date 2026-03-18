@@ -674,7 +674,7 @@ export default function Home() {
         throw new Error(getReplayShareErrorMessage(exportRes.status));
       }
 
-      const codeRes = await fetch("/api/replay/code", {
+      const codeRes = await fetch("/api/replay/code?hosted=1", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(exported)

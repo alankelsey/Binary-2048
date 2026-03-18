@@ -1,4 +1,5 @@
 import { createHostedReplayCode, parseHostedReplayCode } from "@/lib/binary2048/replay-hosted-code";
+import { resetRunStoreForTests } from "@/lib/binary2048/run-store";
 import type { CompactReplayPayload } from "@/lib/binary2048/replay-format";
 
 describe("replay-hosted-code", () => {
@@ -35,23 +36,27 @@ describe("replay-hosted-code", () => {
     moves: ["left", "up"]
   };
 
+  afterEach(() => {
+    resetRunStoreForTests();
+  });
+
   it("creates and parses a hosted replay code", () => {
-    const hosted = createHostedReplayCode(payload, "hosted-secret");
-    const decoded = parseHostedReplayCode(hosted.code, "hosted-secret");
-    expect(decoded.moves).toEqual(["left", "up"]);
-    expect(decoded.header.seed).toBe(123);
+    return createHostedReplayCode(payload, "hosted-secret").then(async (hosted) => {
+      const decoded = await parseHostedReplayCode(hosted.code, "hosted-secret");
+      expect(decoded.moves).toEqual(["left", "up"]);
+      expect(decoded.header.seed).toBe(123);
+    });
   });
 
   it("rejects expired hosted replay code", async () => {
-    const hosted = createHostedReplayCode(payload, "hosted-secret", 1);
+    const hosted = await createHostedReplayCode(payload, "hosted-secret", 1);
     await new Promise((resolve) => setTimeout(resolve, 5));
-    expect(() => parseHostedReplayCode(hosted.code, "hosted-secret")).toThrow(/expired|not found/i);
+    await expect(parseHostedReplayCode(hosted.code, "hosted-secret")).rejects.toThrow(/expired|not found/i);
   });
 
-  it("rejects tampered hosted replay code signature", () => {
-    const hosted = createHostedReplayCode(payload, "hosted-secret");
+  it("rejects tampered hosted replay code signature", async () => {
+    const hosted = await createHostedReplayCode(payload, "hosted-secret");
     const tampered = `${hosted.code}x`;
-    expect(() => parseHostedReplayCode(tampered, "hosted-secret")).toThrow(/signature/i);
+    await expect(parseHostedReplayCode(tampered, "hosted-secret")).rejects.toThrow(/signature/i);
   });
 });
-

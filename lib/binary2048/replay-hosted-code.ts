@@ -1,5 +1,7 @@
 import type { CompactReplayPayload } from "@/lib/binary2048/replay-format";
-import { createHmac, randomUUID, timingSafeEqual } from "crypto";
+import { toCompactReplayPayload } from "@/lib/binary2048/replay-format";
+import { getRunStore, type CanonicalRunRecord } from "@/lib/binary2048/run-store";
+import { createHash, createHmac, timingSafeEqual } from "crypto";
 
 const HOSTED_PREFIX = "rs1";
 const DEFAULT_TTL_MS = 15 * 60 * 1000;
@@ -30,11 +32,37 @@ function cleanupExpired(now = Date.now()) {
   }
 }
 
+function hostedReplayId(payload: CompactReplayPayload): string {
+  const json = JSON.stringify(payload);
+  return `share_${createHash("sha256").update(json).digest("hex").slice(0, 24)}`;
+}
+
+function toHostedRunRecord(id: string, payload: CompactReplayPayload): CanonicalRunRecord {
+  return {
+    id,
+    playerId: "share",
+    userTier: "guest",
+    gameId: id,
+    score: 0,
+    maxTile: 0,
+    moves: payload.moves.length,
+    seed: payload.header.seed,
+    engineVersion: payload.header.engineVersion,
+    rulesetId: payload.header.rulesetId,
+    integrity: {
+      sessionClass: "unranked",
+      source: "imported"
+    },
+    createdAtISO: payload.header.createdAt,
+    replay: payload
+  };
+}
+
 export function isHostedReplayCode(code: string): boolean {
   return typeof code === "string" && code.startsWith(`${HOSTED_PREFIX}.`);
 }
 
-export function createHostedReplayCode(
+export async function createHostedReplayCode(
   payload: CompactReplayPayload,
   secret: string,
   ttlMs = DEFAULT_TTL_MS
@@ -42,11 +70,13 @@ export function createHostedReplayCode(
   if (!secret || secret.trim().length === 0) {
     throw new Error("hosted replay secret is required");
   }
+  const normalized = toCompactReplayPayload(payload);
   const now = Date.now();
   cleanupExpired(now);
-  const id = randomUUID().replace(/-/g, "");
+  const id = hostedReplayId(normalized);
   const expiresAt = now + Math.max(1, Math.floor(ttlMs));
-  hostedReplayStore.set(id, { payload, expiresAt });
+  hostedReplayStore.set(id, { payload: normalized, expiresAt });
+  await getRunStore().upsertRun(toHostedRunRecord(id, normalized));
   const signature = signHostedToken(id, expiresAt, secret);
   return {
     code: `${HOSTED_PREFIX}.${id}.${expiresAt}.${signature}`,
@@ -54,7 +84,7 @@ export function createHostedReplayCode(
   };
 }
 
-export function parseHostedReplayCode(code: string, secret: string): CompactReplayPayload {
+export async function parseHostedReplayCode(code: string, secret: string): Promise<CompactReplayPayload> {
   if (!secret || secret.trim().length === 0) {
     throw new Error("hosted replay secret is required");
   }
@@ -81,11 +111,16 @@ export function parseHostedReplayCode(code: string, secret: string): CompactRepl
   if (expiresAt <= now) throw new Error("hosted replay expired");
 
   const record = hostedReplayStore.get(id);
-  if (!record) throw new Error("hosted replay not found");
-  if (record.expiresAt <= now) {
-    hostedReplayStore.delete(id);
-    throw new Error("hosted replay expired");
+  if (record) {
+    if (record.expiresAt <= now) {
+      hostedReplayStore.delete(id);
+      throw new Error("hosted replay expired");
+    }
+    return record.payload;
   }
-  return record.payload;
-}
 
+  const persisted = await getRunStore().getRunReplay(id);
+  if (!persisted) throw new Error("hosted replay not found");
+  hostedReplayStore.set(id, { payload: persisted, expiresAt });
+  return persisted;
+}

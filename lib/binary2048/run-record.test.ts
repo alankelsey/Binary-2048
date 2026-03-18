@@ -26,6 +26,7 @@ describe("buildCanonicalRunRecord", () => {
     expect(record.seed).toBe(5150);
     expect(record.score).toBe(exported.final.score);
     expect(record.rulesetId).toBe("binary2048-v1");
-    expect(Array.isArray(record.replay.moves)).toBe(true);
+    expect(record.replay).toBeDefined();
+    expect(Array.isArray(record.replay?.moves)).toBe(true);
   });
 });
