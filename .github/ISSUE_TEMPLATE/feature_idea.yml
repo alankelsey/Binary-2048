@@ -1,0 +1,38 @@
+name: Feature idea
+description: Suggest a gameplay, bot, UX, economy, or tooling improvement
+title: "idea: "
+labels:
+  - idea
+  - player-feedback
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Idea
+      description: Describe the feature or change.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it would help
+      description: Explain the player or product benefit.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Gameplay
+        - Replay
+        - Bots / AI
+        - Leaderboard / Competition
+        - Store / Economy
+        - Accessibility
+        - Mobile
+        - Docs / Developer tooling
+        - Community / Content
+  - type: textarea
+    id: examples
+    attributes:
+      label: Examples or references
+      description: Links, screenshots, or example games are useful here.

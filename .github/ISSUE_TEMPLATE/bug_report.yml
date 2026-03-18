@@ -1,0 +1,35 @@
+name: Bug report
+description: Report a gameplay, UI, replay, auth, or production issue
+title: "bug: "
+labels:
+  - bug
+  - player-feedback
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe the issue and what you expected instead.
+      placeholder: When I clicked Copy Replay Link, it returned Game not found.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the game
+        2. Start a run
+        3. Click ...
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Include build/version, page URL, game id, browser, screenshots, and any console/network details.
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: Tell us whether this blocks play, affects ranked integrity, or is cosmetic only.

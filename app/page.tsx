@@ -6,11 +6,12 @@ import { keyToDir, swipeToDir } from "@/lib/binary2048/input";
 import { getUiPolicy } from "@/lib/binary2048/ui-policy";
 import { parseReplayExport, replayStateAtStep, type ReplayData } from "@/lib/binary2048/replay";
 import { buildShareLandingUrl, buildShareText, buildShareUrls } from "@/lib/binary2048/share";
+import { buildIssueReportUrl } from "@/lib/binary2048/issue-report";
 import { isThemeMode, THEMES, type ThemeMode } from "@/lib/binary2048/theme";
 import { rarityCssClass, STORE_ITEM_ICONS } from "@/lib/binary2048/store-icons";
 import { getControlVisibility } from "@/lib/binary2048/control-visibility";
 import { getReplayCodeFromSearch } from "@/lib/binary2048/replay-link";
-import { buildReplayUrl } from "@/lib/binary2048/replay-share";
+import { buildReplayUrl, getReplayShareErrorMessage } from "@/lib/binary2048/replay-share";
 import { replaySpeedToDelayMs } from "@/lib/binary2048/replay-autoplay";
 import { shouldStartNewGameOnReplayExit } from "@/lib/binary2048/replay-exit";
 import { parseReplayStepInput } from "@/lib/binary2048/replay-scrubber";
@@ -617,6 +618,19 @@ export default function Home() {
           medium: "social"
         })
       : "https://binary2048.com";
+  const issueReportUrl =
+    typeof window !== "undefined"
+      ? buildIssueReportUrl({
+          origin: window.location.origin,
+          pathname: window.location.pathname,
+          version: APP_VERSION,
+          commit: APP_COMMIT,
+          gameId: gameId || undefined,
+          spawnMode: activeMode,
+          gameMode,
+          replay: Boolean(replay)
+        })
+      : "https://github.com/alankelsey/Binary-2048/issues/new";
   const socialUrls = buildShareUrls(shareText, shareUrl);
 
   async function trackMarketing(type: MarketingEventType, channel: "x" | "linkedin" | "copy" | "replay") {
@@ -651,9 +665,14 @@ export default function Home() {
   async function copyReplayLink() {
     if (!gameId) return;
     try {
-      const exportRes = await fetch(`/api/games/${gameId}/export`);
+      const exportRes = await fetch(`/api/games/${gameId}/replay`);
       const exported = await exportRes.json().catch(() => ({}));
-      if (!exportRes.ok) throw new Error("Failed to export replay");
+      if (!exportRes.ok) {
+        if (exportRes.status === 404) {
+          window.localStorage.removeItem(gameIdKey);
+        }
+        throw new Error(getReplayShareErrorMessage(exportRes.status));
+      }
 
       const codeRes = await fetch("/api/replay/code", {
         method: "POST",
@@ -1131,6 +1150,14 @@ export default function Home() {
           </button>
           <button type="button" disabled={!gameId} onClick={() => void copyReplayLink()}>
             Copy Replay Link
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              window.open(issueReportUrl, "_blank", "noopener,noreferrer");
+            }}
+          >
+            Report Issue
           </button>
           {shareMessage ? <span className="share-status">{shareMessage}</span> : null}
         </div>
