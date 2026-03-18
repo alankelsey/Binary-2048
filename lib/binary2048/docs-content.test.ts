@@ -15,6 +15,7 @@ describe("docs content", () => {
     const botQuickstart = readFileSync(join(repoRoot, "docs", "bot-api-quickstart.md"), "utf8");
     const botBenchmark = readFileSync(join(repoRoot, "docs", "bot-benchmark-suite.md"), "utf8");
     const launchPackage = readFileSync(join(repoRoot, "docs", "bot-first-launch-package.md"), "utf8");
+    const chatStrategy = readFileSync(join(repoRoot, "docs", "chat-product-strategy.md"), "utf8");
     expect(user).toContain("# Binary-2048 User Guide");
     expect(user).toContain("## Replay and Sharing");
     expect(dev).toContain("# Binary-2048 Developer Guide");
@@ -34,6 +35,8 @@ describe("docs content", () => {
     expect(botQuickstart).toContain("Python starter");
     expect(botBenchmark).toContain("# Bot Benchmark Suite");
     expect(launchPackage).toContain("# Bot-First Launch Package");
+    expect(chatStrategy).toContain("# Binary-2048 Chat And Product Messaging Strategy");
+    expect(chatStrategy).toContain("should not ship open player-to-player chat");
   });
 
   it("links docs routes from api docs page and README", () => {
