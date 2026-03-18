@@ -45,6 +45,14 @@ describe("engine RNG draw contract", () => {
     expect(created.state.rngStep).toBe(6);
   });
 
+  it("generates distinct game ids across new sessions", () => {
+    const a = createGame(configFor("one"));
+    const b = createGame(configFor("one"));
+    expect(a.state.id).not.toBe(b.state.id);
+    expect(a.state.id).toMatch(/^g_[a-z0-9]+_[a-z0-9]+$/);
+    expect(b.state.id).toMatch(/^g_[a-z0-9]+_[a-z0-9]+$/);
+  });
+
   it("keeps wildcard multiplier replay-compatible for fixed seed", () => {
     const cfg = configFor("wild");
     const a = runScenario(cfg, movableGrid, ["right", "left", "right"]);

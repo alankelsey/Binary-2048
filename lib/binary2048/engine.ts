@@ -13,8 +13,6 @@ import type {
   UndoEvent
 } from "@/lib/binary2048/types";
 
-let idCounter = 1;
-
 export const DEFAULT_CONFIG: GameConfig = {
   width: 4,
   height: 4,
@@ -42,7 +40,7 @@ export function createGame(
   const normalizedInitialGrid = normalizeInitialGrid(initialGrid, config);
   const events: GameEvent[] = [];
   const state: GameState = {
-    id: `g_${idCounter++}`,
+    id: createGameId(),
     config,
     width: config.width,
     height: config.height,
@@ -56,6 +54,12 @@ export function createGame(
   };
   const withSpawns = normalizedInitialGrid ? state : spawnN(state, 2, events);
   return { state: updateWinLose(withSpawns, events), events };
+}
+
+function createGameId(): string {
+  const timestamp = Date.now().toString(36);
+  const entropy = Math.random().toString(36).slice(2, 8);
+  return `g_${timestamp}_${entropy}`;
 }
 
 export function generateBitstormInitialGrid(config: GameConfig): Cell[][] {

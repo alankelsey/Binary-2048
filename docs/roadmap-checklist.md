@@ -21,6 +21,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 
 - [x] Canonical replay flow: seed + moves deterministically reconstructs final state
 - [x] Shareable replay links via encoded replay payload (`/replay?code=...`)
+- [ ] Add hosted replay permalink/hash ids so shared replays can survive live session expiry and cold starts
 - [x] Ranked leaderboard is server-authoritative (does not trust client-submitted scores/replays)
 - [x] Move endpoint optimistic concurrency guard (`stateHash` + `409` on stale clients)
 - [x] Replay header schema lock: include explicit `replayVersion`, `size`, `createdAt`, and compatibility checks
@@ -44,6 +45,10 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Theme persistence + dropdown
 - [x] Accessibility pass for full tab/keyboard navigation map
 - [x] Explicit replay timeline scrubber UI
+- [ ] Add subtract-tile mechanic design spike (rules, readability, anti-chaos limits, ranked eligibility decision)
+- [ ] Add board-flip mechanic prototype (horizontal/vertical/inversion triggers with accessibility review)
+- [ ] Add device tilt control experiment for mobile with opt-in toggle, calibration, and conflict rules vs swipe
+- [ ] Add motion-safety policy for flip/tilt mechanics (`prefers-reduced-motion`, disable in ranked by default)
 
 ## Economy + Integrity
 
@@ -110,6 +115,15 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Keep ranked integrity: ad rewards cannot affect `ranked_pure` leaderboard outcomes
 - [x] Ship subscription-first fallback plan if ad economics are poor
 - [x] Create player-facing monetization policy (what is paid, what is cosmetic, what is never pay-to-win)
+- [ ] Define three-layer economy model explicitly: game currency, premium currency, and optional external reward currency
+- [ ] Add internal transaction ledger schema for rewards, purchases, penalties, grants, and withdrawals
+- [ ] Add decision memo for external reward rails (Lightning/sats) vs internal-only rewards with abuse/cost analysis
+- [ ] Define reward pool sustainability model: revenue in, ops reserve, reward reserve, and payout caps
+- [ ] Add withdrawal policy if crypto rewards ship: minimums, cooldowns, KYC/compliance review, and fraud controls
+- [ ] Add server-verified proof-of-play reward model to avoid browser mining and passive farming
+- [ ] Add anti-farm controls for reward economy: daily caps, CAPTCHA on withdrawal, velocity checks, and behavior scoring
+- [ ] Add bot tournament prize model decision: internal rewards only vs external payout pools
+- [ ] Keep all external-value rewards segregated from ranked-pure balance until abuse model is proven safe
 
 ## Bot-First Differentiation + Competitive Depth
 
@@ -141,6 +155,10 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Privacy/compliance essentials: privacy page + user data export/delete endpoints
 - [x] GitHub Pages presence (repo landing page and playable-host strategy decision: iframe vs static mirror)
 - [x] GitHub Pages animated intro page with non-playable board demo + production deep-link CTA
+- [ ] Add player chat/product messaging strategy decision: no chat vs lightweight chat vs bot-only reactions
+- [ ] If player chat ships: add moderation pipeline, reporting, retention policy, and abuse rate limits
+- [ ] Add consent model for mood/emotion-derived gameplay or assistance features
+- [ ] Keep any emotion-triggered gameplay effects opt-in and disabled for ranked/competitive integrity by default
 
 ## Championship/League Safe Testing Brainstorm
 
@@ -184,6 +202,26 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add experimentation framework for UI improvements (A/B flags + guardrails + holdout tracking)
 - [x] Add ML training-data policy for telemetry joins (consent classes, retention window, anonymization constraints)
 - [x] Add bot-vs-human behavior segmentation metrics to guide balancing and anti-abuse tuning
+- [ ] Evaluate emotion classification stack for chat/support signals (for example `roberta-base-go_emotions`) with accuracy, latency, and privacy review
+- [ ] Define allowed emotion use cases: analytics, hint timing, UX adaptation, support triage, bot flavor text
+- [ ] Reject disallowed emotion use cases: covert manipulation, ranked balance changes, or punitive emotional targeting
+- [ ] Add mood analytics dashboard for aggregated player sentiment only if consent and moderation requirements are met
+- [ ] Add hint-assist experiment driven by detected confusion/friction signals, limited to non-ranked modes
+- [ ] Add bot personality/reaction layer that can simulate emotion safely without storing sensitive user inference by default
+- [ ] Define event-trigger policy for emotion-linked game effects (`confusion -> hint`, `joy -> flourish`) and keep chaos/reward triggers out of ranked
+- [ ] Add model evaluation set for mood detection drift, false positives, and abuse edge cases
+- [ ] Add privacy review for emotional inference retention, export/delete handling, and disclosure requirements
+
+## LLM Safety + Agentic Features
+
+- [ ] Add prompt-injection threat model for all LLM-facing surfaces (blog generation, tile ideation, dashboards, chat, admin tools)
+- [ ] Add trust-boundary rules: untrusted player text must never directly control secrets, tools, deploy steps, or payouts
+- [ ] Add content sanitization pipeline before LLM ingestion (strip markup, URLs, prompts, hidden instructions where possible)
+- [ ] Add output validation layer for agent-generated changes (tests, lint, schema checks, replay compatibility, manual approval)
+- [ ] Add role isolation for multi-agent workflows so proposer/implementer/reviewer cannot self-approve
+- [ ] Add audit log for LLM-originated content/code/config changes with human approver identity
+- [ ] Add safe fallback behavior when prompt-injection or jailbreak signals are detected
+- [ ] Add secret-handling policy for LLM tools so runtime tokens, DB URIs, and admin secrets are never exposed to model context unnecessarily
 
 ## Production Test Coverage Brainstorm
 
@@ -214,3 +252,9 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [ ] Add automated PR quality gate for LLM-generated tile changes (tests, lint, replay compatibility checks)
 - [ ] Add community voting flow for tile ideas (submit, vote window, anti-spam/rate limit, winner promotion)
 - [ ] Add governance for community winner rollout (manual override, safety kill switch, rollback path)
+- [ ] Add editorial pipeline for leaderboard interviews, guest bot spotlights, and neutral technical/community stories
+- [ ] Add monthly “bot reactions” or “bot personalities” content feature without affecting competitive fairness
+- [ ] Add weekly experimental tile review board: proposal, implementation, review, sandbox test, promotion, rollback
+- [ ] Add public issue-reporting path to GitHub (header/footer links, issue templates, bug vs idea categories)
+- [ ] Add in-app “Report issue” flow with prefilled GitHub issue link carrying page/build/version context
+- [ ] Add triage labels/project convention for player-reported bugs, gameplay ideas, and balance feedback

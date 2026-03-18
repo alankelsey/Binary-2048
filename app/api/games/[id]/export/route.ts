@@ -32,11 +32,15 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
     });
   }
 
+  const createdAt = exported.meta?.createdAtISO ?? new Date().toISOString();
+  const filenameTimestamp = createdAt.replace(/[:.]/g, "-");
+  const filename = `${id}-${filenameTimestamp}.json`;
+
   return new NextResponse(JSON.stringify({ ...exported, signature }, null, 2), {
     status: 200,
     headers: {
       "content-type": "application/json; charset=utf-8",
-      "content-disposition": `attachment; filename="${id}.json"`
+      "content-disposition": `attachment; filename="${filename}"`
     }
   });
 }
