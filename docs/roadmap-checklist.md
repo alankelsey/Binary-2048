@@ -83,7 +83,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Tournament job-queue/concurrency limit strategy for CPU cost control
 - [x] Replay/tournament telemetry + anomaly alarms (latency/cost/WAF spike visibility)
 - [x] Stand up dedicated `dev` environment (separate Amplify branch/domain + secrets + optional test data) for rapid iteration without impacting `main`/prod
-- [ ] Add egress architecture note for Amplify WEB_COMPUTE vs fixed-egress runtimes (what currently has no stable outbound IP and why it matters)
+- [x] Add egress architecture note for Amplify WEB_COMPUTE vs fixed-egress runtimes (what currently has no stable outbound IP and why it matters)
 - [ ] Decide and document production database egress strategy (open allowlist temporary vs NAT/VPC fixed egress vs Atlas PrivateLink)
 - [ ] Add costed egress decision memo with monthly floor estimate for NAT/VPC and Atlas PrivateLink paths
 - [ ] Reduce Atlas network access from broad temporary allowlist to approved fixed egress path once runtime is migrated

@@ -8,6 +8,7 @@ describe("docs content", () => {
     const user = readFileSync(join(repoRoot, "docs", "user-guide.md"), "utf8");
     const dev = readFileSync(join(repoRoot, "docs", "developer-guide.md"), "utf8");
     const replayStorage = readFileSync(join(repoRoot, "docs", "replay-storage-strategy.md"), "utf8");
+    const egressArchitecture = readFileSync(join(repoRoot, "docs", "egress-architecture.md"), "utf8");
     const telemetry = readFileSync(join(repoRoot, "docs", "telemetry-alarms.md"), "utf8");
     const nxdomain = readFileSync(join(repoRoot, "docs", "route53-nxdomain-runbook.md"), "utf8");
     const monetization = readFileSync(join(repoRoot, "docs", "player-monetization-policy.md"), "utf8");
@@ -20,6 +21,9 @@ describe("docs content", () => {
     expect(dev).toContain("## Replay Model");
     expect(replayStorage).toContain("# Binary-2048 Replay Storage Strategy");
     expect(replayStorage).toContain("## Phase 1: No-DB Default (Current Lightweight Mode)");
+    expect(egressArchitecture).toContain("# Binary-2048 Egress Architecture Note");
+    expect(egressArchitecture).toContain("Amplify `WEB_COMPUTE`");
+    expect(egressArchitecture).toContain("no guaranteed stable outbound IP address");
     expect(telemetry).toContain("# Telemetry And Anomaly Visibility");
     expect(telemetry).toContain("GET /api/ops/telemetry");
     expect(nxdomain).toContain("# Route 53 NXDOMAIN Runbook");
