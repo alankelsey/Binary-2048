@@ -1,6 +1,7 @@
 export type AuthUiState = {
   authenticated: boolean;
   displayName: string;
+  showDisplayName: boolean;
   email: string | null;
   tier: "guest" | "authed" | "paid";
   providersConfigured: boolean;
@@ -20,6 +21,7 @@ export function buildAuthUiState(
     return {
       authenticated: false,
       displayName: "Guest",
+      showDisplayName: false,
       email: null,
       tier: "guest",
       providersConfigured
@@ -32,6 +34,7 @@ export function buildAuthUiState(
   return {
     authenticated: true,
     displayName: name,
+    showDisplayName: true,
     email,
     tier: normalizeTier(record.tier),
     providersConfigured

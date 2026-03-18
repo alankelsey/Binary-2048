@@ -6,6 +6,7 @@ describe("buildAuthUiState", () => {
     expect(state).toEqual({
       authenticated: false,
       displayName: "Guest",
+      showDisplayName: false,
       email: null,
       tier: "guest",
       providersConfigured: false
@@ -22,6 +23,7 @@ describe("buildAuthUiState", () => {
     );
     expect(state.authenticated).toBe(true);
     expect(state.displayName).toBe("Alan");
+    expect(state.showDisplayName).toBe(true);
     expect(state.email).toBe("alan@example.com");
     expect(state.tier).toBe("paid");
     expect(state.providersConfigured).toBe(true);

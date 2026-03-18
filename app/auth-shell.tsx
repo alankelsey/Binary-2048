@@ -14,7 +14,7 @@ export async function AuthShell() {
   return (
     <div className="auth-shell" aria-label="Authentication status">
       <span className={`auth-tier auth-tier-${state.tier}`}>{state.tier}</span>
-      <span className="auth-user">{state.displayName}</span>
+      {state.showDisplayName ? <span className="auth-user">{state.displayName}</span> : null}
       {state.authenticated ? (
         <a href="/api/auth/signout?callbackUrl=/" className="auth-link">
           Sign out
