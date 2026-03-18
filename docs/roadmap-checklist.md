@@ -21,7 +21,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 
 - [x] Canonical replay flow: seed + moves deterministically reconstructs final state
 - [x] Shareable replay links via encoded replay payload (`/replay?code=...`)
-- [ ] Add hosted replay permalink/hash ids so shared replays can survive live session expiry and cold starts
+- [x] Add hosted replay permalink/hash ids so shared replays can survive live session expiry and cold starts
 - [x] Ranked leaderboard is server-authoritative (does not trust client-submitted scores/replays)
 - [x] Move endpoint optimistic concurrency guard (`stateHash` + `409` on stale clients)
 - [x] Replay header schema lock: include explicit `replayVersion`, `size`, `createdAt`, and compatibility checks
