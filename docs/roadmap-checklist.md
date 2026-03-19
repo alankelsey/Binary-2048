@@ -156,9 +156,9 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] GitHub Pages presence (repo landing page and playable-host strategy decision: iframe vs static mirror)
 - [x] GitHub Pages animated intro page with non-playable board demo + production deep-link CTA
 - [x] Add player chat/product messaging strategy decision: no chat vs lightweight chat vs bot-only reactions
-- [ ] If player chat ships: add moderation pipeline, reporting, retention policy, and abuse rate limits
-- [ ] Add consent model for mood/emotion-derived gameplay or assistance features
-- [ ] Keep any emotion-triggered gameplay effects opt-in and disabled for ranked/competitive integrity by default
+- [x] If player chat ships: add moderation pipeline, reporting, retention policy, and abuse rate limits
+- [x] Add consent model for mood/emotion-derived gameplay or assistance features
+- [x] Keep any emotion-triggered gameplay effects opt-in and disabled for ranked/competitive integrity by default
 
 ## Championship/League Safe Testing Brainstorm
 
