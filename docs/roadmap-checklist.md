@@ -202,15 +202,15 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add experimentation framework for UI improvements (A/B flags + guardrails + holdout tracking)
 - [x] Add ML training-data policy for telemetry joins (consent classes, retention window, anonymization constraints)
 - [x] Add bot-vs-human behavior segmentation metrics to guide balancing and anti-abuse tuning
-- [ ] Evaluate emotion classification stack for chat/support signals (for example `roberta-base-go_emotions`) with accuracy, latency, and privacy review
-- [ ] Define allowed emotion use cases: analytics, hint timing, UX adaptation, support triage, bot flavor text
-- [ ] Reject disallowed emotion use cases: covert manipulation, ranked balance changes, or punitive emotional targeting
-- [ ] Add mood analytics dashboard for aggregated player sentiment only if consent and moderation requirements are met
-- [ ] Add hint-assist experiment driven by detected confusion/friction signals, limited to non-ranked modes
-- [ ] Add bot personality/reaction layer that can simulate emotion safely without storing sensitive user inference by default
-- [ ] Define event-trigger policy for emotion-linked game effects (`confusion -> hint`, `joy -> flourish`) and keep chaos/reward triggers out of ranked
-- [ ] Add model evaluation set for mood detection drift, false positives, and abuse edge cases
-- [ ] Add privacy review for emotional inference retention, export/delete handling, and disclosure requirements
+- [x] Evaluate emotion classification stack for chat/support signals (for example `roberta-base-go_emotions`) with accuracy, latency, and privacy review
+- [x] Define allowed emotion use cases: analytics, hint timing, UX adaptation, support triage, bot flavor text
+- [x] Reject disallowed emotion use cases: covert manipulation, ranked balance changes, or punitive emotional targeting
+- [x] Add mood analytics dashboard for aggregated player sentiment only if consent and moderation requirements are met
+- [x] Add hint-assist experiment driven by detected confusion/friction signals, limited to non-ranked modes
+- [x] Add bot personality/reaction layer that can simulate emotion safely without storing sensitive user inference by default
+- [x] Define event-trigger policy for emotion-linked game effects (`confusion -> hint`, `joy -> flourish`) and keep chaos/reward triggers out of ranked
+- [x] Add model evaluation set for mood detection drift, false positives, and abuse edge cases
+- [x] Add privacy review for emotional inference retention, export/delete handling, and disclosure requirements
 
 ## LLM Safety + Agentic Features
 

@@ -17,6 +17,7 @@ describe("docs content", () => {
     const launchPackage = readFileSync(join(repoRoot, "docs", "bot-first-launch-package.md"), "utf8");
     const chatStrategy = readFileSync(join(repoRoot, "docs", "chat-product-strategy.md"), "utf8");
     const chatEmotionGovernance = readFileSync(join(repoRoot, "docs", "chat-emotion-governance.md"), "utf8");
+    const emotionPolicy = readFileSync(join(repoRoot, "docs", "emotion-classification-policy.md"), "utf8");
     expect(user).toContain("# Binary-2048 User Guide");
     expect(user).toContain("## Replay and Sharing");
     expect(dev).toContain("# Binary-2048 Developer Guide");
@@ -40,6 +41,8 @@ describe("docs content", () => {
     expect(chatStrategy).toContain("should not ship open player-to-player chat");
     expect(chatEmotionGovernance).toContain("# Binary-2048 Chat And Emotion Governance");
     expect(chatEmotionGovernance).toContain("Emotion or mood-derived behavior must be opt-in");
+    expect(emotionPolicy).toContain("# Binary-2048 Emotion Classification Policy");
+    expect(emotionPolicy).toContain("roberta-base-go_emotions");
   });
 
   it("links docs routes from api docs page and README", () => {
