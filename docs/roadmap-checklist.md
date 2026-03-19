@@ -115,15 +115,15 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Keep ranked integrity: ad rewards cannot affect `ranked_pure` leaderboard outcomes
 - [x] Ship subscription-first fallback plan if ad economics are poor
 - [x] Create player-facing monetization policy (what is paid, what is cosmetic, what is never pay-to-win)
-- [ ] Define three-layer economy model explicitly: game currency, premium currency, and optional external reward currency
-- [ ] Add internal transaction ledger schema for rewards, purchases, penalties, grants, and withdrawals
-- [ ] Add decision memo for external reward rails (Lightning/sats) vs internal-only rewards with abuse/cost analysis
-- [ ] Define reward pool sustainability model: revenue in, ops reserve, reward reserve, and payout caps
-- [ ] Add withdrawal policy if crypto rewards ship: minimums, cooldowns, KYC/compliance review, and fraud controls
-- [ ] Add server-verified proof-of-play reward model to avoid browser mining and passive farming
-- [ ] Add anti-farm controls for reward economy: daily caps, CAPTCHA on withdrawal, velocity checks, and behavior scoring
-- [ ] Add bot tournament prize model decision: internal rewards only vs external payout pools
-- [ ] Keep all external-value rewards segregated from ranked-pure balance until abuse model is proven safe
+- [x] Define three-layer economy model explicitly: game currency, premium currency, and optional external reward currency
+- [x] Add internal transaction ledger schema for rewards, purchases, penalties, grants, and withdrawals
+- [x] Add decision memo for external reward rails (Lightning/sats) vs internal-only rewards with abuse/cost analysis
+- [x] Define reward pool sustainability model: revenue in, ops reserve, reward reserve, and payout caps
+- [x] Add withdrawal policy if crypto rewards ship: minimums, cooldowns, KYC/compliance review, and fraud controls
+- [x] Add server-verified proof-of-play reward model to avoid browser mining and passive farming
+- [x] Add anti-farm controls for reward economy: daily caps, CAPTCHA on withdrawal, velocity checks, and behavior scoring
+- [x] Add bot tournament prize model decision: internal rewards only vs external payout pools
+- [x] Keep all external-value rewards segregated from ranked-pure balance until abuse model is proven safe
 
 ## Bot-First Differentiation + Competitive Depth
 
