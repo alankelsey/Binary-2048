@@ -24,6 +24,7 @@ describe("docs content", () => {
     const egressDecision = readFileSync(join(repoRoot, "docs", "production-egress-decision.md"), "utf8");
     const fixedEgressRunbook = readFileSync(join(repoRoot, "docs", "fixed-egress-migration-runbook.md"), "utf8");
     const fixedEgressChecklist = readFileSync(join(repoRoot, "docs", "fixed-egress-aws-checklist.md"), "utf8");
+    const githubAwsOidc = readFileSync(join(repoRoot, "docs", "github-actions-aws-oidc.md"), "utf8");
     const contentOps = readFileSync(join(repoRoot, "docs", "content-and-community-ops.md"), "utf8");
     expect(user).toContain("# Binary-2048 User Guide");
     expect(user).toContain("## Replay and Sharing");
@@ -62,6 +63,8 @@ describe("docs content", () => {
     expect(fixedEgressRunbook).toContain("Mongo-touching workloads move off Amplify `WEB_COMPUTE`");
     expect(fixedEgressChecklist).toContain("# Binary-2048 Fixed Egress AWS Checklist");
     expect(fixedEgressChecklist).toContain("infra/fixed-egress-vpc-template.yml");
+    expect(githubAwsOidc).toContain("# Binary-2048 GitHub Actions AWS OIDC Setup");
+    expect(githubAwsOidc).toContain("AWS_ROLE_TO_ASSUME");
     expect(contentOps).toContain("# Binary-2048 Content And Community Operations");
     expect(contentOps).toContain("Tile Of The Week Program");
   });
