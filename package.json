@@ -61,6 +61,7 @@
     "ops:prod:storage-check": "bash ./scripts/prod-storage-check.sh",
     "ops:prod:storage-check:amplify": "bash ./scripts/prod-storage-check-amplify.sh",
     "ops:egress:readiness": "bash ./scripts/fixed-egress-readiness.sh",
+    "ops:egress:preflight": "bash ./scripts/fixed-egress-preflight.sh",
     "load:baseline": "k6 run ./scripts/load/k6-baseline.js",
     "load:ramp": "k6 run ./scripts/load/k6-ramp.js",
     "load:spike": "k6 run ./scripts/load/k6-spike.js",
