@@ -45,10 +45,10 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Theme persistence + dropdown
 - [x] Accessibility pass for full tab/keyboard navigation map
 - [x] Explicit replay timeline scrubber UI
-- [ ] Add subtract-tile mechanic design spike (rules, readability, anti-chaos limits, ranked eligibility decision)
-- [ ] Add board-flip mechanic prototype (horizontal/vertical/inversion triggers with accessibility review)
-- [ ] Add device tilt control experiment for mobile with opt-in toggle, calibration, and conflict rules vs swipe
-- [ ] Add motion-safety policy for flip/tilt mechanics (`prefers-reduced-motion`, disable in ranked by default)
+- [x] Add subtract-tile mechanic design spike (rules, readability, anti-chaos limits, ranked eligibility decision)
+- [x] Add board-flip mechanic prototype (horizontal/vertical/inversion triggers with accessibility review)
+- [x] Add device tilt control experiment for mobile with opt-in toggle, calibration, and conflict rules vs swipe
+- [x] Add motion-safety policy for flip/tilt mechanics (`prefers-reduced-motion`, disable in ranked by default)
 
 ## Economy + Integrity
 

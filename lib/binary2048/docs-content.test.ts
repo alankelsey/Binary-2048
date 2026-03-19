@@ -20,6 +20,7 @@ describe("docs content", () => {
     const emotionPolicy = readFileSync(join(repoRoot, "docs", "emotion-classification-policy.md"), "utf8");
     const llmSafety = readFileSync(join(repoRoot, "docs", "llm-safety-and-agent-policy.md"), "utf8");
     const economyPolicy = readFileSync(join(repoRoot, "docs", "economy-and-rewards-policy.md"), "utf8");
+    const mechanicsPolicy = readFileSync(join(repoRoot, "docs", "experimental-mechanics-policy.md"), "utf8");
     expect(user).toContain("# Binary-2048 User Guide");
     expect(user).toContain("## Replay and Sharing");
     expect(dev).toContain("# Binary-2048 Developer Guide");
@@ -49,6 +50,8 @@ describe("docs content", () => {
     expect(llmSafety).toContain("Untrusted text must never directly control");
     expect(economyPolicy).toContain("# Binary-2048 Economy And Rewards Policy");
     expect(economyPolicy).toContain("three-layer economy");
+    expect(mechanicsPolicy).toContain("# Binary-2048 Experimental Mechanics Policy");
+    expect(mechanicsPolicy).toContain("subtract tiles");
   });
 
   it("links docs routes from api docs page and README", () => {
