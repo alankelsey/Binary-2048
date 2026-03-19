@@ -15,6 +15,7 @@ import { buildReplayUrl, getReplayShareErrorMessage } from "@/lib/binary2048/rep
 import { replaySpeedToDelayMs } from "@/lib/binary2048/replay-autoplay";
 import { shouldStartNewGameOnReplayExit } from "@/lib/binary2048/replay-exit";
 import { parseReplayStepInput } from "@/lib/binary2048/replay-scrubber";
+import { getToolbarActionState } from "@/lib/binary2048/toolbar-actions";
 import { GameOverOverlay, WinOverlay } from "@/app/game-overlays";
 import { buildAccessibilityTabMap, keyboardShortcutMap } from "@/lib/binary2048/accessibility-map";
 import { applyUiPolicyOverrides, type UIControlOverrides } from "@/lib/binary2048/ui-policy-override";
@@ -137,6 +138,7 @@ export default function Home() {
   }
 
   async function newGame() {
+    if (busy) return;
     setReplay(null);
     setContinueAfterWin(false);
     setBusy(true);
@@ -246,7 +248,7 @@ export default function Home() {
   }
 
   async function undoMove() {
-    if (replay || !gameId) return;
+    if (busy || replay || !gameId) return;
     setBusy(true);
     setErrorMessage("");
     try {
@@ -597,7 +599,13 @@ export default function Home() {
     isActiveRun,
     uiPolicy: effectiveUiPolicy
   });
-  const canUndo = Boolean(!replay && gameId && state && (state.turn ?? 0) > 0 && (undo.remaining ?? 0) > 0 && !busy);
+  const toolbarActionState = getToolbarActionState({
+    replay: Boolean(replay),
+    gameId,
+    turn: state?.turn ?? 0,
+    over: Boolean(state?.over),
+    undoRemaining: undo.remaining ?? 0
+  });
   const accessibilityTabMap = buildAccessibilityTabMap({
     replay: Boolean(replay),
     showUndo: controlVisibility.showUndo,
@@ -895,11 +903,11 @@ export default function Home() {
           />
         </div>
         <div className="actions" id="game-controls">
-          <button disabled={busy} onClick={() => void newGame()}>
+          <button disabled={toolbarActionState.disableNewGame} onClick={() => void newGame()}>
             New Game
           </button>
           {controlVisibility.showUndo ? (
-            <button disabled={!canUndo} onClick={() => void undoMove()}>
+            <button disabled={toolbarActionState.disableUndo} onClick={() => void undoMove()}>
               Undo {undo.remaining}
             </button>
           ) : null}
@@ -908,6 +916,7 @@ export default function Home() {
               <button
                 disabled={!gameId}
                 onClick={() => {
+                  if (busy || !gameId) return;
                   if (!gameId) return;
                   window.open(`/api/games/${gameId}/export`, "_blank");
                 }}
@@ -915,8 +924,9 @@ export default function Home() {
                 Export JSON
               </button>
               <button
-                disabled={busy}
+                disabled={toolbarActionState.disableReplayImport}
                 onClick={() => {
+                  if (busy) return;
                   replayInputRef.current?.click();
                 }}
               >
