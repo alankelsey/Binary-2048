@@ -18,6 +18,7 @@ describe("docs content", () => {
     const chatStrategy = readFileSync(join(repoRoot, "docs", "chat-product-strategy.md"), "utf8");
     const chatEmotionGovernance = readFileSync(join(repoRoot, "docs", "chat-emotion-governance.md"), "utf8");
     const emotionPolicy = readFileSync(join(repoRoot, "docs", "emotion-classification-policy.md"), "utf8");
+    const llmSafety = readFileSync(join(repoRoot, "docs", "llm-safety-and-agent-policy.md"), "utf8");
     expect(user).toContain("# Binary-2048 User Guide");
     expect(user).toContain("## Replay and Sharing");
     expect(dev).toContain("# Binary-2048 Developer Guide");
@@ -43,6 +44,8 @@ describe("docs content", () => {
     expect(chatEmotionGovernance).toContain("Emotion or mood-derived behavior must be opt-in");
     expect(emotionPolicy).toContain("# Binary-2048 Emotion Classification Policy");
     expect(emotionPolicy).toContain("roberta-base-go_emotions");
+    expect(llmSafety).toContain("# Binary-2048 LLM Safety And Agent Policy");
+    expect(llmSafety).toContain("Untrusted text must never directly control");
   });
 
   it("links docs routes from api docs page and README", () => {

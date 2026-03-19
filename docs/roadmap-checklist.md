@@ -214,14 +214,14 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 
 ## LLM Safety + Agentic Features
 
-- [ ] Add prompt-injection threat model for all LLM-facing surfaces (blog generation, tile ideation, dashboards, chat, admin tools)
-- [ ] Add trust-boundary rules: untrusted player text must never directly control secrets, tools, deploy steps, or payouts
-- [ ] Add content sanitization pipeline before LLM ingestion (strip markup, URLs, prompts, hidden instructions where possible)
-- [ ] Add output validation layer for agent-generated changes (tests, lint, schema checks, replay compatibility, manual approval)
-- [ ] Add role isolation for multi-agent workflows so proposer/implementer/reviewer cannot self-approve
-- [ ] Add audit log for LLM-originated content/code/config changes with human approver identity
-- [ ] Add safe fallback behavior when prompt-injection or jailbreak signals are detected
-- [ ] Add secret-handling policy for LLM tools so runtime tokens, DB URIs, and admin secrets are never exposed to model context unnecessarily
+- [x] Add prompt-injection threat model for all LLM-facing surfaces (blog generation, tile ideation, dashboards, chat, admin tools)
+- [x] Add trust-boundary rules: untrusted player text must never directly control secrets, tools, deploy steps, or payouts
+- [x] Add content sanitization pipeline before LLM ingestion (strip markup, URLs, prompts, hidden instructions where possible)
+- [x] Add output validation layer for agent-generated changes (tests, lint, schema checks, replay compatibility, manual approval)
+- [x] Add role isolation for multi-agent workflows so proposer/implementer/reviewer cannot self-approve
+- [x] Add audit log for LLM-originated content/code/config changes with human approver identity
+- [x] Add safe fallback behavior when prompt-injection or jailbreak signals are detected
+- [x] Add secret-handling policy for LLM tools so runtime tokens, DB URIs, and admin secrets are never exposed to model context unnecessarily
 
 ## Production Test Coverage Brainstorm
 
