@@ -239,22 +239,22 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 
 ## Content + Community + LLM Ops Track (New)
 
-- [ ] Add weekly/monthly LLM-generated blog pipeline (topic seed list, draft, fact-check, publish queue)
-- [ ] Add editorial guardrails: politically/religiously neutral tone enforcement and rejection tests
-- [ ] Add blog topic packs for game-adjacent categories: bots, leaderboard interviews, social, tech, game culture, math, science
-- [ ] Add player/guest bot spotlight format with template + moderation checklist
-- [ ] Add game analytics dashboard (active games, runs/minute, mode/difficulty split, move rates, replay exports)
-- [ ] Add leaderboard operations dashboard (submission volume, rejection reasons, sandbox vs live share)
-- [ ] Add LLM tile ideation workflow (weekly tile proposal with mechanics + icon prompt + safety constraints)
-- [ ] Add “tile of the week” feature flag system with start/end window and automatic expiry
-- [ ] Add entitlement policy for weekly tiles (paid users + local dev toggle controls)
-- [ ] Add multi-agent content pipeline: proposer LLM -> implementer agent -> reviewer agent -> merge gate
-- [ ] Add automated PR quality gate for LLM-generated tile changes (tests, lint, replay compatibility checks)
-- [ ] Add community voting flow for tile ideas (submit, vote window, anti-spam/rate limit, winner promotion)
-- [ ] Add governance for community winner rollout (manual override, safety kill switch, rollback path)
-- [ ] Add editorial pipeline for leaderboard interviews, guest bot spotlights, and neutral technical/community stories
-- [ ] Add monthly “bot reactions” or “bot personalities” content feature without affecting competitive fairness
-- [ ] Add weekly experimental tile review board: proposal, implementation, review, sandbox test, promotion, rollback
+- [x] Add weekly/monthly LLM-generated blog pipeline (topic seed list, draft, fact-check, publish queue)
+- [x] Add editorial guardrails: politically/religiously neutral tone enforcement and rejection tests
+- [x] Add blog topic packs for game-adjacent categories: bots, leaderboard interviews, social, tech, game culture, math, science
+- [x] Add player/guest bot spotlight format with template + moderation checklist
+- [x] Add game analytics dashboard (active games, runs/minute, mode/difficulty split, move rates, replay exports)
+- [x] Add leaderboard operations dashboard (submission volume, rejection reasons, sandbox vs live share)
+- [x] Add LLM tile ideation workflow (weekly tile proposal with mechanics + icon prompt + safety constraints)
+- [x] Add “tile of the week” feature flag system with start/end window and automatic expiry
+- [x] Add entitlement policy for weekly tiles (paid users + local dev toggle controls)
+- [x] Add multi-agent content pipeline: proposer LLM -> implementer agent -> reviewer agent -> merge gate
+- [x] Add automated PR quality gate for LLM-generated tile changes (tests, lint, replay compatibility checks)
+- [x] Add community voting flow for tile ideas (submit, vote window, anti-spam/rate limit, winner promotion)
+- [x] Add governance for community winner rollout (manual override, safety kill switch, rollback path)
+- [x] Add editorial pipeline for leaderboard interviews, guest bot spotlights, and neutral technical/community stories
+- [x] Add monthly “bot reactions” or “bot personalities” content feature without affecting competitive fairness
+- [x] Add weekly experimental tile review board: proposal, implementation, review, sandbox test, promotion, rollback
 - [x] Add public issue-reporting path to GitHub (header/footer links, issue templates, bug vs idea categories)
 - [x] Add in-app “Report issue” flow with prefilled GitHub issue link carrying page/build/version context
-- [ ] Add triage labels/project convention for player-reported bugs, gameplay ideas, and balance feedback
+- [x] Add triage labels/project convention for player-reported bugs, gameplay ideas, and balance feedback

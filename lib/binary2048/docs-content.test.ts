@@ -22,6 +22,7 @@ describe("docs content", () => {
     const economyPolicy = readFileSync(join(repoRoot, "docs", "economy-and-rewards-policy.md"), "utf8");
     const mechanicsPolicy = readFileSync(join(repoRoot, "docs", "experimental-mechanics-policy.md"), "utf8");
     const egressDecision = readFileSync(join(repoRoot, "docs", "production-egress-decision.md"), "utf8");
+    const contentOps = readFileSync(join(repoRoot, "docs", "content-and-community-ops.md"), "utf8");
     expect(user).toContain("# Binary-2048 User Guide");
     expect(user).toContain("## Replay and Sharing");
     expect(dev).toContain("# Binary-2048 Developer Guide");
@@ -55,6 +56,8 @@ describe("docs content", () => {
     expect(mechanicsPolicy).toContain("subtract tiles");
     expect(egressDecision).toContain("# Binary-2048 Production Egress Decision");
     expect(egressDecision).toContain("stay on Amplify `WEB_COMPUTE`");
+    expect(contentOps).toContain("# Binary-2048 Content And Community Operations");
+    expect(contentOps).toContain("Tile Of The Week Program");
   });
 
   it("links docs routes from api docs page and README", () => {
