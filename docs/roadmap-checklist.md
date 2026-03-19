@@ -255,6 +255,6 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [ ] Add editorial pipeline for leaderboard interviews, guest bot spotlights, and neutral technical/community stories
 - [ ] Add monthly “bot reactions” or “bot personalities” content feature without affecting competitive fairness
 - [ ] Add weekly experimental tile review board: proposal, implementation, review, sandbox test, promotion, rollback
-- [ ] Add public issue-reporting path to GitHub (header/footer links, issue templates, bug vs idea categories)
-- [ ] Add in-app “Report issue” flow with prefilled GitHub issue link carrying page/build/version context
+- [x] Add public issue-reporting path to GitHub (header/footer links, issue templates, bug vs idea categories)
+- [x] Add in-app “Report issue” flow with prefilled GitHub issue link carrying page/build/version context
 - [ ] Add triage labels/project convention for player-reported bugs, gameplay ideas, and balance feedback
