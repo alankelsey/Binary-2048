@@ -21,6 +21,7 @@ describe("docs content", () => {
     const llmSafety = readFileSync(join(repoRoot, "docs", "llm-safety-and-agent-policy.md"), "utf8");
     const economyPolicy = readFileSync(join(repoRoot, "docs", "economy-and-rewards-policy.md"), "utf8");
     const mechanicsPolicy = readFileSync(join(repoRoot, "docs", "experimental-mechanics-policy.md"), "utf8");
+    const egressDecision = readFileSync(join(repoRoot, "docs", "production-egress-decision.md"), "utf8");
     expect(user).toContain("# Binary-2048 User Guide");
     expect(user).toContain("## Replay and Sharing");
     expect(dev).toContain("# Binary-2048 Developer Guide");
@@ -52,6 +53,8 @@ describe("docs content", () => {
     expect(economyPolicy).toContain("three-layer economy");
     expect(mechanicsPolicy).toContain("# Binary-2048 Experimental Mechanics Policy");
     expect(mechanicsPolicy).toContain("subtract tiles");
+    expect(egressDecision).toContain("# Binary-2048 Production Egress Decision");
+    expect(egressDecision).toContain("stay on Amplify `WEB_COMPUTE`");
   });
 
   it("links docs routes from api docs page and README", () => {
