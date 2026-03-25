@@ -49,6 +49,11 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add board-flip mechanic prototype (horizontal/vertical/inversion triggers with accessibility review)
 - [x] Add device tilt control experiment for mobile with opt-in toggle, calibration, and conflict rules vs swipe
 - [x] Add motion-safety policy for flip/tilt mechanics (`prefers-reduced-motion`, disable in ranked by default)
+- [ ] Add mobile control safety pass so bottom action buttons are harder to hit accidentally during swipe play
+- [ ] Add destructive-action confirmation or safer placement for `New Game` on small screens during active runs
+- [ ] Add explicit session resume fix for mobile background/lockscreen/browser restore so active games do not silently reset
+- [ ] Add resume telemetry for `session_resume_success`, `session_resume_miss`, and `session_reset_after_resume`
+- [ ] Run and document a real-device mobile UX audit on iPhone + Android after control/resume fixes
 
 ## Economy + Integrity
 
@@ -211,6 +216,16 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Define event-trigger policy for emotion-linked game effects (`confusion -> hint`, `joy -> flourish`) and keep chaos/reward triggers out of ranked
 - [x] Add model evaluation set for mood detection drift, false positives, and abuse edge cases
 - [x] Add privacy review for emotional inference retention, export/delete handling, and disclosure requirements
+- [ ] Add UX audit instrumentation for accidental taps, rage taps, dead clicks, and mobile mis-taps around board controls
+- [ ] Evaluate lightweight UX feedback/session-replay tooling (`Microsoft Clarity` vs `PostHog`) with privacy constraints and retention limits
+
+## Merch + Swag
+
+- [ ] Define merch/store strategy for physical swag separate from in-game store economy
+- [ ] Add merch concept pack for hats, shirts, stickers, and logo variants including `FBBB` / `For Bots By Bots`
+- [ ] Evaluate print-on-demand providers, margins, fulfillment risk, and brand-quality thresholds
+- [ ] Add simple swag landing/view concept and decide whether it lives in-app, on GitHub Pages, or on an external storefront
+- [ ] Explore visual identity options for `F-cubed` / `FBBB` acronym mark and how it fits the main Binary-2048 brand
 
 ## LLM Safety + Agentic Features
 

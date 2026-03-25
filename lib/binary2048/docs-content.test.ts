@@ -25,6 +25,7 @@ describe("docs content", () => {
     const fixedEgressRunbook = readFileSync(join(repoRoot, "docs", "fixed-egress-migration-runbook.md"), "utf8");
     const fixedEgressChecklist = readFileSync(join(repoRoot, "docs", "fixed-egress-aws-checklist.md"), "utf8");
     const githubAwsOidc = readFileSync(join(repoRoot, "docs", "github-actions-aws-oidc.md"), "utf8");
+    const uxAuditPlaybook = readFileSync(join(repoRoot, "docs", "ux-audit-playbook.md"), "utf8");
     const contentOps = readFileSync(join(repoRoot, "docs", "content-and-community-ops.md"), "utf8");
     expect(user).toContain("# Binary-2048 User Guide");
     expect(user).toContain("## Replay and Sharing");
@@ -65,6 +66,9 @@ describe("docs content", () => {
     expect(fixedEgressChecklist).toContain("infra/fixed-egress-vpc-template.yml");
     expect(githubAwsOidc).toContain("# Binary-2048 GitHub Actions AWS OIDC Setup");
     expect(githubAwsOidc).toContain("AWS_ROLE_TO_ASSUME");
+    expect(uxAuditPlaybook).toContain("# Binary-2048 UX Audit Playbook");
+    expect(uxAuditPlaybook).toContain("Microsoft Clarity");
+    expect(uxAuditPlaybook).toContain("mobile lockscreen/resume reset bug");
     expect(contentOps).toContain("# Binary-2048 Content And Community Operations");
     expect(contentOps).toContain("Tile Of The Week Program");
   });
