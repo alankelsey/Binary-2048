@@ -375,6 +375,15 @@ main {
   overflow: auto;
 }
 
+.fullscreen-shell:fullscreen .game-hint,
+.fullscreen-shell.fullscreen-active .game-hint,
+.fullscreen-shell:fullscreen .share-row,
+.fullscreen-shell.fullscreen-active .share-row,
+.fullscreen-shell:fullscreen .build-version,
+.fullscreen-shell.fullscreen-active .build-version {
+  display: none;
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -1260,6 +1269,12 @@ select:focus-visible {
     border-radius: 0.9rem;
   }
 
+  .fullscreen-shell:fullscreen .meta,
+  .fullscreen-shell.fullscreen-active .meta {
+    gap: 0.28rem 0.5rem;
+    font-size: 0.72rem;
+  }
+
   .meta {
     gap: 0.45rem 0.65rem;
     font-size: 0.76rem;
@@ -1280,6 +1295,11 @@ select:focus-visible {
     width: min(100%, calc(100vw - 1rem));
     margin-top: 0.25rem;
     margin-bottom: 0.25rem;
+  }
+
+  .fullscreen-shell:fullscreen .actions,
+  .fullscreen-shell.fullscreen-active .actions {
+    margin-top: 0.55rem;
   }
 
   .cell {
@@ -1372,6 +1392,12 @@ select:focus-visible {
   .fullscreen-shell:fullscreen .board,
   .fullscreen-shell.fullscreen-active .board {
     width: min(100%, calc(100vw - 0.65rem));
+  }
+
+  .fullscreen-shell:fullscreen .meta,
+  .fullscreen-shell.fullscreen-active .meta {
+    font-size: 0.68rem;
+    gap: 0.24rem 0.4rem;
   }
 
   .actions > button,
