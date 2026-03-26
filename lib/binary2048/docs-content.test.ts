@@ -26,6 +26,7 @@ describe("docs content", () => {
     const fixedEgressChecklist = readFileSync(join(repoRoot, "docs", "fixed-egress-aws-checklist.md"), "utf8");
     const githubAwsOidc = readFileSync(join(repoRoot, "docs", "github-actions-aws-oidc.md"), "utf8");
     const uxAuditPlaybook = readFileSync(join(repoRoot, "docs", "ux-audit-playbook.md"), "utf8");
+    const uxToolingDecision = readFileSync(join(repoRoot, "docs", "ux-session-replay-tooling-decision.md"), "utf8");
     const contentOps = readFileSync(join(repoRoot, "docs", "content-and-community-ops.md"), "utf8");
     expect(user).toContain("# Binary-2048 User Guide");
     expect(user).toContain("## Replay and Sharing");
@@ -69,6 +70,10 @@ describe("docs content", () => {
     expect(uxAuditPlaybook).toContain("# Binary-2048 UX Audit Playbook");
     expect(uxAuditPlaybook).toContain("Microsoft Clarity");
     expect(uxAuditPlaybook).toContain("mobile lockscreen/resume reset bug");
+    expect(uxToolingDecision).toContain("# Binary-2048 UX Session Replay Tooling Decision");
+    expect(uxToolingDecision).toContain("Microsoft Clarity");
+    expect(uxToolingDecision).toContain("PostHog");
+    expect(uxToolingDecision).toContain("Use **Microsoft Clarity first**");
     expect(contentOps).toContain("# Binary-2048 Content And Community Operations");
     expect(contentOps).toContain("Tile Of The Week Program");
   });

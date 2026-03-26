@@ -217,7 +217,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add model evaluation set for mood detection drift, false positives, and abuse edge cases
 - [x] Add privacy review for emotional inference retention, export/delete handling, and disclosure requirements
 - [x] Add UX audit instrumentation for accidental taps, rage taps, dead clicks, and mobile mis-taps around board controls
-- [ ] Evaluate lightweight UX feedback/session-replay tooling (`Microsoft Clarity` vs `PostHog`) with privacy constraints and retention limits
+- [x] Evaluate lightweight UX feedback/session-replay tooling (`Microsoft Clarity` vs `PostHog`) with privacy constraints and retention limits
 
 ## Merch + Swag
 
