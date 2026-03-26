@@ -16,11 +16,13 @@ import { replaySpeedToDelayMs } from "@/lib/binary2048/replay-autoplay";
 import { shouldStartNewGameOnReplayExit } from "@/lib/binary2048/replay-exit";
 import { parseReplayStepInput } from "@/lib/binary2048/replay-scrubber";
 import { getToolbarActionState } from "@/lib/binary2048/toolbar-actions";
+import { clearResumeSnapshot, loadResumeSnapshot, saveResumeSnapshot } from "@/lib/binary2048/resume-recovery";
 import { GameOverOverlay, WinOverlay } from "@/app/game-overlays";
 import { buildAccessibilityTabMap, keyboardShortcutMap } from "@/lib/binary2048/accessibility-map";
 import { applyUiPolicyOverrides, type UIControlOverrides } from "@/lib/binary2048/ui-policy-override";
 import type { UIControl } from "@/lib/binary2048/ui-policy";
 import { createReferralCode, type MarketingEventType } from "@/lib/binary2048/marketing";
+import type { GameExport } from "@/lib/binary2048/types";
 
 type Tile = { t: "n"; v: number } | { t: "z" } | { t: "w"; m: number } | { t: "i" };
 type Cell = Tile | null;
@@ -137,12 +139,77 @@ export default function Home() {
     return response?.integrity?.sessionClass !== "ranked";
   }
 
-  async function newGame() {
+  function applyLoadedSession(json: {
+    id: string;
+    current: GameState;
+    undo?: UndoMeta;
+    integrity?: { sessionClass?: SessionClass };
+    economy?: { canContinueAfterWin?: boolean };
+  }) {
+    setGameId(json.id);
+    setState(json.current);
+    setContinueAfterWin(false);
+    setSessionClass((json?.integrity?.sessionClass as SessionClass) ?? "unranked");
+    setCanContinueAfterWin(resolveCanContinueAfterWin(json));
+    if (json?.undo) setUndo(json.undo as UndoMeta);
+    setCellEffects({});
+    window.localStorage.setItem(gameIdKey, json.id);
+
+    const importedRate = json?.current?.config?.spawn?.pWildcard;
+    if (typeof importedRate === "number") {
+      const inferredMode = modeFromWildcardRate(importedRate);
+      setSpawnMode(inferredMode);
+      window.localStorage.setItem(modeKey, inferredMode);
+    }
+  }
+
+  async function importSnapshotExport(snapshotExport: unknown): Promise<boolean> {
+    try {
+      const res = await fetch("/api/games/import", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(snapshotExport)
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json?.current || !json?.id) return false;
+      applyLoadedSession(json as { id: string; current: GameState; undo?: UndoMeta });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async function recoverFromLocalSnapshot(expectedGameId?: string): Promise<boolean> {
+    const snapshot = loadResumeSnapshot(window.localStorage, expectedGameId);
+    if (!snapshot) return false;
+    const ok = await importSnapshotExport(snapshot);
+    if (ok) {
+      setErrorMessage("Recovered your last local game snapshot.");
+      return true;
+    }
+    return false;
+  }
+
+  async function persistResumeSnapshot(sessionId: string) {
+    try {
+      const res = await fetch(`/api/games/${sessionId}/export`);
+      const exported = await res.json().catch(() => null);
+      if (!res.ok || !exported || typeof exported !== "object") return;
+      saveResumeSnapshot(window.localStorage, sessionId, exported as GameExport);
+    } catch {
+      // Best-effort local recovery snapshot; ignore transient export failures.
+    }
+  }
+
+  async function newGame(options?: { clearSnapshot?: boolean }) {
     if (busy) return;
     setReplay(null);
     setContinueAfterWin(false);
     setBusy(true);
     setErrorMessage("");
+    if (options?.clearSnapshot !== false) {
+      clearResumeSnapshot(window.localStorage);
+    }
     try {
       const pZero = 0.15;
       const pWildcard = SPAWN_MODES[spawnMode].pWildcard;
@@ -169,15 +236,7 @@ export default function Home() {
         const message = (json && typeof json.error === "string" ? json.error : "Failed to create game");
         throw new Error(message);
       }
-      setGameId(json.id);
-      setState(json.current);
-      setSessionClass((json?.integrity?.sessionClass as SessionClass) ?? "unranked");
-      setCanContinueAfterWin(resolveCanContinueAfterWin(json));
-      if (json?.undo) setUndo(json.undo as UndoMeta);
-      const wildcardRate = json?.current?.config?.spawn?.pWildcard;
-      if (typeof wildcardRate === "number") setSpawnMode(modeFromWildcardRate(wildcardRate));
-      setCellEffects({});
-      window.localStorage.setItem(gameIdKey, json.id);
+      applyLoadedSession(json as { id: string; current: GameState; undo?: UndoMeta });
       window.localStorage.setItem(modeKey, spawnMode);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Failed to create game");
@@ -191,16 +250,7 @@ export default function Home() {
       const res = await fetch(`/api/games/${id}`);
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json?.current || json?.id !== id) return false;
-      setGameId(id);
-      const restored = json.current as GameState;
-      setState(restored);
-      setContinueAfterWin(false);
-      setSessionClass((json?.integrity?.sessionClass as SessionClass) ?? "unranked");
-      setCanContinueAfterWin(resolveCanContinueAfterWin(json));
-      if (json?.undo) setUndo(json.undo as UndoMeta);
-      const wildcardRate = restored?.config?.spawn?.pWildcard;
-      if (typeof wildcardRate === "number") setSpawnMode(modeFromWildcardRate(wildcardRate));
-      setCellEffects({});
+      applyLoadedSession(json as { id: string; current: GameState; undo?: UndoMeta });
       setErrorMessage("");
       return true;
     } catch {
@@ -223,9 +273,11 @@ export default function Home() {
       if (!res.ok || !json?.current) {
         const message = (json && typeof json.error === "string" ? json.error : "Failed to apply move");
         if (res.status === 404) {
-          // Session may be gone in dev/serverless contexts; create a fresh game.
           window.localStorage.removeItem(gameIdKey);
-          await newGame();
+          const recovered = await recoverFromLocalSnapshot(gameId);
+          if (!recovered) {
+            await newGame({ clearSnapshot: true });
+          }
           return;
         }
         throw new Error(message);
@@ -346,21 +398,7 @@ export default function Home() {
         const message = (json && typeof json.error === "string" ? json.error : "Failed to import game");
         throw new Error(message);
       }
-      setGameId(json.id);
-      setState(json.current);
-      setContinueAfterWin(false);
-      setSessionClass((json?.integrity?.sessionClass as SessionClass) ?? "unranked");
-      setCanContinueAfterWin(resolveCanContinueAfterWin(json));
-      if (json?.undo) setUndo(json.undo as UndoMeta);
-      setCellEffects({});
-      window.localStorage.setItem(gameIdKey, json.id);
-
-      const importedRate = json?.current?.config?.spawn?.pWildcard;
-      if (typeof importedRate === "number") {
-        const inferredMode = modeFromWildcardRate(importedRate);
-        setSpawnMode(inferredMode);
-        window.localStorage.setItem(modeKey, inferredMode);
-      }
+      applyLoadedSession(json as { id: string; current: GameState; undo?: UndoMeta });
     } catch (error) {
       const msg = error instanceof Error ? error.message : "Failed to import game";
       setErrorMessage(msg);
@@ -447,8 +485,13 @@ export default function Home() {
           setBusy(false);
           return;
         }
+        const recovered = await recoverFromLocalSnapshot(savedId);
+        if (recovered || cancelled) {
+          setBusy(false);
+          return;
+        }
       }
-      if (!cancelled) await newGame();
+      if (!cancelled) await newGame({ clearSnapshot: true });
       if (!cancelled) setBusy(false);
     }
     void initializeGame();
@@ -519,6 +562,11 @@ export default function Home() {
     setHighScore(score);
     window.sessionStorage.setItem(highScoreKey, String(score));
   }, [state?.score, highScore]);
+
+  useEffect(() => {
+    if (replay || !gameId || !state) return;
+    void persistResumeSnapshot(gameId);
+  }, [replay, gameId, state?.turn, state?.score, state?.over, state?.won]);
 
   useEffect(() => {
     window.localStorage.setItem(modeKey, spawnMode);
