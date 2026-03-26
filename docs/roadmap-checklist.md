@@ -221,7 +221,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 
 ## Merch + Swag
 
-- [ ] Define merch/store strategy for physical swag separate from in-game store economy
+- [x] Define merch/store strategy for physical swag separate from in-game store economy
 - [ ] Add merch concept pack for hats, shirts, stickers, and logo variants including `FBBB` / `For Bots By Bots`
 - [ ] Evaluate print-on-demand providers, margins, fulfillment risk, and brand-quality thresholds
 - [ ] Add simple swag landing/view concept and decide whether it lives in-app, on GitHub Pages, or on an external storefront

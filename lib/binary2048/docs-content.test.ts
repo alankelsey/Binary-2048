@@ -27,6 +27,7 @@ describe("docs content", () => {
     const githubAwsOidc = readFileSync(join(repoRoot, "docs", "github-actions-aws-oidc.md"), "utf8");
     const uxAuditPlaybook = readFileSync(join(repoRoot, "docs", "ux-audit-playbook.md"), "utf8");
     const uxToolingDecision = readFileSync(join(repoRoot, "docs", "ux-session-replay-tooling-decision.md"), "utf8");
+    const merchStrategy = readFileSync(join(repoRoot, "docs", "merch-and-swag-strategy.md"), "utf8");
     const contentOps = readFileSync(join(repoRoot, "docs", "content-and-community-ops.md"), "utf8");
     expect(user).toContain("# Binary-2048 User Guide");
     expect(user).toContain("## Replay and Sharing");
@@ -74,6 +75,9 @@ describe("docs content", () => {
     expect(uxToolingDecision).toContain("Microsoft Clarity");
     expect(uxToolingDecision).toContain("PostHog");
     expect(uxToolingDecision).toContain("Use **Microsoft Clarity first**");
+    expect(merchStrategy).toContain("# Binary-2048 Merch And Swag Strategy");
+    expect(merchStrategy).toContain("For Bots By Bots");
+    expect(merchStrategy).toContain("Physical merch must remain separate from the in-game store");
     expect(contentOps).toContain("# Binary-2048 Content And Community Operations");
     expect(contentOps).toContain("Tile Of The Week Program");
   });
