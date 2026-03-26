@@ -17,6 +17,12 @@ import { shouldStartNewGameOnReplayExit } from "@/lib/binary2048/replay-exit";
 import { parseReplayStepInput } from "@/lib/binary2048/replay-scrubber";
 import { getToolbarActionState } from "@/lib/binary2048/toolbar-actions";
 import { getNewGameGuardState } from "@/lib/binary2048/new-game-guard";
+import {
+  exitDocumentFullscreen,
+  isFullscreenActive,
+  isFullscreenSupported,
+  requestElementFullscreen
+} from "@/lib/binary2048/fullscreen";
 import { clearResumeSnapshot, loadResumeSnapshot, saveResumeSnapshot } from "@/lib/binary2048/resume-recovery";
 import { GameOverOverlay, WinOverlay } from "@/app/game-overlays";
 import { buildAccessibilityTabMap, keyboardShortcutMap } from "@/lib/binary2048/accessibility-map";
@@ -120,6 +126,8 @@ export default function Home() {
   const [replaySpeed, setReplaySpeed] = useState(5);
   const [shareMessage, setShareMessage] = useState<string>("");
   const [newGameConfirmArmed, setNewGameConfirmArmed] = useState(false);
+  const [fullscreenSupported, setFullscreenSupported] = useState(false);
+  const [fullscreenActive, setFullscreenActive] = useState(false);
   const [sessionClass, setSessionClass] = useState<SessionClass>("unranked");
   const [canContinueAfterWin, setCanContinueAfterWin] = useState(true);
   const [continueAfterWin, setContinueAfterWin] = useState(false);
@@ -129,6 +137,7 @@ export default function Home() {
   const effectTimerRef = useRef<number | null>(null);
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const replayInputRef = useRef<HTMLInputElement | null>(null);
+  const fullscreenShellRef = useRef<HTMLDivElement | null>(null);
 
   function resolveCanContinueAfterWin(payload: unknown): boolean {
     const response = payload as {
@@ -781,6 +790,35 @@ export default function Home() {
     }
   }
 
+  async function toggleFullscreen() {
+    if (!fullscreenSupported) return;
+    try {
+      if (isFullscreenActive(document)) {
+        await exitDocumentFullscreen(document);
+      } else {
+        await requestElementFullscreen(fullscreenShellRef.current);
+      }
+    } catch {
+      setShareMessage("Fullscreen is unavailable on this device");
+      window.setTimeout(() => setShareMessage(""), 1800);
+    }
+  }
+
+  useEffect(() => {
+    function syncFullscreenState() {
+      setFullscreenActive(isFullscreenActive(document));
+      setFullscreenSupported(isFullscreenSupported(fullscreenShellRef.current));
+    }
+
+    syncFullscreenState();
+    document.addEventListener("fullscreenchange", syncFullscreenState);
+    document.addEventListener("webkitfullscreenchange", syncFullscreenState as EventListener);
+    return () => {
+      document.removeEventListener("fullscreenchange", syncFullscreenState);
+      document.removeEventListener("webkitfullscreenchange", syncFullscreenState as EventListener);
+    };
+  }, []);
+
   return (
     <main>
       <a className="skip-link" href="#game-controls">
@@ -794,7 +832,8 @@ export default function Home() {
         </div>
       </header>
       <p>Made mostly for bots by mostly bots: Bonus tiles: zero annihilator + wildcard multipliers.</p>
-      <div className="card">
+      <div ref={fullscreenShellRef} className={`fullscreen-shell ${fullscreenActive ? "fullscreen-active" : ""}`}>
+        <div className="card">
         <div className="meta">
           <span>Game: {replay ? `Replay (${replay.sourceName})` : gameId || "-"}</span>
           <span className="score-pill">Score: {viewState?.score ?? 0}</span>
@@ -985,6 +1024,11 @@ export default function Home() {
           {controlVisibility.showUndo ? (
             <button disabled={toolbarActionState.disableUndo} onClick={() => void undoMove()}>
               Undo {undo.remaining}
+            </button>
+          ) : null}
+          {fullscreenSupported ? (
+            <button type="button" onClick={() => void toggleFullscreen()}>
+              {fullscreenActive ? "Exit Fullscreen" : "Fullscreen"}
             </button>
           ) : null}
           {controlVisibility.showActiveExport ? (
@@ -1250,6 +1294,7 @@ export default function Home() {
         <p className="build-version" aria-label="app version">
           v{APP_VERSION} ({APP_COMMIT})
         </p>
+        </div>
       </div>
     </main>
   );

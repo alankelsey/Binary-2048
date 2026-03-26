@@ -363,6 +363,18 @@ main {
   padding: 0.85rem;
 }
 
+.fullscreen-shell {
+  width: 100%;
+}
+
+.fullscreen-shell:fullscreen,
+.fullscreen-shell.fullscreen-active {
+  background: radial-gradient(circle at top, var(--bg-glow), var(--bg-base) 55%);
+  padding: max(env(safe-area-inset-top), 0.6rem) max(env(safe-area-inset-right), 0.6rem)
+    max(env(safe-area-inset-bottom), 0.75rem) max(env(safe-area-inset-left), 0.6rem);
+  overflow: auto;
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -1236,6 +1248,14 @@ select:focus-visible {
     padding: 0.65rem;
   }
 
+  .fullscreen-shell:fullscreen .card,
+  .fullscreen-shell.fullscreen-active .card {
+    width: 100%;
+    max-width: 100%;
+    min-height: calc(100dvh - max(env(safe-area-inset-top), 0.6rem) - max(env(safe-area-inset-bottom), 0.75rem));
+    border-radius: 0.9rem;
+  }
+
   .meta {
     gap: 0.45rem 0.65rem;
     font-size: 0.76rem;
@@ -1249,6 +1269,13 @@ select:focus-visible {
     width: min(100%, 92vw);
     gap: 0.34rem;
     margin: 0.55rem auto;
+  }
+
+  .fullscreen-shell:fullscreen .board,
+  .fullscreen-shell.fullscreen-active .board {
+    width: min(100%, calc(100vw - 1rem));
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem;
   }
 
   .cell {
@@ -1332,6 +1359,11 @@ select:focus-visible {
   .board {
     width: min(100%, 94vw);
     gap: 0.28rem;
+  }
+
+  .fullscreen-shell:fullscreen .board,
+  .fullscreen-shell.fullscreen-active .board {
+    width: min(100%, calc(100vw - 0.65rem));
   }
 
   .actions > button,
