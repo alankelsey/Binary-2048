@@ -16,6 +16,7 @@ import { replaySpeedToDelayMs } from "@/lib/binary2048/replay-autoplay";
 import { shouldStartNewGameOnReplayExit } from "@/lib/binary2048/replay-exit";
 import { parseReplayStepInput } from "@/lib/binary2048/replay-scrubber";
 import { getToolbarActionState } from "@/lib/binary2048/toolbar-actions";
+import { getNewGameGuardState } from "@/lib/binary2048/new-game-guard";
 import { clearResumeSnapshot, loadResumeSnapshot, saveResumeSnapshot } from "@/lib/binary2048/resume-recovery";
 import { GameOverOverlay, WinOverlay } from "@/app/game-overlays";
 import { buildAccessibilityTabMap, keyboardShortcutMap } from "@/lib/binary2048/accessibility-map";
@@ -118,6 +119,7 @@ export default function Home() {
   const [replayPlaying, setReplayPlaying] = useState(false);
   const [replaySpeed, setReplaySpeed] = useState(5);
   const [shareMessage, setShareMessage] = useState<string>("");
+  const [newGameConfirmArmed, setNewGameConfirmArmed] = useState(false);
   const [sessionClass, setSessionClass] = useState<SessionClass>("unranked");
   const [canContinueAfterWin, setCanContinueAfterWin] = useState(true);
   const [continueAfterWin, setContinueAfterWin] = useState(false);
@@ -205,6 +207,7 @@ export default function Home() {
     if (busy) return;
     setReplay(null);
     setContinueAfterWin(false);
+    setNewGameConfirmArmed(false);
     setBusy(true);
     setErrorMessage("");
     if (options?.clearSnapshot !== false) {
@@ -252,6 +255,7 @@ export default function Home() {
       if (!res.ok || !json?.current || json?.id !== id) return false;
       applyLoadedSession(json as { id: string; current: GameState; undo?: UndoMeta });
       setErrorMessage("");
+      setNewGameConfirmArmed(false);
       return true;
     } catch {
       return false;
@@ -288,6 +292,7 @@ export default function Home() {
       if (json?.undo) setUndo(json.undo as UndoMeta);
       const events = Array.isArray(json?.lastStep?.events) ? (json.lastStep.events as MoveEvent[]) : [];
       setState(next);
+      setNewGameConfirmArmed(false);
       startCellEffects(computeCellEffects(previous, next, events, dir));
       if (next.over) {
         window.localStorage.removeItem(gameIdKey);
@@ -312,6 +317,7 @@ export default function Home() {
       }
       setState(json.current as GameState);
       if (json?.undo) setUndo(json.undo as UndoMeta);
+      setNewGameConfirmArmed(false);
       setCellEffects({});
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Failed to undo move");
@@ -399,6 +405,7 @@ export default function Home() {
         throw new Error(message);
       }
       applyLoadedSession(json as { id: string; current: GameState; undo?: UndoMeta });
+      setNewGameConfirmArmed(false);
     } catch (error) {
       const msg = error instanceof Error ? error.message : "Failed to import game";
       setErrorMessage(msg);
@@ -569,6 +576,10 @@ export default function Home() {
   }, [replay, gameId, state?.turn, state?.score, state?.over, state?.won]);
 
   useEffect(() => {
+    setNewGameConfirmArmed(false);
+  }, [gameId, replay, state?.turn, state?.over]);
+
+  useEffect(() => {
     window.localStorage.setItem(modeKey, spawnMode);
   }, [spawnMode]);
 
@@ -653,6 +664,13 @@ export default function Home() {
     turn: state?.turn ?? 0,
     over: Boolean(state?.over),
     undoRemaining: undo.remaining ?? 0
+  });
+  const newGameGuard = getNewGameGuardState({
+    replay: Boolean(replay),
+    gameId,
+    turn: state?.turn ?? 0,
+    over: Boolean(state?.over),
+    confirmArmed: newGameConfirmArmed
   });
   const accessibilityTabMap = buildAccessibilityTabMap({
     replay: Boolean(replay),
@@ -951,8 +969,18 @@ export default function Home() {
           />
         </div>
         <div className="actions" id="game-controls">
-          <button disabled={toolbarActionState.disableNewGame} onClick={() => void newGame()}>
-            New Game
+          <button
+            disabled={toolbarActionState.disableNewGame}
+            className={newGameGuard.requiresConfirm && newGameConfirmArmed ? "danger-armed" : ""}
+            onClick={() => {
+              if (!newGameGuard.shouldStartNewGame) {
+                setNewGameConfirmArmed(newGameGuard.nextConfirmArmed);
+                return;
+              }
+              void newGame();
+            }}
+          >
+            {newGameGuard.label}
           </button>
           {controlVisibility.showUndo ? (
             <button disabled={toolbarActionState.disableUndo} onClick={() => void undoMove()}>

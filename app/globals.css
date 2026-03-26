@@ -508,6 +508,11 @@ main {
   margin-top: 0.9rem;
 }
 
+.actions > button.danger-armed {
+  border-color: #ff8a80;
+  box-shadow: 0 0 0 1px rgba(255, 138, 128, 0.28);
+}
+
 .options-panel {
   border: 1px solid var(--hint-border);
   border-radius: 10px;
