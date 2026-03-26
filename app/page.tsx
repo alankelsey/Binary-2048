@@ -1027,7 +1027,7 @@ export default function Home() {
             </button>
           ) : null}
           {fullscreenSupported ? (
-            <button type="button" onClick={() => void toggleFullscreen()}>
+            <button type="button" className="fullscreen-toggle" onClick={() => void toggleFullscreen()}>
               {fullscreenActive ? "Exit Fullscreen" : "Fullscreen"}
             </button>
           ) : null}

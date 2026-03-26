@@ -525,6 +525,10 @@ main {
   box-shadow: 0 0 0 1px rgba(255, 138, 128, 0.28);
 }
 
+.fullscreen-toggle {
+  display: none;
+}
+
 .options-panel {
   border: 1px solid var(--hint-border);
   border-radius: 10px;
@@ -1286,6 +1290,10 @@ select:focus-visible {
   .actions {
     gap: 0.34rem;
     margin-top: 1.1rem;
+  }
+
+  .fullscreen-toggle {
+    display: inline-flex;
   }
 
   .actions > button {
