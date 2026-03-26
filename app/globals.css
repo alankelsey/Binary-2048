@@ -505,7 +505,7 @@ main {
   justify-content: flex-start;
   gap: 0.42rem;
   max-width: 100%;
-  margin-top: 0.25rem;
+  margin-top: 0.9rem;
 }
 
 .options-panel {
@@ -1253,6 +1253,7 @@ select:focus-visible {
 
   .actions {
     gap: 0.34rem;
+    margin-top: 1.1rem;
   }
 
   .actions > button {
