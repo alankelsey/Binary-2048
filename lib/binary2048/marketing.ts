@@ -1,9 +1,17 @@
-export type MarketingEventType = "share_click" | "copy_share" | "copy_replay_link" | "landing_visit";
+export type MarketingEventType =
+  | "share_click"
+  | "copy_share"
+  | "copy_replay_link"
+  | "landing_visit"
+  | "session_resume_success"
+  | "session_resume_miss"
+  | "session_reset_after_resume"
+  | "mobile_controls_toggle";
 
 export type MarketingEvent = {
   id: string;
   type: MarketingEventType;
-  channel?: "x" | "linkedin" | "copy" | "replay";
+  channel?: "x" | "linkedin" | "copy" | "replay" | "resume" | "mobile";
   referralCode?: string;
   campaign?: string;
   metadata?: Record<string, string>;

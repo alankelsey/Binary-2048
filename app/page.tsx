@@ -199,6 +199,10 @@ export default function Home() {
     if (!snapshot) return false;
     const ok = await importSnapshotExport(snapshot);
     if (ok) {
+      void trackMarketing("session_resume_success", "resume", {
+        source: "local_snapshot",
+        expectedGameId: expectedGameId ?? "unknown"
+      });
       setErrorMessage("Recovered your last local game snapshot.");
       return true;
     }
@@ -267,6 +271,10 @@ export default function Home() {
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json?.current || json?.id !== id) return false;
       applyLoadedSession(json as { id: string; current: GameState; undo?: UndoMeta });
+      void trackMarketing("session_resume_success", "resume", {
+        source: "server",
+        gameId: id
+      });
       setErrorMessage("");
       setNewGameConfirmArmed(false);
       return true;
@@ -293,6 +301,10 @@ export default function Home() {
           window.localStorage.removeItem(gameIdKey);
           const recovered = await recoverFromLocalSnapshot(gameId);
           if (!recovered) {
+            void trackMarketing("session_reset_after_resume", "resume", {
+              gameId,
+              outcome: "move_404_new_game"
+            });
             await newGame({ clearSnapshot: true });
           }
           return;
@@ -505,11 +517,19 @@ export default function Home() {
           setBusy(false);
           return;
         }
+        void trackMarketing("session_resume_miss", "resume", {
+          gameId: savedId,
+          source: "server"
+        });
         const recovered = await recoverFromLocalSnapshot(savedId);
         if (recovered || cancelled) {
           setBusy(false);
           return;
         }
+        void trackMarketing("session_reset_after_resume", "resume", {
+          gameId: savedId,
+          outcome: "init_new_game"
+        });
       }
       if (!cancelled) await newGame({ clearSnapshot: true });
       if (!cancelled) setBusy(false);
@@ -720,7 +740,11 @@ export default function Home() {
       : "https://github.com/alankelsey/Binary-2048/issues/new";
   const socialUrls = buildShareUrls(shareText, shareUrl);
 
-  async function trackMarketing(type: MarketingEventType, channel: "x" | "linkedin" | "copy" | "replay") {
+  async function trackMarketing(
+    type: MarketingEventType,
+    channel: "x" | "linkedin" | "copy" | "replay" | "resume" | "mobile",
+    metadata?: Record<string, string>
+  ) {
     try {
       await fetch("/api/marketing/track", {
         method: "POST",
@@ -729,7 +753,8 @@ export default function Home() {
           type,
           channel,
           campaign: "share",
-          referralCode
+          referralCode,
+          metadata
         })
       });
     } catch {
@@ -1035,7 +1060,16 @@ export default function Home() {
             className="mobile-controls-toggle"
             aria-expanded={mobileControlsOpen}
             aria-controls="game-controls"
-            onClick={() => setMobileControlsOpen((open) => !open)}
+            onClick={() =>
+              setMobileControlsOpen((open) => {
+                const nextOpen = !open;
+                void trackMarketing("mobile_controls_toggle", "mobile", {
+                  state: nextOpen ? "open" : "closed",
+                  fullscreen: fullscreenActive ? "true" : "false"
+                });
+                return nextOpen;
+              })
+            }
           >
             {mobileControlsOpen ? "Hide Controls" : "Show Controls"}
           </button>

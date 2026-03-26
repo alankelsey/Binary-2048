@@ -33,4 +33,24 @@ describe("POST /api/marketing/track", () => {
     const res = await POST(req);
     expect(res.status).toBe(400);
   });
+
+  it("tracks mobile resume telemetry events", async () => {
+    const req = new Request("http://localhost/api/marketing/track", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        type: "session_resume_success",
+        channel: "resume",
+        metadata: {
+          source: "local_snapshot"
+        }
+      })
+    });
+    const res = await POST(req);
+    const json = await res.json();
+    expect(res.status).toBe(200);
+    expect(json.event?.type).toBe("session_resume_success");
+    expect(json.event?.channel).toBe("resume");
+    expect(json.event?.metadata?.source).toBe("local_snapshot");
+  });
 });

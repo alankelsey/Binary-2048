@@ -3,14 +3,23 @@ import { trackMarketingEvent, type MarketingEventType } from "@/lib/binary2048/m
 
 type TrackBody = {
   type?: MarketingEventType;
-  channel?: "x" | "linkedin" | "copy" | "replay";
+  channel?: "x" | "linkedin" | "copy" | "replay" | "resume" | "mobile";
   referralCode?: string;
   campaign?: string;
   metadata?: Record<string, string>;
 };
 
 function isType(value: unknown): value is MarketingEventType {
-  return value === "share_click" || value === "copy_share" || value === "copy_replay_link" || value === "landing_visit";
+  return (
+    value === "share_click" ||
+    value === "copy_share" ||
+    value === "copy_replay_link" ||
+    value === "landing_visit" ||
+    value === "session_resume_success" ||
+    value === "session_resume_miss" ||
+    value === "session_reset_after_resume" ||
+    value === "mobile_controls_toggle"
+  );
 }
 
 export async function POST(req: Request) {

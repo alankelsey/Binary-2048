@@ -18,4 +18,19 @@ describe("marketing hooks", () => {
     expect(listed.map((item) => item.id)).toContain(first.id);
     expect(listed.map((item) => item.id)).toContain(second.id);
   });
+
+  it("tracks mobile ux telemetry events with metadata", () => {
+    const event = trackMarketingEvent({
+      type: "mobile_controls_toggle",
+      channel: "mobile",
+      metadata: {
+        state: "open",
+        fullscreen: "false"
+      }
+    });
+
+    expect(event.type).toBe("mobile_controls_toggle");
+    expect(event.channel).toBe("mobile");
+    expect(event.metadata?.state).toBe("open");
+  });
 });
