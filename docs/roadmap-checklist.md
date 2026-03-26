@@ -216,7 +216,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Define event-trigger policy for emotion-linked game effects (`confusion -> hint`, `joy -> flourish`) and keep chaos/reward triggers out of ranked
 - [x] Add model evaluation set for mood detection drift, false positives, and abuse edge cases
 - [x] Add privacy review for emotional inference retention, export/delete handling, and disclosure requirements
-- [ ] Add UX audit instrumentation for accidental taps, rage taps, dead clicks, and mobile mis-taps around board controls
+- [x] Add UX audit instrumentation for accidental taps, rage taps, dead clicks, and mobile mis-taps around board controls
 - [ ] Evaluate lightweight UX feedback/session-replay tooling (`Microsoft Clarity` vs `PostHog`) with privacy constraints and retention limits
 
 ## Merch + Swag

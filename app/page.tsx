@@ -25,6 +25,11 @@ import {
 } from "@/lib/binary2048/fullscreen";
 import { isFullscreenToggleEnabled } from "@/lib/binary2048/fullscreen-visibility";
 import { clearResumeSnapshot, loadResumeSnapshot, saveResumeSnapshot } from "@/lib/binary2048/resume-recovery";
+import {
+  createInitialRageTapState,
+  normalizeAuditControlLabel,
+  recordRageTap
+} from "@/lib/binary2048/ux-audit";
 import { GameOverOverlay, WinOverlay } from "@/app/game-overlays";
 import { buildAccessibilityTabMap, keyboardShortcutMap } from "@/lib/binary2048/accessibility-map";
 import { applyUiPolicyOverrides, type UIControlOverrides } from "@/lib/binary2048/ui-policy-override";
@@ -142,6 +147,7 @@ export default function Home() {
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const replayInputRef = useRef<HTMLInputElement | null>(null);
   const fullscreenShellRef = useRef<HTMLDivElement | null>(null);
+  const controlTapStateRef = useRef(createInitialRageTapState());
 
   function resolveCanContinueAfterWin(payload: unknown): boolean {
     const response = payload as {
@@ -742,7 +748,7 @@ export default function Home() {
 
   async function trackMarketing(
     type: MarketingEventType,
-    channel: "x" | "linkedin" | "copy" | "replay" | "resume" | "mobile",
+    channel: "x" | "linkedin" | "copy" | "replay" | "resume" | "mobile" | "ux",
     metadata?: Record<string, string>
   ) {
     try {
@@ -759,6 +765,32 @@ export default function Home() {
       });
     } catch {
       // Keep share UX resilient even if tracking fails.
+    }
+  }
+
+  function handleControlsPointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    const target = event.target as HTMLElement | null;
+    const button = target?.closest("button");
+    if (!button) return;
+
+    const control = normalizeAuditControlLabel(button.textContent);
+    const rageResult = recordRageTap(controlTapStateRef.current, control, Date.now());
+    controlTapStateRef.current = rageResult.next;
+
+    if (rageResult.shouldTrack) {
+      void trackMarketing("ux_rage_tap", "ux", {
+        area: "actions",
+        control,
+        mobile: compactMobile ? "true" : "false"
+      });
+    }
+
+    if ((button as HTMLButtonElement).disabled) {
+      void trackMarketing("ux_dead_click", "ux", {
+        area: "actions",
+        control,
+        mobile: compactMobile ? "true" : "false"
+      });
     }
   }
 
@@ -1074,12 +1106,22 @@ export default function Home() {
             {mobileControlsOpen ? "Hide Controls" : "Show Controls"}
           </button>
         ) : null}
-        <div className={`actions ${compactMobile && !replay && !mobileControlsOpen ? "mobile-collapsed" : ""}`} id="game-controls">
+        <div
+          className={`actions ${compactMobile && !replay && !mobileControlsOpen ? "mobile-collapsed" : ""}`}
+          id="game-controls"
+          onPointerDownCapture={handleControlsPointerDown}
+        >
           <button
             disabled={toolbarActionState.disableNewGame}
             className={newGameGuard.requiresConfirm && newGameConfirmArmed ? "danger-armed" : ""}
             onClick={() => {
               if (!newGameGuard.shouldStartNewGame) {
+                void trackMarketing(compactMobile ? "ux_mobile_mis_tap" : "ux_accidental_tap", "ux", {
+                  area: "actions",
+                  control: "new_game",
+                  guard: "confirm",
+                  mobile: compactMobile ? "true" : "false"
+                });
                 setNewGameConfirmArmed(newGameGuard.nextConfirmArmed);
                 return;
               }

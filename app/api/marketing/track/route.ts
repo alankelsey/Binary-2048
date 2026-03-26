@@ -3,7 +3,7 @@ import { trackMarketingEvent, type MarketingEventType } from "@/lib/binary2048/m
 
 type TrackBody = {
   type?: MarketingEventType;
-  channel?: "x" | "linkedin" | "copy" | "replay" | "resume" | "mobile";
+  channel?: "x" | "linkedin" | "copy" | "replay" | "resume" | "mobile" | "ux";
   referralCode?: string;
   campaign?: string;
   metadata?: Record<string, string>;
@@ -18,7 +18,11 @@ function isType(value: unknown): value is MarketingEventType {
     value === "session_resume_success" ||
     value === "session_resume_miss" ||
     value === "session_reset_after_resume" ||
-    value === "mobile_controls_toggle"
+    value === "mobile_controls_toggle" ||
+    value === "ux_accidental_tap" ||
+    value === "ux_mobile_mis_tap" ||
+    value === "ux_dead_click" ||
+    value === "ux_rage_tap"
   );
 }
 

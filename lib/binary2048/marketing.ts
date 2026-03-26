@@ -6,12 +6,16 @@ export type MarketingEventType =
   | "session_resume_success"
   | "session_resume_miss"
   | "session_reset_after_resume"
-  | "mobile_controls_toggle";
+  | "mobile_controls_toggle"
+  | "ux_accidental_tap"
+  | "ux_mobile_mis_tap"
+  | "ux_dead_click"
+  | "ux_rage_tap";
 
 export type MarketingEvent = {
   id: string;
   type: MarketingEventType;
-  channel?: "x" | "linkedin" | "copy" | "replay" | "resume" | "mobile";
+  channel?: "x" | "linkedin" | "copy" | "replay" | "resume" | "mobile" | "ux";
   referralCode?: string;
   campaign?: string;
   metadata?: Record<string, string>;
