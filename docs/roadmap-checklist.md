@@ -49,9 +49,9 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add board-flip mechanic prototype (horizontal/vertical/inversion triggers with accessibility review)
 - [x] Add device tilt control experiment for mobile with opt-in toggle, calibration, and conflict rules vs swipe
 - [x] Add motion-safety policy for flip/tilt mechanics (`prefers-reduced-motion`, disable in ranked by default)
-- [ ] Add mobile control safety pass so bottom action buttons are harder to hit accidentally during swipe play
-- [ ] Add destructive-action confirmation or safer placement for `New Game` on small screens during active runs
-- [ ] Add explicit session resume fix for mobile background/lockscreen/browser restore so active games do not silently reset
+- [x] Add mobile control safety pass so bottom action buttons are harder to hit accidentally during swipe play
+- [x] Add destructive-action confirmation or safer placement for `New Game` on small screens during active runs
+- [x] Add explicit session resume fix for mobile background/lockscreen/browser restore so active games do not silently reset
 - [ ] Add resume telemetry for `session_resume_success`, `session_resume_miss`, and `session_reset_after_resume`
 - [ ] Run and document a real-device mobile UX audit on iPhone + Android after control/resume fixes
 

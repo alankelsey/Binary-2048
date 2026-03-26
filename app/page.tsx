@@ -130,6 +130,8 @@ export default function Home() {
   const [newGameConfirmArmed, setNewGameConfirmArmed] = useState(false);
   const [fullscreenSupported, setFullscreenSupported] = useState(false);
   const [fullscreenActive, setFullscreenActive] = useState(false);
+  const [compactMobile, setCompactMobile] = useState(false);
+  const [mobileControlsOpen, setMobileControlsOpen] = useState(false);
   const [sessionClass, setSessionClass] = useState<SessionClass>("unranked");
   const [canContinueAfterWin, setCanContinueAfterWin] = useState(true);
   const [continueAfterWin, setContinueAfterWin] = useState(false);
@@ -821,6 +823,24 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 560px)");
+
+    function syncCompactMobile() {
+      setCompactMobile(mediaQuery.matches);
+    }
+
+    syncCompactMobile();
+    mediaQuery.addEventListener("change", syncCompactMobile);
+    return () => mediaQuery.removeEventListener("change", syncCompactMobile);
+  }, []);
+
+  useEffect(() => {
+    if (compactMobile && !replay) {
+      setMobileControlsOpen(false);
+    }
+  }, [compactMobile, replay, viewState?.turn]);
+
   return (
     <main>
       <a className="skip-link" href="#game-controls">
@@ -1009,7 +1029,18 @@ export default function Home() {
             }}
           />
         </div>
-        <div className="actions" id="game-controls">
+        {!replay && compactMobile ? (
+          <button
+            type="button"
+            className="mobile-controls-toggle"
+            aria-expanded={mobileControlsOpen}
+            aria-controls="game-controls"
+            onClick={() => setMobileControlsOpen((open) => !open)}
+          >
+            {mobileControlsOpen ? "Hide Controls" : "Show Controls"}
+          </button>
+        ) : null}
+        <div className={`actions ${compactMobile && !replay && !mobileControlsOpen ? "mobile-collapsed" : ""}`} id="game-controls">
           <button
             disabled={toolbarActionState.disableNewGame}
             className={newGameGuard.requiresConfirm && newGameConfirmArmed ? "danger-armed" : ""}

@@ -529,6 +529,19 @@ main {
   margin-top: 0.9rem;
 }
 
+.mobile-controls-toggle {
+  display: none;
+  margin: 0.2rem auto 0;
+  min-height: 2.15rem;
+  padding: 0.38rem 0.82rem;
+  border-radius: 999px;
+  border: 1px solid #355273;
+  background: rgba(18, 37, 60, 0.92);
+  color: #dbeafd;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
 .actions > button.danger-armed {
   border-color: #ff8a80;
   box-shadow: 0 0 0 1px rgba(255, 138, 128, 0.28);
@@ -1310,6 +1323,16 @@ select:focus-visible {
   .actions {
     gap: 0.34rem;
     margin-top: 1.1rem;
+  }
+
+  .actions.mobile-collapsed {
+    display: none;
+  }
+
+  .mobile-controls-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .fullscreen-toggle {
