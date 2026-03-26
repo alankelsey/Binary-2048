@@ -11,6 +11,14 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: "Binary 2048",
   description: "Binary 2048 web app with deterministic API",
+  icons: {
+    icon: [
+      { url: "/icon.png", type: "image/png", sizes: "64x64" },
+      { url: "/icon.svg", type: "image/svg+xml", sizes: "any" }
+    ],
+    shortcut: ["/icon.png"],
+    apple: [{ url: "/icon.png", sizes: "64x64" }]
+  },
   alternates: {
     canonical: "/"
   },
