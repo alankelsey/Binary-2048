@@ -222,7 +222,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 ## Merch + Swag
 
 - [x] Define merch/store strategy for physical swag separate from in-game store economy
-- [ ] Add merch concept pack for hats, shirts, stickers, and logo variants including `FBBB` / `For Bots By Bots`
+- [x] Add merch concept pack for hats, shirts, stickers, and logo variants including `FBBB` / `For Bots By Bots`
 - [ ] Evaluate print-on-demand providers, margins, fulfillment risk, and brand-quality thresholds
 - [ ] Add simple swag landing/view concept and decide whether it lives in-app, on GitHub Pages, or on an external storefront
 - [ ] Explore visual identity options for `F-cubed` / `FBBB` acronym mark and how it fits the main Binary-2048 brand
