@@ -23,6 +23,7 @@ import {
   isFullscreenSupported,
   requestElementFullscreen
 } from "@/lib/binary2048/fullscreen";
+import { isFullscreenToggleEnabled } from "@/lib/binary2048/fullscreen-visibility";
 import { clearResumeSnapshot, loadResumeSnapshot, saveResumeSnapshot } from "@/lib/binary2048/resume-recovery";
 import { GameOverOverlay, WinOverlay } from "@/app/game-overlays";
 import { buildAccessibilityTabMap, keyboardShortcutMap } from "@/lib/binary2048/accessibility-map";
@@ -78,6 +79,7 @@ const DIFFICULTY_HELP_TEXT =
 const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.1.0";
 const APP_COMMIT = process.env.NEXT_PUBLIC_APP_COMMIT ?? "dev";
 const UI_POLICY = getUiPolicy();
+const FULLSCREEN_TOGGLE_ENABLED = isFullscreenToggleEnabled();
 
 function Binary2048Logo() {
   return (
@@ -1026,7 +1028,7 @@ export default function Home() {
               Undo {undo.remaining}
             </button>
           ) : null}
-          {fullscreenSupported ? (
+          {FULLSCREEN_TOGGLE_ENABLED && fullscreenSupported ? (
             <button type="button" className="fullscreen-toggle" onClick={() => void toggleFullscreen()}>
               {fullscreenActive ? "Exit Fullscreen" : "Fullscreen"}
             </button>
