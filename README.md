@@ -444,6 +444,7 @@ BASE_URL=http://localhost:3000 npm run load:stage:abuse
   - Body: `{ "dir": "up" | "down" | "left" | "right" }` or `{ "action": "L" | "R" | "U" | "D" }`
   - Optional concurrency guard: `expectStateHash` (returns `409` if stale)
   - Applies one move and returns updated state
+  - Uses a dedicated quota (default `600` requests / 5 minutes per validated bot key or IP fallback)
   - AI-friendly fields included in response:
     - `action` (compact move code)
     - `dir` (normalized full direction)
@@ -514,7 +515,7 @@ BASE_URL=http://localhost:3000 npm run load:stage:abuse
 - `POST /api/bots/tournament`
   - Body (optional): `{ "seeds"?: number[], "seedStart"?: number, "seedCount"?: number, "maxMoves"?: number, "bots"?: ["priority" | "random" | "alternate"] }`
   - Runs same-seed AI-vs-AI tournament server-side and returns ranking + per-run summaries
-  - Rate-limited per API key (or IP fallback) with `429` responses on quota exhaustion
+  - Rate-limited per validated, server-issued API key (or IP fallback) with `429` responses on quota exhaustion
   - Concurrency-protected by bounded queue (`503` with `queue_full`/`queue_timeout` when saturated)
   - Queue env knobs:
     - `BINARY2048_TOURNAMENT_MAX_CONCURRENT` (default `2`)
@@ -550,12 +551,27 @@ BASE_URL=http://localhost:3000 npm run load:stage:abuse
 - `POST /api/simulate`
   - Body: `{ "seed"?: number, "moves": Array<Dir | "L" | "R" | "U" | "D">, "config"?: Partial<GameConfig> & { size?: number }, "initialGrid"?: Cell[][], "includeSteps"?: boolean }`
   - Runs batch simulation and returns final state, score, and step summaries
-  - Rate-limited per API key (or IP fallback) with `429` responses on quota exhaustion
+  - Rate-limited per validated, server-issued API key (or IP fallback) with `429` responses on quota exhaustion
   - Challenge risk profile: `high` (challenge required when enabled)
   - Includes compact terminal artifacts for bot clients:
     - `finalStateHash`
     - `finalEncodedFlat`
     - `finalActionMask`
+
+### Bot API keys
+
+Generate a bot key and its server-side SHA-256 configuration entry:
+
+```bash
+npm run bot:key:generate -- research-bot
+```
+
+Deliver the displayed raw key once over a secure channel. Store only the
+generated `bot-id=sha256hex` entry in the comma-separated
+`BINARY2048_BOT_API_KEY_HASHES` environment variable. Valid keys receive
+independent quota buckets; missing or invalid keys use the caller's IP bucket.
+Never commit raw keys.
+
 - `POST /api/replay`
   - Body:
     - Full export JSON payload, or
@@ -637,6 +653,7 @@ Challenge policy env:
   - Returns paginated deterministic bot replay records (no persistent storage required — seeds derived from page number)
   - Query params: `page` (default `1`), `limit` (default `20`, max `100`), `bot` (`priority`|`random`|`alternate`|`rollout`, default `rollout`), `minScore` (default `0`)
   - Response includes `seed`, `bot`, `final_score`, `max_tile`, `turns`, `engine_version`
+  - Shares a bounded training queue with labels (`503` with `queue_full`/`queue_timeout` when saturated)
 - `GET /api/training/labels?page=&limit=&strategy=&minTile=`
   - Returns per-step `(flat_state, action_mask, best_action)` tuples for supervised pretraining
   - Query params: `page` (default `1`), `limit` (default `100`, max `500`), `strategy` (`score_delta`|`rollout`, default `score_delta`), `minTile` (filter steps only from games reaching this tile or higher, default `0`)
@@ -644,6 +661,7 @@ Challenge policy env:
   - `action_mask`: 4-element `[0/1]` array aligned to `["L","R","U","D"]`
   - `best_action`: index into action space (`0`=L, `1`=R, `2`=U, `3`=D)
   - `source`: `score_delta` (1-step lookahead) or `rollout` (short random rollouts)
+  - Queue env knobs: `BINARY2048_TRAINING_MAX_CONCURRENT` (default `1`), `BINARY2048_TRAINING_MAX_QUEUE` (default `2`), and `BINARY2048_TRAINING_QUEUE_WAIT_TIMEOUT_MS` (default `10000`)
 - `POST /api/ads/reward`
   - Server-verified rewarded-ad grant endpoint (HMAC-signed payload required).
   - Anti-fraud enforcement: nonce replay detection, freshness window, cooldown, and daily cap.

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { evaluateChallenge } from "@/lib/binary2048/challenge-policy";
-import { checkSimulateRateLimit } from "@/lib/binary2048/rate-limit";
+import { checkSimulateRateLimit, rateLimitHeaders, type RateLimitResult } from "@/lib/binary2048/rate-limit";
 import { EndpointCostCapError } from "@/lib/binary2048/cost-caps";
 import { getDegradeState } from "@/lib/binary2048/degrade-mode";
 import { parseJsonWithLimit, RequestBodyTooLargeError } from "@/lib/binary2048/request-body-limit";
@@ -9,6 +9,7 @@ import { simulateBatch, type SimulateBatchRequest } from "@/lib/binary2048/simul
 const MAX_SIMULATE_BODY_BYTES = 128 * 1024;
 
 export async function POST(req: Request) {
+  let quota: RateLimitResult | null = null;
   try {
     const degrade = getDegradeState("simulate");
     if (degrade.disabled) {
@@ -29,7 +30,7 @@ export async function POST(req: Request) {
         { status: 403 }
       );
     }
-    const quota = checkSimulateRateLimit(req);
+    quota = await checkSimulateRateLimit(req);
     if (!quota.allowed) {
       return NextResponse.json(
         {
@@ -39,25 +40,26 @@ export async function POST(req: Request) {
           remaining: quota.remaining,
           retryAfterSeconds: quota.retryAfterSeconds
         },
-        { status: 429, headers: { "retry-after": String(quota.retryAfterSeconds) } }
+        { status: 429, headers: rateLimitHeaders(quota) }
       );
     }
     const body = await parseJsonWithLimit<SimulateBatchRequest>(req, MAX_SIMULATE_BODY_BYTES);
     const result = simulateBatch(body);
-    return NextResponse.json(result);
+    return NextResponse.json(result, { headers: rateLimitHeaders(quota) });
   } catch (error) {
+    const headers = quota ? rateLimitHeaders(quota) : undefined;
     if (error instanceof RequestBodyTooLargeError) {
-      return NextResponse.json({ error: error.message }, { status: 413 });
+      return NextResponse.json({ error: error.message }, { status: 413, headers });
     }
     if (error instanceof EndpointCostCapError) {
       return NextResponse.json(
         { error: error.message, code: error.code, field: error.field, limit: error.limit, value: error.value },
-        { status: 400 }
+        { status: 400, headers }
       );
     }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Invalid simulation request" },
-      { status: 400 }
+      { status: 400, headers }
     );
   }
 }

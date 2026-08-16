@@ -1,3 +1,4 @@
+import { createHash } from "crypto";
 import { POST } from "@/app/api/simulate/route";
 import { resetRateLimitStore } from "@/lib/binary2048/rate-limit";
 
@@ -10,6 +11,7 @@ describe("POST /api/simulate", () => {
     delete process.env.BINARY2048_CHALLENGE_SECRET;
     delete process.env.BINARY2048_DEGRADE_MODE;
     delete process.env.BINARY2048_DEGRADE_DISABLE_SIMULATE;
+    delete process.env.BINARY2048_BOT_API_KEY_HASHES;
   });
 
   it("accepts compact actions and returns final artifacts", async () => {
@@ -34,6 +36,9 @@ describe("POST /api/simulate", () => {
     expect(json.finalEncodedFlat.length).toBe(4 * 4 * 2);
     expect(Array.isArray(json.finalActionMask)).toBe(true);
     expect(json.finalActionMask).toHaveLength(4);
+    expect(res.headers.get("ratelimit-limit")).toBe("60");
+    expect(res.headers.get("ratelimit-remaining")).toBe("59");
+    expect(res.headers.get("ratelimit-reset")).toMatch(/^\d+$/);
   });
 
   it("returns 400 for invalid direction token", async () => {
@@ -57,6 +62,7 @@ describe("POST /api/simulate", () => {
   it("returns 429 when simulate rate limit is exceeded for same api key", async () => {
     process.env.BINARY2048_RATE_LIMIT_SIMULATE_MAX = "1";
     process.env.BINARY2048_RATE_LIMIT_WINDOW_MS = "60000";
+    process.env.BINARY2048_BOT_API_KEY_HASHES = `sim-bot=${createHash("sha256").update("sim-key-1").digest("hex")}`;
 
     const req1 = new Request("http://localhost/api/simulate", {
       method: "POST",
@@ -85,6 +91,9 @@ describe("POST /api/simulate", () => {
     expect(second.status).toBe(429);
     expect(secondJson.error).toBe("Rate limit exceeded");
     expect(secondJson.route).toBe("simulate");
+    expect(second.headers.get("ratelimit-limit")).toBe("1");
+    expect(second.headers.get("ratelimit-remaining")).toBe("0");
+    expect(second.headers.get("retry-after")).toMatch(/^\d+$/);
   });
 
   it("returns 403 when challenge is enforced and token is missing", async () => {

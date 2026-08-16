@@ -1,3 +1,17 @@
+const RATE_LIMIT_HEADERS = {
+  "RateLimit-Limit": { description: "Maximum requests permitted in the current quota window", schema: { type: "integer" } },
+  "RateLimit-Remaining": { description: "Requests remaining in the current quota window", schema: { type: "integer" } },
+  "RateLimit-Reset": { description: "Quota-window reset time as Unix epoch seconds", schema: { type: "integer" } }
+} as const;
+
+const RATE_LIMITED_PARAMETERS = [{
+  name: "x-api-key",
+  in: "header",
+  required: false,
+  description: "Server-issued bot API key; invalid or missing keys use the IP fallback quota",
+  schema: { type: "string" }
+}] as const;
+
 export const OPENAPI_SPEC = {
   openapi: "3.1.0",
   info: {
@@ -116,13 +130,15 @@ export const OPENAPI_SPEC = {
     "/api/bots/tournament": {
       post: {
         summary: "Run server-side AI-vs-AI tournament for configured seeds",
+        parameters: RATE_LIMITED_PARAMETERS,
         requestBody: {
           required: false,
           content: { "application/json": { schema: { type: "object" } } }
         },
         responses: {
-          "200": { description: "Tournament result with ranking and run summaries" },
-          "400": { description: "Invalid tournament payload" }
+          "200": { description: "Tournament result with ranking and run summaries", headers: RATE_LIMIT_HEADERS },
+          "400": { description: "Invalid tournament payload" },
+          "429": { description: "Rate limit exceeded", headers: { ...RATE_LIMIT_HEADERS, "Retry-After": { description: "Seconds until retry is allowed", schema: { type: "integer" } } } }
         }
       }
     },
@@ -318,14 +334,24 @@ export const OPENAPI_SPEC = {
     "/api/games/{id}/move": {
       post: {
         summary: "Apply one move",
-        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" } },
+          ...RATE_LIMITED_PARAMETERS
+        ],
         requestBody: {
           required: true,
           content: { "application/json": { schema: { type: "object" } } }
         },
         responses: {
-          "200": { description: "Move applied" },
-          "404": { description: "Game not found" }
+          "200": { description: "Move applied", headers: RATE_LIMIT_HEADERS },
+          "404": { description: "Game not found" },
+          "429": {
+            description: "Gameplay move rate limit exceeded",
+            headers: {
+              ...RATE_LIMIT_HEADERS,
+              "Retry-After": { description: "Seconds until retry is allowed", schema: { type: "integer" } }
+            }
+          }
         }
       }
     },
@@ -403,13 +429,37 @@ export const OPENAPI_SPEC = {
     "/api/simulate": {
       post: {
         summary: "Batch simulation endpoint",
+        parameters: RATE_LIMITED_PARAMETERS,
         requestBody: {
           required: true,
           content: { "application/json": { schema: { type: "object" } } }
         },
         responses: {
-          "200": { description: "Simulation result" },
-          "400": { description: "Invalid simulation payload" }
+          "200": { description: "Simulation result", headers: RATE_LIMIT_HEADERS },
+          "400": { description: "Invalid simulation payload" },
+          "429": { description: "Rate limit exceeded", headers: { ...RATE_LIMIT_HEADERS, "Retry-After": { description: "Seconds until retry is allowed", schema: { type: "integer" } } } }
+        }
+      }
+    },
+    "/api/training/replays": {
+      get: {
+        summary: "Generate deterministic bot replay summaries for training",
+        parameters: RATE_LIMITED_PARAMETERS,
+        responses: {
+          "200": { description: "Paginated replay summaries", headers: RATE_LIMIT_HEADERS },
+          "429": { description: "Shared training rate limit exceeded", headers: { ...RATE_LIMIT_HEADERS, "Retry-After": { description: "Seconds until retry is allowed", schema: { type: "integer" } } } },
+          "503": { description: "Training queue full or wait timeout", headers: { "Retry-After": { description: "Seconds before retrying capacity", schema: { type: "integer" } } } }
+        }
+      }
+    },
+    "/api/training/labels": {
+      get: {
+        summary: "Generate labeled board states for training",
+        parameters: RATE_LIMITED_PARAMETERS,
+        responses: {
+          "200": { description: "Paginated labeled board states", headers: RATE_LIMIT_HEADERS },
+          "429": { description: "Shared training rate limit exceeded", headers: { ...RATE_LIMIT_HEADERS, "Retry-After": { description: "Seconds until retry is allowed", schema: { type: "integer" } } } },
+          "503": { description: "Training queue full or wait timeout", headers: { "Retry-After": { description: "Seconds before retrying capacity", schema: { type: "integer" } } } }
         }
       }
     },

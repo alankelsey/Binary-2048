@@ -57,59 +57,12 @@
       }
     },
     {
-      "Name": "CaptchaGamesCreateBurst",
-      "Priority": 40,
-      "Statement": {
-        "RateBasedStatement": {
-          "Limit": 90,
-          "AggregateKeyType": "IP",
-          "ScopeDownStatement": {
-            "ByteMatchStatement": {
-              "SearchString": "/api/games",
-              "FieldToMatch": { "UriPath": {} },
-              "TextTransformations": [{ "Priority": 0, "Type": "NONE" }],
-              "PositionalConstraint": "EXACTLY"
-            }
-          }
-        }
-      },
-      "Action": { "Captcha": {} },
-      "VisibilityConfig": {
-        "SampledRequestsEnabled": true,
-        "CloudWatchMetricsEnabled": true,
-        "MetricName": "CaptchaGamesCreateBurst"
-      }
-    },
-    {
-      "Name": "CaptchaMoveBurst",
-      "Priority": 45,
-      "Statement": {
-        "RateBasedStatement": {
-          "Limit": 180,
-          "AggregateKeyType": "IP",
-          "ScopeDownStatement": {
-            "ByteMatchStatement": {
-              "SearchString": "/move",
-              "FieldToMatch": { "UriPath": {} },
-              "TextTransformations": [{ "Priority": 0, "Type": "NONE" }],
-              "PositionalConstraint": "CONTAINS"
-            }
-          }
-        }
-      },
-      "Action": { "Challenge": {} },
-      "VisibilityConfig": {
-        "SampledRequestsEnabled": true,
-        "CloudWatchMetricsEnabled": true,
-        "MetricName": "CaptchaMoveBurst"
-      }
-    },
-    {
       "Name": "RateLimitApi",
       "Priority": 50,
       "Statement": {
         "RateBasedStatement": {
-          "Limit": 600,
+          "Limit": 6000,
+          "EvaluationWindowSec": 300,
           "AggregateKeyType": "IP",
           "ScopeDownStatement": {
             "ByteMatchStatement": {
@@ -133,7 +86,8 @@
       "Priority": 60,
       "Statement": {
         "RateBasedStatement": {
-          "Limit": 2000,
+          "Limit": 12000,
+          "EvaluationWindowSec": 300,
           "AggregateKeyType": "IP"
         }
       },

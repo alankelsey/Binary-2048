@@ -33,6 +33,9 @@ describe("POST /api/bots/tournament", () => {
     expect(Array.isArray(json.ranking)).toBe(true);
     expect(Array.isArray(json.runs)).toBe(true);
     expect(json.runs.length).toBe(json.seeds.length * json.bots.length);
+    expect(res.headers.get("ratelimit-limit")).toBe("10");
+    expect(res.headers.get("ratelimit-remaining")).toBe("9");
+    expect(res.headers.get("ratelimit-reset")).toMatch(/^\d+$/);
   });
 
   it("supports explicit seeds and bot subset", async () => {
@@ -75,6 +78,9 @@ describe("POST /api/bots/tournament", () => {
     expect(second.status).toBe(429);
     expect(secondJson.error).toBe("Rate limit exceeded");
     expect(secondJson.route).toBe("bots_tournament");
+    expect(second.headers.get("ratelimit-limit")).toBe("1");
+    expect(second.headers.get("ratelimit-remaining")).toBe("0");
+    expect(second.headers.get("retry-after")).toMatch(/^\d+$/);
   });
 
   it("returns 503 when tournament queue is full", async () => {

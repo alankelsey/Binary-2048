@@ -4,7 +4,7 @@ import { evaluateChallenge } from "@/lib/binary2048/challenge-policy";
 import { EndpointCostCapError, TOURNAMENT_MAX_MOVES, TOURNAMENT_MAX_SEEDS } from "@/lib/binary2048/cost-caps";
 import { getDegradeState } from "@/lib/binary2048/degrade-mode";
 import { recordRouteTelemetry } from "@/lib/binary2048/ops-telemetry";
-import { checkTournamentRateLimit } from "@/lib/binary2048/rate-limit";
+import { checkTournamentRateLimit, rateLimitHeaders, type RateLimitResult } from "@/lib/binary2048/rate-limit";
 import {
   acquireTournamentSlot,
   getTournamentQueueStats,
@@ -57,6 +57,7 @@ export async function POST(req: Request) {
   const startedAtMs = Date.now();
   let statusCode = 200;
   let slot: Awaited<ReturnType<typeof acquireTournamentSlot>> | null = null;
+  let quota: RateLimitResult | null = null;
   try {
     const degrade = getDegradeState("bots_tournament");
     if (degrade.disabled) {
@@ -84,7 +85,7 @@ export async function POST(req: Request) {
         { status: 403 }
       );
     }
-    const quota = checkTournamentRateLimit(req);
+    quota = await checkTournamentRateLimit(req);
     if (!quota.allowed) {
       statusCode = 429;
       return NextResponse.json(
@@ -95,14 +96,14 @@ export async function POST(req: Request) {
           remaining: quota.remaining,
           retryAfterSeconds: quota.retryAfterSeconds
         },
-        { status: 429, headers: { "retry-after": String(quota.retryAfterSeconds) } }
+        { status: 429, headers: rateLimitHeaders(quota) }
       );
     }
     slot = await acquireTournamentSlot(resolveTournamentQueueOptions());
     const body = ((await req.json().catch(() => ({}))) as TournamentBody);
     const seeds = parseSeedList(body);
     if (seeds.length === 0) {
-      return NextResponse.json({ error: "No valid seeds provided" }, { status: 400 });
+      return NextResponse.json({ error: "No valid seeds provided" }, { status: 400, headers: rateLimitHeaders(quota) });
     }
     const maxMoves = Number.isFinite(Number(body.maxMoves)) ? Math.max(1, Math.floor(Number(body.maxMoves))) : DEFAULT_MAX_MOVES;
     if (maxMoves > TOURNAMENT_MAX_MOVES) {
@@ -120,14 +121,15 @@ export async function POST(req: Request) {
         ...result,
         queue: getTournamentQueueStats()
       },
-      { status: 200 }
+      { status: 200, headers: rateLimitHeaders(quota) }
     );
   } catch (error) {
+    const headers = quota ? rateLimitHeaders(quota) : undefined;
     if (error instanceof EndpointCostCapError) {
       statusCode = 400;
       return NextResponse.json(
         { error: error.message, code: error.code, field: error.field, limit: error.limit, value: error.value },
-        { status: 400 }
+        { status: 400, headers }
       );
     }
     if (error instanceof TournamentQueueFullError) {
@@ -138,7 +140,7 @@ export async function POST(req: Request) {
           code: "queue_full",
           queue: getTournamentQueueStats()
         },
-        { status: 503 }
+        { status: 503, headers }
       );
     }
     if (error instanceof TournamentQueueTimeoutError) {
@@ -149,13 +151,13 @@ export async function POST(req: Request) {
           code: "queue_timeout",
           queue: getTournamentQueueStats()
         },
-        { status: 503 }
+        { status: 503, headers }
       );
     }
     statusCode = 400;
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Invalid tournament payload" },
-      { status: 400 }
+      { status: 400, headers }
     );
   } finally {
     slot?.release();

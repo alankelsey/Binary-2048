@@ -5,6 +5,7 @@ describe("OPENAPI_SPEC", () => {
     expect(OPENAPI_SPEC.paths["/api/games"]?.post?.summary).toBe("Create a game session");
     expect(OPENAPI_SPEC.paths["/api/games/{id}"]?.get?.summary).toBe("Get game state by id");
     expect(OPENAPI_SPEC.paths["/api/games/{id}/move"]?.post?.summary).toBe("Apply one move");
+    expect(OPENAPI_SPEC.paths["/api/games/{id}/move"].post.responses["429"].headers["Retry-After"].schema.type).toBe("integer");
     expect(OPENAPI_SPEC.paths["/api/games/{id}/undo"]?.post?.summary).toBe("Undo the last move");
   });
 
@@ -28,6 +29,9 @@ describe("OPENAPI_SPEC", () => {
     expect(OPENAPI_SPEC.paths["/api/games/{id}/encoded"]?.get?.summary).toBe("Get AI-friendly encoded state");
     expect(OPENAPI_SPEC.paths["/api/games/{id}/replay"]?.get?.summary).toContain("canonical replay payload");
     expect(OPENAPI_SPEC.paths["/api/simulate"]?.post?.summary).toBe("Batch simulation endpoint");
+    expect(OPENAPI_SPEC.paths["/api/training/replays"]?.get?.summary).toContain("replay summaries");
+    expect(OPENAPI_SPEC.paths["/api/training/labels"]?.get?.summary).toContain("labeled board states");
+    expect(OPENAPI_SPEC.paths["/api/training/replays"].get.responses["503"].description).toContain("queue");
     expect(OPENAPI_SPEC.paths["/api/replay"]?.post?.summary).toContain("Deterministically reconstruct replay");
     expect(OPENAPI_SPEC.paths["/api/replay/validate"]?.post?.summary).toContain("Validate replay payload");
     expect(OPENAPI_SPEC.paths["/api/replay/code"]?.post?.summary).toContain("Create shareable replay code");
@@ -44,5 +48,12 @@ describe("OPENAPI_SPEC", () => {
     expect(OPENAPI_SPEC.paths["/api/ops/telemetry"]?.get?.summary).toContain("telemetry");
     expect(OPENAPI_SPEC.paths["/api/user/data/export"]?.get?.summary).toContain("Export");
     expect(OPENAPI_SPEC.paths["/api/user/data"]?.delete?.summary).toContain("Delete");
+  });
+
+  it("documents quota headers and 429 retry behavior", () => {
+    const simulate = OPENAPI_SPEC.paths["/api/simulate"].post;
+    expect(simulate.responses["200"].headers["RateLimit-Remaining"].schema.type).toBe("integer");
+    expect(simulate.responses["429"].headers["Retry-After"].schema.type).toBe("integer");
+    expect(simulate.parameters[0].name).toBe("x-api-key");
   });
 });

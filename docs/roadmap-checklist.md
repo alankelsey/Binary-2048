@@ -87,6 +87,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Rate limits/quotas on heavy bot/tournament endpoints (per IP and/or per key)
 - [x] Tournament job-queue/concurrency limit strategy for CPU cost control
 - [x] Replay/tournament telemetry + anomaly alarms (latency/cost/WAF spike visibility)
+- [x] Validate Mongo Atlas SCRAM connectivity with write/read/delete smoke against the `binary2048.runs` collection
 - [x] Stand up dedicated `dev` environment (separate Amplify branch/domain + secrets + optional test data) for rapid iteration without impacting `main`/prod
 - [x] Add egress architecture note for Amplify WEB_COMPUTE vs fixed-egress runtimes (what currently has no stable outbound IP and why it matters)
 - [x] Decide and document production database egress strategy (open allowlist temporary vs NAT/VPC fixed egress vs Atlas PrivateLink)
@@ -107,6 +108,19 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add pre-launch cost simulation checklist and expected max daily spend envelope
 - [x] Validate billing tripwire by forced threshold test in non-prod and capture evidence
 - [x] Define bot-abuse incident playbook (detect, throttle, block, recover, postmortem)
+- [x] Validate server-issued bot API keys and prevent arbitrary key rotation by falling back invalid/missing keys to the caller IP
+- [ ] Provision production bot keys and migrate quota counters from process memory to a shared Mongo-backed store for multi-instance enforcement
+  - [x] Implement atomic Mongo fixed-window counters with TTL cleanup and per-instance outage fallback
+  - [x] Validate Atlas authentication and an end-to-end application counter increment (`59` to `58`) against the `rate_limits` collection
+  - [ ] Configure `BINARY2048_RATE_LIMIT_STORE=mongo` and production key hashes in Amplify, then validate cross-instance enforcement
+- [x] Publish rate-limit response headers and retry semantics (`429`, `Retry-After`, limit, remaining, and reset) in API responses, OpenAPI, and bot documentation
+- [x] Add a dedicated high-throughput gameplay-move quota that is separate from and higher than simulation, tournament, and training quotas
+- [x] Put tournament and training workloads in separate bounded queues/concurrency pools with explicit saturation responses
+- [ ] Move synchronous tournament/training generation to a dedicated worker runtime for hard CPU isolation from gameplay
+- [ ] Verify and capture the deployed WAF association, rule thresholds, scope-down paths, and sampled-request behavior against the application quota matrix before public bot access
+  - [x] Captured the live association, managed rules, sampled-request behavior, logging state, and quota comparison on 2026-08-15 ([evidence](./waf-live-verification-2026-08-15.md))
+  - [x] Deployed and re-queried bot-friendly API/global rate backstops on 2026-08-16, enabled 30-day retained logging, and removed CAPTCHA/Challenge conflicts from the bot API policy
+  - [ ] Run a controlled threshold/block test against the rate rules in non-production and capture the resulting sampled request and retained log event
 
 ## Monetization Decision Track (Cost-Coverage First)
 
