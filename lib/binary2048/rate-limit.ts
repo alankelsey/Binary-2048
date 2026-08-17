@@ -82,7 +82,12 @@ async function getMongoCollection() {
     const pending = (async () => {
       const uri = process.env.BINARY2048_MONGO_URI ?? "";
       if (!uri) throw new Error("BINARY2048_MONGO_URI is required when BINARY2048_RATE_LIMIT_STORE=mongo");
-      const client = new MongoClient(uri);
+      const timeoutMs = parsePositiveInt(process.env.BINARY2048_MONGO_RATE_LIMIT_TIMEOUT_MS, 3000);
+      const client = new MongoClient(uri, {
+        serverSelectionTimeoutMS: timeoutMs,
+        connectTimeoutMS: timeoutMs,
+        maxPoolSize: 5
+      });
       await client.connect();
       const collection = client
         .db(process.env.BINARY2048_MONGO_DB ?? "binary2048")

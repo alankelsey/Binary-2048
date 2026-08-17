@@ -69,7 +69,9 @@ a Mongo TTL index. The shared store uses the same validated bot-key identity and
 route buckets shown above. If Atlas is temporarily unavailable, requests fall
 back to a per-instance memory counter and emit an application error log; this
 preserves local protection and availability, but the fallback interval is not a
-globally strict quota window.
+globally strict quota window. Mongo server selection is capped by
+`BINARY2048_MONGO_RATE_LIMIT_TIMEOUT_MS` (default 3 seconds) so an unreachable
+database cannot hold bot/gameplay requests until the platform gateway times out.
 
 ## Heavy-work concurrency pools
 
