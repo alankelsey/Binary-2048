@@ -1,0 +1,55 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AmplifyReadDeployStatus",
+      "Effect": "Allow",
+      "Action": [
+        "amplify:GetApp",
+        "amplify:GetBranch",
+        "amplify:GetDomainAssociation",
+        "amplify:GetJob",
+        "amplify:ListApps",
+        "amplify:ListBranches",
+        "amplify:ListDomainAssociations",
+        "amplify:ListJobs",
+        "amplify:StartJob"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ReadSsmParametersForAmplifyVerification",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:GetParameter",
+        "ssm:GetParameters",
+        "ssm:GetParametersByPath"
+      ],
+      "Resource": [
+        "arn:aws:ssm:us-east-2:750629424234:parameter/amplify/dzxvs1esr22z9/*"
+      ]
+    },
+    {
+      "Sid": "ReadCloudWatchLogsForTroubleshooting",
+      "Effect": "Allow",
+      "Action": [
+        "logs:DescribeLogGroups",
+        "logs:DescribeLogStreams",
+        "logs:GetLogEvents",
+        "logs:FilterLogEvents"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "AllowIamSimulationForAmplifyRoleChecks",
+      "Effect": "Allow",
+      "Action": [
+        "iam:SimulatePrincipalPolicy",
+        "iam:GetRole"
+      ],
+      "Resource": [
+        "arn:aws:iam::750629424234:role/service-role/AmplifySSRLoggingRole-634fe957-6629-46d2-be9f-96f6ee4d3d5a"
+      ]
+    }
+  ]
+}

@@ -1066,7 +1066,12 @@ def export_phase(args: argparse.Namespace, client: GameClient) -> None:
             df.to_parquet("labels.parquet", index=False)
             print(f"[export] wrote labels.parquet ({len(df)} rows)")
 
-        _write_dataset_card(len(replays), len(labels))
+        _write_dataset_card(
+            len(replays),
+            len(labels),
+            replay_bot=args.export_bot,
+            label_strategy=args.label_strategy,
+        )
 
     print("[export] done.")
 
@@ -1105,8 +1110,23 @@ def _write_labels_csv(path: str, labels: List[Dict]) -> None:
     print(f"[export] wrote {path} ({len(labels)} rows)")
 
 
-def _write_dataset_card(n_replays: int, n_labels: int) -> None:
+def _write_dataset_card(
+    n_replays: int,
+    n_labels: int,
+    replay_bot: str,
+    label_strategy: str,
+) -> None:
     """Write a Hugging Face dataset README template."""
+    total_rows = n_replays + n_labels
+    if total_rows < 1_000:
+        size_category = "n<1K"
+    elif total_rows < 10_000:
+        size_category = "1K<n<10K"
+    elif total_rows < 100_000:
+        size_category = "10K<n<100K"
+    else:
+        size_category = "100K<n<1M"
+
     card = f"""\
 ---
 license: apache-2.0
@@ -1114,13 +1134,13 @@ task_categories:
   - reinforcement-learning
 tags:
   - game
-  - 2048
+  - "2048"
   - binary-2048
   - rl
   - bot
 pretty_name: Binary-2048 Training Dataset
 size_categories:
-  - 1K<n<10K
+  - {size_category}
 ---
 
 # Binary-2048 Training Dataset
@@ -1135,6 +1155,12 @@ Automatically generated training data from the
 | `replays` | {n_replays} | Seeded bot game summaries (seed, score, max_tile, turns) |
 | `labels` | {n_labels} | Per-step (state, action_mask, best_action) tuples for supervised learning |
 
+## Generation configuration
+
+- Replay policy: `{replay_bot}`
+- Labeling strategy: `{label_strategy}`
+- Total rows: {total_rows}
+
 ## State encoding
 
 Each board position is encoded as a 32-float vector (`s0` ... `s31`).
@@ -1146,6 +1172,13 @@ Cells are listed row-major (top-left to bottom-right), each occupying 2 floats:
 
 Actions are indexed as: 0=Left, 1=Right, 2=Up, 3=Down.
 `m0`...`m3` are the action mask (1=legal, 0=illegal for that board position).
+
+## Limitations
+
+Rollout labels use a finite simulation horizon. Low confidence means the top
+candidate actions had similar simulated outcomes; consumers should retain or
+filter on the `confidence` field according to their use case. This dataset is
+generated from deterministic bot play and does not represent human gameplay.
 
 ## Reproducibility
 
@@ -1217,6 +1250,8 @@ def build_parser() -> argparse.ArgumentParser:
                    default="all", help="Pipeline phase to run (default: all)")
     p.add_argument("--base-url", default="http://localhost:3000",
                    help="Game server base URL (default: http://localhost:3000)")
+    p.add_argument("--request-timeout", type=int, default=30,
+                   help="HTTP request timeout in seconds (default: 30; use 180+ for rollout exports)")
 
     # Collect
     p.add_argument("--collect-games", type=int, default=200,
@@ -1272,7 +1307,7 @@ def main() -> None:
         if args.model_path == "dqn_model.pt":
             args.model_path = "dqn_model_numpy.pkl"
 
-    client = GameClient(base_url=args.base_url)
+    client = GameClient(base_url=args.base_url, timeout=args.request_timeout)
 
     # Health check before starting.
     if args.phase != "export":

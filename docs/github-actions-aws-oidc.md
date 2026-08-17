@@ -137,6 +137,17 @@ Save this as `github-actions-amplify-watch-policy.json`:
         "logs:FilterLogEvents"
       ],
       "Resource": "*"
+    },
+    {
+      "Sid": "AllowIamSimulationForAmplifyRoleChecks",
+      "Effect": "Allow",
+      "Action": [
+        "iam:SimulatePrincipalPolicy",
+        "iam:GetRole"
+      ],
+      "Resource": [
+        "arn:aws:iam::750629424234:role/service-role/AmplifySSRLoggingRole-634fe957-6629-46d2-be9f-96f6ee4d3d5a"
+      ]
     }
   ]
 }
