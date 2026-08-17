@@ -14,3 +14,15 @@ coverage
 docs/COLORBLIND_PLAN.local.md
 docs/waf-exports/*.json
 artifacts/
+
+# Python / generated ML pipeline outputs
+__pycache__/
+*.py[cod]
+replay_buffer.pkl
+dqn_model.pt
+dqn_model_numpy.pkl
+replays.csv
+labels.csv
+replays.parquet
+labels.parquet
+dataset_card.md
