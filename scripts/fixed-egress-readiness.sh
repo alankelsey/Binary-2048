@@ -40,7 +40,7 @@ ENV_JSON="$(aws amplify get-branch \
   --query 'branch.environmentVariables' \
   --output json)"
 
-node <<'EOF' "$ENV_JSON"
+node - "$ENV_JSON" <<'EOF'
 const env = JSON.parse(process.argv[2]);
 const required = [
   "BINARY2048_MONGO_URI",

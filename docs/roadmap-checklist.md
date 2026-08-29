@@ -112,7 +112,8 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [ ] Provision production bot keys and migrate quota counters from process memory to a shared Mongo-backed store for multi-instance enforcement
   - [x] Implement atomic Mongo fixed-window counters with TTL cleanup and per-instance outage fallback
   - [x] Validate Atlas authentication and an end-to-end application counter increment (`59` to `58`) against the `rate_limits` collection
-  - [ ] Configure `BINARY2048_RATE_LIMIT_STORE=mongo` and production key hashes in Amplify, then validate cross-instance enforcement
+  - [x] Configure `BINARY2048_RATE_LIMIT_STORE=mongo` and the first production key hash in Amplify; verify a production count-2 per-key document and TTL index in Atlas
+  - [ ] Validate simultaneous requests across separate production compute instances use the same Mongo counter
 - [x] Publish rate-limit response headers and retry semantics (`429`, `Retry-After`, limit, remaining, and reset) in API responses, OpenAPI, and bot documentation
 - [x] Add a dedicated high-throughput gameplay-move quota that is separate from and higher than simulation, tournament, and training quotas
 - [x] Put tournament and training workloads in separate bounded queues/concurrency pools with explicit saturation responses
