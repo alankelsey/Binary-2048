@@ -95,6 +95,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Decide and document production database egress strategy (open allowlist temporary vs NAT/VPC fixed egress vs Atlas PrivateLink)
 - [x] Add costed egress decision memo with monthly floor estimate for NAT/VPC and Atlas PrivateLink paths
 - [ ] Reduce Atlas network access from broad temporary allowlist to approved fixed egress path once runtime is migrated
+  - [x] Defer always-on NAT/private-egress spend until real traffic, ranked persistence, or multi-device sessions justify migrating runtime compute into the VPC
 
 ## Public Launch Readiness + Cost Guardrails
 
