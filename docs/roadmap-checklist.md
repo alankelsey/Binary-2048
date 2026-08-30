@@ -53,6 +53,8 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add destructive-action confirmation or safer placement for `New Game` on small screens during active runs
 - [x] Add explicit session resume fix for mobile background/lockscreen/browser restore so active games do not silently reset
 - [x] Add resume telemetry for `session_resume_success`, `session_resume_miss`, and `session_reset_after_resume`
+- [x] Prefer the browser recovery snapshot during casual-game startup so refresh does not depend on Amplify instance-local session memory
+- [x] Require an explicit `Start New Game` action when no recoverable game exists instead of generating a board on page load
 - [ ] Run and document a real-device mobile UX audit on iPhone + Android after control/resume fixes
 
 ## Economy + Integrity
@@ -196,6 +198,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 ## Persistence + ML Backlog (Post-100 Expansion)
 
 - [x] Add MongoDB persistence layer for sessions/runs (replace in-memory store behind interface)
+- [ ] Convert Mongo session reads to awaited asynchronous hydration, then enable `BINARY2048_SESSION_STORE=mongo` when ranked/multi-device traffic justifies the additional Atlas operations
 - [x] Persist canonical run records (`seed`, `moves`, `score`, `maxTile`, `engineVersion`, `rulesetId`, `integrity`, `createdAt`)
 - [x] Store top/contest replay artifacts in S3 (compressed payload + checksum + metadata) and keep Mongo pointer
 - [x] Add replay retention policy (TTL tiers: hot in Mongo, warm in S3, purge policy for guest data)

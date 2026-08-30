@@ -22,7 +22,7 @@ export function getNewGameGuardState(input: NewGameGuardInput): NewGameGuardStat
       requiresConfirm: false,
       nextConfirmArmed: false,
       shouldStartNewGame: true,
-      label: "New Game"
+      label: !input.gameId ? "Start New Game" : input.over ? "Play Again" : "New Game"
     };
   }
 

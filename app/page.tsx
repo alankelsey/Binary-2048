@@ -200,7 +200,10 @@ export default function Home() {
     }
   }
 
-  async function recoverFromLocalSnapshot(expectedGameId?: string): Promise<boolean> {
+  async function recoverFromLocalSnapshot(
+    expectedGameId?: string,
+    options?: { notify?: boolean }
+  ): Promise<boolean> {
     const snapshot = loadResumeSnapshot(window.localStorage, expectedGameId);
     if (!snapshot) return false;
     const ok = await importSnapshotExport(snapshot);
@@ -209,7 +212,9 @@ export default function Home() {
         source: "local_snapshot",
         expectedGameId: expectedGameId ?? "unknown"
       });
-      setErrorMessage("Recovered your last local game snapshot.");
+      if (options?.notify !== false) {
+        setErrorMessage("Recovered your last local game snapshot.");
+      }
       return true;
     }
     return false;
@@ -518,6 +523,11 @@ export default function Home() {
       }
       const savedId = window.localStorage.getItem(gameIdKey);
       if (savedId) {
+        const recovered = await recoverFromLocalSnapshot(savedId, { notify: false });
+        if (recovered || cancelled) {
+          setBusy(false);
+          return;
+        }
         const ok = await restoreGame(savedId);
         if (ok || cancelled) {
           setBusy(false);
@@ -527,17 +537,19 @@ export default function Home() {
           gameId: savedId,
           source: "server"
         });
-        const recovered = await recoverFromLocalSnapshot(savedId);
+        void trackMarketing("session_reset_after_resume", "resume", {
+          gameId: savedId,
+          outcome: "await_new_game"
+        });
+        window.localStorage.removeItem(gameIdKey);
+        clearResumeSnapshot(window.localStorage);
+      } else {
+        const recovered = await recoverFromLocalSnapshot(undefined, { notify: false });
         if (recovered || cancelled) {
           setBusy(false);
           return;
         }
-        void trackMarketing("session_reset_after_resume", "resume", {
-          gameId: savedId,
-          outcome: "init_new_game"
-        });
       }
-      if (!cancelled) await newGame({ clearSnapshot: true });
       if (!cancelled) setBusy(false);
     }
     void initializeGame();
@@ -1030,7 +1042,7 @@ export default function Home() {
             role="grid"
             aria-label="Binary 2048 game board"
           >
-            {viewState?.grid.map((row, r) =>
+            {(viewState?.grid ?? Array.from({ length: 4 }, () => Array.from({ length: 4 }, () => null))).map((row, r) =>
               row.map((cell, c) => {
                 const effect = cellEffects[`${r}-${c}`];
                 const effectClass = effect ? `fx-${effect}` : "";
