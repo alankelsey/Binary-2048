@@ -17,6 +17,7 @@ import { shouldStartNewGameOnReplayExit } from "@/lib/binary2048/replay-exit";
 import { parseReplayStepInput } from "@/lib/binary2048/replay-scrubber";
 import { getToolbarActionState } from "@/lib/binary2048/toolbar-actions";
 import { getNewGameGuardState } from "@/lib/binary2048/new-game-guard";
+import { getNewGameStartAction } from "@/lib/binary2048/startup-new-game";
 import {
   exitDocumentFullscreen,
   isFullscreenActive,
@@ -235,8 +236,11 @@ export default function Home() {
   }
 
   async function newGame(options?: { clearSnapshot?: boolean; allowWhileBusy?: boolean }) {
-    if (busy && !options?.allowWhileBusy) {
-      if (initializing && !gameId) {
+    const startAction = options?.allowWhileBusy
+      ? "start"
+      : getNewGameStartAction({ busy, initializing, gameId });
+    if (startAction !== "start") {
+      if (startAction === "queue") {
         pendingNewGameRef.current = true;
         setStartNewGamePending(true);
       }
