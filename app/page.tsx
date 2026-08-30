@@ -18,6 +18,7 @@ import { parseReplayStepInput } from "@/lib/binary2048/replay-scrubber";
 import { getToolbarActionState } from "@/lib/binary2048/toolbar-actions";
 import { getNewGameGuardState } from "@/lib/binary2048/new-game-guard";
 import { getNewGameStartAction } from "@/lib/binary2048/startup-new-game";
+import { requestResumableMove } from "@/lib/binary2048/resumable-move";
 import {
   exitDocumentFullscreen,
   isFullscreenActive,
@@ -188,7 +189,11 @@ export default function Home() {
     }
   }
 
-  async function importSnapshotExport(snapshotExport: unknown): Promise<boolean> {
+  async function importSnapshotExport(snapshotExport: unknown): Promise<{
+    id: string;
+    current: GameState;
+    undo?: UndoMeta;
+  } | null> {
     try {
       const res = await fetch("/api/games/import", {
         method: "POST",
@@ -196,22 +201,22 @@ export default function Home() {
         body: JSON.stringify(snapshotExport)
       });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok || !json?.current || !json?.id) return false;
+      if (!res.ok || !json?.current || !json?.id) return null;
       applyLoadedSession(json as { id: string; current: GameState; undo?: UndoMeta });
-      return true;
+      return json as { id: string; current: GameState; undo?: UndoMeta };
     } catch {
-      return false;
+      return null;
     }
   }
 
   async function recoverFromLocalSnapshot(
     expectedGameId?: string,
     options?: { notify?: boolean }
-  ): Promise<boolean> {
+  ): Promise<{ id: string; current: GameState; undo?: UndoMeta } | null> {
     const snapshot = loadResumeSnapshot(window.localStorage, expectedGameId);
-    if (!snapshot) return false;
-    const ok = await importSnapshotExport(snapshot);
-    if (ok) {
+    if (!snapshot) return null;
+    const recovered = await importSnapshotExport(snapshot);
+    if (recovered) {
       void trackMarketing("session_resume_success", "resume", {
         source: "local_snapshot",
         expectedGameId: expectedGameId ?? "unknown"
@@ -219,9 +224,9 @@ export default function Home() {
       if (options?.notify !== false) {
         setErrorMessage("Recovered your last local game snapshot.");
       }
-      return true;
+      return recovered;
     }
-    return false;
+    return null;
   }
 
   async function persistResumeSnapshot(sessionId: string) {
@@ -314,28 +319,40 @@ export default function Home() {
     setBusy(true);
     setErrorMessage("");
     try {
-      const res = await fetch(`/api/games/${gameId}/move`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ dir })
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok || !json?.current) {
-        const message = (json && typeof json.error === "string" ? json.error : "Failed to apply move");
-        if (res.status === 404) {
+      const moveResult = await requestResumableMove({
+        sessionId: gameId,
+        async requestMove(sessionId) {
+          const response = await fetch(`/api/games/${sessionId}/move`, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ dir })
+          });
+          return {
+            ok: response.ok,
+            status: response.status,
+            payload: await response.json().catch(() => ({}))
+          };
+        },
+        async recoverSession(staleSessionId) {
+          setErrorMessage("Restoring your game…");
           window.localStorage.removeItem(gameIdKey);
-          const recovered = await recoverFromLocalSnapshot(gameId);
-          if (!recovered) {
-            void trackMarketing("session_reset_after_resume", "resume", {
-              gameId,
-              outcome: "move_404_new_game"
-            });
-            await newGame({ clearSnapshot: true });
-          }
+          return recoverFromLocalSnapshot(staleSessionId);
+        }
+      });
+      const { attempt, recoveredSession } = moveResult;
+      const json = attempt.payload as { current?: GameState; error?: string; undo?: UndoMeta; lastStep?: { events?: MoveEvent[] }; integrity?: { sessionClass?: SessionClass } };
+      if (!attempt.ok || !json?.current) {
+        if (attempt.status === 404 && !recoveredSession) {
+          void trackMarketing("session_reset_after_resume", "resume", {
+            gameId,
+            outcome: "move_404_new_game"
+          });
+          await newGame({ clearSnapshot: true, allowWhileBusy: true });
           return;
         }
-        throw new Error(message);
+        throw new Error(typeof json.error === "string" ? json.error : "Failed to apply move");
       }
+      setErrorMessage("");
       const next = json.current as GameState;
       setSessionClass((json?.integrity?.sessionClass as SessionClass) ?? sessionClass);
       setCanContinueAfterWin(resolveCanContinueAfterWin(json));
