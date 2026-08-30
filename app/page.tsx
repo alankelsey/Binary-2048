@@ -120,6 +120,8 @@ export default function Home() {
   const [gameId, setGameId] = useState<string>("");
   const [state, setState] = useState<GameState | null>(null);
   const [busy, setBusy] = useState(false);
+  const [initializing, setInitializing] = useState(true);
+  const [startNewGamePending, setStartNewGamePending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [highScore, setHighScore] = useState(0);
   const [spawnMode, setSpawnMode] = useState<SpawnMode>("normal");
@@ -148,6 +150,7 @@ export default function Home() {
   const replayInputRef = useRef<HTMLInputElement | null>(null);
   const fullscreenShellRef = useRef<HTMLDivElement | null>(null);
   const controlTapStateRef = useRef(createInitialRageTapState());
+  const pendingNewGameRef = useRef(false);
 
   function resolveCanContinueAfterWin(payload: unknown): boolean {
     const response = payload as {
@@ -231,8 +234,14 @@ export default function Home() {
     }
   }
 
-  async function newGame(options?: { clearSnapshot?: boolean }) {
-    if (busy) return;
+  async function newGame(options?: { clearSnapshot?: boolean; allowWhileBusy?: boolean }) {
+    if (busy && !options?.allowWhileBusy) {
+      if (initializing && !gameId) {
+        pendingNewGameRef.current = true;
+        setStartNewGamePending(true);
+      }
+      return;
+    }
     setReplay(null);
     setContinueAfterWin(false);
     setNewGameConfirmArmed(false);
@@ -273,6 +282,7 @@ export default function Home() {
       setErrorMessage(error instanceof Error ? error.message : "Failed to create game");
     } finally {
       setBusy(false);
+      setStartNewGamePending(false);
     }
   }
 
@@ -513,24 +523,33 @@ export default function Home() {
 
   useEffect(() => {
     let cancelled = false;
+    async function finishInitialization() {
+      if (cancelled) return;
+      setInitializing(false);
+      setBusy(false);
+      if (pendingNewGameRef.current) {
+        pendingNewGameRef.current = false;
+        await newGame({ clearSnapshot: true, allowWhileBusy: true });
+      }
+    }
     async function initializeGame() {
       setBusy(true);
       const sharedReplayCode = getReplayCodeFromSearch(window.location.search);
       if (sharedReplayCode) {
         await loadReplayCode(sharedReplayCode);
-        if (!cancelled) setBusy(false);
+        await finishInitialization();
         return;
       }
       const savedId = window.localStorage.getItem(gameIdKey);
       if (savedId) {
         const recovered = await recoverFromLocalSnapshot(savedId, { notify: false });
         if (recovered || cancelled) {
-          setBusy(false);
+          await finishInitialization();
           return;
         }
         const ok = await restoreGame(savedId);
         if (ok || cancelled) {
-          setBusy(false);
+          await finishInitialization();
           return;
         }
         void trackMarketing("session_resume_miss", "resume", {
@@ -546,11 +565,11 @@ export default function Home() {
       } else {
         const recovered = await recoverFromLocalSnapshot(undefined, { notify: false });
         if (recovered || cancelled) {
-          setBusy(false);
+          await finishInitialization();
           return;
         }
       }
-      if (!cancelled) setBusy(false);
+      await finishInitialization();
     }
     void initializeGame();
     return () => {
@@ -1124,7 +1143,7 @@ export default function Home() {
           onPointerDownCapture={handleControlsPointerDown}
         >
           <button
-            disabled={toolbarActionState.disableNewGame}
+            disabled={toolbarActionState.disableNewGame || startNewGamePending}
             className={newGameGuard.requiresConfirm && newGameConfirmArmed ? "danger-armed" : ""}
             onClick={() => {
               if (!newGameGuard.shouldStartNewGame) {
@@ -1140,7 +1159,7 @@ export default function Home() {
               void newGame();
             }}
           >
-            {newGameGuard.label}
+            {startNewGamePending ? "Starting…" : newGameGuard.label}
           </button>
           {controlVisibility.showUndo ? (
             <button disabled={toolbarActionState.disableUndo} onClick={() => void undoMove()}>
