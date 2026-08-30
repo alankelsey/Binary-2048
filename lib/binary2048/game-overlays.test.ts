@@ -1,8 +1,25 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import React from "react";
-import { GameOverOverlay, WinOverlay } from "@/app/game-overlays";
+import { GameOverOverlay, NewGameOverlay, WinOverlay } from "@/app/game-overlays";
 
 describe("game overlays", () => {
+  it("renders a direct new-game action for an empty board", () => {
+    const html = renderToStaticMarkup(
+      React.createElement(NewGameOverlay, { visible: true, starting: false, onStart: () => {} })
+    );
+    expect(html).toContain('role="dialog"');
+    expect(html).toContain("NEW GAME");
+    expect(html).toContain(">Start New Game<");
+  });
+
+  it("disables the new-game overlay action while starting", () => {
+    const html = renderToStaticMarkup(
+      React.createElement(NewGameOverlay, { visible: true, starting: true, onStart: () => {} })
+    );
+    expect(html).toContain("disabled");
+    expect(html).toContain("Starting…");
+  });
+
   it("renders game over overlay with score and high score", () => {
     const html = renderToStaticMarkup(
       React.createElement(GameOverOverlay, { visible: true, score: 321, highScore: 999 })

@@ -7,9 +7,11 @@ test("prod home renders core app shell", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Binary 2048" })).toBeVisible();
 });
 
-test("a Start New Game tap during recovery is queued and creates one board", async ({ page }) => {
+test("the empty mobile board shows a start overlay after recovery finishes", async ({ page }) => {
   const staleGameId = "g_ui_startup";
   let createRequests = 0;
+
+  await page.setViewportSize({ width: 412, height: 915 });
 
   await page.addInitScript((gameId) => {
     window.localStorage.setItem("binary2048.currentGameId", gameId);
@@ -23,6 +25,7 @@ test("a Start New Game tap during recovery is queued and creates one board", asy
   await page.route("**/api/games", async (route) => {
     if (route.request().method() !== "POST") return route.continue();
     createRequests += 1;
+    await new Promise((resolve) => setTimeout(resolve, 250));
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -51,6 +54,7 @@ test("a Start New Game tap during recovery is queued and creates one board", asy
   });
 
   await page.goto("/");
+  await expect(page.getByRole("button", { name: "Show Controls" })).toBeVisible();
   const startButton = page.getByRole("button", { name: "Start New Game" });
   await expect(startButton).toBeVisible();
   await startButton.click();

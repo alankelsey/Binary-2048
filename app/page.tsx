@@ -32,7 +32,7 @@ import {
   normalizeAuditControlLabel,
   recordRageTap
 } from "@/lib/binary2048/ux-audit";
-import { GameOverOverlay, WinOverlay } from "@/app/game-overlays";
+import { GameOverOverlay, NewGameOverlay, WinOverlay } from "@/app/game-overlays";
 import { buildAccessibilityTabMap, keyboardShortcutMap } from "@/lib/binary2048/accessibility-map";
 import { applyUiPolicyOverrides, type UIControlOverrides } from "@/lib/binary2048/ui-policy-override";
 import type { UIControl } from "@/lib/binary2048/ui-policy";
@@ -1124,6 +1124,13 @@ export default function Home() {
             score={viewState?.score ?? 0}
             highScore={Math.max(highScore, viewState?.score ?? 0)}
           />
+          <NewGameOverlay
+            visible={!initializing && !replay && !state}
+            starting={startNewGamePending || busy}
+            onStart={() => {
+              void newGame();
+            }}
+          />
           <WinOverlay
             visible={winPending}
             score={viewState?.score ?? 0}
@@ -1163,25 +1170,27 @@ export default function Home() {
           id="game-controls"
           onPointerDownCapture={handleControlsPointerDown}
         >
-          <button
-            disabled={toolbarActionState.disableNewGame || startNewGamePending}
-            className={newGameGuard.requiresConfirm && newGameConfirmArmed ? "danger-armed" : ""}
-            onClick={() => {
-              if (!newGameGuard.shouldStartNewGame) {
-                void trackMarketing(compactMobile ? "ux_mobile_mis_tap" : "ux_accidental_tap", "ux", {
-                  area: "actions",
-                  control: "new_game",
-                  guard: "confirm",
-                  mobile: compactMobile ? "true" : "false"
-                });
-                setNewGameConfirmArmed(newGameGuard.nextConfirmArmed);
-                return;
-              }
-              void newGame();
-            }}
-          >
-            {startNewGamePending ? "Starting…" : newGameGuard.label}
-          </button>
+          {state ? (
+            <button
+              disabled={toolbarActionState.disableNewGame || startNewGamePending}
+              className={newGameGuard.requiresConfirm && newGameConfirmArmed ? "danger-armed" : ""}
+              onClick={() => {
+                if (!newGameGuard.shouldStartNewGame) {
+                  void trackMarketing(compactMobile ? "ux_mobile_mis_tap" : "ux_accidental_tap", "ux", {
+                    area: "actions",
+                    control: "new_game",
+                    guard: "confirm",
+                    mobile: compactMobile ? "true" : "false"
+                  });
+                  setNewGameConfirmArmed(newGameGuard.nextConfirmArmed);
+                  return;
+                }
+                void newGame();
+              }}
+            >
+              {startNewGamePending ? "Starting…" : newGameGuard.label}
+            </button>
+          ) : null}
           {controlVisibility.showUndo ? (
             <button disabled={toolbarActionState.disableUndo} onClick={() => void undoMove()}>
               Undo {undo.remaining}
