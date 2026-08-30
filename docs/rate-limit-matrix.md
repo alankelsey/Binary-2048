@@ -66,12 +66,15 @@ For multi-instance enforcement, set `BINARY2048_RATE_LIMIT_STORE=mongo`. Atomic
 fixed-window counters are stored in
 `BINARY2048_MONGO_RATE_LIMIT_COLLECTION` (default `rate_limits`) and expired by
 a Mongo TTL index. The shared store uses the same validated bot-key identity and
-route buckets shown above. If Atlas is temporarily unavailable, requests fall
+route buckets shown above. Validated bot-key moves use this shared store;
+ordinary browser moves use the per-instance 600-request gameplay bucket plus
+the deployed WAF/IP backstop so a cold Atlas connection cannot delay a swipe.
+If Atlas is temporarily unavailable, shared-counter requests fall
 back to a per-instance memory counter and emit an application error log; this
 preserves local protection and availability, but the fallback interval is not a
 globally strict quota window. Mongo server selection is capped by
 `BINARY2048_MONGO_RATE_LIMIT_TIMEOUT_MS` (default 3 seconds) so an unreachable
-database cannot hold bot/gameplay requests until the platform gateway times out.
+database cannot hold bot requests until the platform gateway times out.
 
 ## Heavy-work concurrency pools
 

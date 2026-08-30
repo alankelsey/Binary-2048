@@ -11,6 +11,7 @@ type CheckRateLimitInput = {
   route: string;
   max: number;
   windowMs: number;
+  sharedForApiKeysOnly?: boolean;
 };
 
 export type RateLimitResult = {
@@ -51,16 +52,16 @@ function parsePositiveInt(raw: string | undefined, fallback: number): number {
   return value;
 }
 
-function getClientIdentifier(req: Request): string {
+function getClientIdentity(req: Request): { identifier: string; hasVerifiedApiKey: boolean } {
   const apiKeyIdentity = resolveBotApiKey(req.headers.get("x-api-key"));
-  if (apiKeyIdentity) return `key:${apiKeyIdentity.id}`;
+  if (apiKeyIdentity) return { identifier: `key:${apiKeyIdentity.id}`, hasVerifiedApiKey: true };
 
   const forwardedFor = req.headers.get("x-forwarded-for");
   if (forwardedFor && forwardedFor.trim().length > 0) {
     const ip = forwardedFor.split(",")[0]?.trim();
-    if (ip) return `ip:${ip}`;
+    if (ip) return { identifier: `ip:${ip}`, hasVerifiedApiKey: false };
   }
-  return "ip:unknown";
+  return { identifier: "ip:unknown", hasVerifiedApiKey: false };
 }
 
 const memoryCounterStore: RateLimitCounterStore = {
@@ -126,10 +127,12 @@ const mongoCounterStore: RateLimitCounterStore = {
 
 export async function checkRateLimit(input: CheckRateLimitInput): Promise<RateLimitResult> {
   const now = Date.now();
-  const key = `${input.route}:${getClientIdentifier(input.req)}`;
+  const identity = getClientIdentity(input.req);
+  const key = `${input.route}:${identity.identifier}`;
   const windowMs = Math.max(1000, input.windowMs);
   const limit = Math.max(1, input.max);
-  const useMongo = (process.env.BINARY2048_RATE_LIMIT_STORE ?? "memory").toLowerCase() === "mongo";
+  const mongoConfigured = (process.env.BINARY2048_RATE_LIMIT_STORE ?? "memory").toLowerCase() === "mongo";
+  const useMongo = mongoConfigured && (!input.sharedForApiKeysOnly || identity.hasVerifiedApiKey);
   let backend: RateLimitResult["backend"] = useMongo ? "mongo" : "memory";
   let counter: CounterResult;
   try {
@@ -189,7 +192,8 @@ export async function checkMoveRateLimit(req: Request) {
     req,
     route: "game_move",
     max: parsePositiveInt(process.env.BINARY2048_RATE_LIMIT_MOVE_MAX, 600),
-    windowMs: parsePositiveInt(process.env.BINARY2048_RATE_LIMIT_WINDOW_MS, 5 * 60 * 1000)
+    windowMs: parsePositiveInt(process.env.BINARY2048_RATE_LIMIT_WINDOW_MS, 5 * 60 * 1000),
+    sharedForApiKeysOnly: true
   });
 }
 

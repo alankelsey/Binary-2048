@@ -16,6 +16,8 @@ describe("rate-limit", () => {
     delete process.env.BINARY2048_RATE_LIMIT_MOVE_MAX;
     delete process.env.BINARY2048_RATE_LIMIT_WINDOW_MS;
     delete process.env.BINARY2048_RATE_LIMIT_STORE;
+    delete process.env.BINARY2048_MONGO_URI;
+    delete process.env.BINARY2048_MONGO_RATE_LIMIT_TIMEOUT_MS;
     delete process.env.BINARY2048_BOT_API_KEY_HASHES;
   });
 
@@ -77,5 +79,31 @@ describe("rate-limit", () => {
     expect(simulate.limit).toBe(60);
     expect(move.key).toContain("game_move:");
     expect(simulate.key).toContain("simulate:");
+  });
+
+  it("keeps browser move quotas in memory when shared Mongo counters are enabled", async () => {
+    process.env.BINARY2048_RATE_LIMIT_STORE = "mongo";
+    process.env.BINARY2048_MONGO_URI = "mongodb://127.0.0.1:1";
+    process.env.BINARY2048_MONGO_RATE_LIMIT_TIMEOUT_MS = "1";
+    const req = new Request("http://localhost", { headers: { "x-forwarded-for": "10.1.1.21" } });
+
+    const move = await checkMoveRateLimit(req);
+
+    expect(move.backend).toBe("memory");
+    expect(move.key).toBe("game_move:ip:10.1.1.21");
+  });
+
+  it("retains shared Mongo enforcement for verified bot move keys", async () => {
+    const rawKey = "b2048_move-bot";
+    process.env.BINARY2048_BOT_API_KEY_HASHES = `bot-move=${createHash("sha256").update(rawKey).digest("hex")}`;
+    process.env.BINARY2048_RATE_LIMIT_STORE = "mongo";
+    process.env.BINARY2048_MONGO_URI = "mongodb://127.0.0.1:1";
+    process.env.BINARY2048_MONGO_RATE_LIMIT_TIMEOUT_MS = "1";
+    const req = new Request("http://localhost", { headers: { "x-api-key": rawKey } });
+
+    const move = await checkMoveRateLimit(req);
+
+    expect(move.backend).toBe("memory_fallback");
+    expect(move.key).toBe("game_move:key:bot-move");
   });
 });
