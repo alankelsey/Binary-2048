@@ -25,7 +25,7 @@ const SEED = Number(process.env.SEED ?? "100");
 const INPUT_USD_PER_MILLION = Number(process.env.HF_INPUT_USD_PER_MILLION ?? "0.45");
 const OUTPUT_USD_PER_MILLION = Number(process.env.HF_OUTPUT_USD_PER_MILLION ?? "3.00");
 const OBSERVED_USD_PER_REQUEST = Number(process.env.HF_OBSERVED_USD_PER_REQUEST ?? String(0.25 / 35));
-const MAX_ESTIMATED_COST_USD = Number(process.env.HF_MAX_ESTIMATED_COST_USD ?? "0.10");
+const MAX_ESTIMATED_COST_USD = Number(process.env.HF_MAX_ESTIMATED_COST_USD ?? "5.00");
 
 function estimatedCost(inputTokens, outputTokens) {
   return (inputTokens * INPUT_USD_PER_MILLION + outputTokens * OUTPUT_USD_PER_MILLION) / 1_000_000;

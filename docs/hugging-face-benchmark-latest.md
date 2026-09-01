@@ -41,6 +41,6 @@ SEED=100 MAX_MOVES=25 npm run hf:bot
 
 Hugging Face obtains the final provider-reported charge asynchronously, after
 the inference response. A client therefore cannot enforce a real-time dollar
-cap from response token counts. The adapter defaults to a $0.10 preflight limit
+cap from response token counts. The adapter defaults to a $5.00 preflight limit
 using the observed $0.00714 per-request cost; override
 `HF_MAX_ESTIMATED_COST_USD` explicitly to authorize a larger run.
