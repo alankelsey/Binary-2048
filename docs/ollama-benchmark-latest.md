@@ -62,7 +62,7 @@ was rerun at the same 25-move cap.
 | Seed 100 policy | Score | Max Tile | Fallbacks | Avg Latency | p95 Latency |
 |---|---:|---:|---:|---:|---:|
 | Qwen, board only | 53 | 8 | 0 | 6,792 ms | 7,372 ms |
-| Qwen, engine candidates | 78 | 16 | 0 | 22,030 ms | 31,758 ms |
+| Qwen, engine candidates | 78 | 16 | 0 | 22,754 ms | 29,543 ms |
 | Rollout | 59 | 16 | not applicable | approximately 22 ms | — |
 
 Candidate evaluation improved Qwen's score by 47% and doubled its maximum tile
@@ -76,6 +76,10 @@ stronger than rollout in aggregate. Additional full games were not run because
 each one would take roughly 9–13 minutes under sustained load. The candidate
 approach is useful for model/prompt research, but not for bulk self-play or an
 interactive policy on this hardware.
+
+The instrumented candidate run used 10,135 prompt tokens and 150 output tokens
+across 25 decisions (10,285 total). Ollama token counts come from
+`prompt_eval_count` and `eval_count`; rollout uses no model tokens.
 
 ## Reproduction
 

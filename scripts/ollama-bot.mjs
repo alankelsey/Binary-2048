@@ -51,7 +51,12 @@ async function pickAction(encoded) {
     })
   });
   const selected = parseOllamaAction(response?.message?.content ?? "", legalActions);
-  return selected ? { ...selected, latencyMs: Math.round(performance.now() - started) } : null;
+  return selected ? {
+    ...selected,
+    latencyMs: Math.round(performance.now() - started),
+    promptTokens: Number(response?.prompt_eval_count ?? 0),
+    outputTokens: Number(response?.eval_count ?? 0)
+  } : null;
 }
 
 async function check() {
@@ -74,6 +79,8 @@ async function play() {
   let moves = 0;
   let fallbackMoves = 0;
   const latencies = [];
+  let promptTokens = 0;
+  let outputTokens = 0;
   let done = false;
   while (!done && moves < MAX_MOVES) {
     const encoded = await requestJson(BASE, `/api/games/${id}/encoded`);
@@ -81,6 +88,8 @@ async function play() {
     if (!selected) break;
     if (selected.fallback) fallbackMoves += 1;
     latencies.push(selected.latencyMs);
+    promptTokens += selected.promptTokens;
+    outputTokens += selected.outputTokens;
     const moved = await requestJson(BASE, `/api/games/${id}/move`, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -88,7 +97,7 @@ async function play() {
     });
     moves += 1;
     done = Boolean(moved?.done);
-    console.log(`move=${moves} action=${selected.action} latencyMs=${selected.latencyMs} fallback=${selected.fallback}`);
+    console.log(`move=${moves} action=${selected.action} latencyMs=${selected.latencyMs} promptTokens=${selected.promptTokens} outputTokens=${selected.outputTokens} fallback=${selected.fallback}`);
   }
 
   const final = await requestJson(BASE, `/api/games/${id}`);
@@ -99,6 +108,9 @@ async function play() {
     seed: SEED,
     moves,
     fallbackMoves,
+    promptTokens,
+    outputTokens,
+    totalTokens: promptTokens + outputTokens,
     score: final?.current?.score ?? 0,
     maxTile: Math.max(0, ...((final?.current?.grid ?? []).flat().map((cell) => cell?.t === "n" ? cell.v : 0))),
     avgLatencyMs: latencies.length ? Math.round(latencies.reduce((sum, value) => sum + value, 0) / latencies.length) : null,
