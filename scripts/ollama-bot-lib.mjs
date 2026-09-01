@@ -29,15 +29,25 @@ export function parseOllamaAction(content, legalActions) {
   return fallback ? { action: fallback, fallback: true } : null;
 }
 
-export function buildMovePrompt(encodedState, legalActions) {
+export function buildMovePrompt(encodedState, legalActions, candidates = []) {
   const board = formatEncodedBoard(encodedState);
+  const evaluatedCandidates = candidates.map((candidate) => ({
+    action: candidate.action,
+    resultingBoard: formatEncodedBoard(candidate.encodedState),
+    scoreDelta: candidate.scoreDelta,
+    emptyCells: candidate.emptyCells,
+    maxTile: candidate.maxTile,
+    mergeCount: candidate.mergeCount,
+    won: candidate.won,
+    over: candidate.over
+  }));
   return [
-    "Choose the strongest legal Binary 2048 move.",
+    "Rank the engine-evaluated legal Binary 2048 moves and choose the strongest action.",
     "Rows are shown top to bottom. Cells: . empty, Z zero, L0 locked zero, Wn wildcard multiplier, numbers are tiles.",
     "Prefer merges, empty cells, monotonic high tiles near a corner, and avoiding terminal positions.",
     `Board: ${JSON.stringify(board)}`,
     `Legal actions: ${JSON.stringify(legalActions)}`,
+    `Candidate outcomes after the move and deterministic spawn: ${JSON.stringify(evaluatedCandidates)}`,
     "Return only the required JSON action."
   ].join("\n");
 }
-

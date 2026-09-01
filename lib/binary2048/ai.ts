@@ -1,5 +1,5 @@
 import { applyMove } from "@/lib/binary2048/engine";
-import { toActionCode, type ActionCode } from "@/lib/binary2048/action";
+import { parseAction, toActionCode, type ActionCode } from "@/lib/binary2048/action";
 import type { Cell, Dir, GameState } from "@/lib/binary2048/types";
 
 export type EncodedCell = {
@@ -39,6 +39,33 @@ export function legalActionCodes(state: GameState): ActionCode[] {
 export function actionMask(legalActions: ActionCode[]): number[] {
   const set = new Set<ActionCode>(legalActions);
   return ACTION_SPACE.map((action) => (set.has(action) ? 1 : 0));
+}
+
+export function actionCandidates(state: GameState) {
+  return legalActionCodes(state).map((action) => {
+    const dir = parseAction(action);
+    if (!dir) throw new Error(`Unsupported action ${action}`);
+    const result = applyMove(state, dir);
+    let emptyCells = 0;
+    let maxTile = 0;
+    for (const row of result.state.grid) {
+      for (const cell of row) {
+        if (!cell) emptyCells += 1;
+        if (cell?.t === "n") maxTile = Math.max(maxTile, cell.v);
+      }
+    }
+    return {
+      action,
+      encodedState: encodeState(result.state),
+      scoreDelta: result.state.score - state.score,
+      emptyCells,
+      maxTile,
+      mergeCount: result.events.filter((event) => event.type === "merge").length,
+      won: result.state.won,
+      over: result.state.over,
+      stateHash: stateHash(result.state)
+    };
+  });
 }
 
 export function flattenEncodedState(encoded: EncodedState): number[] {

@@ -1,5 +1,6 @@
 import {
   ACTION_SPACE,
+  actionCandidates,
   actionMask,
   encodeCell,
   encodeState,
@@ -86,5 +87,22 @@ describe("AI helpers", () => {
   it("provides fixed-order action masks aligned to action space", () => {
     expect(actionMask(["L", "U"])).toEqual([1, 0, 1, 0]);
     expect(actionMask(["R", "D"])).toEqual([0, 1, 0, 1]);
+  });
+
+  it("evaluates each legal action without mutating the source state", () => {
+    const initialGrid: Cell[][] = [
+      [{ t: "n", v: 1 }, { t: "n", v: 1 }, null, null],
+      [null, null, null, null],
+      [null, null, null, null],
+      [null, null, null, null]
+    ];
+    const { state } = createGame(config, initialGrid);
+    const before = JSON.stringify(state);
+    const candidates = actionCandidates(state);
+    const left = candidates.find((candidate) => candidate.action === "L");
+
+    expect(left).toMatchObject({ scoreDelta: 2, emptyCells: 14, maxTile: 2, mergeCount: 1, won: false, over: false });
+    expect(left?.encodedState).toHaveLength(4);
+    expect(JSON.stringify(state)).toBe(before);
   });
 });

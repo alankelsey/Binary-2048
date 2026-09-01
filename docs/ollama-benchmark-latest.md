@@ -52,6 +52,31 @@ Conclusion: keep Qwen3 8B as a zero-shot experimental baseline and prompt/model
 research target. Use rollout or a trained compact policy for actual tournament,
 self-play, and interactive workloads.
 
+## Engine-evaluated candidate trial
+
+On 2026-08-31, the adapter was changed to give Qwen the engine-calculated
+result of every legal move: resulting board after deterministic spawn, score
+delta, empty cells, maximum tile, merge count, and terminal flags. Seed `100`
+was rerun at the same 25-move cap.
+
+| Seed 100 policy | Score | Max Tile | Fallbacks | Avg Latency | p95 Latency |
+|---|---:|---:|---:|---:|---:|
+| Qwen, board only | 53 | 8 | 0 | 6,792 ms | 7,372 ms |
+| Qwen, engine candidates | 78 | 16 | 0 | 22,030 ms | 31,758 ms |
+| Rollout | 59 | 16 | not applicable | approximately 22 ms | — |
+
+Candidate evaluation improved Qwen's score by 47% and doubled its maximum tile
+on this seed. It also replaced the original Down-heavy behavior with a more
+varied Left/Up corner strategy. However, average inference became 3.2 times
+slower than the board-only prompt and roughly 1,000 times slower than rollout.
+Sustained candidate inference degraded to approximately 29–33 seconds per move.
+
+This is a single-seed quality signal, not evidence that candidate-aware Qwen is
+stronger than rollout in aggregate. Additional full games were not run because
+each one would take roughly 9–13 minutes under sustained load. The candidate
+approach is useful for model/prompt research, but not for bulk self-play or an
+interactive policy on this hardware.
+
 ## Reproduction
 
 Run the app locally, then execute each fixed-seed Qwen game:
@@ -71,4 +96,3 @@ Run rollout through `POST /api/bots/tournament` with:
   "bots": ["rollout"]
 }
 ```
-

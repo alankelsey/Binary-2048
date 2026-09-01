@@ -15,8 +15,18 @@ test("accepts only a legal structured action", () => {
 });
 
 test("prompt includes the board and legal action constraint", () => {
-  const prompt = buildMovePrompt([[{ type: 2, value: 1 }]], ["L"]);
+  const prompt = buildMovePrompt([[{ type: 2, value: 1 }]], ["L"], [{
+    action: "L",
+    encodedState: [[{ type: 2, value: 2 }]],
+    scoreDelta: 4,
+    emptyCells: 12,
+    maxTile: 4,
+    mergeCount: 1,
+    won: false,
+    over: false
+  }]);
   assert.match(prompt, /Board: \[\["2"\]\]/);
   assert.match(prompt, /Legal actions: \["L"\]/);
+  assert.match(prompt, /resultingBoard/);
+  assert.match(prompt, /scoreDelta/);
 });
-

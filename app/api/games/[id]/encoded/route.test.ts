@@ -41,6 +41,16 @@ describe("GET /api/games/:id/encoded", () => {
     expect(Array.isArray(json.encodedFlat)).toBe(true);
     expect(json.encodedFlat.length).toBe(4 * 4 * 2);
     expect(typeof json.stateHash).toBe("string");
+    expect(json.candidates).toHaveLength(json.legalActions.length);
+    for (const candidate of json.candidates) {
+      expect(json.legalActions).toContain(candidate.action);
+      expect(candidate.encodedState).toHaveLength(4);
+      expect(typeof candidate.scoreDelta).toBe("number");
+      expect(typeof candidate.emptyCells).toBe("number");
+      expect(typeof candidate.maxTile).toBe("number");
+      expect(typeof candidate.mergeCount).toBe("number");
+      expect(typeof candidate.stateHash).toBe("string");
+    }
     expect(json.meta?.rulesetId).toBe("binary2048-v1");
   });
 

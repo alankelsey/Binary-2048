@@ -32,6 +32,11 @@ validates it against the engine-provided legal-action list, and records any
 deterministic fallback. It also sends the encoded endpoint's state hash with
 each move so stale decisions cannot mutate a newer board.
 
+For each legal action, the engine supplies the resulting board after its
+deterministic spawn, immediate score delta, empty-cell count, maximum tile,
+merge count, and terminal flags. The LLM ranks these calculated candidates
+instead of attempting to simulate the move rules itself.
+
 This is a local benchmark and is not part of the production tournament API.
 Compare its score, fallback count, and per-move latency with the built-in
 rollout bot before considering further integration. The latest recorded

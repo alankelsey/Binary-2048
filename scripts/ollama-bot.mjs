@@ -46,7 +46,7 @@ async function pickAction(encoded) {
       options: { temperature: 0, num_predict: 16 },
       messages: [
         { role: "system", content: "You are a deterministic Binary 2048 move-selection policy." },
-        { role: "user", content: buildMovePrompt(encoded.encodedState, legalActions) }
+        { role: "user", content: buildMovePrompt(encoded.encodedState, legalActions, encoded.candidates) }
       ]
     })
   });

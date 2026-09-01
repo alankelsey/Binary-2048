@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   ACTION_SPACE,
+  actionCandidates,
   actionMask,
   encodeState,
   flattenEncodedState,
@@ -32,6 +33,7 @@ export async function GET(_: Request, context: { params: Promise<{ id: string }>
     legalMoves: legalDirMoves,
     legalActions,
     actionMask: actionMask(legalActions),
+    candidates: actionCandidates(state),
     meta: {
       rulesetId: RULESET_ID,
       engineVersion: ENGINE_VERSION,
