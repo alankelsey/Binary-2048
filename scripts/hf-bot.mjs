@@ -24,7 +24,8 @@ const MAX_MOVES = Number(process.env.MAX_MOVES ?? "25");
 const SEED = Number(process.env.SEED ?? "100");
 const INPUT_USD_PER_MILLION = Number(process.env.HF_INPUT_USD_PER_MILLION ?? "0.45");
 const OUTPUT_USD_PER_MILLION = Number(process.env.HF_OUTPUT_USD_PER_MILLION ?? "3.00");
-const MAX_ESTIMATED_COST_USD = Number(process.env.HF_MAX_ESTIMATED_COST_USD ?? "0.01");
+const OBSERVED_USD_PER_REQUEST = Number(process.env.HF_OBSERVED_USD_PER_REQUEST ?? String(0.25 / 35));
+const MAX_ESTIMATED_COST_USD = Number(process.env.HF_MAX_ESTIMATED_COST_USD ?? "0.10");
 
 function estimatedCost(inputTokens, outputTokens) {
   return (inputTokens * INPUT_USD_PER_MILLION + outputTokens * OUTPUT_USD_PER_MILLION) / 1_000_000;
@@ -94,9 +95,10 @@ async function play() {
   if (!HF_TOKEN) throw new Error("HF_TOKEN is required");
   if (!Number.isInteger(MAX_MOVES) || MAX_MOVES < 1) throw new Error("MAX_MOVES must be a positive integer");
 
-  // The measured local candidate prompt stayed below 500 input tokens per move.
-  // Use a deliberately higher allowance so the run stops before risking the cap.
-  const preflightCost = estimatedCost(MAX_MOVES * 750, MAX_MOVES * 16);
+  // Hugging Face settles the provider-reported charge asynchronously, so the
+  // response token counts cannot enforce a real-time dollar cap. Use the
+  // dashboard-observed per-request cost as a conservative preflight estimate.
+  const preflightCost = MAX_MOVES * OBSERVED_USD_PER_REQUEST;
   if (preflightCost > MAX_ESTIMATED_COST_USD) {
     throw new Error(`Preflight cost $${preflightCost.toFixed(6)} exceeds cap $${MAX_ESTIMATED_COST_USD.toFixed(6)}`);
   }
@@ -123,10 +125,6 @@ async function play() {
     promptTokens += selected.promptTokens;
     outputTokens += selected.outputTokens;
     latencies.push(selected.latencyMs);
-    const currentCost = estimatedCost(promptTokens, outputTokens);
-    if (currentCost > MAX_ESTIMATED_COST_USD) {
-      throw new Error(`Measured cost $${currentCost.toFixed(6)} exceeded cap $${MAX_ESTIMATED_COST_USD.toFixed(6)}`);
-    }
     const moved = await requestJson(`${BASE}/api/games/${id}/move`, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -148,7 +146,8 @@ async function play() {
     promptTokens,
     outputTokens,
     totalTokens: promptTokens + outputTokens,
-    estimatedCostUsd: Number(estimatedCost(promptTokens, outputTokens).toFixed(8)),
+    listedTokenRateEstimateUsd: Number(estimatedCost(promptTokens, outputTokens).toFixed(8)),
+    observedCostEstimateUsd: Number((moves * OBSERVED_USD_PER_REQUEST).toFixed(8)),
     score: final?.current?.score ?? 0,
     maxTile: Math.max(0, ...((final?.current?.grid ?? []).flat().map((cell) => cell?.t === "n" ? cell.v : 0))),
     avgLatencyMs: latencies.length ? Math.round(latencies.reduce((sum, value) => sum + value, 0) / latencies.length) : null,

@@ -17,8 +17,14 @@
 | Rollout | 59 | 25 | 16 | not applicable | approximately 22 ms | — |
 
 The hosted model used 10,371 prompt tokens and 150 output tokens (10,521
-total). At the observed DeepInfra rates of $0.45 per million input tokens and
-$3.00 per million output tokens, the estimated inference cost was $0.00511695.
+total). The published DeepInfra token rates implied $0.00511695 for this run,
+but the Hugging Face billing dashboard subsequently showed $0.25 accrued for
+all 35 successful calls made during setup and benchmarking. Those calls were
+the two one-move smoke tests, an eight-move partial run, and this 25-move run.
+The observed average was therefore about $0.00714 per request, allocating
+approximately $0.18 of actual cost to the 25-move benchmark. The dashboard is
+authoritative; the reason for the discrepancy with the listed token rates is
+not exposed in the inference response.
 
 On this single seed, the hosted model scored 2 points higher than local Qwen
 and 21 points higher than rollout. It was about 33 times faster than local Qwen,
@@ -33,4 +39,8 @@ Configure `HF_TOKEN` in `.env.local`, run the app locally, then execute:
 SEED=100 MAX_MOVES=25 npm run hf:bot
 ```
 
-The adapter defaults to a conservative $0.01 preflight and measured-cost cap.
+Hugging Face obtains the final provider-reported charge asynchronously, after
+the inference response. A client therefore cannot enforce a real-time dollar
+cap from response token counts. The adapter defaults to a $0.10 preflight limit
+using the observed $0.00714 per-request cost; override
+`HF_MAX_ESTIMATED_COST_USD` explicitly to authorize a larger run.
