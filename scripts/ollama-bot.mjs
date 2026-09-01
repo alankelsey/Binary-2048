@@ -7,6 +7,7 @@ const BASE = process.env.BASE ?? "http://localhost:3000";
 const OLLAMA_BASE = process.env.OLLAMA_BASE ?? "http://127.0.0.1:11434";
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? "qwen3:8b";
 const MAX_MOVES = Number(process.env.MAX_MOVES ?? "25");
+const SEED = Number(process.env.SEED ?? "100");
 const CHECK_ONLY = process.env.OLLAMA_CHECK_ONLY === "1";
 
 async function requestJson(base, path, init = {}) {
@@ -65,7 +66,7 @@ async function play() {
   const created = await requestJson(BASE, "/api/games", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({})
+    body: JSON.stringify({ config: { seed: SEED } })
   });
   const id = created?.id;
   if (!id) throw new Error("Create game response missing id");
@@ -95,6 +96,7 @@ async function play() {
   console.log(JSON.stringify({
     id,
     model: OLLAMA_MODEL,
+    seed: SEED,
     moves,
     fallbackMoves,
     score: final?.current?.score ?? 0,
@@ -108,4 +110,3 @@ async function play() {
   console.error(`[ollama:bot] ${error instanceof Error ? error.message : String(error)}`);
   process.exit(1);
 });
-
