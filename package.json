@@ -13,6 +13,8 @@
     "dev:turbo": "NEXT_DIST_DIR=${NEXT_DIST_DIR:-.next-dev} NEXT_DISABLE_WEBPACK_CACHE=1 next dev --turbo",
     "prebuild": "npm run clean:build",
     "build": "NEXT_DIST_DIR=${NEXT_DIST_DIR:-.next} next build && bash ./scripts/build-smoke.sh",
+    "typegen": "NEXT_DIST_DIR=${NEXT_DIST_DIR:-.next} next typegen",
+    "typecheck": "npm run typegen && tsc --noEmit",
     "start": "NEXT_DIST_DIR=${NEXT_DIST_DIR:-.next} next start",
     "test:unit": "jest --runInBand",
     "verify": "npm run test:unit && npm run build",

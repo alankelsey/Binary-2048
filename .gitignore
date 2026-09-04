@@ -28,3 +28,5 @@ labels.csv
 replays.parquet
 labels.parquet
 dataset_card.md
+next-env.d.ts
+*.tsbuildinfo
