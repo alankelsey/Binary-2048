@@ -43,3 +43,15 @@ The runner records to `docs/hf-benchmark-runs.json` by default. Override
 `HF_RUN_LEDGER` for exploratory runs that should not update the tracked ledger.
 Set `HF_COMPARE_ROLLOUT=0` only when the local rollout comparison is intentionally
 disabled; the ledger will then record `rollout: null`.
+
+## Export research splits
+
+```bash
+npm run models:export:dataset
+```
+
+This writes canonical JSONL files plus `manifest.json` under
+`data/model-benchmark/`. Hosted, Ollama, and rollout decisions are kept in
+separate step files, while `run_metrics.jsonl` contains every run summary.
+Schema-v1 historical summaries remain in metrics but are intentionally excluded
+from step datasets because their move-level inputs and actions were not saved.

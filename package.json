@@ -31,6 +31,8 @@
     "hf:bot": "node ./scripts/hf-bot.mjs",
     "test:ollama-adapter": "node --test ./scripts/ollama-bot-lib.test.mjs",
     "test:hf-ledger": "node --test ./scripts/hf-benchmark-ledger.test.mjs",
+    "test:model-dataset-export": "node --test ./scripts/model-benchmark-export-lib.test.mjs",
+    "models:export:dataset": "node ./scripts/export-model-benchmark-dataset.mjs",
     "bot:key:generate": "node ./scripts/generate-bot-api-key.mjs",
     "league:sandbox:sim": "node ./scripts/league-sandbox-sim.mjs",
     "bot:tourney:dev": "bash ./scripts/bot-tournament-dev.sh",
