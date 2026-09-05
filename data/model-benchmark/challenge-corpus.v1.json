@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "corpusId": "binary2048-curated-challenges",
+  "corpusVersion": "1.0.0",
+  "rulesetId": "binary2048-v1",
+  "replayVersion": 1,
+  "scenarios": [
+    {
+      "scenarioId": "number-double-merge",
+      "scenarioVersion": 1,
+      "title": "Two independent number merges",
+      "description": "Recognize two same-value pairs and collect both merges in one move.",
+      "skillTags": ["number-merge", "score-maximization", "multi-merge"],
+      "maxMoves": 1,
+      "config": { "width": 4, "height": 4, "seed": 7101, "winTile": 2048, "zeroBehavior": "annihilate", "spawnOnNoopMove": false, "spawn": { "pZero": 0, "pOne": 1, "pWildcard": 0, "pLock": 0, "wildcardMultipliers": [2, 4, 8] } },
+      "initialGrid": [
+        [{ "t": "n", "v": 1 }, { "t": "n", "v": 1 }, { "t": "n", "v": 2 }, { "t": "n", "v": 2 }],
+        [null, null, null, null], [null, null, null, null], [null, null, null, null]
+      ],
+      "expectedInvariants": {
+        "initialOccupiedCells": 4,
+        "legalActionsContaining": ["L", "R", "D"],
+        "probes": [{ "action": "L", "moved": true, "scoreDelta": 6, "mergeCount": 2, "eventTypesContaining": ["merge", "spawn"], "resultingMaxNumberTile": 4 }]
+      }
+    },
+    {
+      "scenarioId": "zero-wildcard-annihilation",
+      "scenarioVersion": 1,
+      "title": "Zero removes a wildcard",
+      "description": "Use the annihilation rule to remove a zero and wildcard collision.",
+      "skillTags": ["zero-annihilation", "wildcard", "board-clearing"],
+      "maxMoves": 1,
+      "config": { "width": 4, "height": 4, "seed": 7102, "winTile": 2048, "zeroBehavior": "annihilate", "spawnOnNoopMove": false, "spawn": { "pZero": 0, "pOne": 1, "pWildcard": 0, "pLock": 0, "wildcardMultipliers": [2, 4, 8] } },
+      "initialGrid": [
+        [{ "t": "z" }, { "t": "w", "m": 2 }, null, null],
+        [{ "t": "n", "v": 2 }, null, null, null], [null, null, null, null], [null, null, null, null]
+      ],
+      "expectedInvariants": {
+        "initialOccupiedCells": 3,
+        "legalActionsContaining": ["L", "R", "U", "D"],
+        "probes": [{ "action": "L", "moved": true, "scoreDelta": 0, "eventTypesContaining": ["spawn"], "resultingTileCounts": { "zero": 0, "wildcard": 0 } }]
+      }
+    },
+    {
+      "scenarioId": "wildcard-multiplier",
+      "scenarioVersion": 1,
+      "title": "Apply a wildcard multiplier",
+      "description": "Merge a number with a wildcard while preserving the higher-value result.",
+      "skillTags": ["wildcard", "multiplication", "score-maximization"],
+      "maxMoves": 1,
+      "config": { "width": 4, "height": 4, "seed": 7103, "winTile": 2048, "zeroBehavior": "annihilate", "spawnOnNoopMove": false, "spawn": { "pZero": 0, "pOne": 1, "pWildcard": 0, "pLock": 0, "wildcardMultipliers": [2, 4, 8] } },
+      "initialGrid": [
+        [{ "t": "n", "v": 8 }, { "t": "w", "m": 4 }, null, null],
+        [null, null, null, null], [null, null, null, null], [null, null, null, null]
+      ],
+      "expectedInvariants": {
+        "initialOccupiedCells": 2,
+        "legalActionsContaining": ["L", "R", "D"],
+        "probes": [{ "action": "L", "moved": true, "scoreDelta": 32, "mergeCount": 1, "eventTypesContaining": ["merge", "spawn"], "resultingMaxNumberTile": 32 }]
+      }
+    },
+    {
+      "scenarioId": "lock-cooldown-block",
+      "scenarioVersion": 1,
+      "title": "Respect the lock-zero cooldown",
+      "description": "Detect that lock-zero blocks a collision on turn zero instead of annihilating.",
+      "skillTags": ["lock-zero", "cooldown", "hazard-avoidance"],
+      "maxMoves": 2,
+      "config": { "width": 4, "height": 4, "seed": 7104, "winTile": 2048, "zeroBehavior": "annihilate", "spawnOnNoopMove": false, "spawn": { "pZero": 0, "pOne": 1, "pWildcard": 0, "pLock": 0, "wildcardMultipliers": [2, 4, 8] } },
+      "initialGrid": [
+        [{ "t": "i" }, { "t": "n", "v": 1 }, null, null],
+        [null, null, null, null], [null, null, null, null], [null, null, null, null]
+      ],
+      "expectedInvariants": {
+        "initialOccupiedCells": 2,
+        "legalActionsContaining": ["R", "D"],
+        "probes": [{ "action": "R", "moved": true, "scoreDelta": 0, "eventTypesContaining": ["lock_block", "spawn"], "resultingTileCounts": { "lock": 1 } }]
+      }
+    },
+    {
+      "scenarioId": "immediate-target-merge",
+      "scenarioVersion": 1,
+      "title": "Complete the target tile",
+      "description": "Identify the immediate winning merge from two 1024 tiles.",
+      "skillTags": ["number-merge", "win-detection", "tactical-finish"],
+      "maxMoves": 1,
+      "config": { "width": 4, "height": 4, "seed": 7105, "winTile": 2048, "zeroBehavior": "annihilate", "spawnOnNoopMove": false, "spawn": { "pZero": 0, "pOne": 1, "pWildcard": 0, "pLock": 0, "wildcardMultipliers": [2, 4, 8] } },
+      "initialGrid": [
+        [{ "t": "n", "v": 1024 }, { "t": "n", "v": 1024 }, null, null],
+        [null, null, null, null], [null, null, null, null], [null, null, null, null]
+      ],
+      "expectedInvariants": {
+        "initialOccupiedCells": 2,
+        "legalActionsContaining": ["L", "R", "D"],
+        "probes": [{ "action": "L", "moved": true, "scoreDelta": 2048, "mergeCount": 1, "eventTypesContaining": ["merge", "spawn", "game_won"], "resultingMaxNumberTile": 2048, "won": true }]
+      }
+    },
+    {
+      "scenarioId": "asymmetric-edge-choice",
+      "scenarioVersion": 1,
+      "title": "Preserve an asymmetric high-value edge",
+      "description": "Exercise spatial planning on a dense board with special tiles and a single open corner.",
+      "skillTags": ["spatial-planning", "edge-preservation", "dense-board", "bitstorm"],
+      "maxMoves": 4,
+      "config": { "width": 4, "height": 4, "seed": 7106, "winTile": 2048, "zeroBehavior": "annihilate", "spawnOnNoopMove": false, "spawn": { "pZero": 0.15, "pOne": 0.72, "pWildcard": 0.1, "pLock": 0.03, "wildcardMultipliers": [2, 4, 8] } },
+      "initialGrid": [
+        [{ "t": "n", "v": 128 }, { "t": "n", "v": 64 }, { "t": "n", "v": 32 }, { "t": "n", "v": 16 }],
+        [{ "t": "n", "v": 64 }, { "t": "z" }, { "t": "n", "v": 8 }, { "t": "n", "v": 4 }],
+        [{ "t": "n", "v": 32 }, { "t": "n", "v": 8 }, { "t": "w", "m": 2 }, { "t": "n", "v": 2 }],
+        [{ "t": "n", "v": 16 }, { "t": "n", "v": 4 }, { "t": "n", "v": 2 }, null]
+      ],
+      "expectedInvariants": {
+        "initialOccupiedCells": 15,
+        "legalActionsContaining": ["R", "D"],
+        "probes": [{ "action": "R", "moved": true, "eventTypesContaining": ["spawn"], "resultingMaxNumberTile": 128 }]
+      }
+    }
+  ]
+}
