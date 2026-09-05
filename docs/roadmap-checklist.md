@@ -161,6 +161,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Generate trace-complete rollout baselines for seeds 100-104 and publish them in the rollout JSONL/Parquet split
 - [x] Expand bot evaluation into two separately reported tracks: reproducible seeded games and versioned curated fixed-board/Bitstorm challenge scenarios
 - [x] Define the curated challenge corpus with explicit initial grids, rules/config, scenario IDs, intended skill tags, expected invariants, and replay-compatible versions
+- [ ] Validate multi-step dense-board objectives with exhaustive search or a stronger reference policy before publishing pass/fail research claims
 - [x] Lock RNG draw contract for wildcard multiplier selection and add strict replay-compat tests
 - [x] Define Mongo/session-store migration trigger thresholds (active sessions, memory, replay volume) and execution plan
 - [x] Add daily seeded challenge mode (`Bitstorm Daily`) with per-day leaderboard window

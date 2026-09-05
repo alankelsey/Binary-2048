@@ -28,6 +28,7 @@
     "bot:benchmark": "node ./scripts/bot-benchmark.mjs",
     "rollout:trace": "node ./scripts/rollout-trace.mjs",
     "challenge:benchmark": "node ./scripts/challenge-benchmark.mjs",
+    "challenge:report": "node ./scripts/challenge-benchmark-report.mjs",
     "ollama:check": "OLLAMA_CHECK_ONLY=1 node ./scripts/ollama-bot.mjs",
     "ollama:bot": "node ./scripts/ollama-bot.mjs",
     "hf:bot": "node ./scripts/hf-bot.mjs",

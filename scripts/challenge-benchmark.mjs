@@ -3,7 +3,7 @@
 import { performance } from "node:perf_hooks";
 import { readFile, writeFile } from "node:fs/promises";
 import { readFileSync } from "node:fs";
-import { evaluateChallengeTrace, renderChallengeReport, summarizeChallengeRecords } from "./challenge-benchmark-lib.mjs";
+import { correctFallbackObjectives, evaluateChallengeTrace, renderChallengeReport, summarizeChallengeRecords } from "./challenge-benchmark-lib.mjs";
 import { modelProvider, upsertBenchmarkRecord } from "./hf-benchmark-ledger.mjs";
 import { buildMovePrompt, parseOllamaAction } from "./ollama-bot-lib.mjs";
 
@@ -167,7 +167,7 @@ async function main() {
     const listedCost = ADAPTER === "hf" ? (totals.input * HF_INPUT_USD_PER_MILLION + totals.output * HF_OUTPUT_USD_PER_MILLION) / 1_000_000 : 0;
     const conservativeCost = ADAPTER === "hf" ? Math.max(listedCost, run.moves * HF_OBSERVED_USD_PER_REQUEST) : 0;
     const record = {
-      runId: `challenge:${corpus.corpusVersion}:${scenario.scenarioId}:${model.provider}:${model.id}`,
+      runId: `challenge:${corpus.corpusVersion}:${scenario.scenarioId}:${model.provider}:${model.id}${model.thinkingEnabled ? `:thinking:${model.parameters.maxOutputTokens}` : ""}`,
       recordedAtISO: new Date().toISOString(),
       experimentId: `curated-challenges-${corpus.corpusVersion}`,
       phase: ADAPTER,
@@ -188,8 +188,10 @@ async function main() {
 
   const ledger = JSON.parse(await readFile(LEDGER_PATH, "utf8"));
   const corpusRecords = ledger.filter((record) => record.track === "curated-fixed-board" && record.corpus?.id === corpus.corpusId && record.corpus?.version === corpus.corpusVersion);
+  const correctedFallbackObjectives = correctFallbackObjectives(corpusRecords);
+  if (correctedFallbackObjectives > 0) await writeFile(LEDGER_PATH, `${JSON.stringify(ledger, null, 2)}\n`, "utf8");
   await writeFile(REPORT_PATH, renderChallengeReport(corpus, corpusRecords), "utf8");
-  console.log(JSON.stringify({ ok: true, adapter: ADAPTER, ledger: LEDGER_PATH, report: REPORT_PATH, newRuns: newRecords.length, summary: summarizeChallengeRecords(corpusRecords) }, null, 2));
+  console.log(JSON.stringify({ ok: true, adapter: ADAPTER, ledger: LEDGER_PATH, report: REPORT_PATH, newRuns: newRecords.length, correctedFallbackObjectives, summary: summarizeChallengeRecords(corpusRecords) }, null, 2));
 }
 
 main().catch((error) => {
