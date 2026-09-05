@@ -6081,5 +6081,6152 @@
         }
       ]
     }
+  },
+  {
+    "schemaVersion": 2,
+    "runId": "challenge:1.0.0:number-double-merge:ollama:qwen3:8b",
+    "recordedAtISO": "2026-09-05T23:31:00.482Z",
+    "experimentId": "curated-challenges-1.0.0",
+    "phase": "ollama",
+    "track": "curated-fixed-board",
+    "rulesetId": "binary2048-v1",
+    "corpus": {
+      "id": "binary2048-curated-challenges",
+      "version": "1.0.0",
+      "schemaVersion": 1,
+      "replayVersion": 1
+    },
+    "scenario": {
+      "scenarioId": "number-double-merge",
+      "scenarioVersion": 1,
+      "title": "Two independent number merges",
+      "skillTags": [
+        "number-merge",
+        "score-maximization",
+        "multi-merge"
+      ],
+      "maxMoves": 1,
+      "config": {
+        "width": 4,
+        "height": 4,
+        "seed": 7101,
+        "winTile": 2048,
+        "zeroBehavior": "annihilate",
+        "spawnOnNoopMove": false,
+        "spawn": {
+          "pZero": 0,
+          "pOne": 1,
+          "pWildcard": 0,
+          "pLock": 0,
+          "wildcardMultipliers": [
+            2,
+            4,
+            8
+          ]
+        }
+      },
+      "initialGrid": [
+        [
+          {
+            "t": "n",
+            "v": 1
+          },
+          {
+            "t": "n",
+            "v": 1
+          },
+          {
+            "t": "n",
+            "v": 2
+          },
+          {
+            "t": "n",
+            "v": 2
+          }
+        ],
+        [
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null
+        ]
+      ]
+    },
+    "model": {
+      "id": "qwen3:8b",
+      "provider": "ollama",
+      "type": "non-thinking",
+      "thinkingEnabled": false,
+      "parameters": {
+        "temperature": 0,
+        "maxOutputTokens": 16,
+        "structuredOutput": "json_schema",
+        "engineCandidateBoards": true
+      }
+    },
+    "objective": {
+      "passed": true,
+      "selectedAction": "L",
+      "expectedActions": [
+        "L",
+        "R"
+      ],
+      "criterion": "first action matches a validated scenario probe"
+    },
+    "metrics": {
+      "moves": 1,
+      "score": 6,
+      "maxTile": 4,
+      "won": false,
+      "over": false,
+      "inputTokens": 351,
+      "outputTokens": 6,
+      "reasoningTokens": 0,
+      "fallbackCount": 0,
+      "averageModelLatencyMs": 1982,
+      "p95ModelLatencyMs": 1982,
+      "totalModelLatencyMs": 1982
+    },
+    "estimatedCostUsd": {
+      "listedTokenRates": 0,
+      "conservativeObservedRequestRate": 0,
+      "inputUsdPerMillion": 0,
+      "outputUsdPerMillion": 0,
+      "observedUsdPerRequest": 0
+    },
+    "trace": {
+      "version": 1,
+      "complete": true,
+      "actions": [
+        "L"
+      ],
+      "decisions": [
+        {
+          "turn": 0,
+          "before": {
+            "stateHash": "b233027e",
+            "encodedState": [
+              [
+                {
+                  "type": 2,
+                  "value": 0
+                },
+                {
+                  "type": 2,
+                  "value": 0
+                },
+                {
+                  "type": 2,
+                  "value": 1
+                },
+                {
+                  "type": 2,
+                  "value": 1
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ]
+            ],
+            "encodedFlat": [
+              2,
+              0,
+              2,
+              0,
+              2,
+              1,
+              2,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "legalActions": [
+              "D",
+              "L",
+              "R"
+            ],
+            "actionMask": [
+              1,
+              1,
+              0,
+              1
+            ],
+            "candidates": [
+              {
+                "action": "D",
+                "encodedState": [
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 1
+                    },
+                    {
+                      "type": 2,
+                      "value": 1
+                    }
+                  ]
+                ],
+                "scoreDelta": 0,
+                "emptyCells": 11,
+                "maxTile": 2,
+                "mergeCount": 0,
+                "won": false,
+                "over": false,
+                "stateHash": "8ac9c266"
+              },
+              {
+                "action": "L",
+                "encodedState": [
+                  [
+                    {
+                      "type": 2,
+                      "value": 1
+                    },
+                    {
+                      "type": 2,
+                      "value": 2
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ]
+                ],
+                "scoreDelta": 6,
+                "emptyCells": 13,
+                "maxTile": 4,
+                "mergeCount": 2,
+                "won": false,
+                "over": false,
+                "stateHash": "aab2a7fd"
+              },
+              {
+                "action": "R",
+                "encodedState": [
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 1
+                    },
+                    {
+                      "type": 2,
+                      "value": 2
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ]
+                ],
+                "scoreDelta": 6,
+                "emptyCells": 13,
+                "maxTile": 4,
+                "mergeCount": 2,
+                "won": false,
+                "over": false,
+                "stateHash": "28505115"
+              }
+            ],
+            "engine": {
+              "rulesetId": "binary2048-v1",
+              "engineVersion": "dev",
+              "width": 4,
+              "height": 4,
+              "spawnProbs": {
+                "zero": 0,
+                "one": 1,
+                "wildcard": 0,
+                "lock": 0
+              }
+            }
+          },
+          "decision": {
+            "action": "L",
+            "fallback": false,
+            "latencyMs": 1982,
+            "inputTokens": 351,
+            "outputTokens": 6,
+            "reasoningTokens": 0
+          },
+          "after": {
+            "stateHash": "aab2a7fd",
+            "encodedState": [
+              [
+                {
+                  "type": 2,
+                  "value": 1
+                },
+                {
+                  "type": 2,
+                  "value": 2
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 2,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ]
+            ],
+            "score": 6,
+            "turn": 1,
+            "reward": 6,
+            "changed": true,
+            "done": false,
+            "spawned": {
+              "r": 0,
+              "c": 3,
+              "tile": {
+                "t": "n",
+                "v": 1
+              }
+            },
+            "events": [
+              {
+                "type": "merge",
+                "at": [
+                  -1,
+                  -1
+                ],
+                "into": {
+                  "t": "n",
+                  "v": 2
+                }
+              },
+              {
+                "type": "merge",
+                "at": [
+                  -1,
+                  -1
+                ],
+                "into": {
+                  "t": "n",
+                  "v": 4
+                }
+              },
+              {
+                "type": "spawn",
+                "at": [
+                  0,
+                  3
+                ],
+                "tile": {
+                  "t": "n",
+                  "v": 1
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "schemaVersion": 2,
+    "runId": "challenge:1.0.0:zero-wildcard-annihilation:ollama:qwen3:8b",
+    "recordedAtISO": "2026-09-05T23:31:01.559Z",
+    "experimentId": "curated-challenges-1.0.0",
+    "phase": "ollama",
+    "track": "curated-fixed-board",
+    "rulesetId": "binary2048-v1",
+    "corpus": {
+      "id": "binary2048-curated-challenges",
+      "version": "1.0.0",
+      "schemaVersion": 1,
+      "replayVersion": 1
+    },
+    "scenario": {
+      "scenarioId": "zero-wildcard-annihilation",
+      "scenarioVersion": 1,
+      "title": "Zero removes a wildcard",
+      "skillTags": [
+        "zero-annihilation",
+        "wildcard",
+        "board-clearing"
+      ],
+      "maxMoves": 1,
+      "config": {
+        "width": 4,
+        "height": 4,
+        "seed": 7102,
+        "winTile": 2048,
+        "zeroBehavior": "annihilate",
+        "spawnOnNoopMove": false,
+        "spawn": {
+          "pZero": 0,
+          "pOne": 1,
+          "pWildcard": 0,
+          "pLock": 0,
+          "wildcardMultipliers": [
+            2,
+            4,
+            8
+          ]
+        }
+      },
+      "initialGrid": [
+        [
+          {
+            "t": "z"
+          },
+          {
+            "t": "w",
+            "m": 2
+          },
+          null,
+          null
+        ],
+        [
+          {
+            "t": "n",
+            "v": 2
+          },
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null
+        ]
+      ]
+    },
+    "model": {
+      "id": "qwen3:8b",
+      "provider": "ollama",
+      "type": "non-thinking",
+      "thinkingEnabled": false,
+      "parameters": {
+        "temperature": 0,
+        "maxOutputTokens": 16,
+        "structuredOutput": "json_schema",
+        "engineCandidateBoards": true
+      }
+    },
+    "objective": {
+      "passed": false,
+      "selectedAction": "U",
+      "expectedActions": [
+        "L"
+      ],
+      "criterion": "first action matches a validated scenario probe"
+    },
+    "metrics": {
+      "moves": 1,
+      "score": 2,
+      "maxTile": 2,
+      "won": false,
+      "over": false,
+      "inputTokens": 421,
+      "outputTokens": 6,
+      "reasoningTokens": 0,
+      "fallbackCount": 0,
+      "averageModelLatencyMs": 952,
+      "p95ModelLatencyMs": 952,
+      "totalModelLatencyMs": 952
+    },
+    "estimatedCostUsd": {
+      "listedTokenRates": 0,
+      "conservativeObservedRequestRate": 0,
+      "inputUsdPerMillion": 0,
+      "outputUsdPerMillion": 0,
+      "observedUsdPerRequest": 0
+    },
+    "trace": {
+      "version": 1,
+      "complete": true,
+      "actions": [
+        "U"
+      ],
+      "decisions": [
+        {
+          "turn": 0,
+          "before": {
+            "stateHash": "bbaf3c9e",
+            "encodedState": [
+              [
+                {
+                  "type": 1,
+                  "value": 0
+                },
+                {
+                  "type": 3,
+                  "value": 1
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 2,
+                  "value": 1
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ]
+            ],
+            "encodedFlat": [
+              1,
+              0,
+              3,
+              1,
+              0,
+              0,
+              0,
+              0,
+              2,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "legalActions": [
+              "U",
+              "D",
+              "L",
+              "R"
+            ],
+            "actionMask": [
+              1,
+              1,
+              1,
+              1
+            ],
+            "candidates": [
+              {
+                "action": "U",
+                "encodedState": [
+                  [
+                    {
+                      "type": 2,
+                      "value": 1
+                    },
+                    {
+                      "type": 3,
+                      "value": 1
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ]
+                ],
+                "scoreDelta": 2,
+                "emptyCells": 13,
+                "maxTile": 2,
+                "mergeCount": 1,
+                "won": false,
+                "over": false,
+                "stateHash": "b851a847"
+              },
+              {
+                "action": "D",
+                "encodedState": [
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 1
+                    },
+                    {
+                      "type": 3,
+                      "value": 1
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ]
+                ],
+                "scoreDelta": 2,
+                "emptyCells": 13,
+                "maxTile": 2,
+                "mergeCount": 1,
+                "won": false,
+                "over": false,
+                "stateHash": "a73b4947"
+              },
+              {
+                "action": "L",
+                "encodedState": [
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 1
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ]
+                ],
+                "scoreDelta": 0,
+                "emptyCells": 14,
+                "maxTile": 2,
+                "mergeCount": 0,
+                "won": false,
+                "over": false,
+                "stateHash": "a820ca93"
+              },
+              {
+                "action": "R",
+                "encodedState": [
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 1
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ]
+                ],
+                "scoreDelta": 0,
+                "emptyCells": 14,
+                "maxTile": 2,
+                "mergeCount": 0,
+                "won": false,
+                "over": false,
+                "stateHash": "d247c653"
+              }
+            ],
+            "engine": {
+              "rulesetId": "binary2048-v1",
+              "engineVersion": "dev",
+              "width": 4,
+              "height": 4,
+              "spawnProbs": {
+                "zero": 0,
+                "one": 1,
+                "wildcard": 0,
+                "lock": 0
+              }
+            }
+          },
+          "decision": {
+            "action": "U",
+            "fallback": false,
+            "latencyMs": 952,
+            "inputTokens": 421,
+            "outputTokens": 6,
+            "reasoningTokens": 0
+          },
+          "after": {
+            "stateHash": "b851a847",
+            "encodedState": [
+              [
+                {
+                  "type": 2,
+                  "value": 1
+                },
+                {
+                  "type": 3,
+                  "value": 1
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 2,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ]
+            ],
+            "score": 2,
+            "turn": 1,
+            "reward": 2,
+            "changed": true,
+            "done": false,
+            "spawned": {
+              "r": 3,
+              "c": 0,
+              "tile": {
+                "t": "n",
+                "v": 1
+              }
+            },
+            "events": [
+              {
+                "type": "merge",
+                "at": [
+                  -1,
+                  -1
+                ],
+                "into": {
+                  "t": "n",
+                  "v": 2
+                }
+              },
+              {
+                "type": "spawn",
+                "at": [
+                  3,
+                  0
+                ],
+                "tile": {
+                  "t": "n",
+                  "v": 1
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "schemaVersion": 2,
+    "runId": "challenge:1.0.0:wildcard-multiplier:ollama:qwen3:8b",
+    "recordedAtISO": "2026-09-05T23:31:02.497Z",
+    "experimentId": "curated-challenges-1.0.0",
+    "phase": "ollama",
+    "track": "curated-fixed-board",
+    "rulesetId": "binary2048-v1",
+    "corpus": {
+      "id": "binary2048-curated-challenges",
+      "version": "1.0.0",
+      "schemaVersion": 1,
+      "replayVersion": 1
+    },
+    "scenario": {
+      "scenarioId": "wildcard-multiplier",
+      "scenarioVersion": 1,
+      "title": "Apply a wildcard multiplier",
+      "skillTags": [
+        "wildcard",
+        "multiplication",
+        "score-maximization"
+      ],
+      "maxMoves": 1,
+      "config": {
+        "width": 4,
+        "height": 4,
+        "seed": 7103,
+        "winTile": 2048,
+        "zeroBehavior": "annihilate",
+        "spawnOnNoopMove": false,
+        "spawn": {
+          "pZero": 0,
+          "pOne": 1,
+          "pWildcard": 0,
+          "pLock": 0,
+          "wildcardMultipliers": [
+            2,
+            4,
+            8
+          ]
+        }
+      },
+      "initialGrid": [
+        [
+          {
+            "t": "n",
+            "v": 8
+          },
+          {
+            "t": "w",
+            "m": 4
+          },
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null
+        ]
+      ]
+    },
+    "model": {
+      "id": "qwen3:8b",
+      "provider": "ollama",
+      "type": "non-thinking",
+      "thinkingEnabled": false,
+      "parameters": {
+        "temperature": 0,
+        "maxOutputTokens": 16,
+        "structuredOutput": "json_schema",
+        "engineCandidateBoards": true
+      }
+    },
+    "objective": {
+      "passed": true,
+      "selectedAction": "L",
+      "expectedActions": [
+        "L",
+        "R"
+      ],
+      "criterion": "first action matches a validated scenario probe"
+    },
+    "metrics": {
+      "moves": 1,
+      "score": 32,
+      "maxTile": 32,
+      "won": false,
+      "over": false,
+      "inputTokens": 358,
+      "outputTokens": 6,
+      "reasoningTokens": 0,
+      "fallbackCount": 0,
+      "averageModelLatencyMs": 800,
+      "p95ModelLatencyMs": 800,
+      "totalModelLatencyMs": 800
+    },
+    "estimatedCostUsd": {
+      "listedTokenRates": 0,
+      "conservativeObservedRequestRate": 0,
+      "inputUsdPerMillion": 0,
+      "outputUsdPerMillion": 0,
+      "observedUsdPerRequest": 0
+    },
+    "trace": {
+      "version": 1,
+      "complete": true,
+      "actions": [
+        "L"
+      ],
+      "decisions": [
+        {
+          "turn": 0,
+          "before": {
+            "stateHash": "9be27bce",
+            "encodedState": [
+              [
+                {
+                  "type": 2,
+                  "value": 3
+                },
+                {
+                  "type": 3,
+                  "value": 2
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ]
+            ],
+            "encodedFlat": [
+              2,
+              3,
+              3,
+              2,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "legalActions": [
+              "D",
+              "L",
+              "R"
+            ],
+            "actionMask": [
+              1,
+              1,
+              0,
+              1
+            ],
+            "candidates": [
+              {
+                "action": "D",
+                "encodedState": [
+                  [
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 3
+                    },
+                    {
+                      "type": 3,
+                      "value": 2
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ]
+                ],
+                "scoreDelta": 0,
+                "emptyCells": 13,
+                "maxTile": 8,
+                "mergeCount": 0,
+                "won": false,
+                "over": false,
+                "stateHash": "1f955996"
+              },
+              {
+                "action": "L",
+                "encodedState": [
+                  [
+                    {
+                      "type": 2,
+                      "value": 5
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ]
+                ],
+                "scoreDelta": 32,
+                "emptyCells": 14,
+                "maxTile": 32,
+                "mergeCount": 1,
+                "won": false,
+                "over": false,
+                "stateHash": "122de14c"
+              },
+              {
+                "action": "R",
+                "encodedState": [
+                  [
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 5
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ]
+                ],
+                "scoreDelta": 32,
+                "emptyCells": 14,
+                "maxTile": 32,
+                "mergeCount": 1,
+                "won": false,
+                "over": false,
+                "stateHash": "deb4c844"
+              }
+            ],
+            "engine": {
+              "rulesetId": "binary2048-v1",
+              "engineVersion": "dev",
+              "width": 4,
+              "height": 4,
+              "spawnProbs": {
+                "zero": 0,
+                "one": 1,
+                "wildcard": 0,
+                "lock": 0
+              }
+            }
+          },
+          "decision": {
+            "action": "L",
+            "fallback": false,
+            "latencyMs": 800,
+            "inputTokens": 358,
+            "outputTokens": 6,
+            "reasoningTokens": 0
+          },
+          "after": {
+            "stateHash": "122de14c",
+            "encodedState": [
+              [
+                {
+                  "type": 2,
+                  "value": 5
+                },
+                {
+                  "type": 2,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ]
+            ],
+            "score": 32,
+            "turn": 1,
+            "reward": 32,
+            "changed": true,
+            "done": false,
+            "spawned": {
+              "r": 0,
+              "c": 1,
+              "tile": {
+                "t": "n",
+                "v": 1
+              }
+            },
+            "events": [
+              {
+                "type": "merge",
+                "at": [
+                  -1,
+                  -1
+                ],
+                "into": {
+                  "t": "n",
+                  "v": 32
+                }
+              },
+              {
+                "type": "spawn",
+                "at": [
+                  0,
+                  1
+                ],
+                "tile": {
+                  "t": "n",
+                  "v": 1
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "schemaVersion": 2,
+    "runId": "challenge:1.0.0:lock-cooldown-block:ollama:qwen3:8b",
+    "recordedAtISO": "2026-09-05T23:31:04.278Z",
+    "experimentId": "curated-challenges-1.0.0",
+    "phase": "ollama",
+    "track": "curated-fixed-board",
+    "rulesetId": "binary2048-v1",
+    "corpus": {
+      "id": "binary2048-curated-challenges",
+      "version": "1.0.0",
+      "schemaVersion": 1,
+      "replayVersion": 1
+    },
+    "scenario": {
+      "scenarioId": "lock-cooldown-block",
+      "scenarioVersion": 1,
+      "title": "Respect the lock-zero cooldown",
+      "skillTags": [
+        "lock-zero",
+        "cooldown",
+        "hazard-avoidance"
+      ],
+      "maxMoves": 2,
+      "config": {
+        "width": 4,
+        "height": 4,
+        "seed": 7104,
+        "winTile": 2048,
+        "zeroBehavior": "annihilate",
+        "spawnOnNoopMove": false,
+        "spawn": {
+          "pZero": 0,
+          "pOne": 1,
+          "pWildcard": 0,
+          "pLock": 0,
+          "wildcardMultipliers": [
+            2,
+            4,
+            8
+          ]
+        }
+      },
+      "initialGrid": [
+        [
+          {
+            "t": "i"
+          },
+          {
+            "t": "n",
+            "v": 1
+          },
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null
+        ]
+      ]
+    },
+    "model": {
+      "id": "qwen3:8b",
+      "provider": "ollama",
+      "type": "non-thinking",
+      "thinkingEnabled": false,
+      "parameters": {
+        "temperature": 0,
+        "maxOutputTokens": 16,
+        "structuredOutput": "json_schema",
+        "engineCandidateBoards": true
+      }
+    },
+    "objective": {
+      "passed": false,
+      "selectedAction": "D",
+      "expectedActions": [
+        "R"
+      ],
+      "criterion": "first action matches a validated scenario probe"
+    },
+    "metrics": {
+      "moves": 2,
+      "score": 2,
+      "maxTile": 2,
+      "won": false,
+      "over": false,
+      "inputTokens": 708,
+      "outputTokens": 12,
+      "reasoningTokens": 0,
+      "fallbackCount": 0,
+      "averageModelLatencyMs": 762,
+      "p95ModelLatencyMs": 938,
+      "totalModelLatencyMs": 1523
+    },
+    "estimatedCostUsd": {
+      "listedTokenRates": 0,
+      "conservativeObservedRequestRate": 0,
+      "inputUsdPerMillion": 0,
+      "outputUsdPerMillion": 0,
+      "observedUsdPerRequest": 0
+    },
+    "trace": {
+      "version": 1,
+      "complete": true,
+      "actions": [
+        "D",
+        "U"
+      ],
+      "decisions": [
+        {
+          "turn": 0,
+          "before": {
+            "stateHash": "31c62930",
+            "encodedState": [
+              [
+                {
+                  "type": 4,
+                  "value": 0
+                },
+                {
+                  "type": 2,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ]
+            ],
+            "encodedFlat": [
+              4,
+              0,
+              2,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "legalActions": [
+              "D",
+              "R"
+            ],
+            "actionMask": [
+              0,
+              1,
+              0,
+              1
+            ],
+            "candidates": [
+              {
+                "action": "D",
+                "encodedState": [
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 4,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ]
+                ],
+                "scoreDelta": 0,
+                "emptyCells": 13,
+                "maxTile": 1,
+                "mergeCount": 0,
+                "won": false,
+                "over": false,
+                "stateHash": "db233a98"
+              },
+              {
+                "action": "R",
+                "encodedState": [
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 4,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ]
+                ],
+                "scoreDelta": 0,
+                "emptyCells": 13,
+                "maxTile": 1,
+                "mergeCount": 0,
+                "won": false,
+                "over": false,
+                "stateHash": "c5e89e58"
+              }
+            ],
+            "engine": {
+              "rulesetId": "binary2048-v1",
+              "engineVersion": "dev",
+              "width": 4,
+              "height": 4,
+              "spawnProbs": {
+                "zero": 0,
+                "one": 1,
+                "wildcard": 0,
+                "lock": 0
+              }
+            }
+          },
+          "decision": {
+            "action": "D",
+            "fallback": false,
+            "latencyMs": 585,
+            "inputTokens": 286,
+            "outputTokens": 6,
+            "reasoningTokens": 0
+          },
+          "after": {
+            "stateHash": "db233a98",
+            "encodedState": [
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 2,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 4,
+                  "value": 0
+                },
+                {
+                  "type": 2,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ]
+            ],
+            "score": 0,
+            "turn": 1,
+            "reward": 0,
+            "changed": true,
+            "done": false,
+            "spawned": {
+              "r": 2,
+              "c": 1,
+              "tile": {
+                "t": "n",
+                "v": 1
+              }
+            },
+            "events": [
+              {
+                "type": "spawn",
+                "at": [
+                  2,
+                  1
+                ],
+                "tile": {
+                  "t": "n",
+                  "v": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "turn": 1,
+          "before": {
+            "stateHash": "db233a98",
+            "encodedState": [
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 2,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 4,
+                  "value": 0
+                },
+                {
+                  "type": 2,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ]
+            ],
+            "encodedFlat": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0,
+              0,
+              0,
+              0,
+              4,
+              0,
+              2,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "legalActions": [
+              "U",
+              "D",
+              "L",
+              "R"
+            ],
+            "actionMask": [
+              1,
+              1,
+              1,
+              1
+            ],
+            "candidates": [
+              {
+                "action": "U",
+                "encodedState": [
+                  [
+                    {
+                      "type": 4,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 1
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ]
+                ],
+                "scoreDelta": 2,
+                "emptyCells": 13,
+                "maxTile": 2,
+                "mergeCount": 1,
+                "won": false,
+                "over": false,
+                "stateHash": "86e22ca3"
+              },
+              {
+                "action": "D",
+                "encodedState": [
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 4,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 1
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ]
+                ],
+                "scoreDelta": 2,
+                "emptyCells": 13,
+                "maxTile": 2,
+                "mergeCount": 1,
+                "won": false,
+                "over": false,
+                "stateHash": "51a9126b"
+              },
+              {
+                "action": "L",
+                "encodedState": [
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ]
+                ],
+                "scoreDelta": 1,
+                "emptyCells": 13,
+                "maxTile": 1,
+                "mergeCount": 1,
+                "won": false,
+                "over": false,
+                "stateHash": "7313702d"
+              },
+              {
+                "action": "R",
+                "encodedState": [
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    }
+                  ]
+                ],
+                "scoreDelta": 1,
+                "emptyCells": 13,
+                "maxTile": 1,
+                "mergeCount": 1,
+                "won": false,
+                "over": false,
+                "stateHash": "de86902d"
+              }
+            ],
+            "engine": {
+              "rulesetId": "binary2048-v1",
+              "engineVersion": "dev",
+              "width": 4,
+              "height": 4,
+              "spawnProbs": {
+                "zero": 0,
+                "one": 1,
+                "wildcard": 0,
+                "lock": 0
+              }
+            }
+          },
+          "decision": {
+            "action": "U",
+            "fallback": false,
+            "latencyMs": 938,
+            "inputTokens": 422,
+            "outputTokens": 6,
+            "reasoningTokens": 0
+          },
+          "after": {
+            "stateHash": "86e22ca3",
+            "encodedState": [
+              [
+                {
+                  "type": 4,
+                  "value": 0
+                },
+                {
+                  "type": 2,
+                  "value": 1
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 2,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ]
+            ],
+            "score": 2,
+            "turn": 2,
+            "reward": 2,
+            "changed": true,
+            "done": false,
+            "spawned": {
+              "r": 1,
+              "c": 2,
+              "tile": {
+                "t": "n",
+                "v": 1
+              }
+            },
+            "events": [
+              {
+                "type": "merge",
+                "at": [
+                  -1,
+                  -1
+                ],
+                "into": {
+                  "t": "n",
+                  "v": 2
+                }
+              },
+              {
+                "type": "spawn",
+                "at": [
+                  1,
+                  2
+                ],
+                "tile": {
+                  "t": "n",
+                  "v": 1
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "schemaVersion": 2,
+    "runId": "challenge:1.0.0:immediate-target-merge:ollama:qwen3:8b",
+    "recordedAtISO": "2026-09-05T23:31:05.272Z",
+    "experimentId": "curated-challenges-1.0.0",
+    "phase": "ollama",
+    "track": "curated-fixed-board",
+    "rulesetId": "binary2048-v1",
+    "corpus": {
+      "id": "binary2048-curated-challenges",
+      "version": "1.0.0",
+      "schemaVersion": 1,
+      "replayVersion": 1
+    },
+    "scenario": {
+      "scenarioId": "immediate-target-merge",
+      "scenarioVersion": 1,
+      "title": "Complete the target tile",
+      "skillTags": [
+        "number-merge",
+        "win-detection",
+        "tactical-finish"
+      ],
+      "maxMoves": 1,
+      "config": {
+        "width": 4,
+        "height": 4,
+        "seed": 7105,
+        "winTile": 2048,
+        "zeroBehavior": "annihilate",
+        "spawnOnNoopMove": false,
+        "spawn": {
+          "pZero": 0,
+          "pOne": 1,
+          "pWildcard": 0,
+          "pLock": 0,
+          "wildcardMultipliers": [
+            2,
+            4,
+            8
+          ]
+        }
+      },
+      "initialGrid": [
+        [
+          {
+            "t": "n",
+            "v": 1024
+          },
+          {
+            "t": "n",
+            "v": 1024
+          },
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          null,
+          null,
+          null,
+          null
+        ]
+      ]
+    },
+    "model": {
+      "id": "qwen3:8b",
+      "provider": "ollama",
+      "type": "non-thinking",
+      "thinkingEnabled": false,
+      "parameters": {
+        "temperature": 0,
+        "maxOutputTokens": 16,
+        "structuredOutput": "json_schema",
+        "engineCandidateBoards": true
+      }
+    },
+    "objective": {
+      "passed": true,
+      "selectedAction": "L",
+      "expectedActions": [
+        "L"
+      ],
+      "criterion": "first action matches a validated scenario probe"
+    },
+    "metrics": {
+      "moves": 1,
+      "score": 2048,
+      "maxTile": 2048,
+      "won": true,
+      "over": false,
+      "inputTokens": 383,
+      "outputTokens": 6,
+      "reasoningTokens": 0,
+      "fallbackCount": 0,
+      "averageModelLatencyMs": 796,
+      "p95ModelLatencyMs": 796,
+      "totalModelLatencyMs": 796
+    },
+    "estimatedCostUsd": {
+      "listedTokenRates": 0,
+      "conservativeObservedRequestRate": 0,
+      "inputUsdPerMillion": 0,
+      "outputUsdPerMillion": 0,
+      "observedUsdPerRequest": 0
+    },
+    "trace": {
+      "version": 1,
+      "complete": true,
+      "actions": [
+        "L"
+      ],
+      "decisions": [
+        {
+          "turn": 0,
+          "before": {
+            "stateHash": "5ad66a08",
+            "encodedState": [
+              [
+                {
+                  "type": 2,
+                  "value": 10
+                },
+                {
+                  "type": 2,
+                  "value": 10
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ]
+            ],
+            "encodedFlat": [
+              2,
+              10,
+              2,
+              10,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "legalActions": [
+              "D",
+              "L",
+              "R"
+            ],
+            "actionMask": [
+              1,
+              1,
+              0,
+              1
+            ],
+            "candidates": [
+              {
+                "action": "D",
+                "encodedState": [
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 10
+                    },
+                    {
+                      "type": 2,
+                      "value": 10
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ]
+                ],
+                "scoreDelta": 0,
+                "emptyCells": 13,
+                "maxTile": 1024,
+                "mergeCount": 0,
+                "won": false,
+                "over": false,
+                "stateHash": "c6382830"
+              },
+              {
+                "action": "L",
+                "encodedState": [
+                  [
+                    {
+                      "type": 2,
+                      "value": 11
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ]
+                ],
+                "scoreDelta": 2048,
+                "emptyCells": 14,
+                "maxTile": 2048,
+                "mergeCount": 1,
+                "won": true,
+                "over": false,
+                "stateHash": "432c32f4"
+              },
+              {
+                "action": "R",
+                "encodedState": [
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 11
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ]
+                ],
+                "scoreDelta": 2048,
+                "emptyCells": 14,
+                "maxTile": 2048,
+                "mergeCount": 1,
+                "won": true,
+                "over": false,
+                "stateHash": "49c30d1c"
+              }
+            ],
+            "engine": {
+              "rulesetId": "binary2048-v1",
+              "engineVersion": "dev",
+              "width": 4,
+              "height": 4,
+              "spawnProbs": {
+                "zero": 0,
+                "one": 1,
+                "wildcard": 0,
+                "lock": 0
+              }
+            }
+          },
+          "decision": {
+            "action": "L",
+            "fallback": false,
+            "latencyMs": 796,
+            "inputTokens": 383,
+            "outputTokens": 6,
+            "reasoningTokens": 0
+          },
+          "after": {
+            "stateHash": "432c32f4",
+            "encodedState": [
+              [
+                {
+                  "type": 2,
+                  "value": 11
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 2,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ]
+            ],
+            "score": 2048,
+            "turn": 1,
+            "reward": 2048,
+            "changed": true,
+            "done": true,
+            "spawned": {
+              "r": 0,
+              "c": 2,
+              "tile": {
+                "t": "n",
+                "v": 1
+              }
+            },
+            "events": [
+              {
+                "type": "merge",
+                "at": [
+                  -1,
+                  -1
+                ],
+                "into": {
+                  "t": "n",
+                  "v": 2048
+                }
+              },
+              {
+                "type": "spawn",
+                "at": [
+                  0,
+                  2
+                ],
+                "tile": {
+                  "t": "n",
+                  "v": 1
+                }
+              },
+              {
+                "type": "game_won",
+                "at": [
+                  0,
+                  0
+                ],
+                "tile": {
+                  "t": "n",
+                  "v": 2048
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "schemaVersion": 2,
+    "runId": "challenge:1.0.0:asymmetric-edge-choice:ollama:qwen3:8b",
+    "recordedAtISO": "2026-09-05T23:31:09.265Z",
+    "experimentId": "curated-challenges-1.0.0",
+    "phase": "ollama",
+    "track": "curated-fixed-board",
+    "rulesetId": "binary2048-v1",
+    "corpus": {
+      "id": "binary2048-curated-challenges",
+      "version": "1.0.0",
+      "schemaVersion": 1,
+      "replayVersion": 1
+    },
+    "scenario": {
+      "scenarioId": "asymmetric-edge-choice",
+      "scenarioVersion": 1,
+      "title": "Preserve an asymmetric high-value edge",
+      "skillTags": [
+        "spatial-planning",
+        "edge-preservation",
+        "dense-board",
+        "bitstorm"
+      ],
+      "maxMoves": 4,
+      "config": {
+        "width": 4,
+        "height": 4,
+        "seed": 7106,
+        "winTile": 2048,
+        "zeroBehavior": "annihilate",
+        "spawnOnNoopMove": false,
+        "spawn": {
+          "pZero": 0.15,
+          "pOne": 0.72,
+          "pWildcard": 0.1,
+          "pLock": 0.03,
+          "wildcardMultipliers": [
+            2,
+            4,
+            8
+          ]
+        }
+      },
+      "initialGrid": [
+        [
+          {
+            "t": "n",
+            "v": 128
+          },
+          {
+            "t": "n",
+            "v": 64
+          },
+          {
+            "t": "n",
+            "v": 32
+          },
+          {
+            "t": "n",
+            "v": 16
+          }
+        ],
+        [
+          {
+            "t": "n",
+            "v": 64
+          },
+          {
+            "t": "z"
+          },
+          {
+            "t": "n",
+            "v": 8
+          },
+          {
+            "t": "n",
+            "v": 4
+          }
+        ],
+        [
+          {
+            "t": "n",
+            "v": 32
+          },
+          {
+            "t": "n",
+            "v": 8
+          },
+          {
+            "t": "w",
+            "m": 2
+          },
+          {
+            "t": "n",
+            "v": 2
+          }
+        ],
+        [
+          {
+            "t": "n",
+            "v": 16
+          },
+          {
+            "t": "n",
+            "v": 4
+          },
+          {
+            "t": "n",
+            "v": 2
+          },
+          null
+        ]
+      ]
+    },
+    "model": {
+      "id": "qwen3:8b",
+      "provider": "ollama",
+      "type": "non-thinking",
+      "thinkingEnabled": false,
+      "parameters": {
+        "temperature": 0,
+        "maxOutputTokens": 16,
+        "structuredOutput": "json_schema",
+        "engineCandidateBoards": true
+      }
+    },
+    "objective": {
+      "passed": false,
+      "selectedAction": "U",
+      "expectedActions": [
+        "R"
+      ],
+      "criterion": "first action matches a validated scenario probe"
+    },
+    "metrics": {
+      "moves": 4,
+      "score": 110,
+      "maxTile": 128,
+      "won": false,
+      "over": false,
+      "inputTokens": 1754,
+      "outputTokens": 24,
+      "reasoningTokens": 0,
+      "fallbackCount": 0,
+      "averageModelLatencyMs": 918,
+      "p95ModelLatencyMs": 1077,
+      "totalModelLatencyMs": 3670
+    },
+    "estimatedCostUsd": {
+      "listedTokenRates": 0,
+      "conservativeObservedRequestRate": 0,
+      "inputUsdPerMillion": 0,
+      "outputUsdPerMillion": 0,
+      "observedUsdPerRequest": 0
+    },
+    "trace": {
+      "version": 1,
+      "complete": true,
+      "actions": [
+        "U",
+        "L",
+        "L",
+        "U"
+      ],
+      "decisions": [
+        {
+          "turn": 0,
+          "before": {
+            "stateHash": "3039ec70",
+            "encodedState": [
+              [
+                {
+                  "type": 2,
+                  "value": 7
+                },
+                {
+                  "type": 2,
+                  "value": 6
+                },
+                {
+                  "type": 2,
+                  "value": 5
+                },
+                {
+                  "type": 2,
+                  "value": 4
+                }
+              ],
+              [
+                {
+                  "type": 2,
+                  "value": 6
+                },
+                {
+                  "type": 1,
+                  "value": 0
+                },
+                {
+                  "type": 2,
+                  "value": 3
+                },
+                {
+                  "type": 2,
+                  "value": 2
+                }
+              ],
+              [
+                {
+                  "type": 2,
+                  "value": 5
+                },
+                {
+                  "type": 2,
+                  "value": 3
+                },
+                {
+                  "type": 3,
+                  "value": 1
+                },
+                {
+                  "type": 2,
+                  "value": 1
+                }
+              ],
+              [
+                {
+                  "type": 2,
+                  "value": 4
+                },
+                {
+                  "type": 2,
+                  "value": 2
+                },
+                {
+                  "type": 2,
+                  "value": 1
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ]
+            ],
+            "encodedFlat": [
+              2,
+              7,
+              2,
+              6,
+              2,
+              5,
+              2,
+              4,
+              2,
+              6,
+              1,
+              0,
+              2,
+              3,
+              2,
+              2,
+              2,
+              5,
+              2,
+              3,
+              3,
+              1,
+              2,
+              1,
+              2,
+              4,
+              2,
+              2,
+              2,
+              1,
+              0,
+              0
+            ],
+            "legalActions": [
+              "U",
+              "D",
+              "L",
+              "R"
+            ],
+            "actionMask": [
+              1,
+              1,
+              1,
+              1
+            ],
+            "candidates": [
+              {
+                "action": "U",
+                "encodedState": [
+                  [
+                    {
+                      "type": 2,
+                      "value": 7
+                    },
+                    {
+                      "type": 2,
+                      "value": 6
+                    },
+                    {
+                      "type": 2,
+                      "value": 5
+                    },
+                    {
+                      "type": 2,
+                      "value": 4
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 6
+                    },
+                    {
+                      "type": 2,
+                      "value": 3
+                    },
+                    {
+                      "type": 2,
+                      "value": 4
+                    },
+                    {
+                      "type": 2,
+                      "value": 2
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 5
+                    },
+                    {
+                      "type": 2,
+                      "value": 2
+                    },
+                    {
+                      "type": 2,
+                      "value": 1
+                    },
+                    {
+                      "type": 2,
+                      "value": 1
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 4
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ]
+                ],
+                "scoreDelta": 80,
+                "emptyCells": 2,
+                "maxTile": 128,
+                "mergeCount": 2,
+                "won": false,
+                "over": false,
+                "stateHash": "2daa4e40"
+              },
+              {
+                "action": "D",
+                "encodedState": [
+                  [
+                    {
+                      "type": 2,
+                      "value": 7
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 6
+                    },
+                    {
+                      "type": 2,
+                      "value": 6
+                    },
+                    {
+                      "type": 2,
+                      "value": 5
+                    },
+                    {
+                      "type": 2,
+                      "value": 4
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 5
+                    },
+                    {
+                      "type": 2,
+                      "value": 3
+                    },
+                    {
+                      "type": 2,
+                      "value": 3
+                    },
+                    {
+                      "type": 2,
+                      "value": 2
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 4
+                    },
+                    {
+                      "type": 2,
+                      "value": 2
+                    },
+                    {
+                      "type": 2,
+                      "value": 2
+                    },
+                    {
+                      "type": 2,
+                      "value": 1
+                    }
+                  ]
+                ],
+                "scoreDelta": 12,
+                "emptyCells": 2,
+                "maxTile": 128,
+                "mergeCount": 2,
+                "won": false,
+                "over": false,
+                "stateHash": "11890145"
+              },
+              {
+                "action": "L",
+                "encodedState": [
+                  [
+                    {
+                      "type": 2,
+                      "value": 7
+                    },
+                    {
+                      "type": 2,
+                      "value": 6
+                    },
+                    {
+                      "type": 2,
+                      "value": 5
+                    },
+                    {
+                      "type": 2,
+                      "value": 4
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 6
+                    },
+                    {
+                      "type": 2,
+                      "value": 3
+                    },
+                    {
+                      "type": 2,
+                      "value": 2
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 5
+                    },
+                    {
+                      "type": 2,
+                      "value": 4
+                    },
+                    {
+                      "type": 2,
+                      "value": 1
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 4
+                    },
+                    {
+                      "type": 2,
+                      "value": 2
+                    },
+                    {
+                      "type": 2,
+                      "value": 1
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ]
+                ],
+                "scoreDelta": 80,
+                "emptyCells": 2,
+                "maxTile": 128,
+                "mergeCount": 2,
+                "won": false,
+                "over": false,
+                "stateHash": "2f43ce90"
+              },
+              {
+                "action": "R",
+                "encodedState": [
+                  [
+                    {
+                      "type": 2,
+                      "value": 7
+                    },
+                    {
+                      "type": 2,
+                      "value": 6
+                    },
+                    {
+                      "type": 2,
+                      "value": 5
+                    },
+                    {
+                      "type": 2,
+                      "value": 4
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 6
+                    },
+                    {
+                      "type": 2,
+                      "value": 3
+                    },
+                    {
+                      "type": 2,
+                      "value": 2
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 5
+                    },
+                    {
+                      "type": 2,
+                      "value": 3
+                    },
+                    {
+                      "type": 2,
+                      "value": 2
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 4
+                    },
+                    {
+                      "type": 2,
+                      "value": 2
+                    },
+                    {
+                      "type": 2,
+                      "value": 1
+                    }
+                  ]
+                ],
+                "scoreDelta": 12,
+                "emptyCells": 2,
+                "maxTile": 128,
+                "mergeCount": 2,
+                "won": false,
+                "over": false,
+                "stateHash": "e835ef75"
+              }
+            ],
+            "engine": {
+              "rulesetId": "binary2048-v1",
+              "engineVersion": "dev",
+              "width": 4,
+              "height": 4,
+              "spawnProbs": {
+                "zero": 0.15,
+                "one": 0.72,
+                "wildcard": 0.1,
+                "lock": 0.03
+              }
+            }
+          },
+          "decision": {
+            "action": "U",
+            "fallback": false,
+            "latencyMs": 1077,
+            "inputTokens": 501,
+            "outputTokens": 6,
+            "reasoningTokens": 0
+          },
+          "after": {
+            "stateHash": "2daa4e40",
+            "encodedState": [
+              [
+                {
+                  "type": 2,
+                  "value": 7
+                },
+                {
+                  "type": 2,
+                  "value": 6
+                },
+                {
+                  "type": 2,
+                  "value": 5
+                },
+                {
+                  "type": 2,
+                  "value": 4
+                }
+              ],
+              [
+                {
+                  "type": 2,
+                  "value": 6
+                },
+                {
+                  "type": 2,
+                  "value": 3
+                },
+                {
+                  "type": 2,
+                  "value": 4
+                },
+                {
+                  "type": 2,
+                  "value": 2
+                }
+              ],
+              [
+                {
+                  "type": 2,
+                  "value": 5
+                },
+                {
+                  "type": 2,
+                  "value": 2
+                },
+                {
+                  "type": 2,
+                  "value": 1
+                },
+                {
+                  "type": 2,
+                  "value": 1
+                }
+              ],
+              [
+                {
+                  "type": 2,
+                  "value": 4
+                },
+                {
+                  "type": 2,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ]
+            ],
+            "score": 80,
+            "turn": 1,
+            "reward": 80,
+            "changed": true,
+            "done": false,
+            "spawned": {
+              "r": 3,
+              "c": 1,
+              "tile": {
+                "t": "n",
+                "v": 1
+              }
+            },
+            "events": [
+              {
+                "type": "merge",
+                "at": [
+                  -1,
+                  -1
+                ],
+                "into": {
+                  "t": "n",
+                  "v": 64
+                }
+              },
+              {
+                "type": "merge",
+                "at": [
+                  -1,
+                  -1
+                ],
+                "into": {
+                  "t": "n",
+                  "v": 16
+                }
+              },
+              {
+                "type": "spawn",
+                "at": [
+                  3,
+                  1
+                ],
+                "tile": {
+                  "t": "n",
+                  "v": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "turn": 1,
+          "before": {
+            "stateHash": "2daa4e40",
+            "encodedState": [
+              [
+                {
+                  "type": 2,
+                  "value": 7
+                },
+                {
+                  "type": 2,
+                  "value": 6
+                },
+                {
+                  "type": 2,
+                  "value": 5
+                },
+                {
+                  "type": 2,
+                  "value": 4
+                }
+              ],
+              [
+                {
+                  "type": 2,
+                  "value": 6
+                },
+                {
+                  "type": 2,
+                  "value": 3
+                },
+                {
+                  "type": 2,
+                  "value": 4
+                },
+                {
+                  "type": 2,
+                  "value": 2
+                }
+              ],
+              [
+                {
+                  "type": 2,
+                  "value": 5
+                },
+                {
+                  "type": 2,
+                  "value": 2
+                },
+                {
+                  "type": 2,
+                  "value": 1
+                },
+                {
+                  "type": 2,
+                  "value": 1
+                }
+              ],
+              [
+                {
+                  "type": 2,
+                  "value": 4
+                },
+                {
+                  "type": 2,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ]
+            ],
+            "encodedFlat": [
+              2,
+              7,
+              2,
+              6,
+              2,
+              5,
+              2,
+              4,
+              2,
+              6,
+              2,
+              3,
+              2,
+              4,
+              2,
+              2,
+              2,
+              5,
+              2,
+              2,
+              2,
+              1,
+              2,
+              1,
+              2,
+              4,
+              2,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "legalActions": [
+              "D",
+              "L",
+              "R"
+            ],
+            "actionMask": [
+              1,
+              1,
+              0,
+              1
+            ],
+            "candidates": [
+              {
+                "action": "D",
+                "encodedState": [
+                  [
+                    {
+                      "type": 2,
+                      "value": 7
+                    },
+                    {
+                      "type": 2,
+                      "value": 6
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 6
+                    },
+                    {
+                      "type": 2,
+                      "value": 3
+                    },
+                    {
+                      "type": 2,
+                      "value": 5
+                    },
+                    {
+                      "type": 2,
+                      "value": 4
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 5
+                    },
+                    {
+                      "type": 2,
+                      "value": 2
+                    },
+                    {
+                      "type": 2,
+                      "value": 4
+                    },
+                    {
+                      "type": 2,
+                      "value": 2
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 4
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 1
+                    },
+                    {
+                      "type": 2,
+                      "value": 1
+                    }
+                  ]
+                ],
+                "scoreDelta": 0,
+                "emptyCells": 1,
+                "maxTile": 128,
+                "mergeCount": 0,
+                "won": false,
+                "over": false,
+                "stateHash": "e4ae44a2"
+              },
+              {
+                "action": "L",
+                "encodedState": [
+                  [
+                    {
+                      "type": 2,
+                      "value": 7
+                    },
+                    {
+                      "type": 2,
+                      "value": 6
+                    },
+                    {
+                      "type": 2,
+                      "value": 5
+                    },
+                    {
+                      "type": 2,
+                      "value": 4
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 6
+                    },
+                    {
+                      "type": 2,
+                      "value": 3
+                    },
+                    {
+                      "type": 2,
+                      "value": 4
+                    },
+                    {
+                      "type": 2,
+                      "value": 2
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 5
+                    },
+                    {
+                      "type": 2,
+                      "value": 2
+                    },
+                    {
+                      "type": 2,
+                      "value": 2
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 4
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ]
+                ],
+                "scoreDelta": 4,
+                "emptyCells": 2,
+                "maxTile": 128,
+                "mergeCount": 1,
+                "won": false,
+                "over": false,
+                "stateHash": "be20660e"
+              },
+              {
+                "action": "R",
+                "encodedState": [
+                  [
+                    {
+                      "type": 2,
+                      "value": 7
+                    },
+                    {
+                      "type": 2,
+                      "value": 6
+                    },
+                    {
+                      "type": 2,
+                      "value": 5
+                    },
+                    {
+                      "type": 2,
+                      "value": 4
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 6
+                    },
+                    {
+                      "type": 2,
+                      "value": 3
+                    },
+                    {
+                      "type": 2,
+                      "value": 4
+                    },
+                    {
+                      "type": 2,
+                      "value": 2
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 5
+                    },
+                    {
+                      "type": 2,
+                      "value": 2
+                    },
+                    {
+                      "type": 2,
+                      "value": 2
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 4
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    }
+                  ]
+                ],
+                "scoreDelta": 4,
+                "emptyCells": 2,
+                "maxTile": 128,
+                "mergeCount": 1,
+                "won": false,
+                "over": false,
+                "stateHash": "7699b7ce"
+              }
+            ],
+            "engine": {
+              "rulesetId": "binary2048-v1",
+              "engineVersion": "dev",
+              "width": 4,
+              "height": 4,
+              "spawnProbs": {
+                "zero": 0.15,
+                "one": 0.72,
+                "wildcard": 0.1,
+                "lock": 0.03
+              }
+            }
+          },
+          "decision": {
+            "action": "L",
+            "fallback": false,
+            "latencyMs": 867,
+            "inputTokens": 415,
+            "outputTokens": 6,
+            "reasoningTokens": 0
+          },
+          "after": {
+            "stateHash": "be20660e",
+            "encodedState": [
+              [
+                {
+                  "type": 2,
+                  "value": 7
+                },
+                {
+                  "type": 2,
+                  "value": 6
+                },
+                {
+                  "type": 2,
+                  "value": 5
+                },
+                {
+                  "type": 2,
+                  "value": 4
+                }
+              ],
+              [
+                {
+                  "type": 2,
+                  "value": 6
+                },
+                {
+                  "type": 2,
+                  "value": 3
+                },
+                {
+                  "type": 2,
+                  "value": 4
+                },
+                {
+                  "type": 2,
+                  "value": 2
+                }
+              ],
+              [
+                {
+                  "type": 2,
+                  "value": 5
+                },
+                {
+                  "type": 2,
+                  "value": 2
+                },
+                {
+                  "type": 2,
+                  "value": 2
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 2,
+                  "value": 4
+                },
+                {
+                  "type": 2,
+                  "value": 0
+                },
+                {
+                  "type": 2,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ]
+            ],
+            "score": 84,
+            "turn": 2,
+            "reward": 4,
+            "changed": true,
+            "done": false,
+            "spawned": {
+              "r": 3,
+              "c": 2,
+              "tile": {
+                "t": "n",
+                "v": 1
+              }
+            },
+            "events": [
+              {
+                "type": "merge",
+                "at": [
+                  -1,
+                  -1
+                ],
+                "into": {
+                  "t": "n",
+                  "v": 4
+                }
+              },
+              {
+                "type": "spawn",
+                "at": [
+                  3,
+                  2
+                ],
+                "tile": {
+                  "t": "n",
+                  "v": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "turn": 2,
+          "before": {
+            "stateHash": "be20660e",
+            "encodedState": [
+              [
+                {
+                  "type": 2,
+                  "value": 7
+                },
+                {
+                  "type": 2,
+                  "value": 6
+                },
+                {
+                  "type": 2,
+                  "value": 5
+                },
+                {
+                  "type": 2,
+                  "value": 4
+                }
+              ],
+              [
+                {
+                  "type": 2,
+                  "value": 6
+                },
+                {
+                  "type": 2,
+                  "value": 3
+                },
+                {
+                  "type": 2,
+                  "value": 4
+                },
+                {
+                  "type": 2,
+                  "value": 2
+                }
+              ],
+              [
+                {
+                  "type": 2,
+                  "value": 5
+                },
+                {
+                  "type": 2,
+                  "value": 2
+                },
+                {
+                  "type": 2,
+                  "value": 2
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 2,
+                  "value": 4
+                },
+                {
+                  "type": 2,
+                  "value": 0
+                },
+                {
+                  "type": 2,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ]
+            ],
+            "encodedFlat": [
+              2,
+              7,
+              2,
+              6,
+              2,
+              5,
+              2,
+              4,
+              2,
+              6,
+              2,
+              3,
+              2,
+              4,
+              2,
+              2,
+              2,
+              5,
+              2,
+              2,
+              2,
+              2,
+              0,
+              0,
+              2,
+              4,
+              2,
+              0,
+              2,
+              0,
+              0,
+              0
+            ],
+            "legalActions": [
+              "D",
+              "L",
+              "R"
+            ],
+            "actionMask": [
+              1,
+              1,
+              0,
+              1
+            ],
+            "candidates": [
+              {
+                "action": "D",
+                "encodedState": [
+                  [
+                    {
+                      "type": 2,
+                      "value": 7
+                    },
+                    {
+                      "type": 2,
+                      "value": 6
+                    },
+                    {
+                      "type": 2,
+                      "value": 5
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 6
+                    },
+                    {
+                      "type": 2,
+                      "value": 3
+                    },
+                    {
+                      "type": 2,
+                      "value": 4
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 5
+                    },
+                    {
+                      "type": 2,
+                      "value": 2
+                    },
+                    {
+                      "type": 2,
+                      "value": 2
+                    },
+                    {
+                      "type": 2,
+                      "value": 4
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 4
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 2
+                    }
+                  ]
+                ],
+                "scoreDelta": 0,
+                "emptyCells": 1,
+                "maxTile": 128,
+                "mergeCount": 0,
+                "won": false,
+                "over": false,
+                "stateHash": "b737d5e4"
+              },
+              {
+                "action": "L",
+                "encodedState": [
+                  [
+                    {
+                      "type": 2,
+                      "value": 7
+                    },
+                    {
+                      "type": 2,
+                      "value": 6
+                    },
+                    {
+                      "type": 2,
+                      "value": 5
+                    },
+                    {
+                      "type": 2,
+                      "value": 4
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 6
+                    },
+                    {
+                      "type": 2,
+                      "value": 3
+                    },
+                    {
+                      "type": 2,
+                      "value": 4
+                    },
+                    {
+                      "type": 2,
+                      "value": 2
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 5
+                    },
+                    {
+                      "type": 2,
+                      "value": 3
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 4
+                    },
+                    {
+                      "type": 2,
+                      "value": 1
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ]
+                ],
+                "scoreDelta": 10,
+                "emptyCells": 3,
+                "maxTile": 128,
+                "mergeCount": 2,
+                "won": false,
+                "over": false,
+                "stateHash": "441656d1"
+              },
+              {
+                "action": "R",
+                "encodedState": [
+                  [
+                    {
+                      "type": 2,
+                      "value": 7
+                    },
+                    {
+                      "type": 2,
+                      "value": 6
+                    },
+                    {
+                      "type": 2,
+                      "value": 5
+                    },
+                    {
+                      "type": 2,
+                      "value": 4
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 6
+                    },
+                    {
+                      "type": 2,
+                      "value": 3
+                    },
+                    {
+                      "type": 2,
+                      "value": 4
+                    },
+                    {
+                      "type": 2,
+                      "value": 2
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 5
+                    },
+                    {
+                      "type": 2,
+                      "value": 3
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 4
+                    },
+                    {
+                      "type": 2,
+                      "value": 1
+                    }
+                  ]
+                ],
+                "scoreDelta": 10,
+                "emptyCells": 3,
+                "maxTile": 128,
+                "mergeCount": 2,
+                "won": false,
+                "over": false,
+                "stateHash": "0e63e809"
+              }
+            ],
+            "engine": {
+              "rulesetId": "binary2048-v1",
+              "engineVersion": "dev",
+              "width": 4,
+              "height": 4,
+              "spawnProbs": {
+                "zero": 0.15,
+                "one": 0.72,
+                "wildcard": 0.1,
+                "lock": 0.03
+              }
+            }
+          },
+          "decision": {
+            "action": "L",
+            "fallback": false,
+            "latencyMs": 867,
+            "inputTokens": 419,
+            "outputTokens": 6,
+            "reasoningTokens": 0
+          },
+          "after": {
+            "stateHash": "441656d1",
+            "encodedState": [
+              [
+                {
+                  "type": 2,
+                  "value": 7
+                },
+                {
+                  "type": 2,
+                  "value": 6
+                },
+                {
+                  "type": 2,
+                  "value": 5
+                },
+                {
+                  "type": 2,
+                  "value": 4
+                }
+              ],
+              [
+                {
+                  "type": 2,
+                  "value": 6
+                },
+                {
+                  "type": 2,
+                  "value": 3
+                },
+                {
+                  "type": 2,
+                  "value": 4
+                },
+                {
+                  "type": 2,
+                  "value": 2
+                }
+              ],
+              [
+                {
+                  "type": 2,
+                  "value": 5
+                },
+                {
+                  "type": 2,
+                  "value": 3
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 2,
+                  "value": 4
+                },
+                {
+                  "type": 2,
+                  "value": 1
+                },
+                {
+                  "type": 2,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ]
+            ],
+            "score": 94,
+            "turn": 3,
+            "reward": 10,
+            "changed": true,
+            "done": false,
+            "spawned": {
+              "r": 3,
+              "c": 2,
+              "tile": {
+                "t": "n",
+                "v": 1
+              }
+            },
+            "events": [
+              {
+                "type": "merge",
+                "at": [
+                  -1,
+                  -1
+                ],
+                "into": {
+                  "t": "n",
+                  "v": 8
+                }
+              },
+              {
+                "type": "merge",
+                "at": [
+                  -1,
+                  -1
+                ],
+                "into": {
+                  "t": "n",
+                  "v": 2
+                }
+              },
+              {
+                "type": "spawn",
+                "at": [
+                  3,
+                  2
+                ],
+                "tile": {
+                  "t": "n",
+                  "v": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "turn": 3,
+          "before": {
+            "stateHash": "441656d1",
+            "encodedState": [
+              [
+                {
+                  "type": 2,
+                  "value": 7
+                },
+                {
+                  "type": 2,
+                  "value": 6
+                },
+                {
+                  "type": 2,
+                  "value": 5
+                },
+                {
+                  "type": 2,
+                  "value": 4
+                }
+              ],
+              [
+                {
+                  "type": 2,
+                  "value": 6
+                },
+                {
+                  "type": 2,
+                  "value": 3
+                },
+                {
+                  "type": 2,
+                  "value": 4
+                },
+                {
+                  "type": 2,
+                  "value": 2
+                }
+              ],
+              [
+                {
+                  "type": 2,
+                  "value": 5
+                },
+                {
+                  "type": 2,
+                  "value": 3
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 2,
+                  "value": 4
+                },
+                {
+                  "type": 2,
+                  "value": 1
+                },
+                {
+                  "type": 2,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ]
+            ],
+            "encodedFlat": [
+              2,
+              7,
+              2,
+              6,
+              2,
+              5,
+              2,
+              4,
+              2,
+              6,
+              2,
+              3,
+              2,
+              4,
+              2,
+              2,
+              2,
+              5,
+              2,
+              3,
+              0,
+              0,
+              0,
+              0,
+              2,
+              4,
+              2,
+              1,
+              2,
+              0,
+              0,
+              0
+            ],
+            "legalActions": [
+              "U",
+              "D",
+              "R"
+            ],
+            "actionMask": [
+              0,
+              1,
+              1,
+              1
+            ],
+            "candidates": [
+              {
+                "action": "U",
+                "encodedState": [
+                  [
+                    {
+                      "type": 2,
+                      "value": 7
+                    },
+                    {
+                      "type": 2,
+                      "value": 6
+                    },
+                    {
+                      "type": 2,
+                      "value": 5
+                    },
+                    {
+                      "type": 2,
+                      "value": 4
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 6
+                    },
+                    {
+                      "type": 2,
+                      "value": 4
+                    },
+                    {
+                      "type": 2,
+                      "value": 4
+                    },
+                    {
+                      "type": 2,
+                      "value": 2
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 5
+                    },
+                    {
+                      "type": 2,
+                      "value": 1
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 4
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ]
+                ],
+                "scoreDelta": 16,
+                "emptyCells": 3,
+                "maxTile": 128,
+                "mergeCount": 1,
+                "won": false,
+                "over": false,
+                "stateHash": "412f58e9"
+              },
+              {
+                "action": "D",
+                "encodedState": [
+                  [
+                    {
+                      "type": 2,
+                      "value": 7
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 6
+                    },
+                    {
+                      "type": 2,
+                      "value": 6
+                    },
+                    {
+                      "type": 2,
+                      "value": 5
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 5
+                    },
+                    {
+                      "type": 2,
+                      "value": 4
+                    },
+                    {
+                      "type": 2,
+                      "value": 4
+                    },
+                    {
+                      "type": 2,
+                      "value": 4
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 4
+                    },
+                    {
+                      "type": 2,
+                      "value": 1
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 2
+                    }
+                  ]
+                ],
+                "scoreDelta": 16,
+                "emptyCells": 3,
+                "maxTile": 128,
+                "mergeCount": 1,
+                "won": false,
+                "over": false,
+                "stateHash": "399c8e29"
+              },
+              {
+                "action": "R",
+                "encodedState": [
+                  [
+                    {
+                      "type": 2,
+                      "value": 7
+                    },
+                    {
+                      "type": 2,
+                      "value": 6
+                    },
+                    {
+                      "type": 2,
+                      "value": 5
+                    },
+                    {
+                      "type": 2,
+                      "value": 4
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 6
+                    },
+                    {
+                      "type": 2,
+                      "value": 3
+                    },
+                    {
+                      "type": 2,
+                      "value": 4
+                    },
+                    {
+                      "type": 2,
+                      "value": 2
+                    }
+                  ],
+                  [
+                    {
+                      "type": 2,
+                      "value": 0
+                    },
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 5
+                    },
+                    {
+                      "type": 2,
+                      "value": 3
+                    }
+                  ],
+                  [
+                    {
+                      "type": 0,
+                      "value": 0
+                    },
+                    {
+                      "type": 2,
+                      "value": 4
+                    },
+                    {
+                      "type": 2,
+                      "value": 1
+                    },
+                    {
+                      "type": 2,
+                      "value": 0
+                    }
+                  ]
+                ],
+                "scoreDelta": 0,
+                "emptyCells": 2,
+                "maxTile": 128,
+                "mergeCount": 0,
+                "won": false,
+                "over": false,
+                "stateHash": "67832bfa"
+              }
+            ],
+            "engine": {
+              "rulesetId": "binary2048-v1",
+              "engineVersion": "dev",
+              "width": 4,
+              "height": 4,
+              "spawnProbs": {
+                "zero": 0.15,
+                "one": 0.72,
+                "wildcard": 0.1,
+                "lock": 0.03
+              }
+            }
+          },
+          "decision": {
+            "action": "U",
+            "fallback": false,
+            "latencyMs": 859,
+            "inputTokens": 419,
+            "outputTokens": 6,
+            "reasoningTokens": 0
+          },
+          "after": {
+            "stateHash": "412f58e9",
+            "encodedState": [
+              [
+                {
+                  "type": 2,
+                  "value": 7
+                },
+                {
+                  "type": 2,
+                  "value": 6
+                },
+                {
+                  "type": 2,
+                  "value": 5
+                },
+                {
+                  "type": 2,
+                  "value": 4
+                }
+              ],
+              [
+                {
+                  "type": 2,
+                  "value": 6
+                },
+                {
+                  "type": 2,
+                  "value": 4
+                },
+                {
+                  "type": 2,
+                  "value": 4
+                },
+                {
+                  "type": 2,
+                  "value": 2
+                }
+              ],
+              [
+                {
+                  "type": 2,
+                  "value": 5
+                },
+                {
+                  "type": 2,
+                  "value": 1
+                },
+                {
+                  "type": 2,
+                  "value": 0
+                },
+                {
+                  "type": 2,
+                  "value": 0
+                }
+              ],
+              [
+                {
+                  "type": 2,
+                  "value": 4
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                },
+                {
+                  "type": 0,
+                  "value": 0
+                }
+              ]
+            ],
+            "score": 110,
+            "turn": 4,
+            "reward": 16,
+            "changed": true,
+            "done": false,
+            "spawned": {
+              "r": 2,
+              "c": 3,
+              "tile": {
+                "t": "n",
+                "v": 1
+              }
+            },
+            "events": [
+              {
+                "type": "merge",
+                "at": [
+                  -1,
+                  -1
+                ],
+                "into": {
+                  "t": "n",
+                  "v": 16
+                }
+              },
+              {
+                "type": "spawn",
+                "at": [
+                  2,
+                  3
+                ],
+                "tile": {
+                  "t": "n",
+                  "v": 1
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
   }
 ]
