@@ -1,5 +1,5 @@
 import { parseAction, toActionCode, type ActionCode } from "@/lib/binary2048/action";
-import { legalActionCodes, stateHash } from "@/lib/binary2048/ai";
+import { actionCandidates, actionMask, encodeState, flattenEncodedState, legalActionCodes, stateHash } from "@/lib/binary2048/ai";
 import { applyMove, createGame, DEFAULT_CONFIG } from "@/lib/binary2048/engine";
 import type { Dir, GameConfig, GameState } from "@/lib/binary2048/types";
 
@@ -14,6 +14,12 @@ export type TournamentRun = {
   over: boolean;
   maxTile: number;
   finalStateHash: string;
+  trace?: {
+    version: 1;
+    complete: boolean;
+    actions: ActionCode[];
+    decisions: Array<Record<string, unknown>>;
+  };
 };
 
 export type TournamentRanking = {
@@ -30,6 +36,7 @@ export type TournamentRequest = {
   maxMoves: number;
   bots: BotId[];
   config?: Partial<GameConfig>;
+  includeTraces?: boolean;
 };
 
 export type TournamentResult = {
@@ -180,10 +187,11 @@ function mergeConfig(config: Partial<GameConfig> | undefined, seed: number): Gam
   };
 }
 
-function runOneGame(bot: BotId, seed: number, maxMoves: number, config?: Partial<GameConfig>): TournamentRun {
+function runOneGame(bot: BotId, seed: number, maxMoves: number, config?: Partial<GameConfig>, includeTrace = false): TournamentRun {
   const game = createGame(mergeConfig(config, seed));
   let current = game.state;
   let moves = 0;
+  const decisions: Array<Record<string, unknown>> = [];
   const ctx: BotContext = {
     rand: mulberry32((seed ^ hashBotId(bot)) >>> 0),
     lastAction: null
@@ -192,11 +200,39 @@ function runOneGame(bot: BotId, seed: number, maxMoves: number, config?: Partial
   while (!current.over && !current.won && moves < maxMoves) {
     const legal = legalActionCodes(current);
     const policy = BOT_POLICIES[bot];
+    const before = current;
+    const started = performance.now();
     const action = policy.pick(current, legal, ctx);
+    const latencyMs = Math.round((performance.now() - started) * 1000) / 1000;
     if (!action) break;
     const dir = parseAction(action) as Dir | null;
     if (!dir) break;
     const moved = applyMove(current, dir);
+    if (includeTrace) {
+      decisions.push({
+        turn: moves,
+        before: {
+          stateHash: stateHash(before),
+          encodedState: encodeState(before),
+          encodedFlat: flattenEncodedState(encodeState(before)),
+          legalActions: legal,
+          actionMask: actionMask(legal),
+          candidates: actionCandidates(before),
+          engine: { rulesetId: "binary2048-v1", engineVersion: process.env.NEXT_PUBLIC_APP_COMMIT ?? "dev", width: before.width, height: before.height }
+        },
+        decision: { action, fallback: false, latencyMs, inputTokens: 0, outputTokens: 0, reasoningTokens: 0 },
+        after: {
+          stateHash: stateHash(moved.state),
+          encodedState: encodeState(moved.state),
+          score: moved.state.score,
+          turn: moved.state.turn,
+          reward: moved.state.score - before.score,
+          changed: moved.moved,
+          done: moved.state.over || moved.state.won,
+          spawned: moved.events.find((event) => event.type === "spawn") ?? null
+        }
+      });
+    }
     current = moved.state;
     ctx.lastAction = toActionCode(dir);
     moves += 1;
@@ -210,7 +246,8 @@ function runOneGame(bot: BotId, seed: number, maxMoves: number, config?: Partial
     won: current.won,
     over: current.over,
     maxTile: maxTile(current),
-    finalStateHash: stateHash(current)
+    finalStateHash: stateHash(current),
+    ...(includeTrace ? { trace: { version: 1 as const, complete: decisions.length === moves, actions: decisions.map((entry) => (entry.decision as { action: ActionCode }).action), decisions } } : {})
   };
 }
 
@@ -239,7 +276,7 @@ export function runBotTournament(input: TournamentRequest): TournamentResult {
   const runs: TournamentRun[] = [];
   for (const seed of input.seeds) {
     for (const bot of input.bots) {
-      runs.push(runOneGame(bot, seed, input.maxMoves, input.config));
+      runs.push(runOneGame(bot, seed, input.maxMoves, input.config, input.includeTraces));
     }
   }
   return {

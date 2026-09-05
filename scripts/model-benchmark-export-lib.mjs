@@ -64,7 +64,7 @@ function parquetColumns(rows, kind) {
         ["candidate_boards_json", "JSON", (row) => row.before?.candidates],
         ["action", "STRING", (row) => row.decision?.action],
         ["fallback", "BOOLEAN", (row) => row.decision?.fallback],
-        ["latency_ms", "INT32", (row) => row.decision?.latencyMs],
+        ["latency_ms", "DOUBLE", (row) => row.decision?.latencyMs],
         ["input_tokens", "INT32", (row) => row.decision?.inputTokens],
         ["output_tokens", "INT32", (row) => row.decision?.outputTokens],
         ["reasoning_tokens", "INT32", (row) => row.decision?.reasoningTokens],

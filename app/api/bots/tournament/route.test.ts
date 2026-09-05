@@ -56,6 +56,31 @@ describe("POST /api/bots/tournament", () => {
     expect(json.runs).toHaveLength(4);
   });
 
+  it("returns opt-in decision traces", async () => {
+    const req = new Request("http://localhost/api/bots/tournament", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ seeds: [100], maxMoves: 3, bots: ["rollout"], includeTraces: true })
+    });
+    const res = await POST(req);
+    const json = await res.json();
+    expect(res.status).toBe(200);
+    expect(json.runs[0].trace.complete).toBe(true);
+    expect(json.runs[0].trace.decisions).toHaveLength(3);
+  });
+
+  it("caps the size of trace responses", async () => {
+    const req = new Request("http://localhost/api/bots/tournament", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ seedCount: 2, maxMoves: 700, bots: ["priority", "rollout"], includeTraces: true })
+    });
+    const res = await POST(req);
+    const json = await res.json();
+    expect(res.status).toBe(400);
+    expect(json).toMatchObject({ code: "cost_cap_exceeded", field: "traceDecisions", limit: 2500, value: 2800 });
+  });
+
   it("returns 429 when tournament rate limit is exceeded for same ip", async () => {
     process.env.BINARY2048_RATE_LIMIT_TOURNAMENT_MAX = "1";
     process.env.BINARY2048_RATE_LIMIT_WINDOW_MS = "60000";

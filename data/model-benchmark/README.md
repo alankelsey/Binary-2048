@@ -19,6 +19,7 @@ latency. See `manifest.json` for row counts and SHA-256 checksums.
 | Qwen3.5-397B-A17B / DeepInfra | 5 | 125 | 105.0 | 736 ms | 52,009 | 750 | 0 | $0.89 |
 | GPT-OSS-120B / Novita | 5 | 125 | 83.4 | 5,330 ms | 58,931 | 65,820 | 0 | $0.89 |
 | Qwen3-8B / local Ollama | 5 | 125 | 157.2 | 5,238 ms | 50,902 | 750 | 0 | $0.00 |
+| Monte Carlo rollout / local engine | 5 | 112 | 1,982.6 | 14 ms | 0 | 0 | 0 | $0.00 |
 
 The Ollama aggregate latency includes seed 100 on an Intel build under
 translation (22,400 ms average). After switching to the native Apple Silicon
@@ -30,6 +31,7 @@ nested boards and candidates are retained in JSON-typed columns. The 20 older
 schema-v1 runs appear only in `run_metrics` because their decision traces were
 not captured and must not be treated as training steps.
 
-`rollout_steps` is currently empty. Same-seed rollout summary results are stored
-on each run-metrics record, while the older rollout training corpus remains in
+The rollout split contains trace-complete runs for seeds `100`–`104`. Seed 102
+reached the target tile after 12 moves, so this split has 112 rather than 125
+steps. The older rollout training corpus remains in
 `artifacts/training-archive-20260816`.

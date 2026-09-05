@@ -21,12 +21,14 @@ type TournamentBody = {
   maxMoves?: number;
   bots?: BotId[];
   config?: Partial<GameConfig>;
+  includeTraces?: boolean;
 };
 
 const DEFAULT_SEED_START = 100;
 const DEFAULT_SEED_COUNT = 3;
 const DEFAULT_MAX_MOVES = 250;
 const DEFAULT_BOTS: BotId[] = ["priority", "random", "alternate", "rollout"];
+const MAX_TRACE_DECISIONS = 2_500;
 
 function parseSeedList(body: TournamentBody) {
   if (Array.isArray(body.seeds) && body.seeds.length > 0) {
@@ -110,11 +112,16 @@ export async function POST(req: Request) {
       throw new EndpointCostCapError("maxMoves", TOURNAMENT_MAX_MOVES, maxMoves);
     }
     const bots = parseBots(body.bots);
+    const requestedTraceDecisions = seeds.length * bots.length * maxMoves;
+    if (body.includeTraces === true && requestedTraceDecisions > MAX_TRACE_DECISIONS) {
+      throw new EndpointCostCapError("traceDecisions", MAX_TRACE_DECISIONS, requestedTraceDecisions);
+    }
     const result = runBotTournament({
       seeds,
       maxMoves,
       bots,
-      config: body.config
+      config: body.config,
+      includeTraces: body.includeTraces === true
     });
     return NextResponse.json(
       {
