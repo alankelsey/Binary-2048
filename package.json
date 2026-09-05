@@ -86,6 +86,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.967.0",
+    "hyparquet-writer": "^0.16.6",
     "mongodb": "^6.20.0",
     "next": "15.5.12",
     "next-auth": "^4.24.13",

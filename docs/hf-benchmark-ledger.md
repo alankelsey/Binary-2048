@@ -50,8 +50,10 @@ disabled; the ledger will then record `rollout: null`.
 npm run models:export:dataset
 ```
 
-This writes canonical JSONL files plus `manifest.json` under
-`data/model-benchmark/`. Hosted, Ollama, and rollout decisions are kept in
-separate step files, while `run_metrics.jsonl` contains every run summary.
+This writes canonical JSONL files, derived Parquet files, SHA-256 checksums, and
+`manifest.json` under `data/model-benchmark/`. Hosted, Ollama, and rollout
+decisions are kept in separate step files, while `run_metrics` contains every
+run summary. Empty step splits retain an empty JSONL file and omit Parquet until
+at least one trace-complete row exists.
 Schema-v1 historical summaries remain in metrics but are intentionally excluded
 from step datasets because their move-level inputs and actions were not saved.

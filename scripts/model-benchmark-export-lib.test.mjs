@@ -67,4 +67,8 @@ test("writes JSONL splits and a manifest", async () => {
   assert.equal(manifest.rows.metrics, 1);
   const row = JSON.parse((await readFile(join(outDirectory, "hosted_model_steps.jsonl"), "utf8")).trim());
   assert.equal(row.before.candidates[0].action, "L");
+  const parquet = await readFile(join(outDirectory, "hosted_model_steps.parquet"));
+  assert.equal(parquet.subarray(0, 4).toString(), "PAR1");
+  assert.equal(parquet.subarray(-4).toString(), "PAR1");
+  assert.match(manifest.sha256["hosted_model_steps.parquet"], /^[a-f0-9]{64}$/);
 });

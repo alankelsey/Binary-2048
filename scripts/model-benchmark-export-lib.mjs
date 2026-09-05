@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
@@ -19,6 +20,75 @@ function splitFor(record) {
 
 function jsonLine(value) {
   return JSON.stringify(value);
+}
+
+function parquetColumns(rows, kind) {
+  const fields = kind === "metrics"
+    ? [
+        ["run_id", "STRING", (row) => row.runId],
+        ["experiment_id", "STRING", (row) => row.experimentId],
+        ["phase", "STRING", (row) => row.phase],
+        ["seed", "INT32", (row) => row.seed?.value],
+        ["model_id", "STRING", (row) => row.model?.id],
+        ["provider", "STRING", (row) => row.model?.provider],
+        ["model_type", "STRING", (row) => row.model?.type],
+        ["thinking_enabled", "BOOLEAN", (row) => row.model?.thinkingEnabled],
+        ["moves", "INT32", (row) => row.metrics?.moves],
+        ["score", "INT32", (row) => row.metrics?.score],
+        ["max_tile", "INT32", (row) => row.metrics?.maxTile],
+        ["input_tokens", "INT32", (row) => row.metrics?.inputTokens],
+        ["output_tokens", "INT32", (row) => row.metrics?.outputTokens],
+        ["fallback_count", "INT32", (row) => row.metrics?.fallbackCount],
+        ["average_model_latency_ms", "INT32", (row) => row.metrics?.averageModelLatencyMs],
+        ["listed_cost_usd", "DOUBLE", (row) => row.estimatedCostUsd?.listedTokenRates],
+        ["conservative_cost_usd", "DOUBLE", (row) => row.estimatedCostUsd?.conservativeObservedRequestRate],
+        ["trace_complete", "BOOLEAN", (row) => row.traceComplete],
+        ["record_json", "JSON", (row) => row]
+      ]
+    : [
+        ["run_id", "STRING", (row) => row.runId],
+        ["experiment_id", "STRING", (row) => row.experimentId],
+        ["phase", "STRING", (row) => row.phase],
+        ["seed", "INT32", (row) => row.seed],
+        ["model_id", "STRING", (row) => row.model?.id],
+        ["provider", "STRING", (row) => row.model?.provider],
+        ["model_type", "STRING", (row) => row.model?.type],
+        ["thinking_enabled", "BOOLEAN", (row) => row.model?.thinkingEnabled],
+        ["temperature", "DOUBLE", (row) => row.model?.parameters?.temperature],
+        ["max_output_tokens", "INT32", (row) => row.model?.parameters?.maxOutputTokens],
+        ["turn", "INT32", (row) => row.turn],
+        ["state_hash_before", "STRING", (row) => row.before?.stateHash],
+        ["legal_actions_json", "JSON", (row) => row.before?.legalActions],
+        ["action_mask_json", "JSON", (row) => row.before?.actionMask],
+        ["encoded_state_json", "JSON", (row) => row.before?.encodedState],
+        ["candidate_boards_json", "JSON", (row) => row.before?.candidates],
+        ["action", "STRING", (row) => row.decision?.action],
+        ["fallback", "BOOLEAN", (row) => row.decision?.fallback],
+        ["latency_ms", "INT32", (row) => row.decision?.latencyMs],
+        ["input_tokens", "INT32", (row) => row.decision?.inputTokens],
+        ["output_tokens", "INT32", (row) => row.decision?.outputTokens],
+        ["reasoning_tokens", "INT32", (row) => row.decision?.reasoningTokens],
+        ["state_hash_after", "STRING", (row) => row.after?.stateHash],
+        ["encoded_state_after_json", "JSON", (row) => row.after?.encodedState],
+        ["score_after", "INT32", (row) => row.after?.score],
+        ["reward", "INT32", (row) => row.after?.reward],
+        ["done", "BOOLEAN", (row) => row.after?.done],
+        ["step_json", "JSON", (row) => row]
+      ];
+  return fields.map(([name, type, select]) => ({
+    name,
+    type,
+    nullable: true,
+    data: rows.map((row) => {
+      const value = select(row);
+      if (value === undefined || value === null) return null;
+      return type === "JSON" ? JSON.stringify(value) : value;
+    })
+  }));
+}
+
+async function checksum(path) {
+  return createHash("sha256").update(await readFile(path)).digest("hex");
 }
 
 export function buildBenchmarkSplits(records) {
@@ -81,13 +151,32 @@ export async function exportBenchmarkLedger({ ledgerPath, outDirectory }) {
     const lines = result.splits[split].map(jsonLine);
     await writeFile(join(outDirectory, file), lines.length ? `${lines.join("\n")}\n` : "", "utf8");
   }
+  const { parquetWriteFile } = await import("hyparquet-writer");
+  const parquetFiles = {};
+  for (const [split, rows] of Object.entries(result.splits)) {
+    if (rows.length === 0) {
+      parquetFiles[split] = null;
+      continue;
+    }
+    const filename = SPLIT_FILES[split].replace(/\.jsonl$/, ".parquet");
+    parquetWriteFile({
+      filename: join(outDirectory, filename),
+      columnData: parquetColumns(rows, split)
+    });
+    parquetFiles[split] = filename;
+  }
+  const checksums = {};
+  for (const file of [...Object.values(SPLIT_FILES), ...Object.values(parquetFiles).filter(Boolean)]) {
+    checksums[file] = await checksum(join(outDirectory, file));
+  }
   const manifest = {
     exportSchemaVersion: EXPORT_SCHEMA_VERSION,
     generatedAtISO: new Date().toISOString(),
     source: ledgerPath,
     skippedSummaryOnly: result.skippedSummaryOnly,
     rows: Object.fromEntries(Object.entries(result.splits).map(([name, rows]) => [name, rows.length])),
-    files: SPLIT_FILES
+    files: { jsonl: SPLIT_FILES, parquet: parquetFiles },
+    sha256: checksums
   };
   await writeFile(join(outDirectory, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
   return manifest;

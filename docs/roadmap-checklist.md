@@ -156,7 +156,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add a versioned per-run hosted-model ledger for seed/config, model type and parameters, thinking mode, scores, tiles, tokens, fallbacks, latency, cost estimates, and same-seed rollout comparisons
 - [x] Capture versioned hosted-model decision traces with complete move sequences, encoded states, legal/action-mask inputs, engine candidate boards, actions, outcomes, per-move tokens, fallbacks, and latency
 - [x] Export trace-complete runs into separately identified hosted-model, Ollama-model, rollout, and aggregate-metrics canonical JSONL splits, rejecting incomplete traces from step data
-- [ ] Derive Parquet splits and checksums from the canonical model benchmark JSONL export
+- [x] Derive Parquet splits and SHA-256 checksums from the canonical model benchmark JSONL export
 - [ ] Regenerate fixed-seed hosted and local model traces so the research dataset contains policies beyond rollout
 - [ ] Expand bot evaluation into two separately reported tracks: reproducible seeded games and versioned curated fixed-board/Bitstorm challenge scenarios
 - [ ] Define the curated challenge corpus with explicit initial grids, rules/config, scenario IDs, intended skill tags, expected invariants, and replay-compatible versions
