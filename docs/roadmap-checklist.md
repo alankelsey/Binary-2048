@@ -211,6 +211,13 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add run index strategy (playerId/date, score desc, rulesetId, contestId) and query latency SLO
 - [x] Add `/api/runs/:id` + `/api/runs/:id/replay` backed by persistent storage
 - [x] Add deterministic training dataset export job (Parquet/JSONL) for ML with PII-safe schema
+- [ ] Keep `botvsbot/binary2048` private until a public research-release audit is approved
+- [ ] Before public release, verify every published row is synthetic bot-generated data with no player identifiers, Mongo records, secrets, environment values, operational logs, or internal handoff notes
+- [ ] Publish research-safe files only (`README.md`/dataset card and Parquet data); exclude the executable/non-portable pickle replay buffer unless a documented need and security review justify it
+- [ ] Complete public dataset documentation: provenance, dataset/engine/ruleset versions, seed range and RNG semantics, bot policy/version, exact generation command, limitations, intended uses, and citation
+- [ ] Confirm Binary-2048 owns the data and Apache-2.0 is appropriate for every published artifact
+- [ ] Add checksums, explicit train/validation/test split guidance, and immutable tagged dataset releases before changing visibility
+- [ ] After the release audit passes, make the synthetic dataset public; use gated access instead for any future human-derived or consent-sensitive dataset
 - [x] Add feature extractor job for model inputs (encoded state/action mask + outcome labels)
 - [x] Add baseline offline ML pipeline (train/eval/report) using persisted runs
 - [x] Add a local Ollama zero-shot bot baseline with structured legal-action output, deterministic fallback, latency reporting, and no Binary-2048 training-data dependency
