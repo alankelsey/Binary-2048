@@ -1,69 +1,99 @@
-# Hugging Face Model Benchmark
+# Hugging Face Hosted-Model Benchmark
 
-- Date: 2026-09-03
-- Model: `Qwen/Qwen3.5-397B-A17B`
-- Provider: DeepInfra through Hugging Face Inference Providers
-- Seeds: `100`–`105`
-- Maximum moves: `25`
+- Date: 2026-09-05
+- Provider: Hugging Face Inference Providers
 - Ruleset: `binary2048-v1` default configuration
-- Settings: thinking disabled, temperature 0, JSON-schema action output
+- Maximum moves: `25`
+- Prompt input: current encoded state, legal actions, and the engine-computed
+  resulting board and metrics for every legal action
+- Output contract: temperature 0 and JSON-schema constrained legal action
+- Approved experiment ceiling: `$10`
 
-## Results
+## Two-phase design
 
-| Seed | Hosted Score | Hosted Max Tile | Rollout Score | Rollout Max Tile | Hosted Avg Latency |
-|---:|---:|---:|---:|---:|---:|
-| 100 | 80 | 16 | 59 | 16 | 686 ms |
-| 101 | 75 | 16 | 136 | 64 | 678 ms |
-| 102 | 211 | 128 | 9,376 | 8,192 | 621 ms |
-| 103 | 80 | 16 | 170 | 64 | 631 ms |
-| 104 | 67 | 8 | 172 | 32 | 723 ms |
-| 105 | 67 | 8 | 237 | 64 | 708 ms |
+Phase 1 screened three new candidates on seeds `100`–`104` and reused the
+existing Qwen3.5 result as the control. The two best qualified models advanced
+to Phase 2 on ten additional seeds, `105`–`114`. A model qualified only if it
+could reliably return a legal structured action within its output allowance.
 
-| Aggregate | Hosted Qwen3.5 | Rollout |
+"Non-thinking" means the provider is instructed to return the action directly.
+"Reasoning-style" means the model is allowed to generate intermediate compute
+tokens before its structured action. Both receive the same engine candidate
+boards; the label describes inference behavior, not whether a neural model does
+any computation.
+
+## Phase 1: screening
+
+| Candidate | Mode | Seeds completed | Avg score | Median score | Result |
+|---|---|---:|---:|---:|---|
+| Qwen3.5-397B-A17B (control) | non-thinking | 5 / 5 | 102.6 | 80 | advanced |
+| GPT-OSS-120B | reasoning-style | 5 / 5 | 95.2 | 76 | advanced |
+| DeepSeek-V4-Pro | direct structured output | 5 / 5 | 84.0 | 74 | eliminated |
+| Qwen3-235B-A22B-Thinking-2507 | thinking | 0 / 5 | n/a | n/a | disqualified |
+
+Qwen Thinking repeatedly exhausted a 512-token allowance without an action. A
+2,048-token retry produced one action after 1,507 tokens and about 20.8 seconds,
+but a subsequent game again exhausted the cap. Continuing would not have been a
+reliable or economical policy benchmark.
+
+## Phase 2: finalists
+
+| Seed | Qwen3.5 score | GPT-OSS score |
+|---:|---:|---:|
+| 105 | 67 | 138 |
+| 106 | 97 | 80 |
+| 107 | 164 | 127 |
+| 108 | 143 | 97 |
+| 109 | 70 | 75 |
+| 110 | 222 | 107 |
+| 111 | 84 | 49 |
+| 112 | 61 | 69 |
+| 113 | 60 | 64 |
+| 114 | 96 | 91 |
+
+| Aggregate | Qwen3.5 non-thinking | GPT-OSS reasoning-style |
 |---|---:|---:|
-| Average score | 96.7 | 1,691.7 |
-| Median score | 77.5 | 171 |
-| Average max tile | 32 | 1,405.3 |
-| Median max tile | 16 | 64 |
-| Seeds won head-to-head | 1 / 6 | 5 / 6 |
-| Invalid-output fallbacks | 0 / 150 | not applicable |
-| Average decision latency | 675 ms | approximately 22 ms |
+| Average score | 106.4 | 89.7 |
+| Median score | 90 | 85.5 |
+| Seed wins | 6 / 10 | 4 / 10 |
+| Invalid-output fallbacks | 0 / 250 | 0 / 250 |
+| Average decision latency | 767 ms | 3,971 ms |
+| Output tokens | about 1,500 | 130,977 |
 
-Across six seeds, the hosted model used 62,176 prompt tokens and 900 output
-tokens (63,076 total). The published DeepInfra token rates implied $0.03067920,
-but dashboard-observed billing from the initial seed showed about $0.00714 per
-request. At that observed rate, all six 25-move runs are estimated at $1.07;
-the five runs added on September 3 are estimated at $0.89.
+GPT-OSS used 117,966 prompt tokens and 130,977 output tokens in Phase 2. Its
+listed token rates imply `$0.03864255` for those ten games, but Hugging Face
+settles provider charges asynchronously and earlier dashboard billing showed a
+higher effective request cost. Using the observed `$0.25 / 35` call rate as a
+conservative floor, Phase 2 is estimated at `$3.57` for 500 model calls. The
+whole newly executed two-phase experiment, including screening and retries, is
+estimated near `$5.25`, below the approved `$10` ceiling. The billing dashboard
+remains authoritative.
 
-For the initial seed-100 run, the published token rates implied $0.00511695,
-but the Hugging Face billing dashboard subsequently showed $0.25 accrued for
-all 35 successful calls made during setup and benchmarking. Those calls were
-the two one-move smoke tests, an eight-move partial run, and this 25-move run.
-The observed average was therefore about $0.00714 per request, allocating
-approximately $0.18 of actual cost to the 25-move benchmark. The dashboard is
-authoritative; the reason for the discrepancy with the listed token rates is
-not exposed in the inference response.
+## Decision and roadmap status
 
-Across six seeds, rollout beat the hosted model five times and had substantially
-higher median score and max tile. Seed 102 contains a wildcard-assisted rollout
-win, but removing that outlier still leaves rollout with a 154.8 average score
-versus 73.8 for hosted Qwen on the other five seeds. The hosted model is useful
-as a prompt/model baseline, but it does not justify replacing rollout.
+Qwen3.5 remains the hosted-model baseline. GPT-OSS did not buy higher score with
+its roughly 87-times larger output and 5.2-times higher latency. Neither hosted
+model replaces the built-in rollout bot based on the earlier six-seed control,
+where rollout won five seeds and had a much higher median score.
 
-A future experiment with a stronger reasoning model is approval-gated because
-its output-token use and cost can be much higher. Do not launch it without
-explicit approval of the model, move count, seed count, and estimated budget.
+This completes the hosted multi-model portion of the reproducible seeded track
+and validates cost, structured-output, fallback, and latency telemetry. It does
+not complete the roadmap's dual-track evaluation item: the versioned curated
+fixed-board/Bitstorm challenge corpus still needs to be implemented and reported
+separately.
 
 ## Reproduction
 
 Configure `HF_TOKEN` in `.env.local`, run the app locally, then execute:
 
 ```bash
-SEED=100 MAX_MOVES=25 npm run hf:bot
+SEED=100 MAX_MOVES=25 HF_ENABLE_THINKING=0 npm run hf:bot
 ```
 
 Hugging Face obtains the final provider-reported charge asynchronously, after
 the inference response. A client therefore cannot enforce a real-time dollar
 cap from response token counts. The adapter defaults to a $5.00 preflight limit
 using the observed $0.00714 per-request cost; override
-`HF_MAX_ESTIMATED_COST_USD` explicitly to authorize a larger run.
+`HF_MAX_ESTIMATED_COST_USD` explicitly to authorize a larger run. Reasoning
+experiments must also set `HF_ENABLE_THINKING=1` and an intentional
+`HF_MAX_OUTPUT_TOKENS` value.

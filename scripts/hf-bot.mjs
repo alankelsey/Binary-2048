@@ -22,6 +22,9 @@ const HF_MODEL = process.env.HF_MODEL ?? "Qwen/Qwen3.5-397B-A17B:deepinfra";
 const HF_TOKEN = process.env.HF_TOKEN ?? localEnvValue("HF_TOKEN");
 const MAX_MOVES = Number(process.env.MAX_MOVES ?? "25");
 const SEED = Number(process.env.SEED ?? "100");
+const ENABLE_THINKING = process.env.HF_ENABLE_THINKING === "1";
+const MAX_OUTPUT_TOKENS = Number(process.env.HF_MAX_OUTPUT_TOKENS ?? (ENABLE_THINKING ? "512" : "16"));
+const TEMPERATURE = Number(process.env.HF_TEMPERATURE ?? "0");
 const INPUT_USD_PER_MILLION = Number(process.env.HF_INPUT_USD_PER_MILLION ?? "0.45");
 const OUTPUT_USD_PER_MILLION = Number(process.env.HF_OUTPUT_USD_PER_MILLION ?? "3.00");
 const OBSERVED_USD_PER_REQUEST = Number(process.env.HF_OBSERVED_USD_PER_REQUEST ?? String(0.25 / 35));
@@ -59,9 +62,9 @@ async function pickAction(encoded) {
     },
     body: JSON.stringify({
       model: HF_MODEL,
-      temperature: 0,
-      max_tokens: 16,
-      chat_template_kwargs: { enable_thinking: false },
+      temperature: TEMPERATURE,
+      max_tokens: MAX_OUTPUT_TOKENS,
+      ...(HF_MODEL.startsWith("Qwen/") ? { chat_template_kwargs: { enable_thinking: ENABLE_THINKING } } : {}),
       response_format: {
         type: "json_schema",
         json_schema: {
@@ -76,7 +79,12 @@ async function pickAction(encoded) {
         }
       },
       messages: [
-        { role: "system", content: "You are a deterministic Binary 2048 move-selection policy. Do not think aloud." },
+        {
+          role: "system",
+          content: ENABLE_THINKING
+            ? "You are a deterministic Binary 2048 move-selection policy. Analyze the engine candidates, then return only the required JSON action."
+            : "You are a deterministic Binary 2048 move-selection policy. Do not think aloud."
+        },
         { role: "user", content: buildMovePrompt(encoded.encodedState, legalActions, encoded.candidates) }
       ]
     })
@@ -87,7 +95,8 @@ async function pickAction(encoded) {
     ...selected,
     latencyMs: Math.round(performance.now() - started),
     promptTokens: Number(response?.usage?.prompt_tokens ?? 0),
-    outputTokens: Number(response?.usage?.completion_tokens ?? 0)
+    outputTokens: Number(response?.usage?.completion_tokens ?? 0),
+    reasoningTokens: Number(response?.usage?.completion_tokens_details?.reasoning_tokens ?? 0)
   } : null;
 }
 
@@ -98,7 +107,9 @@ async function play() {
   // Hugging Face settles the provider-reported charge asynchronously, so the
   // response token counts cannot enforce a real-time dollar cap. Use the
   // dashboard-observed per-request cost as a conservative preflight estimate.
-  const preflightCost = MAX_MOVES * OBSERVED_USD_PER_REQUEST;
+  const requestFloorEstimate = MAX_MOVES * OBSERVED_USD_PER_REQUEST;
+  const tokenCeilingEstimate = estimatedCost(MAX_MOVES * 750, MAX_MOVES * MAX_OUTPUT_TOKENS);
+  const preflightCost = Math.max(requestFloorEstimate, tokenCeilingEstimate);
   if (preflightCost > MAX_ESTIMATED_COST_USD) {
     throw new Error(`Preflight cost $${preflightCost.toFixed(6)} exceeds cap $${MAX_ESTIMATED_COST_USD.toFixed(6)}`);
   }
@@ -115,6 +126,7 @@ async function play() {
   let fallbackMoves = 0;
   let promptTokens = 0;
   let outputTokens = 0;
+  let reasoningTokens = 0;
   const latencies = [];
   let done = false;
   while (!done && moves < MAX_MOVES) {
@@ -124,6 +136,7 @@ async function play() {
     if (selected.fallback) fallbackMoves += 1;
     promptTokens += selected.promptTokens;
     outputTokens += selected.outputTokens;
+    reasoningTokens += selected.reasoningTokens;
     latencies.push(selected.latencyMs);
     const moved = await requestJson(`${BASE}/api/games/${id}/move`, {
       method: "POST",
@@ -132,7 +145,7 @@ async function play() {
     });
     moves += 1;
     done = Boolean(moved?.done);
-    console.log(`move=${moves} action=${selected.action} latencyMs=${selected.latencyMs} promptTokens=${selected.promptTokens} outputTokens=${selected.outputTokens} fallback=${selected.fallback}`);
+    console.log(`move=${moves} action=${selected.action} latencyMs=${selected.latencyMs} promptTokens=${selected.promptTokens} outputTokens=${selected.outputTokens} reasoningTokens=${selected.reasoningTokens} fallback=${selected.fallback}`);
   }
 
   const final = await requestJson(`${BASE}/api/games/${id}`);
@@ -145,7 +158,10 @@ async function play() {
     fallbackMoves,
     promptTokens,
     outputTokens,
+    reasoningTokens,
     totalTokens: promptTokens + outputTokens,
+    thinkingEnabled: ENABLE_THINKING,
+    maxOutputTokens: MAX_OUTPUT_TOKENS,
     listedTokenRateEstimateUsd: Number(estimatedCost(promptTokens, outputTokens).toFixed(8)),
     observedCostEstimateUsd: Number((moves * OBSERVED_USD_PER_REQUEST).toFixed(8)),
     score: final?.current?.score ?? 0,
