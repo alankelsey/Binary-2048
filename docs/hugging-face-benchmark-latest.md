@@ -8,6 +8,7 @@
   resulting board and metrics for every legal action
 - Output contract: temperature 0 and JSON-schema constrained legal action
 - Approved experiment ceiling: `$10`
+- Per-run telemetry ledger: [`hf-benchmark-runs.json`](./hf-benchmark-runs.json)
 
 ## Two-phase design
 

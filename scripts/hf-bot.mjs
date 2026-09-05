@@ -3,6 +3,7 @@
 import { performance } from "node:perf_hooks";
 import { readFileSync } from "node:fs";
 import { buildMovePrompt, parseOllamaAction } from "./ollama-bot-lib.mjs";
+import { modelProvider, upsertBenchmarkRecord } from "./hf-benchmark-ledger.mjs";
 
 function localEnvValue(name) {
   try {
@@ -29,6 +30,11 @@ const INPUT_USD_PER_MILLION = Number(process.env.HF_INPUT_USD_PER_MILLION ?? "0.
 const OUTPUT_USD_PER_MILLION = Number(process.env.HF_OUTPUT_USD_PER_MILLION ?? "3.00");
 const OBSERVED_USD_PER_REQUEST = Number(process.env.HF_OBSERVED_USD_PER_REQUEST ?? String(0.25 / 35));
 const MAX_ESTIMATED_COST_USD = Number(process.env.HF_MAX_ESTIMATED_COST_USD ?? "5.00");
+const RUN_LEDGER = process.env.HF_RUN_LEDGER ?? "docs/hf-benchmark-runs.json";
+const EXPERIMENT_ID = process.env.HF_EXPERIMENT_ID ?? "manual-hosted-benchmark";
+const EXPERIMENT_PHASE = process.env.HF_EXPERIMENT_PHASE ?? "unassigned";
+const MODEL_TYPE = process.env.HF_MODEL_TYPE ?? (ENABLE_THINKING ? "reasoning-style" : "non-thinking");
+const COMPARE_ROLLOUT = process.env.HF_COMPARE_ROLLOUT !== "0";
 
 function estimatedCost(inputTokens, outputTokens) {
   return (inputTokens * INPUT_USD_PER_MILLION + outputTokens * OUTPUT_USD_PER_MILLION) / 1_000_000;
@@ -150,7 +156,22 @@ async function play() {
 
   const final = await requestJson(`${BASE}/api/games/${id}`);
   const sorted = [...latencies].sort((a, b) => a - b);
-  console.log(JSON.stringify({
+  let rollout = null;
+  if (COMPARE_ROLLOUT) {
+    try {
+      const comparison = await requestJson(`${BASE}/api/bots/tournament`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ seeds: [SEED], maxMoves: MAX_MOVES, bots: ["rollout"] })
+      });
+      const run = comparison?.runs?.find((entry) => entry?.bot === "rollout" && entry?.seed === SEED);
+      if (run) rollout = { bot: "rollout", score: run.score, moves: run.moves, maxTile: run.maxTile };
+    } catch (error) {
+      console.warn(`[hf:bot] rollout comparison unavailable: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  const result = {
     id,
     model: HF_MODEL,
     seed: SEED,
@@ -168,7 +189,53 @@ async function play() {
     maxTile: Math.max(0, ...((final?.current?.grid ?? []).flat().map((cell) => cell?.t === "n" ? cell.v : 0))),
     avgLatencyMs: latencies.length ? Math.round(latencies.reduce((sum, value) => sum + value, 0) / latencies.length) : null,
     p95LatencyMs: sorted.length ? sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * 0.95) - 1)] : null
-  }, null, 2));
+  };
+  const ledgerRecord = await upsertBenchmarkRecord(RUN_LEDGER, {
+    runId: id,
+    recordedAtISO: new Date().toISOString(),
+    experimentId: EXPERIMENT_ID,
+    phase: EXPERIMENT_PHASE,
+    track: "deterministic-seeded-game",
+    seed: {
+      value: SEED,
+      generator: "binary2048 counter-based seed+rngStep PRNG",
+      note: "The same seed and move sequence reproduce initial tiles and later spawns. Different policies can diverge because their moves change the board while RNG draws remain deterministic."
+    },
+    rulesetId: "binary2048-v1",
+    model: {
+      id: HF_MODEL,
+      provider: modelProvider(HF_MODEL),
+      type: MODEL_TYPE,
+      thinkingEnabled: ENABLE_THINKING,
+      parameters: {
+        temperature: TEMPERATURE,
+        maxOutputTokens: MAX_OUTPUT_TOKENS,
+        structuredOutput: "json_schema",
+        engineCandidateBoards: true
+      }
+    },
+    metrics: {
+      moves,
+      score: result.score,
+      maxTile: result.maxTile,
+      inputTokens: promptTokens,
+      outputTokens,
+      reasoningTokens,
+      fallbackCount: fallbackMoves,
+      averageModelLatencyMs: result.avgLatencyMs,
+      p95ModelLatencyMs: result.p95LatencyMs,
+      totalModelLatencyMs: latencies.reduce((sum, value) => sum + value, 0)
+    },
+    estimatedCostUsd: {
+      listedTokenRates: result.listedTokenRateEstimateUsd,
+      conservativeObservedRequestRate: result.observedCostEstimateUsd,
+      inputUsdPerMillion: INPUT_USD_PER_MILLION,
+      outputUsdPerMillion: OUTPUT_USD_PER_MILLION,
+      observedUsdPerRequest: OBSERVED_USD_PER_REQUEST
+    },
+    rollout
+  });
+  console.log(JSON.stringify({ ...result, ledger: RUN_LEDGER, ledgerSchemaVersion: ledgerRecord.schemaVersion, rollout }, null, 2));
 }
 
 play().catch((error) => {
