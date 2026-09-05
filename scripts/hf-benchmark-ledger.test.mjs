@@ -51,9 +51,9 @@ test("upserts a complete decision trace without losing candidate boards", async 
 
 test("backfilled finalist records retain the required metrics", async () => {
   const records = JSON.parse(await readFile("docs/hf-benchmark-runs.json", "utf8"));
-  assert.equal(records.length, 20);
+  assert.ok(records.length >= 20);
   for (const record of records) {
-    assert.equal(record.schemaVersion, 1);
+    assert.ok(record.schemaVersion === 1 || record.schemaVersion === 2);
     assert.equal(record.track, "deterministic-seeded-game");
     assert.equal(record.model.parameters.engineCandidateBoards, true);
     for (const field of ["moves", "score", "maxTile", "inputTokens", "outputTokens", "fallbackCount", "averageModelLatencyMs"]) {
@@ -61,5 +61,9 @@ test("backfilled finalist records retain the required metrics", async () => {
     }
     assert.ok(Object.hasOwn(record, "estimatedCostUsd"));
     assert.ok(Object.hasOwn(record, "rollout"));
+    if (record.schemaVersion === 2) {
+      assert.equal(record.trace.complete, true);
+      assert.equal(record.trace.decisions.length, record.metrics.moves);
+    }
   }
 });

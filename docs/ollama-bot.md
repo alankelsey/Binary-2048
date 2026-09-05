@@ -38,6 +38,11 @@ merge count, and terminal flags. The LLM ranks these calculated candidates
 instead of attempting to simulate the move rules itself.
 
 This is a local benchmark and is not part of the production tournament API.
+
+On Apple Silicon, use the native `arm64` Ollama runtime. An Intel Homebrew
+binary under translation forced the model to 100% CPU and measured about 22
+seconds per decision; the native runtime reduced the same workload to roughly
+one second per decision.
 Compare its score, fallback count, and per-move latency with the built-in
 rollout bot before considering further integration. The latest recorded
 comparison is in [ollama-benchmark-latest.md](./ollama-benchmark-latest.md).

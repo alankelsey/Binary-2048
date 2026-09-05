@@ -1,0 +1,35 @@
+{
+  "exportSchemaVersion": 1,
+  "generatedAtISO": "2026-09-05T20:01:59.762Z",
+  "source": "docs/hf-benchmark-runs.json",
+  "skippedSummaryOnly": 20,
+  "rows": {
+    "hosted": 250,
+    "ollama": 125,
+    "rollout": 0,
+    "metrics": 35
+  },
+  "files": {
+    "jsonl": {
+      "hosted": "hosted_model_steps.jsonl",
+      "ollama": "ollama_model_steps.jsonl",
+      "rollout": "rollout_steps.jsonl",
+      "metrics": "run_metrics.jsonl"
+    },
+    "parquet": {
+      "hosted": "hosted_model_steps.parquet",
+      "ollama": "ollama_model_steps.parquet",
+      "rollout": null,
+      "metrics": "run_metrics.parquet"
+    }
+  },
+  "sha256": {
+    "hosted_model_steps.jsonl": "34e2089483973dfac970b1088694c02596de0008a3d3039b40181681a39b3232",
+    "ollama_model_steps.jsonl": "445f6f47a0e1da5544133e2f7422bb5b0ae34a2706b352709cf97047b59a1b1b",
+    "rollout_steps.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "run_metrics.jsonl": "c1d32fc3da79b1bc5bffb568746db7bfe38b3f97c6aa3d64f9f8551eae9c51d0",
+    "hosted_model_steps.parquet": "4efbe00651f40f1ffce2dbb5de86143fc4daf0d9e888b0832b12a2626df2e8ea",
+    "ollama_model_steps.parquet": "409f79880b5f98a62fba98d071039bec7a2edf25262fcb924a67061b76273fa1",
+    "run_metrics.parquet": "0437020f26e429371f5442c2a8d63dd520f28a8184f7681b3e8d40ddd3578be3"
+  }
+}
