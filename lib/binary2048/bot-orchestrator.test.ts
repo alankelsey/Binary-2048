@@ -49,6 +49,23 @@ describe("bot orchestrator", () => {
     expect(first.after.changed).toBe(true);
   });
 
+  it("runs a bot from an explicit fixed challenge board", () => {
+    const result = runBotTournament({
+      seeds: [7105],
+      maxMoves: 1,
+      bots: ["priority"],
+      initialGrid: [
+        [{ t: "n", v: 1024 }, { t: "n", v: 1024 }, null, null],
+        [null, null, null, null],
+        [null, null, null, null],
+        [null, null, null, null]
+      ],
+      includeTraces: true
+    });
+    expect(result.runs[0]).toMatchObject({ moves: 1, won: true, maxTile: 2048 });
+    expect(result.runs[0]?.trace?.decisions[0]).toMatchObject({ after: { events: expect.arrayContaining([expect.objectContaining({ type: "game_won" })]) } });
+  });
+
   it("rollout bot is a stable baseline that is not worse than random on fixed seeds", () => {
     const result = runBotTournament({
       seeds: [300, 301, 302, 303, 304],

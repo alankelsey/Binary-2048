@@ -12,7 +12,7 @@ import {
   TournamentQueueFullError,
   TournamentQueueTimeoutError
 } from "@/lib/binary2048/tournament-queue";
-import type { GameConfig } from "@/lib/binary2048/types";
+import type { Cell, GameConfig } from "@/lib/binary2048/types";
 
 type TournamentBody = {
   seeds?: number[];
@@ -21,6 +21,7 @@ type TournamentBody = {
   maxMoves?: number;
   bots?: BotId[];
   config?: Partial<GameConfig>;
+  initialGrid?: Cell[][];
   includeTraces?: boolean;
 };
 
@@ -121,6 +122,7 @@ export async function POST(req: Request) {
       maxMoves,
       bots,
       config: body.config,
+      initialGrid: body.initialGrid,
       includeTraces: body.includeTraces === true
     });
     return NextResponse.json(

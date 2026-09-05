@@ -1,7 +1,7 @@
 import { parseAction, toActionCode, type ActionCode } from "@/lib/binary2048/action";
 import { actionCandidates, actionMask, encodeState, flattenEncodedState, legalActionCodes, stateHash } from "@/lib/binary2048/ai";
 import { applyMove, createGame, DEFAULT_CONFIG } from "@/lib/binary2048/engine";
-import type { Dir, GameConfig, GameState } from "@/lib/binary2048/types";
+import type { Cell, Dir, GameConfig, GameState } from "@/lib/binary2048/types";
 
 export type BotId = "priority" | "random" | "alternate" | "rollout";
 
@@ -36,6 +36,7 @@ export type TournamentRequest = {
   maxMoves: number;
   bots: BotId[];
   config?: Partial<GameConfig>;
+  initialGrid?: Cell[][];
   includeTraces?: boolean;
 };
 
@@ -187,8 +188,8 @@ function mergeConfig(config: Partial<GameConfig> | undefined, seed: number): Gam
   };
 }
 
-function runOneGame(bot: BotId, seed: number, maxMoves: number, config?: Partial<GameConfig>, includeTrace = false): TournamentRun {
-  const game = createGame(mergeConfig(config, seed));
+function runOneGame(bot: BotId, seed: number, maxMoves: number, config?: Partial<GameConfig>, initialGrid?: Cell[][], includeTrace = false): TournamentRun {
+  const game = createGame(mergeConfig(config, seed), initialGrid);
   let current = game.state;
   let moves = 0;
   const decisions: Array<Record<string, unknown>> = [];
@@ -229,7 +230,8 @@ function runOneGame(bot: BotId, seed: number, maxMoves: number, config?: Partial
           reward: moved.state.score - before.score,
           changed: moved.moved,
           done: moved.state.over || moved.state.won,
-          spawned: moved.events.find((event) => event.type === "spawn") ?? null
+          spawned: moved.events.find((event) => event.type === "spawn") ?? null,
+          events: moved.events
         }
       });
     }
@@ -276,7 +278,7 @@ export function runBotTournament(input: TournamentRequest): TournamentResult {
   const runs: TournamentRun[] = [];
   for (const seed of input.seeds) {
     for (const bot of input.bots) {
-      runs.push(runOneGame(bot, seed, input.maxMoves, input.config, input.includeTraces));
+      runs.push(runOneGame(bot, seed, input.maxMoves, input.config, input.initialGrid, input.includeTraces));
     }
   }
   return {

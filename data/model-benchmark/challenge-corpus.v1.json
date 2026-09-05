@@ -20,7 +20,10 @@
       "expectedInvariants": {
         "initialOccupiedCells": 4,
         "legalActionsContaining": ["L", "R", "D"],
-        "probes": [{ "action": "L", "moved": true, "scoreDelta": 6, "mergeCount": 2, "eventTypesContaining": ["merge", "spawn"], "resultingMaxNumberTile": 4 }]
+        "probes": [
+          { "action": "L", "moved": true, "scoreDelta": 6, "mergeCount": 2, "eventTypesContaining": ["merge", "spawn"], "resultingMaxNumberTile": 4 },
+          { "action": "R", "moved": true, "scoreDelta": 6, "mergeCount": 2, "eventTypesContaining": ["merge", "spawn"], "resultingMaxNumberTile": 4 }
+        ]
       }
     },
     {
@@ -56,7 +59,10 @@
       "expectedInvariants": {
         "initialOccupiedCells": 2,
         "legalActionsContaining": ["L", "R", "D"],
-        "probes": [{ "action": "L", "moved": true, "scoreDelta": 32, "mergeCount": 1, "eventTypesContaining": ["merge", "spawn"], "resultingMaxNumberTile": 32 }]
+        "probes": [
+          { "action": "L", "moved": true, "scoreDelta": 32, "mergeCount": 1, "eventTypesContaining": ["merge", "spawn"], "resultingMaxNumberTile": 32 },
+          { "action": "R", "moved": true, "scoreDelta": 32, "mergeCount": 1, "eventTypesContaining": ["merge", "spawn"], "resultingMaxNumberTile": 32 }
+        ]
       }
     },
     {

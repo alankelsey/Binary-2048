@@ -159,7 +159,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Derive Parquet splits and SHA-256 checksums from the canonical model benchmark JSONL export
 - [x] Regenerate fixed-seed hosted and local model traces so the research dataset contains policies beyond rollout
 - [x] Generate trace-complete rollout baselines for seeds 100-104 and publish them in the rollout JSONL/Parquet split
-- [ ] Expand bot evaluation into two separately reported tracks: reproducible seeded games and versioned curated fixed-board/Bitstorm challenge scenarios
+- [x] Expand bot evaluation into two separately reported tracks: reproducible seeded games and versioned curated fixed-board/Bitstorm challenge scenarios
 - [x] Define the curated challenge corpus with explicit initial grids, rules/config, scenario IDs, intended skill tags, expected invariants, and replay-compatible versions
 - [x] Lock RNG draw contract for wildcard multiplier selection and add strict replay-compat tests
 - [x] Define Mongo/session-store migration trigger thresholds (active sessions, memory, replay volume) and execution plan

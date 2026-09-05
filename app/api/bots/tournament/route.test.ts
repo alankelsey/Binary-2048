@@ -69,6 +69,22 @@ describe("POST /api/bots/tournament", () => {
     expect(json.runs[0].trace.decisions).toHaveLength(3);
   });
 
+  it("accepts an explicit fixed challenge board", async () => {
+    const initialGrid = [
+      [{ t: "n", v: 1024 }, { t: "n", v: 1024 }, null, null],
+      [null, null, null, null], [null, null, null, null], [null, null, null, null]
+    ];
+    const req = new Request("http://localhost/api/bots/tournament", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ seeds: [7105], maxMoves: 1, bots: ["priority"], initialGrid, includeTraces: true })
+    });
+    const res = await POST(req);
+    const json = await res.json();
+    expect(res.status).toBe(200);
+    expect(json.runs[0]).toMatchObject({ won: true, maxTile: 2048 });
+  });
+
   it("caps the size of trace responses", async () => {
     const req = new Request("http://localhost/api/bots/tournament", {
       method: "POST",

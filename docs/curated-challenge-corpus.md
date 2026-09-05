@@ -38,3 +38,20 @@ tile, completed moves, invariant or objective result, decision latency, token
 usage, fallbacks, model metadata, and estimated cost. Aggregates should include
 per-skill results so a strong merge score cannot hide failures on zeros,
 wildcards, or lock cooldowns.
+
+## Running the benchmark
+
+Start the application API, then run the free rollout baseline:
+
+```bash
+npm run challenge:benchmark
+```
+
+Select local Ollama with `CHALLENGE_ADAPTER=ollama`. Select Hugging Face with
+`CHALLENGE_ADAPTER=hf CHALLENGE_ALLOW_HOSTED=1`; hosted runs require `HF_TOKEN`
+and are rejected before the first request if the conservative estimate exceeds
+`CHALLENGE_MAX_ESTIMATED_COST_USD` (default `$1.00`). Use
+`CHALLENGE_SCENARIOS=id-one,id-two` to run a subset.
+
+Results are upserted into `docs/challenge-benchmark-runs.json`, and the separate
+fixed-board summary is regenerated at `docs/challenge-benchmark-latest.md`.
