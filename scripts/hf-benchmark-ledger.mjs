@@ -1,7 +1,7 @@
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 
-export const BENCHMARK_SCHEMA_VERSION = 1;
+export const BENCHMARK_SCHEMA_VERSION = 2;
 
 export function modelProvider(model) {
   const separator = model.lastIndexOf(":");

@@ -17,7 +17,36 @@ test("creates and upserts records by run id", async () => {
   await upsertBenchmarkRecord(path, { runId: "run-1", score: 20 });
   const records = JSON.parse(await readFile(path, "utf8"));
   assert.equal(records.length, 1);
-  assert.deepEqual(records[0], { schemaVersion: 1, runId: "run-1", score: 20 });
+  assert.deepEqual(records[0], { schemaVersion: 2, runId: "run-1", score: 20 });
+});
+
+test("upserts a complete decision trace without losing candidate boards", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "binary2048-hf-trace-"));
+  const path = join(directory, "runs.json");
+  await upsertBenchmarkRecord(path, {
+    runId: "trace-1",
+    trace: {
+      version: 1,
+      complete: true,
+      actions: ["L"],
+      decisions: [{
+        turn: 0,
+        before: {
+          stateHash: "before",
+          encodedState: [[{ type: 2, value: 1 }]],
+          legalActions: ["L"],
+          actionMask: [1, 0, 0, 0],
+          candidates: [{ action: "L", encodedState: [[{ type: 2, value: 2 }]] }]
+        },
+        decision: { action: "L", fallback: false, latencyMs: 12, inputTokens: 10, outputTokens: 6 },
+        after: { stateHash: "after", encodedState: [[{ type: 2, value: 2 }]], score: 2, turn: 1 }
+      }]
+    }
+  });
+  const [record] = JSON.parse(await readFile(path, "utf8"));
+  assert.equal(record.schemaVersion, 2);
+  assert.equal(record.trace.decisions[0].before.candidates[0].action, "L");
+  assert.equal(record.trace.decisions[0].after.stateHash, "after");
 });
 
 test("backfilled finalist records retain the required metrics", async () => {

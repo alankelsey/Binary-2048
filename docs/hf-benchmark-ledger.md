@@ -16,11 +16,17 @@ Each record tracks:
 - listed token-rate estimate, conservative observed-request estimate, and the
   rates used for both calculations
 - the same-seed rollout score, moves, and maximum tile when available
+- a versioned decision trace containing the complete action sequence and, for
+  every turn, the encoded input state, action mask, legal actions, all
+  engine-evaluated candidate boards, selected action, resulting state/hash,
+  spawn/reward outcome, fallback flag, timestamps, tokens, and latency
 
 `null` means the metric was not captured historically or a rollout comparison
 was unavailable. It must not be replaced with a guess. A provider may include
 reasoning inside its general output-token count while reporting zero separate
 reasoning tokens; `model.type` and `model.thinkingEnabled` preserve that context.
+Records captured before trace schema version 2 do not have a `trace`; they remain
+valid benchmark summaries but cannot be exported as model training steps.
 
 ## Run metadata
 

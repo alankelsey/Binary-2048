@@ -60,6 +60,7 @@ async function pickAction(encoded) {
   const legalActions = encoded?.legalActions;
   if (!Array.isArray(legalActions) || legalActions.length === 0) return null;
   const started = performance.now();
+  const startedAtISO = new Date().toISOString();
   const response = await requestJson(`${HF_BASE}/chat/completions`, {
     method: "POST",
     headers: {
@@ -102,7 +103,9 @@ async function pickAction(encoded) {
     latencyMs: Math.round(performance.now() - started),
     promptTokens: Number(response?.usage?.prompt_tokens ?? 0),
     outputTokens: Number(response?.usage?.completion_tokens ?? 0),
-    reasoningTokens: Number(response?.usage?.completion_tokens_details?.reasoning_tokens ?? 0)
+    reasoningTokens: Number(response?.usage?.completion_tokens_details?.reasoning_tokens ?? 0),
+    startedAtISO,
+    finishedAtISO: new Date().toISOString()
   } : null;
 }
 
@@ -134,6 +137,7 @@ async function play() {
   let outputTokens = 0;
   let reasoningTokens = 0;
   const latencies = [];
+  const decisions = [];
   let done = false;
   while (!done && moves < MAX_MOVES) {
     const encoded = await requestJson(`${BASE}/api/games/${id}/encoded`);
@@ -148,6 +152,39 @@ async function play() {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ action: selected.action, expectStateHash: encoded.stateHash })
+    });
+    const selectedCandidate = encoded.candidates?.find((candidate) => candidate?.action === selected.action) ?? null;
+    decisions.push({
+      turn: moves,
+      before: {
+        stateHash: encoded.stateHash,
+        encodedState: encoded.encodedState,
+        encodedFlat: encoded.encodedFlat,
+        legalActions: encoded.legalActions,
+        actionMask: encoded.actionMask,
+        candidates: encoded.candidates,
+        engine: encoded.meta
+      },
+      decision: {
+        action: selected.action,
+        fallback: selected.fallback,
+        startedAtISO: selected.startedAtISO,
+        finishedAtISO: selected.finishedAtISO,
+        latencyMs: selected.latencyMs,
+        inputTokens: selected.promptTokens,
+        outputTokens: selected.outputTokens,
+        reasoningTokens: selected.reasoningTokens
+      },
+      after: {
+        stateHash: moved.stateHash,
+        encodedState: selectedCandidate?.encodedState ?? null,
+        score: moved.current?.score ?? null,
+        turn: moved.current?.turn ?? moves + 1,
+        reward: moved.reward,
+        changed: moved.changed,
+        done: moved.done,
+        spawned: moved.spawned
+      }
     });
     moves += 1;
     done = Boolean(moved?.done);
@@ -232,6 +269,12 @@ async function play() {
       inputUsdPerMillion: INPUT_USD_PER_MILLION,
       outputUsdPerMillion: OUTPUT_USD_PER_MILLION,
       observedUsdPerRequest: OBSERVED_USD_PER_REQUEST
+    },
+    trace: {
+      version: 1,
+      complete: decisions.length === moves,
+      actions: decisions.map((entry) => entry.decision.action),
+      decisions
     },
     rollout
   });

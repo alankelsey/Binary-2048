@@ -154,6 +154,9 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add bot benchmark suite and publish seed-based benchmark table in docs
 - [x] Complete an approval-gated, two-phase hosted-model benchmark with engine-evaluated legal candidate boards, fixed seeds, token/cost telemetry, and a non-thinking control versus reasoning-style finalists
 - [x] Add a versioned per-run hosted-model ledger for seed/config, model type and parameters, thinking mode, scores, tiles, tokens, fallbacks, latency, cost estimates, and same-seed rollout comparisons
+- [x] Capture versioned hosted-model decision traces with complete move sequences, encoded states, legal/action-mask inputs, engine candidate boards, actions, outcomes, per-move tokens, fallbacks, and latency
+- [ ] Export trace-complete runs into separately identified hosted-model, Ollama-model, rollout, and aggregate-metrics JSONL/Parquet splits
+- [ ] Regenerate fixed-seed hosted and local model traces so the research dataset contains policies beyond rollout
 - [ ] Expand bot evaluation into two separately reported tracks: reproducible seeded games and versioned curated fixed-board/Bitstorm challenge scenarios
 - [ ] Define the curated challenge corpus with explicit initial grids, rules/config, scenario IDs, intended skill tags, expected invariants, and replay-compatible versions
 - [x] Lock RNG draw contract for wildcard multiplier selection and add strict replay-compat tests
