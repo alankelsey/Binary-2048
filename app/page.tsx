@@ -37,7 +37,7 @@ import { buildAccessibilityTabMap, keyboardShortcutMap } from "@/lib/binary2048/
 import { applyUiPolicyOverrides, type UIControlOverrides } from "@/lib/binary2048/ui-policy-override";
 import type { UIControl } from "@/lib/binary2048/ui-policy";
 import { createReferralCode, type MarketingEventType } from "@/lib/binary2048/marketing";
-import type { GameExport } from "@/lib/binary2048/types";
+import type { GameExport, SessionRecoverySnapshot } from "@/lib/binary2048/types";
 
 type Tile = { t: "n"; v: number } | { t: "z" } | { t: "w"; m: number } | { t: "i" };
 type Cell = Tile | null;
@@ -168,6 +168,7 @@ export default function Home() {
   function applyLoadedSession(json: {
     id: string;
     current: GameState;
+    recoverySnapshot?: SessionRecoverySnapshot;
     undo?: UndoMeta;
     integrity?: { sessionClass?: SessionClass };
     economy?: { canContinueAfterWin?: boolean };
@@ -180,6 +181,9 @@ export default function Home() {
     if (json?.undo) setUndo(json.undo as UndoMeta);
     setCellEffects({});
     window.localStorage.setItem(gameIdKey, json.id);
+    if (json.recoverySnapshot) {
+      saveResumeSnapshot(window.localStorage, json.id, json.recoverySnapshot);
+    }
 
     const importedRate = json?.current?.config?.spawn?.pWildcard;
     if (typeof importedRate === "number") {
@@ -227,17 +231,6 @@ export default function Home() {
       return recovered;
     }
     return null;
-  }
-
-  async function persistResumeSnapshot(sessionId: string) {
-    try {
-      const res = await fetch(`/api/games/${sessionId}/export`);
-      const exported = await res.json().catch(() => null);
-      if (!res.ok || !exported || typeof exported !== "object") return;
-      saveResumeSnapshot(window.localStorage, sessionId, exported as GameExport);
-    } catch {
-      // Best-effort local recovery snapshot; ignore transient export failures.
-    }
   }
 
   async function newGame(options?: { clearSnapshot?: boolean; allowWhileBusy?: boolean }) {
@@ -321,11 +314,11 @@ export default function Home() {
     try {
       const moveResult = await requestResumableMove({
         sessionId: gameId,
-        async requestMove(sessionId) {
+        async requestMove(sessionId, recoveredSession?: { id: string; recoverySnapshot: GameExport | SessionRecoverySnapshot }) {
           const response = await fetch(`/api/games/${sessionId}/move`, {
             method: "POST",
             headers: { "content-type": "application/json" },
-            body: JSON.stringify({ dir })
+            body: JSON.stringify({ dir, recoverySnapshot: recoveredSession?.recoverySnapshot })
           });
           return {
             ok: response.ok,
@@ -335,8 +328,8 @@ export default function Home() {
         },
         async recoverSession(staleSessionId) {
           setErrorMessage("Restoring your game…");
-          window.localStorage.removeItem(gameIdKey);
-          return recoverFromLocalSnapshot(staleSessionId);
+          const recoverySnapshot = loadResumeSnapshot(window.localStorage, staleSessionId);
+          return recoverySnapshot ? { id: staleSessionId, recoverySnapshot } : null;
         }
       });
       const { attempt, recoveredSession } = moveResult;
@@ -354,6 +347,13 @@ export default function Home() {
       }
       setErrorMessage("");
       const next = json.current as GameState;
+      const responseId = typeof (json as { id?: unknown }).id === "string" ? (json as { id: string }).id : gameId;
+      if (responseId !== gameId) {
+        setGameId(responseId);
+        window.localStorage.setItem(gameIdKey, responseId);
+      }
+      const recoverySnapshot = (json as { recoverySnapshot?: SessionRecoverySnapshot }).recoverySnapshot;
+      if (recoverySnapshot) saveResumeSnapshot(window.localStorage, responseId, recoverySnapshot);
       setSessionClass((json?.integrity?.sessionClass as SessionClass) ?? sessionClass);
       setCanContinueAfterWin(resolveCanContinueAfterWin(json));
       if (json?.undo) setUndo(json.undo as UndoMeta);
@@ -376,11 +376,29 @@ export default function Home() {
     setBusy(true);
     setErrorMessage("");
     try {
-      const res = await fetch(`/api/games/${gameId}/undo`, { method: "POST" });
+      const requestUndo = (recoverySnapshot?: GameExport | SessionRecoverySnapshot) =>
+        fetch(`/api/games/${gameId}/undo`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ recoverySnapshot })
+        });
+      let res = await requestUndo();
+      if (res.status === 404) {
+        const recoverySnapshot = loadResumeSnapshot(window.localStorage, gameId);
+        if (recoverySnapshot) res = await requestUndo(recoverySnapshot);
+      }
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json?.current) {
         const message = (json && typeof json.error === "string" ? json.error : "Failed to undo move");
         throw new Error(message);
+      }
+      const responseId = typeof json.id === "string" ? json.id : gameId;
+      if (responseId !== gameId) {
+        setGameId(responseId);
+        window.localStorage.setItem(gameIdKey, responseId);
+      }
+      if (json.recoverySnapshot) {
+        saveResumeSnapshot(window.localStorage, responseId, json.recoverySnapshot as SessionRecoverySnapshot);
       }
       setState(json.current as GameState);
       if (json?.undo) setUndo(json.undo as UndoMeta);
@@ -660,11 +678,6 @@ export default function Home() {
     setHighScore(score);
     window.sessionStorage.setItem(highScoreKey, String(score));
   }, [state?.score, highScore]);
-
-  useEffect(() => {
-    if (replay || !gameId || !state) return;
-    void persistResumeSnapshot(gameId);
-  }, [replay, gameId, state?.turn, state?.score, state?.over, state?.won]);
 
   useEffect(() => {
     setNewGameConfirmArmed(false);

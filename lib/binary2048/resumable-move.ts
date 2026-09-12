@@ -6,7 +6,7 @@ export type MoveAttempt<TPayload> = {
 
 export async function requestResumableMove<TPayload, TSession extends { id: string }>(input: {
   sessionId: string;
-  requestMove: (sessionId: string) => Promise<MoveAttempt<TPayload>>;
+  requestMove: (sessionId: string, recoveredSession?: TSession) => Promise<MoveAttempt<TPayload>>;
   recoverSession: (staleSessionId: string) => Promise<TSession | null>;
 }): Promise<{ attempt: MoveAttempt<TPayload>; recoveredSession: TSession | null }> {
   let attempt = await input.requestMove(input.sessionId);
@@ -15,7 +15,6 @@ export async function requestResumableMove<TPayload, TSession extends { id: stri
   const recoveredSession = await input.recoverSession(input.sessionId);
   if (!recoveredSession) return { attempt, recoveredSession: null };
 
-  attempt = await input.requestMove(recoveredSession.id);
+  attempt = await input.requestMove(recoveredSession.id, recoveredSession);
   return { attempt, recoveredSession };
 }
-

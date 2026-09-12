@@ -1,6 +1,6 @@
 import { stateHash } from "@/lib/binary2048/ai";
 import { POST } from "@/app/api/games/[id]/move/route";
-import { createSession, getSession } from "@/lib/binary2048/sessions";
+import { createSession, exportRecoverySnapshot, exportSession, getSession } from "@/lib/binary2048/sessions";
 import { resetRateLimitStore } from "@/lib/binary2048/rate-limit";
 import type { Cell, GameConfig } from "@/lib/binary2048/types";
 
@@ -105,6 +105,41 @@ describe("POST /api/games/:id/move hash guard", () => {
 
     expect(res.status).toBe(404);
     expect(json.error).toBe("Game not found");
+  });
+
+  it("atomically recovers a missing instance-local session and applies the move", async () => {
+    const original = createSession(config, initialGrid);
+    const recoverySnapshot = exportRecoverySnapshot(original.current.id);
+    const req = new Request("http://localhost/api/games/missing_game/move", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "L", recoverySnapshot })
+    });
+    const res = await POST(req, { params: Promise.resolve({ id: "missing_game" }) });
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.id).not.toBe("missing_game");
+    expect(json.current.turn).toBe(1);
+    expect(json.current.score).toBe(2);
+    expect(json.recoverySnapshot).toMatchObject({ recoveryVersion: 1, moves: ["left"] });
+    expect(getSession(json.id)?.steps).toHaveLength(1);
+  });
+
+  it("accepts the legacy full browser snapshot during rollout", async () => {
+    const original = createSession(config, initialGrid);
+    const recoverySnapshot = exportSession(original.current.id);
+    const req = new Request("http://localhost/api/games/missing_game/move", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "L", recoverySnapshot })
+    });
+    const res = await POST(req, { params: Promise.resolve({ id: "missing_game" }) });
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.current.turn).toBe(1);
+    expect(json.recoverySnapshot).toMatchObject({ recoveryVersion: 1, moves: ["left"] });
   });
 
   it("returns 429 without mutating the game when the move quota is exhausted", async () => {

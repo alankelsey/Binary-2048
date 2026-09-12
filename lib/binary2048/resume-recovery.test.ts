@@ -43,7 +43,8 @@ describe("resume recovery snapshot", () => {
 
     saveResumeSnapshot(storage, exported.final.id, exported);
 
-    expect(loadResumeSnapshot(storage, exported.final.id)?.meta.replay.moves).toEqual(["left"]);
+    const loaded = loadResumeSnapshot(storage, exported.final.id);
+    expect(loaded && "meta" in loaded ? loaded.meta.replay.moves : null).toEqual(["left"]);
     expect(loadResumeSnapshot(storage, "different-id")).toBeNull();
 
     clearResumeSnapshot(storage);

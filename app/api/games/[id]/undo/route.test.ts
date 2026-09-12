@@ -1,5 +1,5 @@
 import { POST } from "@/app/api/games/[id]/undo/route";
-import { createSession, moveSession } from "@/lib/binary2048/sessions";
+import { createSession, exportRecoverySnapshot, moveSession } from "@/lib/binary2048/sessions";
 import type { Cell, GameConfig } from "@/lib/binary2048/types";
 
 describe("POST /api/games/:id/undo", () => {
@@ -61,5 +61,25 @@ describe("POST /api/games/:id/undo", () => {
     const req = new Request("http://localhost/api/games/x/undo", { method: "POST" });
     const res = await POST(req, { params: Promise.resolve({ id: "missing_game" }) });
     expect(res.status).toBe(404);
+  });
+
+  it("restores an instance-local session and undoes atomically", async () => {
+    const session = createSession(baseConfig, initialGrid);
+    const id = session.current.id;
+    moveSession(id, "left");
+    const recoverySnapshot = exportRecoverySnapshot(id);
+
+    const req = new Request("http://localhost/api/games/missing_game/undo", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ recoverySnapshot })
+    });
+    const res = await POST(req, { params: Promise.resolve({ id: "missing_game" }) });
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.id).not.toBe("missing_game");
+    expect(json.stepCount).toBe(0);
+    expect(json.recoverySnapshot.moves).toEqual([]);
   });
 });

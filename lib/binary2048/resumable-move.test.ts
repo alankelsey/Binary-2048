@@ -3,13 +3,15 @@ import { requestResumableMove } from "@/lib/binary2048/resumable-move";
 describe("requestResumableMove", () => {
   it("restores a stale session and retries the same move once", async () => {
     const requestedIds: string[] = [];
+    const recoveryIds: Array<string | undefined> = [];
     const result = await requestResumableMove<
       { error?: string; current?: { turn: number } },
       { id: string }
     >({
       sessionId: "g_stale",
-      async requestMove(sessionId) {
+      async requestMove(sessionId, recovery) {
         requestedIds.push(sessionId);
+        recoveryIds.push(recovery?.id);
         return sessionId === "g_stale"
           ? { ok: false, status: 404, payload: { error: "not found" } }
           : { ok: true, status: 200, payload: { current: { turn: 8 } } };
@@ -21,6 +23,7 @@ describe("requestResumableMove", () => {
     });
 
     expect(requestedIds).toEqual(["g_stale", "g_restored"]);
+    expect(recoveryIds).toEqual([undefined, "g_restored"]);
     expect(result.attempt).toMatchObject({ ok: true, status: 200 });
     expect(result.recoveredSession?.id).toBe("g_restored");
   });

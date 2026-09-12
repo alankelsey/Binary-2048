@@ -1,4 +1,4 @@
-import { createSession, getSession, moveSession, undoSession } from "@/lib/binary2048/sessions";
+import { createSession, exportRecoverySnapshot, getSession, importRecoverySnapshot, moveSession, undoSession } from "@/lib/binary2048/sessions";
 import type { Cell, GameConfig } from "@/lib/binary2048/types";
 
 describe("session undo", () => {
@@ -78,5 +78,17 @@ describe("session undo", () => {
     const session = createSession(config, initialGrid);
     expect(session.integrity.sessionClass).toBe("unranked");
     expect(session.integrity.source).toBe("created");
+  });
+
+  it("reconstructs the current game from a compact recovery snapshot", () => {
+    const session = createSession(config, initialGrid);
+    moveSession(session.current.id, "left");
+    const snapshot = exportRecoverySnapshot(session.current.id);
+    expect(snapshot?.moves).toEqual(["left"]);
+
+    const recovered = importRecoverySnapshot(snapshot!);
+    expect(recovered.current.grid).toEqual(getSession(session.current.id)?.current.grid);
+    expect(recovered.current.score).toBe(getSession(session.current.id)?.current.score);
+    expect(recovered.steps).toHaveLength(1);
   });
 });

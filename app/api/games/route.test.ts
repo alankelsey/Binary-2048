@@ -50,6 +50,7 @@ describe("POST /api/games", () => {
     expect(json.integrity?.source).toBe("created");
     expect(json.economy?.lockTilesEnabled).toBe(true);
     expect(json.economy?.canContinueAfterWin).toBe(true);
+    expect(json.recoverySnapshot).toMatchObject({ recoveryVersion: 1, moves: [] });
   });
 
   it("returns 403 for guest game creation when challenge is enforced and token missing", async () => {

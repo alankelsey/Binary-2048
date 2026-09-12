@@ -57,4 +57,17 @@ describe("POST /api/games/import", () => {
     expect(res.status).toBe(400);
     expect(typeof json.error).toBe("string");
   });
+
+  it("imports a compact recovery snapshot", async () => {
+    const req = new Request("http://localhost/api/games/import", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ recoveryVersion: 1, rulesetId: "binary2048-v1", config, initialGrid, moves: ["left"] })
+    });
+    const res = await POST(req);
+    const json = await res.json();
+    expect(res.status).toBe(200);
+    expect(json.current.turn).toBe(1);
+    expect(json.recoverySnapshot).toMatchObject({ recoveryVersion: 1, moves: ["left"] });
+  });
 });

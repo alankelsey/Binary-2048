@@ -63,7 +63,7 @@ test("the empty mobile board shows a start overlay after recovery finishes", asy
   expect(createRequests).toBe(1);
 });
 
-test("the first move after a stale session is restored and retried", async ({ page }) => {
+test("a stale instance-local session is recovered and moved atomically", async ({ page }) => {
   let staleMoveRequests = 0;
   let restoredMoveRequests = 0;
   const grid = [
@@ -95,16 +95,11 @@ test("the first move after a stale session is restored and retried", async ({ pa
   });
   await page.route("**/api/games/g_before_sleep/move", async (route) => {
     staleMoveRequests += 1;
-    await route.fulfill({ status: 404, contentType: "application/json", body: '{"error":"not found"}' });
-  });
-  await page.route("**/api/games/import", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({ id: "g_after_resume", current: state("g_after_resume") })
-    });
-  });
-  await page.route("**/api/games/g_after_resume/move", async (route) => {
+    const body = route.request().postDataJSON();
+    if (!body.recoverySnapshot) {
+      await route.fulfill({ status: 404, contentType: "application/json", body: '{"error":"not found"}' });
+      return;
+    }
     restoredMoveRequests += 1;
     await route.fulfill({
       status: 200,
@@ -116,7 +111,8 @@ test("the first move after a stale session is restored and retried", async ({ pa
           [null, null, null, null],
           [null, null, null, null],
           [null, null, null, null]
-        ])
+        ]),
+        recoverySnapshot: body.recoverySnapshot
       })
     });
   });
@@ -127,13 +123,17 @@ test("the first move after a stale session is restored and retried", async ({ pa
   await page.evaluate(() => {
     window.localStorage.setItem(
       "binary2048.resumeSnapshot",
-      JSON.stringify({ gameId: "g_before_sleep", savedAtISO: new Date().toISOString(), exported: {} })
+      JSON.stringify({
+        gameId: "g_before_sleep",
+        savedAtISO: new Date().toISOString(),
+        exported: { recoveryVersion: 1, rulesetId: "binary2048-v1", config: {}, initialGrid: [], moves: [] }
+      })
     );
   });
 
   await page.keyboard.press("ArrowLeft");
   await expect(page.getByRole("gridcell", { name: /number 2$/ })).toHaveCount(1);
-  expect(staleMoveRequests).toBe(1);
+  expect(staleMoveRequests).toBe(2);
   expect(restoredMoveRequests).toBe(1);
 });
 

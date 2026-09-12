@@ -1,17 +1,17 @@
-import type { GameExport } from "@/lib/binary2048/types";
+import type { GameExport, SessionRecoverySnapshot } from "@/lib/binary2048/types";
 
 export const RESUME_SNAPSHOT_STORAGE_KEY = "binary2048.resumeSnapshot";
 
 type ResumeSnapshotEnvelope = {
   gameId: string;
   savedAtISO: string;
-  exported: GameExport;
+  exported: GameExport | SessionRecoverySnapshot;
 };
 
 export function saveResumeSnapshot(
   storage: Pick<Storage, "setItem">,
   gameId: string,
-  exported: GameExport
+  exported: GameExport | SessionRecoverySnapshot
 ) {
   const payload: ResumeSnapshotEnvelope = {
     gameId,
@@ -24,7 +24,7 @@ export function saveResumeSnapshot(
 export function loadResumeSnapshot(
   storage: Pick<Storage, "getItem">,
   gameId?: string
-): GameExport | null {
+): GameExport | SessionRecoverySnapshot | null {
   const raw = storage.getItem(RESUME_SNAPSHOT_STORAGE_KEY);
   if (!raw) return null;
 
@@ -33,7 +33,7 @@ export function loadResumeSnapshot(
     if (!parsed || typeof parsed !== "object") return null;
     if (gameId && parsed.gameId !== gameId) return null;
     if (!parsed.exported || typeof parsed.exported !== "object") return null;
-    return parsed.exported as GameExport;
+    return parsed.exported as GameExport | SessionRecoverySnapshot;
   } catch {
     return null;
   }

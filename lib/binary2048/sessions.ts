@@ -1,7 +1,7 @@
-import { applyMove, buildExport, createGame } from "@/lib/binary2048/engine";
+import { applyMove, buildExport, createGame, runScenario } from "@/lib/binary2048/engine";
 import { canContinueAfterWin } from "@/lib/binary2048/continue-policy";
 import { getSessionStore } from "@/lib/binary2048/session-store";
-import type { Cell, Dir, GameConfig, GameExport, GameSession } from "@/lib/binary2048/types";
+import type { Cell, Dir, GameConfig, GameExport, GameSession, SessionRecoverySnapshot } from "@/lib/binary2048/types";
 
 const UNDO_MODES = {
   normal: { pWildcard: 0.1, undoLimit: 2 },
@@ -110,6 +110,18 @@ export function exportSession(id: string) {
   );
 }
 
+export function exportRecoverySnapshot(id: string): SessionRecoverySnapshot | null {
+  const session = getSessionStore().get(id);
+  if (!session) return null;
+  return {
+    recoveryVersion: 1,
+    rulesetId: "binary2048-v1",
+    config: session.initialState.config,
+    initialGrid: session.initialState.grid,
+    moves: session.steps.map((step) => step.dir)
+  };
+}
+
 export function listSessionState(id: string) {
   const session = getSessionStore().get(id);
   if (!session) return null;
@@ -169,4 +181,19 @@ export function importSession(exported: GameExport) {
   };
   getSessionStore().set(current.id, session);
   return session;
+}
+
+export function importRecoverySnapshot(snapshot: SessionRecoverySnapshot) {
+  if (snapshot?.recoveryVersion !== 1 || snapshot.rulesetId !== "binary2048-v1") {
+    throw new Error("Unsupported recovery snapshot");
+  }
+  if (!snapshot.config || !Array.isArray(snapshot.initialGrid) || !Array.isArray(snapshot.moves)) {
+    throw new Error("Recovery snapshot is missing required fields");
+  }
+  const exported = runScenario(snapshot.config, snapshot.initialGrid, snapshot.moves);
+  return importSession(exported);
+}
+
+export function importRecoveryPayload(snapshot: GameExport | SessionRecoverySnapshot) {
+  return "recoveryVersion" in snapshot ? importRecoverySnapshot(snapshot) : importSession(snapshot);
 }

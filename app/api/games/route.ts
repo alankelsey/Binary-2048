@@ -5,7 +5,7 @@ import { deriveEntitlementsForTier } from "@/lib/binary2048/entitlements";
 import { canContinueAfterWin } from "@/lib/binary2048/continue-policy";
 import { DEFAULT_CONFIG, generateBitstormInitialGrid } from "@/lib/binary2048/engine";
 import { verifyEntitlementProof } from "@/lib/binary2048/entitlement-proof";
-import { createSession, getUndoMeta } from "@/lib/binary2048/sessions";
+import { createSession, exportRecoverySnapshot, getUndoMeta } from "@/lib/binary2048/sessions";
 import { applyLockEconomyPolicy, type LockEconomyContext } from "@/lib/binary2048/lock-economy";
 import type { Cell, GameConfig } from "@/lib/binary2048/types";
 import type { UserTier } from "@/lib/binary2048/security-policy";
@@ -87,6 +87,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       id: session.current.id,
       current: session.current,
+      recoverySnapshot: exportRecoverySnapshot(session.current.id),
       steps: session.steps,
       undo: getUndoMeta(session),
       integrity: session.integrity,
