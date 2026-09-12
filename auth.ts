@@ -3,12 +3,14 @@ import GitHubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
 
 const providers: NextAuthOptions["providers"] = [];
+export const GITHUB_OAUTH_ISSUER = "https://github.com/login/oauth";
 
 if (process.env.AUTH_GITHUB_ID && process.env.AUTH_GITHUB_SECRET) {
   providers.push(
     GitHubProvider({
       clientId: process.env.AUTH_GITHUB_ID,
-      clientSecret: process.env.AUTH_GITHUB_SECRET
+      clientSecret: process.env.AUTH_GITHUB_SECRET,
+      issuer: GITHUB_OAUTH_ISSUER
     })
   );
 }

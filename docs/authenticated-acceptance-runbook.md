@@ -6,9 +6,11 @@ Never attach it to issues, logs, commits, or test reports.
 
 ## Current target status
 
-- Custom domain `https://www.binary2048.com`: DNS did not resolve on 2026-09-12.
+- Custom domain `https://www.binary2048.com`: DNS and the public auth endpoints resolve.
 - Amplify target `https://main.dzxvs1esr22z9.amplifyapp.com`: `/auth`, sign-in,
   session, and provider-discovery checks passed; GitHub was advertised.
+- GitHub's OAuth callback issuer is explicitly configured as
+  `https://github.com/login/oauth`, matching GitHub's RFC 9207 callback value.
 
 Confirm that the GitHub OAuth application allows the callback URL used by the
 deployed `NEXTAUTH_URL` before capturing a session.
@@ -16,7 +18,7 @@ deployed `NEXTAUTH_URL` before capturing a session.
 ## Capture a real session
 
 ```bash
-AUTH_BASE=https://main.dzxvs1esr22z9.amplifyapp.com npm run ops:auth:capture
+AUTH_BASE=https://www.binary2048.com npm run ops:auth:capture
 ```
 
 Complete GitHub login and any MFA prompt. Wait until `/auth` displays
@@ -26,7 +28,7 @@ Complete GitHub login and any MFA prompt. Wait until `/auth` displays
 ## Run the non-destructive automated audit
 
 ```bash
-AUTH_BASE=https://main.dzxvs1esr22z9.amplifyapp.com npm run ops:auth:acceptance
+AUTH_BASE=https://www.binary2048.com npm run ops:auth:acceptance
 ```
 
 The audit verifies the real session and tier, refresh persistence, bridge-token
