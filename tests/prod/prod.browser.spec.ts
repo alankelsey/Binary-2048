@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test";
+import { applyMove, createGame, DEFAULT_CONFIG, generateBitstormInitialGrid } from "@/lib/binary2048/engine";
+import type { Dir, GameConfig, GameState } from "@/lib/binary2048/types";
 
 test("prod home renders core app shell", async ({ page }) => {
   const response = await page.goto("/");
@@ -135,6 +137,120 @@ test("a stale instance-local session is recovered and moved atomically", async (
   await expect(page.getByRole("gridcell", { name: /number 2$/ })).toHaveCount(1);
   expect(staleMoveRequests).toBe(2);
   expect(restoredMoveRequests).toBe(1);
+});
+
+test("the manual left-down and right-left loop reaches the game-over overlay", async ({ page }) => {
+  const config: GameConfig = {
+    ...DEFAULT_CONFIG,
+    seed: 980960020,
+    spawn: {
+      pZero: 0.15,
+      pOne: 0.73,
+      pWildcard: 0.04,
+      pLock: 0.08,
+      wildcardMultipliers: [2]
+    }
+  };
+  const initialGrid = generateBitstormInitialGrid(config);
+  let current: GameState = createGame(config, initialGrid).state;
+  const createdId = current.id;
+  const moves: Dir[] = [];
+  const movedResults: boolean[] = [];
+  let createRequests = 0;
+
+  await page.addInitScript(() => {
+    window.localStorage.removeItem("binary2048.currentGameId");
+    window.localStorage.removeItem("binary2048.resumeSnapshot");
+    window.localStorage.setItem("binary2048.spawnMode", "death");
+    window.localStorage.setItem("binary2048.gameMode", "bitstorm");
+  });
+  await page.route("**/api/games", async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    createRequests += 1;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        id: current.id,
+        current,
+        recoverySnapshot: {
+          recoveryVersion: 1,
+          rulesetId: "binary2048-v1",
+          config,
+          initialGrid,
+          moves: []
+        },
+        undo: { limit: 0, used: 0, remaining: 0 },
+        integrity: { sessionClass: "unranked", source: "created" },
+        mode: "bitstorm"
+      })
+    });
+  });
+  await page.route("**/api/games/*/move", async (route) => {
+    const body = route.request().postDataJSON() as { dir: Dir };
+    const result = applyMove(current, body.dir);
+    current = result.state;
+    moves.push(body.dir);
+    movedResults.push(result.moved);
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        id: current.id,
+        current,
+        lastStep: { events: result.events },
+        recoverySnapshot: {
+          recoveryVersion: 1,
+          rulesetId: "binary2048-v1",
+          config,
+          initialGrid,
+          moves
+        },
+        undo: { limit: 0, used: 0, remaining: 0 },
+        integrity: { sessionClass: "unranked", source: "created" }
+      })
+    });
+  });
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "Start New Game" }).click();
+  await expect(page.getByText("Difficulty: Death by AI")).toBeVisible();
+  await expect(page.getByText("Mode: Bitstorm")).toBeVisible();
+
+  async function press(dir: Dir) {
+    const key = { left: "ArrowLeft", down: "ArrowDown", right: "ArrowRight", up: "ArrowUp" }[dir];
+    const before = moves.length;
+    await page.keyboard.press(key);
+    await expect.poll(() => moves.length).toBe(before + 1);
+    return movedResults.at(-1) ?? false;
+  }
+
+  let probeCycles = 0;
+  for (let cycle = 0; cycle < 250 && !current.over; cycle += 1) {
+    const movedLeft = await press("left");
+    if (current.over) break;
+    const movedDown = await press("down");
+    if (current.over) break;
+    if (!movedLeft && !movedDown) {
+      probeCycles += 1;
+      await press("right");
+      if (current.over) break;
+      await press("left");
+    }
+  }
+
+  expect(probeCycles).toBeGreaterThan(0);
+  expect(current.over).toBe(true);
+  expect(current.id).toBe(createdId);
+  expect(createRequests).toBe(1);
+  const gameOver = page.getByRole("status").filter({ hasText: "GAME OVER" });
+  await expect(gameOver).toBeVisible();
+  await expect(gameOver.getByText(`Score: ${current.score}`)).toBeVisible();
+
+  const terminalMoveCount = moves.length;
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowLeft");
+  await expect.poll(() => moves.length).toBe(terminalMoveCount);
 });
 
 test("prod auth page renders and does not show server configuration error", async ({ page }) => {

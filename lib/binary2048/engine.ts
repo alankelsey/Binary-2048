@@ -447,14 +447,14 @@ function updateWinLose(state: GameState, events: GameEvent[]): GameState {
       if (out.won) break;
     }
   }
-  if (isGameOver(out.grid)) {
+  if (isGameOver(out.grid, out.turn)) {
     out.over = true;
     events.push({ type: "game_over" });
   }
   return out;
 }
 
-function isGameOver(grid: Cell[][]): boolean {
+function isGameOver(grid: Cell[][], turn: number): boolean {
   if (!Array.isArray(grid) || grid.length === 0 || !Array.isArray(grid[0])) return false;
   if (getEmptyCoords(grid).length > 0) return false;
   const h = grid.length;
@@ -464,8 +464,8 @@ function isGameOver(grid: Cell[][]): boolean {
       const cur = grid[r][c];
       const right = c + 1 < w ? grid[r][c + 1] : null;
       const down = r + 1 < h ? grid[r + 1][c] : null;
-      if (cur && right && canMerge(cur, right, 1)) return false;
-      if (cur && down && canMerge(cur, down, 1)) return false;
+      if (cur && right && canMerge(cur, right, turn)) return false;
+      if (cur && down && canMerge(cur, down, turn)) return false;
     }
   }
   return true;

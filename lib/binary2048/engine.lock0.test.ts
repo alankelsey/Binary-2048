@@ -51,4 +51,38 @@ describe("lock-0 cooldown behavior", () => {
     expect(countTiles(second.state.grid, "n")).toBe(1);
     expect(second.events.some((event) => event.type === "lock_break")).toBe(true);
   });
+
+  it("ends a full board when an even-turn lock cannot be broken", () => {
+    const initialGrid: Cell[][] = [
+      [{ t: "n", v: 4 }, { t: "n", v: 2 }, { t: "n", v: 1 }, { t: "i" }],
+      [{ t: "n", v: 1 }, { t: "n", v: 8 }, { t: "n", v: 4 }, { t: "n", v: 1 }],
+      [{ t: "n", v: 8 }, { t: "n", v: 32 }, { t: "n", v: 8 }, { t: "n", v: 2 }],
+      [{ t: "n", v: 16 }, { t: "n", v: 1 }, { t: "n", v: 32 }, { t: "n", v: 8 }]
+    ];
+    const config: GameConfig = { ...baseConfig, width: 4, height: 4 };
+    const created = createGame(config, initialGrid).state;
+    const evenTurnState = { ...created, turn: 96, over: false };
+
+    const result = applyMove(evenTurnState, "left");
+
+    expect(result.moved).toBe(false);
+    expect(result.state.turn).toBe(96);
+    expect(result.state.over).toBe(true);
+    expect(result.events.some((event) => event.type === "game_over")).toBe(true);
+  });
+
+  it("keeps a full board active when an odd-turn lock can be broken", () => {
+    const initialGrid: Cell[][] = [
+      [{ t: "n", v: 4 }, { t: "n", v: 2 }, { t: "n", v: 1 }, { t: "i" }],
+      [{ t: "n", v: 1 }, { t: "n", v: 8 }, { t: "n", v: 4 }, { t: "n", v: 1 }],
+      [{ t: "n", v: 8 }, { t: "n", v: 32 }, { t: "n", v: 8 }, { t: "n", v: 2 }],
+      [{ t: "n", v: 16 }, { t: "n", v: 1 }, { t: "n", v: 32 }, { t: "n", v: 8 }]
+    ];
+    const config: GameConfig = { ...baseConfig, width: 4, height: 4 };
+    const created = createGame(config, initialGrid).state;
+    const oddTurnState = { ...created, turn: 95, over: false };
+
+    expect(oddTurnState.over).toBe(false);
+    expect(applyMove(oddTurnState, "left").state.over).toBe(false);
+  });
 });

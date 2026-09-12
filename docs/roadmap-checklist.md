@@ -55,6 +55,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add resume telemetry for `session_resume_success`, `session_resume_miss`, and `session_reset_after_resume`
 - [x] Prefer the browser recovery snapshot during casual-game startup so refresh does not depend on Amplify instance-local session memory
 - [x] Make guest moves and undo recover atomically from compact browser snapshots when Amplify routes a request to a different instance
+- [x] Add a deterministic Playwright Death-by-AI Bitstorm game-over regression for the manual left/down, right/left testing loop
 - [x] Require an explicit `Start New Game` action when no recoverable game exists instead of generating a board on page load
 - [ ] Run and document a real-device mobile UX audit on iPhone + Android after control/resume fixes
 
