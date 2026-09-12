@@ -57,6 +57,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Make guest moves and undo recover atomically from compact browser snapshots when Amplify routes a request to a different instance
 - [x] Add a deterministic Playwright Death-by-AI Bitstorm game-over regression for the manual left/down, right/left testing loop
 - [x] Add engine collision-matrix and Playwright interaction coverage for zero, wildcard, and lock special tiles
+- [x] Serialize rapid keyboard moves through a bounded client buffer so overlapping API requests cannot race recovered game ids
 - [x] Require an explicit `Start New Game` action when no recoverable game exists instead of generating a board on page load
 - [ ] Run and document a real-device mobile UX audit on iPhone + Android after control/resume fixes
 
@@ -180,8 +181,8 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add auth-required UX messaging for protected actions (ranked submit, paid store actions, data export/delete)
 - [x] Add `/auth` account page with provider/session diagnostics and bridge-token helper
 - [ ] Complete and document production authenticated-user acceptance testing
-  - [ ] Complete a real GitHub OAuth sign-in and verify the authenticated identity/session on desktop
-  - [ ] Verify the authenticated session persists across refresh, browser restart, and return visits
+  - [x] Complete a real GitHub OAuth sign-in and verify the authenticated identity/session on desktop
+  - [x] Verify the authenticated session persists across refresh, browser restart, and return visits
   - [ ] Verify authenticated gameplay uses the intended user tier and per-API-key/account rate limits
   - [ ] Verify ranked game creation and leaderboard submission under the real authenticated identity
   - [ ] Verify protected user-data export and deletion authorization

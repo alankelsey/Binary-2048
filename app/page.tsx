@@ -87,6 +87,7 @@ const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.1.0";
 const APP_COMMIT = process.env.NEXT_PUBLIC_APP_COMMIT ?? "dev";
 const UI_POLICY = getUiPolicy();
 const FULLSCREEN_TOGGLE_ENABLED = isFullscreenToggleEnabled();
+const MAX_BUFFERED_MOVES = 8;
 
 function Binary2048Logo() {
   return (
@@ -153,6 +154,8 @@ export default function Home() {
   const fullscreenShellRef = useRef<HTMLDivElement | null>(null);
   const controlTapStateRef = useRef(createInitialRageTapState());
   const pendingNewGameRef = useRef(false);
+  const moveInFlightRef = useRef(false);
+  const bufferedMovesRef = useRef<Dir[]>([]);
 
   function resolveCanContinueAfterWin(payload: unknown): boolean {
     const response = payload as {
@@ -245,6 +248,7 @@ export default function Home() {
       return;
     }
     setReplay(null);
+    bufferedMovesRef.current = [];
     setContinueAfterWin(false);
     setNewGameConfirmArmed(false);
     setBusy(true);
@@ -308,6 +312,14 @@ export default function Home() {
 
   async function move(dir: Dir) {
     if (replay || !gameId || !state || state.over || (state.won && !continueAfterWin)) return;
+    if (moveInFlightRef.current) {
+      if (bufferedMovesRef.current.length < MAX_BUFFERED_MOVES) {
+        bufferedMovesRef.current.push(dir);
+      }
+      return;
+    }
+    if (busy) return;
+    moveInFlightRef.current = true;
     const previous = state;
     setBusy(true);
     setErrorMessage("");
@@ -327,7 +339,6 @@ export default function Home() {
           };
         },
         async recoverSession(staleSessionId) {
-          setErrorMessage("Restoring your game…");
           const recoverySnapshot = loadResumeSnapshot(window.localStorage, staleSessionId);
           return recoverySnapshot ? { id: staleSessionId, recoverySnapshot } : null;
         }
@@ -365,8 +376,10 @@ export default function Home() {
         window.localStorage.removeItem(gameIdKey);
       }
     } catch (error) {
+      bufferedMovesRef.current = [];
       setErrorMessage(error instanceof Error ? error.message : "Failed to apply move");
     } finally {
+      moveInFlightRef.current = false;
       setBusy(false);
     }
   }
@@ -700,6 +713,16 @@ export default function Home() {
     window.localStorage.setItem(themeModeKey, themeMode);
     document.documentElement.setAttribute("data-theme", themeMode);
   }, [themeMode]);
+
+  useEffect(() => {
+    if (busy || moveInFlightRef.current || bufferedMovesRef.current.length === 0) return;
+    if (replay || !gameId || !state || state.over || (state.won && !continueAfterWin)) {
+      bufferedMovesRef.current = [];
+      return;
+    }
+    const nextMove = bufferedMovesRef.current.shift();
+    if (nextMove) void move(nextMove);
+  }, [busy, gameId, state, replay, continueAfterWin]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
