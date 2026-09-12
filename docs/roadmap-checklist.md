@@ -176,6 +176,15 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add auth UI shell (sign in/out controls + session/tier badge in app navigation)
 - [x] Add auth-required UX messaging for protected actions (ranked submit, paid store actions, data export/delete)
 - [x] Add `/auth` account page with provider/session diagnostics and bridge-token helper
+- [ ] Complete and document production authenticated-user acceptance testing
+  - [ ] Complete a real GitHub OAuth sign-in and verify the authenticated identity/session on desktop
+  - [ ] Verify the authenticated session persists across refresh, browser restart, and return visits
+  - [ ] Verify authenticated gameplay uses the intended user tier and per-API-key/account rate limits
+  - [ ] Verify ranked game creation and leaderboard submission under the real authenticated identity
+  - [ ] Verify protected user-data export and deletion authorization
+  - [ ] Verify authenticated store, inventory, entitlement, and paid-feature behavior
+  - [ ] Verify sign-out, expired-session handling, and reauthentication recovery
+  - [ ] Repeat the critical sign-in, session-resume, gameplay, and sign-out flow on Android Chrome
 - [x] Notification subscriptions (app updates/player/leaderboard actions)
 - [x] Async PvP same-seed mode
 - [x] AI-vs-AI tournament orchestrator beyond smoke scripts
