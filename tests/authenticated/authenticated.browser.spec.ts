@@ -52,4 +52,15 @@ test("real authenticated identity can create a ranked session", async ({ request
   expect(payload.integrity).toMatchObject({ sessionClass: "ranked", source: "created" });
   expect(payload.economy.userTier).toMatch(/^(authed|paid)$/);
   expect(payload.economy.canContinueAfterWin).toBe(false);
+
+  const moveResponse = await request.post(`/api/games/${payload.id}/move`, {
+    headers: { authorization: `Bearer ${bridgeToken}` },
+    data: { dir: "left" }
+  });
+  expect(moveResponse.status()).toBe(200);
+  expect(moveResponse.headers()["ratelimit-scope"]).toBe("account");
+  expect(moveResponse.headers()["ratelimit-tier"]).toBe(payload.economy.userTier);
+  expect(Number(moveResponse.headers()["ratelimit-limit"])).toBe(
+    payload.economy.userTier === "paid" ? 1800 : 600
+  );
 });

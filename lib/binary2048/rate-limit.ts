@@ -1,4 +1,7 @@
+import { createHash } from "crypto";
+import { getVerifiedAuthClaims } from "@/lib/binary2048/auth-context";
 import { resolveBotApiKey } from "@/lib/binary2048/bot-api-key";
+import { getRateLimitPolicy, type UserTier } from "@/lib/binary2048/security-policy";
 import { MongoClient, type Collection } from "mongodb";
 
 type RateLimitBucket = {
@@ -22,6 +25,8 @@ export type RateLimitResult = {
   retryAfterSeconds: number;
   resetAtEpochSeconds: number;
   backend: "memory" | "mongo" | "memory_fallback";
+  scope: "api-key" | "account" | "ip";
+  tier: UserTier | null;
 };
 
 type CounterResult = { count: number; resetAt: number };
@@ -52,16 +57,34 @@ function parsePositiveInt(raw: string | undefined, fallback: number): number {
   return value;
 }
 
-function getClientIdentity(req: Request): { identifier: string; hasVerifiedApiKey: boolean } {
+function getClientIdentity(req: Request): {
+  identifier: string;
+  hasVerifiedApiKey: boolean;
+  scope: RateLimitResult["scope"];
+  tier: UserTier | null;
+} {
   const apiKeyIdentity = resolveBotApiKey(req.headers.get("x-api-key"));
-  if (apiKeyIdentity) return { identifier: `key:${apiKeyIdentity.id}`, hasVerifiedApiKey: true };
+  if (apiKeyIdentity) {
+    return { identifier: `key:${apiKeyIdentity.id}`, hasVerifiedApiKey: true, scope: "api-key", tier: null };
+  }
+
+  const authClaims = getVerifiedAuthClaims(req);
+  if (authClaims) {
+    const accountHash = createHash("sha256").update(authClaims.sub).digest("hex");
+    return {
+      identifier: `account:${accountHash}`,
+      hasVerifiedApiKey: false,
+      scope: "account",
+      tier: authClaims.tier
+    };
+  }
 
   const forwardedFor = req.headers.get("x-forwarded-for");
   if (forwardedFor && forwardedFor.trim().length > 0) {
     const ip = forwardedFor.split(",")[0]?.trim();
-    if (ip) return { identifier: `ip:${ip}`, hasVerifiedApiKey: false };
+    if (ip) return { identifier: `ip:${ip}`, hasVerifiedApiKey: false, scope: "ip", tier: "guest" };
   }
-  return { identifier: "ip:unknown", hasVerifiedApiKey: false };
+  return { identifier: "ip:unknown", hasVerifiedApiKey: false, scope: "ip", tier: "guest" };
 }
 
 const memoryCounterStore: RateLimitCounterStore = {
@@ -155,7 +178,9 @@ export async function checkRateLimit(input: CheckRateLimitInput): Promise<RateLi
     remaining,
     retryAfterSeconds: Math.max(1, Math.ceil((counter.resetAt - now) / 1000)),
     resetAtEpochSeconds: Math.ceil(counter.resetAt / 1000),
-    backend
+    backend,
+    scope: identity.scope,
+    tier: identity.tier
   };
 }
 
@@ -163,8 +188,10 @@ export function rateLimitHeaders(quota: RateLimitResult): Record<string, string>
   const headers: Record<string, string> = {
     "RateLimit-Limit": String(quota.limit),
     "RateLimit-Remaining": String(quota.remaining),
-    "RateLimit-Reset": String(quota.resetAtEpochSeconds)
+    "RateLimit-Reset": String(quota.resetAtEpochSeconds),
+    "RateLimit-Scope": quota.scope
   };
+  if (quota.tier) headers["RateLimit-Tier"] = quota.tier;
   if (!quota.allowed) headers["Retry-After"] = String(quota.retryAfterSeconds);
   return headers;
 }
@@ -188,10 +215,12 @@ export async function checkSimulateRateLimit(req: Request) {
 }
 
 export async function checkMoveRateLimit(req: Request) {
+  const identity = getClientIdentity(req);
+  const tierLimit = identity.tier ? getRateLimitPolicy(identity.tier).maxRequests : null;
   return checkRateLimit({
     req,
     route: "game_move",
-    max: parsePositiveInt(process.env.BINARY2048_RATE_LIMIT_MOVE_MAX, 600),
+    max: parsePositiveInt(process.env.BINARY2048_RATE_LIMIT_MOVE_MAX, tierLimit ?? 600),
     windowMs: parsePositiveInt(process.env.BINARY2048_RATE_LIMIT_WINDOW_MS, 5 * 60 * 1000),
     sharedForApiKeysOnly: true
   });

@@ -1,4 +1,5 @@
 import { createHash } from "crypto";
+import { createAuthBridgeToken } from "@/lib/binary2048/auth-bridge";
 import {
   checkRateLimit,
   checkMoveRateLimit,
@@ -19,6 +20,7 @@ describe("rate-limit", () => {
     delete process.env.BINARY2048_MONGO_URI;
     delete process.env.BINARY2048_MONGO_RATE_LIMIT_TIMEOUT_MS;
     delete process.env.BINARY2048_BOT_API_KEY_HASHES;
+    delete process.env.BINARY2048_AUTH_BRIDGE_SECRET;
   });
 
   it("uses a validated api key id for client identity", async () => {
@@ -75,10 +77,50 @@ describe("rate-limit", () => {
     const req = new Request("http://localhost", { headers: { "x-forwarded-for": "10.1.1.20" } });
     const move = await checkMoveRateLimit(req);
     const simulate = await checkSimulateRateLimit(req);
-    expect(move.limit).toBe(600);
+    expect(move.limit).toBe(120);
     expect(simulate.limit).toBe(60);
     expect(move.key).toContain("game_move:");
     expect(simulate.key).toContain("simulate:");
+  });
+
+  it("uses a privacy-safe account bucket and authenticated tier quota", async () => {
+    process.env.BINARY2048_AUTH_BRIDGE_SECRET = "account-rate-limit-secret";
+    const token = createAuthBridgeToken(
+      { sub: "player@example.com", exp: Math.floor(Date.now() / 1000) + 300, tier: "authed" },
+      process.env.BINARY2048_AUTH_BRIDGE_SECRET
+    );
+    const req = new Request("http://localhost", {
+      headers: { authorization: `Bearer ${token}`, "x-forwarded-for": "10.1.1.22" }
+    });
+
+    const move = await checkMoveRateLimit(req);
+
+    expect(move.limit).toBe(600);
+    expect(move.scope).toBe("account");
+    expect(move.tier).toBe("authed");
+    expect(move.key).toMatch(/^game_move:account:[a-f0-9]{64}$/);
+    expect(move.key).not.toContain("player@example.com");
+    expect(rateLimitHeaders(move)).toMatchObject({
+      "RateLimit-Scope": "account",
+      "RateLimit-Tier": "authed",
+      "RateLimit-Limit": "600"
+    });
+  });
+
+  it("gives paid accounts the paid gameplay quota", async () => {
+    process.env.BINARY2048_AUTH_BRIDGE_SECRET = "paid-rate-limit-secret";
+    const token = createAuthBridgeToken(
+      { sub: "paid-player", exp: Math.floor(Date.now() / 1000) + 300, tier: "paid" },
+      process.env.BINARY2048_AUTH_BRIDGE_SECRET
+    );
+
+    const move = await checkMoveRateLimit(
+      new Request("http://localhost", { headers: { authorization: `Bearer ${token}` } })
+    );
+
+    expect(move.limit).toBe(1800);
+    expect(move.scope).toBe("account");
+    expect(move.tier).toBe("paid");
   });
 
   it("keeps browser move quotas in memory when shared Mongo counters are enabled", async () => {

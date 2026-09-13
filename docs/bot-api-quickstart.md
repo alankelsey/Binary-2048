@@ -13,6 +13,8 @@ Rate-limited responses publish:
 - `RateLimit-Limit`: maximum requests in the current window.
 - `RateLimit-Remaining`: requests left after the current request.
 - `RateLimit-Reset`: window reset time as Unix epoch seconds.
+- `RateLimit-Scope`: `api-key`, `account`, or `ip`, without exposing the identity.
+- `RateLimit-Tier`: `guest`, `authed`, or `paid` when applicable.
 - `Retry-After`: seconds to wait; included when the server returns `429`.
 
 Clients must wait for `Retry-After` before retrying a `429` response.
@@ -48,9 +50,11 @@ curl -sS -X POST "http://localhost:3000/api/games/<id>/move" \
   -d '{"action":"L"}'
 ```
 
-Gameplay moves use a dedicated default quota of 600 requests per five minutes,
-separate from the lower simulation, tournament, and training quotas. Clients
-must still honor the returned rate-limit headers and `Retry-After` on `429`.
+Validated bot API keys receive a dedicated quota of 600 gameplay moves per five
+minutes, separate from the lower simulation, tournament, and training quotas.
+Browser move limits are 120 for guests, 600 for authenticated accounts, and
+1,800 for paid accounts. Clients must still honor the returned rate-limit
+headers and `Retry-After` on `429`.
 
 ## Python starter
 

@@ -53,6 +53,8 @@ describe("OPENAPI_SPEC", () => {
   it("documents quota headers and 429 retry behavior", () => {
     const simulate = OPENAPI_SPEC.paths["/api/simulate"].post;
     expect(simulate.responses["200"].headers["RateLimit-Remaining"].schema.type).toBe("integer");
+    expect(simulate.responses["200"].headers["RateLimit-Scope"].schema.type).toBe("string");
+    expect(simulate.responses["200"].headers["RateLimit-Tier"].schema.type).toBe("string");
     expect(simulate.responses["429"].headers["Retry-After"].schema.type).toBe("integer");
     expect(simulate.parameters[0].name).toBe("x-api-key");
   });

@@ -19,6 +19,7 @@ import { getToolbarActionState } from "@/lib/binary2048/toolbar-actions";
 import { getNewGameGuardState } from "@/lib/binary2048/new-game-guard";
 import { getNewGameStartAction } from "@/lib/binary2048/startup-new-game";
 import { requestResumableMove } from "@/lib/binary2048/resumable-move";
+import { createClientAuthBridge } from "@/lib/binary2048/client-auth-bridge";
 import {
   exitDocumentFullscreen,
   isFullscreenActive,
@@ -156,6 +157,14 @@ export default function Home() {
   const pendingNewGameRef = useRef(false);
   const moveInFlightRef = useRef(false);
   const bufferedMovesRef = useRef<Dir[]>([]);
+  const authBridgeRef = useRef<ReturnType<typeof createClientAuthBridge> | null>(null);
+  if (!authBridgeRef.current) {
+    authBridgeRef.current = createClientAuthBridge((input, init) => fetch(input, init));
+  }
+
+  useEffect(() => {
+    void authBridgeRef.current?.authorizationHeader();
+  }, []);
 
   function resolveCanContinueAfterWin(payload: unknown): boolean {
     const response = payload as {
@@ -261,9 +270,10 @@ export default function Home() {
       const pWildcard = SPAWN_MODES[spawnMode].pWildcard;
       const pLock = SPAWN_MODES[spawnMode].pLock;
       const pOne = 1 - pZero - pWildcard - pLock;
+      const authHeaders = await authBridgeRef.current?.authorizationHeader();
       const res = await fetch("/api/games", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...authHeaders },
         body: JSON.stringify({
           mode: gameMode,
           config: {
@@ -327,9 +337,10 @@ export default function Home() {
       const moveResult = await requestResumableMove({
         sessionId: gameId,
         async requestMove(sessionId, recoveredSession?: { id: string; recoverySnapshot: GameExport | SessionRecoverySnapshot }) {
+          const authHeaders = await authBridgeRef.current?.authorizationHeader();
           const response = await fetch(`/api/games/${sessionId}/move`, {
             method: "POST",
-            headers: { "content-type": "application/json" },
+            headers: { "content-type": "application/json", ...authHeaders },
             body: JSON.stringify({ dir, recoverySnapshot: recoveredSession?.recoverySnapshot })
           });
           return {
@@ -389,12 +400,14 @@ export default function Home() {
     setBusy(true);
     setErrorMessage("");
     try {
-      const requestUndo = (recoverySnapshot?: GameExport | SessionRecoverySnapshot) =>
-        fetch(`/api/games/${gameId}/undo`, {
+      const requestUndo = async (recoverySnapshot?: GameExport | SessionRecoverySnapshot) => {
+        const authHeaders = await authBridgeRef.current?.authorizationHeader();
+        return fetch(`/api/games/${gameId}/undo`, {
           method: "POST",
-          headers: { "content-type": "application/json" },
+          headers: { "content-type": "application/json", ...authHeaders },
           body: JSON.stringify({ recoverySnapshot })
         });
+      };
       let res = await requestUndo();
       if (res.status === 404) {
         const recoverySnapshot = loadResumeSnapshot(window.localStorage, gameId);

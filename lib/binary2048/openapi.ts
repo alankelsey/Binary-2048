@@ -1,7 +1,9 @@
 const RATE_LIMIT_HEADERS = {
   "RateLimit-Limit": { description: "Maximum requests permitted in the current quota window", schema: { type: "integer" } },
   "RateLimit-Remaining": { description: "Requests remaining in the current quota window", schema: { type: "integer" } },
-  "RateLimit-Reset": { description: "Quota-window reset time as Unix epoch seconds", schema: { type: "integer" } }
+  "RateLimit-Reset": { description: "Quota-window reset time as Unix epoch seconds", schema: { type: "integer" } },
+  "RateLimit-Scope": { description: "Quota identity class without exposing the identity", schema: { type: "string", enum: ["api-key", "account", "ip"] } },
+  "RateLimit-Tier": { description: "Resolved account tier when the quota is account- or guest-scoped", schema: { type: "string", enum: ["guest", "authed", "paid"] } }
 } as const;
 
 const RATE_LIMITED_PARAMETERS = [{
