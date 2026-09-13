@@ -184,7 +184,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
   - [x] Complete a real GitHub OAuth sign-in and verify the authenticated identity/session on desktop
   - [x] Verify the authenticated session persists across refresh, browser restart, and return visits
   - [x] Capture a local-only authenticated Playwright session and pass the automated session, bridge-token, protected-export, and ranked-creation checks
-  - [ ] Verify authenticated gameplay uses the intended user tier and per-API-key/account rate limits
+  - [x] Verify authenticated gameplay uses the intended user tier and per-API-key/account rate limits
   - [x] Verify ranked game creation under the real authenticated identity
   - [ ] Verify leaderboard submission under the real authenticated identity
   - [x] Verify protected user-data export authorization

@@ -23,6 +23,14 @@ Result: **4 passed**.
 2. The authenticated session minted a short-lived bridge token.
 3. The bridge identity authorized protected, read-only user export.
 4. The real authenticated identity created a ranked session with an authenticated user tier.
+5. An authenticated ranked move returned `RateLimit-Scope: account`, the
+   resolved `RateLimit-Tier`, and the matching tier limit. The account quota key
+   is a SHA-256 hash and neither the key nor account identifier is returned to
+   the client.
+
+The ranked move supplied the create response's compact recovery snapshot. This
+keeps the acceptance check valid when Amplify sends creation and movement to
+different instance-local session stores.
 
 ## Defect found and corrected
 

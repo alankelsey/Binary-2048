@@ -41,7 +41,7 @@ test("bridge identity authorizes protected read-only user export", async ({ requ
   expect(Array.isArray(payload.leaderboard)).toBe(true);
 });
 
-test("real authenticated identity can create a ranked session", async ({ request }) => {
+test("real authenticated identity can create a ranked session with an account quota", async ({ request }) => {
   expect(bridgeToken).toBeTruthy();
   const response = await request.post("/api/games", {
     headers: { authorization: `Bearer ${bridgeToken}` },
@@ -55,7 +55,7 @@ test("real authenticated identity can create a ranked session", async ({ request
 
   const moveResponse = await request.post(`/api/games/${payload.id}/move`, {
     headers: { authorization: `Bearer ${bridgeToken}` },
-    data: { dir: "left" }
+    data: { dir: "left", recoverySnapshot: payload.recoverySnapshot }
   });
   expect(moveResponse.status()).toBe(200);
   expect(moveResponse.headers()["ratelimit-scope"]).toBe("account");
