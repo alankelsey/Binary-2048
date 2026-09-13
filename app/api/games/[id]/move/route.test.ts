@@ -73,8 +73,8 @@ describe("POST /api/games/:id/move hash guard", () => {
     expect(json.integrity?.sessionClass).toBe("unranked");
     expect(json.economy?.canContinueAfterWin).toBe(true);
     expect(getSession(id)?.steps.length).toBe(1);
-    expect(res.headers.get("ratelimit-limit")).toBe("120");
-    expect(res.headers.get("ratelimit-remaining")).toBe("119");
+    expect(res.headers.get("ratelimit-limit")).toBe("600");
+    expect(res.headers.get("ratelimit-remaining")).toBe("599");
     expect(res.headers.get("ratelimit-reset")).toMatch(/^\d+$/);
     expect(res.headers.get("ratelimit-scope")).toBe("ip");
     expect(res.headers.get("ratelimit-tier")).toBe("guest");

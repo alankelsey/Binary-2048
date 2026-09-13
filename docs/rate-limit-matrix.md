@@ -30,7 +30,7 @@ Source: `lib/binary2048/rate-limit.ts`
 
 | Endpoint | Keying | Window | Default Limit | Response on Exceed |
 |---|---|---:|---:|---|
-| `POST /api/games/:id/move` | validated bot key ID, authenticated account hash, else IP | 300s | guest 120; authed/bot 600; paid 1,800 | `429` |
+| `POST /api/games/:id/move` | validated bot key ID, authenticated account hash, else IP | 300s | guest/authed/bot 600; paid 1,800 | `429` |
 | `POST /api/simulate` | validated bot key ID else IP | 300s | 60 | `429` |
 | `POST /api/bots/tournament` | validated bot key ID else IP | 300s | 10 | `429` |
 | Training replay/label routes | shared bucket by validated bot key ID else IP | 300s | 20 | `429` |

@@ -217,10 +217,11 @@ export async function checkSimulateRateLimit(req: Request) {
 export async function checkMoveRateLimit(req: Request) {
   const identity = getClientIdentity(req);
   const tierLimit = identity.tier ? getRateLimitPolicy(identity.tier).maxRequests : null;
+  const defaultMoveLimit = Math.max(600, tierLimit ?? 600);
   return checkRateLimit({
     req,
     route: "game_move",
-    max: parsePositiveInt(process.env.BINARY2048_RATE_LIMIT_MOVE_MAX, tierLimit ?? 600),
+    max: parsePositiveInt(process.env.BINARY2048_RATE_LIMIT_MOVE_MAX, defaultMoveLimit),
     windowMs: parsePositiveInt(process.env.BINARY2048_RATE_LIMIT_WINDOW_MS, 5 * 60 * 1000),
     sharedForApiKeysOnly: true
   });

@@ -52,8 +52,8 @@ curl -sS -X POST "http://localhost:3000/api/games/<id>/move" \
 
 Validated bot API keys receive a dedicated quota of 600 gameplay moves per five
 minutes, separate from the lower simulation, tournament, and training quotas.
-Browser move limits are 120 for guests, 600 for authenticated accounts, and
-1,800 for paid accounts. Clients must still honor the returned rate-limit
+Browser move limits are 600 for guests and authenticated accounts, and 1,800
+for paid accounts. Clients must still honor the returned rate-limit
 headers and `Retry-After` on `429`.
 
 ## Python starter

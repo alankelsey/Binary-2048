@@ -77,7 +77,7 @@ describe("rate-limit", () => {
     const req = new Request("http://localhost", { headers: { "x-forwarded-for": "10.1.1.20" } });
     const move = await checkMoveRateLimit(req);
     const simulate = await checkSimulateRateLimit(req);
-    expect(move.limit).toBe(120);
+    expect(move.limit).toBe(600);
     expect(simulate.limit).toBe(60);
     expect(move.key).toContain("game_move:");
     expect(simulate.key).toContain("simulate:");
