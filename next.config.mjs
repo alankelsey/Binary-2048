@@ -26,6 +26,7 @@ const nextConfig = {
     AUTH_GITHUB_ID: process.env.AUTH_GITHUB_ID ?? "",
     AUTH_GITHUB_SECRET: process.env.AUTH_GITHUB_SECRET ?? "",
     NEXTAUTH_URL: process.env.NEXTAUTH_URL ?? "",
+    BINARY2048_AUTH_BRIDGE_SECRET: process.env.BINARY2048_AUTH_BRIDGE_SECRET ?? "",
     BINARY2048_ADMIN_TOKEN: process.env.BINARY2048_ADMIN_TOKEN ?? "",
     BINARY2048_RUN_STORE: process.env.BINARY2048_RUN_STORE ?? "memory",
     BINARY2048_SESSION_STORE: process.env.BINARY2048_SESSION_STORE ?? process.env.BINARY2048_RUN_STORE ?? "memory",

@@ -43,6 +43,17 @@ if [[ "${HEALTH}" != *'"ok":true'* ]]; then
   exit 1
 fi
 
+BRIDGE_BODY_FILE="/tmp/binary2048-bridge-smoke.json"
+BRIDGE_STATUS="$(curl -sS -o "${BRIDGE_BODY_FILE}" -w "%{http_code}" \
+  -X POST "${BASE}/api/auth/bridge-token" \
+  -H "Content-Type: application/json" \
+  -d '{"ttlSeconds":300}')"
+if [[ "${BRIDGE_STATUS}" != "401" ]]; then
+  echo "Smoke test failed: /api/auth/bridge-token expected unauthenticated 401, received ${BRIDGE_STATUS}"
+  echo "response: $(<"${BRIDGE_BODY_FILE}")"
+  exit 1
+fi
+
 GAME_RESP="$(curl -fsS -X POST "${BASE}/api/games" -H "Content-Type: application/json" -d '{}')"
 if [[ "${GAME_RESP}" != *'"id":"'* ]]; then
   echo "Smoke test failed: /api/games did not return a game id"
