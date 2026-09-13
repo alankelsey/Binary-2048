@@ -183,9 +183,12 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [ ] Complete and document production authenticated-user acceptance testing
   - [x] Complete a real GitHub OAuth sign-in and verify the authenticated identity/session on desktop
   - [x] Verify the authenticated session persists across refresh, browser restart, and return visits
+  - [x] Capture a local-only authenticated Playwright session and pass the automated session, bridge-token, protected-export, and ranked-creation checks
   - [ ] Verify authenticated gameplay uses the intended user tier and per-API-key/account rate limits
-  - [ ] Verify ranked game creation and leaderboard submission under the real authenticated identity
-  - [ ] Verify protected user-data export and deletion authorization
+  - [x] Verify ranked game creation under the real authenticated identity
+  - [ ] Verify leaderboard submission under the real authenticated identity
+  - [x] Verify protected user-data export authorization
+  - [ ] Verify protected user-data deletion authorization
   - [ ] Verify authenticated store, inventory, entitlement, and paid-feature behavior
   - [ ] Verify sign-out, expired-session handling, and reauthentication recovery
   - [ ] Repeat the critical sign-in, session-resume, gameplay, and sign-out flow on Android Chrome
