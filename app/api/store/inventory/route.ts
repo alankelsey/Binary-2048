@@ -1,19 +1,26 @@
 import { NextResponse } from "next/server";
 import { getInventory, grantInventory, listInventoryLedger } from "@/lib/binary2048/inventory";
+import { getStorePrincipal, hasStoreAdminToken } from "@/lib/binary2048/store-auth";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
-  const subscriberId = url.searchParams.get("subscriberId");
-  if (!subscriberId) {
-    return NextResponse.json({ error: "subscriberId query param is required" }, { status: 400 });
+  const principal = getStorePrincipal(req);
+  if (!principal) {
+    return NextResponse.json({ error: "Authenticated user required" }, { status: 401 });
+  }
+  const requestedSubscriberId = url.searchParams.get("subscriberId");
+  if (requestedSubscriberId && requestedSubscriberId !== principal.subscriberId) {
+    return NextResponse.json({ error: "Inventory access denied" }, { status: 403 });
   }
   const limitRaw = url.searchParams.get("limit");
   const limit = limitRaw ? Number(limitRaw) : undefined;
   try {
-    const inventory = getInventory(subscriberId);
+    const inventory = getInventory(principal.subscriberId);
     return NextResponse.json({
       inventory,
-      ledger: listInventoryLedger(subscriberId, limit)
+      ledger: listInventoryLedger(principal.subscriberId, limit),
+      userTier: principal.tier,
+      entitlements: principal.entitlements
     });
   } catch (error) {
     return NextResponse.json(
@@ -24,6 +31,9 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  if (!hasStoreAdminToken(req)) {
+    return NextResponse.json({ error: "Admin token required" }, { status: 401 });
+  }
   try {
     const body = await req.json().catch(() => ({}));
     const result = grantInventory({

@@ -71,5 +71,15 @@ describe("api store webhook", () => {
     );
     expect(res.status).toBe(401);
   });
-});
 
+  it("fails closed when the webhook secret is not configured", async () => {
+    const res = await POST(
+      new Request("http://localhost/api/store/webhook", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id: "evt_unconfigured", type: "checkout.session.completed" })
+      })
+    );
+    expect(res.status).toBe(503);
+  });
+});

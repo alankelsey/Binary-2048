@@ -632,23 +632,25 @@ Challenge policy env:
     - `paid`: `app_updates`, `player_actions`, `leaderboard_actions`
 - `DELETE /api/subscriptions?id=...`
   - Deletes a subscription by id
-- `GET /api/store/inventory?subscriberId=...`
-  - Returns inventory balances + recent ledger entries
+- `GET /api/store/inventory?limit=...`
+  - Requires an auth-bridge bearer token
+  - Derives a hashed subscriber id from the authenticated account and returns only that account's balances + recent ledger entries
 - `GET /api/store/catalog`
   - Returns active paid packet SKUs and their grant bundles
 - `POST /api/store/purchase`
-  - Purchases packet SKU and grants all bundled inventory items
-  - Body: `{ "subscriberId": string, "packetSku": string, "quantity"?: number }`
+  - Requires an auth-bridge bearer token
+  - Direct grant-style purchase is disabled by default until verified checkout is configured
+  - Body: `{ "packetSku": string, "quantity"?: number }`
 - `POST /api/store/webhook`
   - Idempotent webhook processor for payment completion events
   - Supports grant-once behavior by event id and payment reference
-  - Optional shared-secret guard via `BINARY2048_STORE_WEBHOOK_SECRET` + `x-store-webhook-secret` header
+  - Fails closed unless `BINARY2048_STORE_WEBHOOK_SECRET` is configured; callers provide it via `x-store-webhook-secret`
 - `POST /api/store/inventory`
-  - Grants inventory
+  - Grants inventory only with operator authorization via `x-admin-token`
   - Body: `{ "subscriberId": string, "sku": "undo_charge" | "wild_boost_pack" | "lock_breaker", "quantity": number, "reason"?: "grant" | "consume" | "adjust" }`
 - `POST /api/store/consume`
-  - Consumes inventory and appends ledger entry
-  - Body: `{ "subscriberId": string, "sku": "undo_charge" | "wild_boost_pack" | "lock_breaker", "quantity": number, "reason"?: "grant" | "consume" | "adjust" }`
+  - Requires an auth-bridge bearer token and consumes only the authenticated account's inventory
+  - Body: `{ "sku": "undo_charge" | "wild_boost_pack" | "lock_breaker", "quantity": number, "reason"?: "consume" }`
 - `GET /api/training/replays?page=&limit=&bot=&minScore=`
   - Returns paginated deterministic bot replay records (no persistent storage required — seeds derived from page number)
   - Query params: `page` (default `1`), `limit` (default `20`, max `100`), `bot` (`priority`|`random`|`alternate`|`rollout`, default `rollout`), `minScore` (default `0`)

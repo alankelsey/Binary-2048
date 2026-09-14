@@ -5,6 +5,7 @@ import type { Dir, GameState, SessionRecoverySnapshot } from "@/lib/binary2048/t
 test.describe.configure({ mode: "serial" });
 
 let bridgeToken = "";
+let bridgeUserTier: "authed" | "paid" = "authed";
 
 test("real OAuth session is authenticated and survives refresh", async ({ page, request }) => {
   const sessionResponse = await request.get("/api/auth/session");
@@ -28,6 +29,7 @@ test("authenticated session mints a usable short-lived bridge token", async ({ r
   expect(payload.token.length).toBeGreaterThan(40);
   expect(["authed", "paid"]).toContain(payload.userTier);
   bridgeToken = payload.token;
+  bridgeUserTier = payload.userTier;
 });
 
 test("bridge identity authorizes protected read-only user export", async ({ request }) => {
@@ -102,4 +104,56 @@ test("real identity can finish and submit a recovery-safe ranked practice sessio
   });
   expect(submitted.entry.playerId).toEqual(expect.any(String));
   expect(submitted.entry.playerId.length).toBeGreaterThan(0);
+});
+
+test("authenticated store reads are account-bound and paid mutations fail closed", async ({ page, request }) => {
+  expect(bridgeToken).toBeTruthy();
+
+  const catalogResponse = await request.get("/api/store/catalog");
+  expect(catalogResponse.status()).toBe(200);
+  const catalog = await catalogResponse.json();
+  expect(Array.isArray(catalog.packets)).toBe(true);
+  expect(catalog.packets.length).toBeGreaterThan(0);
+
+  const unauthenticatedInventory = await request.get("/api/store/inventory");
+  expect(unauthenticatedInventory.status()).toBe(401);
+
+  const inventoryResponse = await request.get("/api/store/inventory?limit=5", {
+    headers: { authorization: `Bearer ${bridgeToken}` }
+  });
+  expect(inventoryResponse.status()).toBe(200);
+  const inventory = await inventoryResponse.json();
+  expect(inventory.userTier).toBe(bridgeUserTier);
+  expect(inventory.inventory?.subscriberId).toMatch(/^acct_[a-f0-9]{64}$/);
+  expect(inventory.inventory?.balances).toEqual(
+    expect.objectContaining({ undo_charge: expect.any(Number) })
+  );
+
+  const crossAccountRead = await request.get(
+    "/api/store/inventory?subscriberId=another-account",
+    { headers: { authorization: `Bearer ${bridgeToken}` } }
+  );
+  expect(crossAccountRead.status()).toBe(403);
+
+  const unauthorizedGrant = await request.post("/api/store/inventory", {
+    headers: { authorization: `Bearer ${bridgeToken}` },
+    data: { subscriberId: inventory.inventory.subscriberId, sku: "undo_charge", quantity: 1 }
+  });
+  expect(unauthorizedGrant.status()).toBe(401);
+
+  const directPurchase = await request.post("/api/store/purchase", {
+    headers: { authorization: `Bearer ${bridgeToken}` },
+    data: { packetSku: "pack_undo_starter", quantity: 1 }
+  });
+  expect(directPurchase.status()).toBe(503);
+
+  await page.goto("/store");
+  await expect(page.getByText("Account inventory loaded.")).toBeVisible();
+  await expect(
+    page.getByText(
+      bridgeUserTier === "paid"
+        ? "Paid-tier store actions are enabled."
+        : "Paid store actions require a paid tier session."
+    )
+  ).toBeVisible();
 });

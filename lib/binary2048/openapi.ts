@@ -239,12 +239,13 @@ export const OPENAPI_SPEC = {
       get: {
         summary: "Get store inventory and recent ledger entries",
         parameters: [
-          { name: "subscriberId", in: "query", required: true, schema: { type: "string" } },
           { name: "limit", in: "query", required: false, schema: { type: "integer" } }
         ],
         responses: {
           "200": { description: "Inventory and ledger" },
-          "400": { description: "Invalid query" }
+          "400": { description: "Invalid query" },
+          "401": { description: "Authenticated bearer token required" },
+          "403": { description: "Requested subscriber does not match authenticated account" }
         }
       },
       post: {
@@ -255,7 +256,8 @@ export const OPENAPI_SPEC = {
         },
         responses: {
           "200": { description: "Inventory granted" },
-          "400": { description: "Invalid payload" }
+          "400": { description: "Invalid payload" },
+          "401": { description: "Admin token required" }
         }
       }
     },
@@ -276,7 +278,9 @@ export const OPENAPI_SPEC = {
         },
         responses: {
           "200": { description: "Packet purchased and inventory granted" },
-          "400": { description: "Invalid purchase payload" }
+          "400": { description: "Invalid purchase payload" },
+          "401": { description: "Authenticated bearer token required" },
+          "503": { description: "Direct purchase disabled until verified checkout is configured" }
         }
       }
     },
@@ -289,7 +293,8 @@ export const OPENAPI_SPEC = {
         },
         responses: {
           "200": { description: "Inventory consumed" },
-          "400": { description: "Invalid consume payload or insufficient balance" }
+          "400": { description: "Invalid consume payload or insufficient balance" },
+          "401": { description: "Authenticated bearer token required" }
         }
       }
     },
