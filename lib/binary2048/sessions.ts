@@ -1,5 +1,6 @@
 import { applyMove, buildExport, createGame, runScenario } from "@/lib/binary2048/engine";
 import { canContinueAfterWin } from "@/lib/binary2048/continue-policy";
+import { createRecoverySignature, verifyRecoverySignature } from "@/lib/binary2048/recovery-signature";
 import { getSessionStore } from "@/lib/binary2048/session-store";
 import type { Cell, Dir, GameConfig, GameExport, GameSession, SessionRecoverySnapshot } from "@/lib/binary2048/types";
 
@@ -113,13 +114,22 @@ export function exportSession(id: string) {
 export function exportRecoverySnapshot(id: string): SessionRecoverySnapshot | null {
   const session = getSessionStore().get(id);
   if (!session) return null;
-  return {
+  const snapshot: SessionRecoverySnapshot = {
     recoveryVersion: 1,
     rulesetId: "binary2048-v1",
+    sessionId: id,
     config: session.initialState.config,
     initialGrid: session.initialState.grid,
-    moves: session.steps.map((step) => step.dir)
+    moves: session.steps.map((step) => step.dir),
+    integrity: { ...session.integrity },
+    undo: {
+      limit: session.undoLimit,
+      used: session.undoUsed,
+      events: session.undoEvents.map((event) => ({ ...event }))
+    }
   };
+  const secret = process.env.BINARY2048_RECOVERY_SECRET ?? "";
+  return secret ? { ...snapshot, signature: createRecoverySignature(snapshot, secret) } : snapshot;
 }
 
 export function listSessionState(id: string) {
@@ -191,7 +201,26 @@ export function importRecoverySnapshot(snapshot: SessionRecoverySnapshot) {
     throw new Error("Recovery snapshot is missing required fields");
   }
   const exported = runScenario(snapshot.config, snapshot.initialGrid, snapshot.moves);
-  return importSession(exported);
+  const recovered = importSession(exported);
+  const trusted = verifyRecoverySignature(snapshot, process.env.BINARY2048_RECOVERY_SECRET ?? "");
+  if (trusted && snapshot.integrity && snapshot.undo) {
+    if (snapshot.sessionId) {
+      const generatedId = recovered.current.id;
+      recovered.initialState.id = snapshot.sessionId;
+      recovered.current.id = snapshot.sessionId;
+      for (const step of recovered.steps) {
+        step.before.id = snapshot.sessionId;
+        step.after.id = snapshot.sessionId;
+      }
+      getSessionStore().delete(generatedId);
+    }
+    recovered.integrity = { ...snapshot.integrity };
+    recovered.undoLimit = snapshot.undo.limit;
+    recovered.undoUsed = snapshot.undo.used;
+    recovered.undoEvents = snapshot.undo.events.map((event) => ({ ...event }));
+    getSessionStore().set(recovered.current.id, recovered);
+  }
+  return recovered;
 }
 
 export function importRecoveryPayload(snapshot: GameExport | SessionRecoverySnapshot) {

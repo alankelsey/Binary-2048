@@ -53,6 +53,23 @@ describe("POST /api/games", () => {
     expect(json.recoverySnapshot).toMatchObject({ recoveryVersion: 1, moves: [] });
   });
 
+  it("rejects custom ranked board and win rules", async () => {
+    const req = new Request("http://localhost/api/games", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        economy: { sessionClass: "ranked" },
+        config: { seed: 99, winTile: 1 }
+      })
+    });
+
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json.error).toContain("canonical board and win rules");
+  });
+
   it("returns 403 for guest game creation when challenge is enforced and token missing", async () => {
     process.env.BINARY2048_CHALLENGE_MODE = "enforce";
     process.env.BINARY2048_CHALLENGE_SECRET = "challenge-secret";

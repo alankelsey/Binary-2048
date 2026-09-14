@@ -69,9 +69,17 @@ export type GameSession = {
 export type SessionRecoverySnapshot = {
   recoveryVersion: 1;
   rulesetId: "binary2048-v1";
+  sessionId?: string;
   config: GameConfig;
   initialGrid: Cell[][];
   moves: Dir[];
+  integrity?: SessionIntegrity;
+  undo?: {
+    limit: number;
+    used: number;
+    events: UndoEvent[];
+  };
+  signature?: string;
 };
 
 export type UndoEvent = {

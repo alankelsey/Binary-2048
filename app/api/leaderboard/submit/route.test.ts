@@ -4,7 +4,8 @@ import { POST as validateReplayPOST } from "@/app/api/replay/validate/route";
 import { resetLeaderboard } from "@/lib/binary2048/leaderboard";
 import { resetSandboxRateLimitForTests } from "@/lib/binary2048/league-sandbox";
 import { getRunStore, resetRunStoreForTests } from "@/lib/binary2048/run-store";
-import { createSession, moveSession, undoSession } from "@/lib/binary2048/sessions";
+import { createSession, exportRecoverySnapshot, moveSession, undoSession } from "@/lib/binary2048/sessions";
+import { resetSessionStoreForTests } from "@/lib/binary2048/session-store";
 import type { Cell } from "@/lib/binary2048/types";
 
 function authHeader(sub = "u_ranked", tier: "guest" | "authed" | "paid" = "authed") {
@@ -54,6 +55,7 @@ describe("POST /api/leaderboard/submit", () => {
     delete process.env.BINARY2048_SANDBOX_API_KEYS;
     delete process.env.BINARY2048_SANDBOX_RATE_LIMIT_PER_5M;
     delete process.env.BINARY2048_LEAGUE_SHADOW_WRITE;
+    delete process.env.BINARY2048_RECOVERY_SECRET;
   });
 
   it("rejects unauthenticated submissions", async () => {
@@ -91,6 +93,33 @@ describe("POST /api/leaderboard/submit", () => {
     expect(stored?.gameId).toBe(gameId);
     expect(stored?.playerId).toBe("u_submitter");
     expect(Array.isArray(stored?.replay?.moves)).toBe(true);
+  });
+
+  it("submits a signed ranked recovery after instance-local session loss", async () => {
+    process.env.BINARY2048_RECOVERY_SECRET = "leaderboard-recovery-secret";
+    const gameId = createFinishedRankedGame();
+    const recoverySnapshot = exportRecoverySnapshot(gameId);
+    resetSessionStoreForTests();
+
+    const req = new Request("http://localhost/api/leaderboard/submit", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        ...authHeader("u_recovered_submitter", "authed")
+      },
+      body: JSON.stringify({ gameId, recoverySnapshot, isPractice: true })
+    });
+
+    const res = await POST(req);
+    const json = await res.json();
+    expect(res.status).toBe(200);
+    expect(json.storedNamespace).toBe("sandbox");
+    expect(json.entry).toMatchObject({
+      gameId,
+      playerId: "u_recovered_submitter",
+      namespace: "sandbox",
+      isPractice: true
+    });
   });
 
   it("stores replay signature when replay signing secret is configured", async () => {

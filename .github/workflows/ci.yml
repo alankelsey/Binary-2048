@@ -17,6 +17,7 @@ jobs:
     env:
       AUTH_SECRET: ci-build-secret
       BINARY2048_AUTH_BRIDGE_SECRET: ci-auth-bridge-secret
+      BINARY2048_RECOVERY_SECRET: ci-recovery-secret
       NEXTAUTH_URL: http://localhost:3000
     steps:
       - name: Checkout

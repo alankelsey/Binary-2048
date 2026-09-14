@@ -6,7 +6,8 @@ import { createReplaySignature } from "@/lib/binary2048/replay-signature";
 import { buildCanonicalRunRecord } from "@/lib/binary2048/run-record";
 import { getRunStore } from "@/lib/binary2048/run-store";
 import { getLeaderboardEligibility, submitLeaderboardEntry } from "@/lib/binary2048/leaderboard";
-import { exportSession, getSession } from "@/lib/binary2048/sessions";
+import { exportSession, getSession, importRecoveryPayload } from "@/lib/binary2048/sessions";
+import type { GameExport, SessionRecoverySnapshot } from "@/lib/binary2048/types";
 
 type SubmitBody = {
   gameId?: string;
@@ -15,6 +16,7 @@ type SubmitBody = {
   isPractice?: boolean;
   seasonMode?: "live" | "preview";
   shadowWrite?: boolean;
+  recoverySnapshot?: GameExport | SessionRecoverySnapshot;
 };
 
 export async function POST(req: Request) {
@@ -33,7 +35,16 @@ export async function POST(req: Request) {
   }
   const submitMode = resolveSandboxSubmissionMode(body);
 
-  const session = getSession(body.gameId);
+  let activeGameId = body.gameId;
+  let session = getSession(activeGameId);
+  if (!session && body.recoverySnapshot) {
+    try {
+      session = importRecoveryPayload(body.recoverySnapshot);
+      activeGameId = session.current.id;
+    } catch {
+      return NextResponse.json({ error: "Invalid recovery snapshot" }, { status: 400 });
+    }
+  }
   if (!session) {
     return NextResponse.json({ error: "Game not found" }, { status: 404 });
   }
@@ -45,7 +56,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: eligibility.reason, bracket: eligibility.bracket }, { status: 403 });
   }
 
-  const exported = exportSession(body.gameId);
+  const exported = exportSession(activeGameId);
   const replaySignature = (() => {
     const signingSecret = process.env.BINARY2048_REPLAY_CODE_SECRET ?? "";
     if (!signingSecret || !exported) return undefined;
@@ -60,16 +71,16 @@ export async function POST(req: Request) {
     replaySignature,
     playerId: claims.sub,
     userTier: claims.tier,
-    gameId: body.gameId,
+    gameId: activeGameId,
     session
   });
 
   if (exported) {
     const runRecord = buildCanonicalRunRecord({
-      id: `run_${body.gameId}`,
+      id: `run_${activeGameId}`,
       playerId: claims.sub,
       userTier: claims.tier,
-      gameId: body.gameId,
+      gameId: activeGameId,
       exported,
       integrity: session.integrity,
       replaySignature

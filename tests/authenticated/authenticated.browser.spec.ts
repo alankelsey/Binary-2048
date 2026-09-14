@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test";
+import { applyMove } from "@/lib/binary2048/engine";
+import type { Dir, GameState, SessionRecoverySnapshot } from "@/lib/binary2048/types";
 
 test.describe.configure({ mode: "serial" });
 
@@ -42,6 +44,7 @@ test("bridge identity authorizes protected read-only user export", async ({ requ
 });
 
 test("real authenticated identity can create a ranked session with an account quota", async ({ request }) => {
+  test.setTimeout(180_000);
   expect(bridgeToken).toBeTruthy();
   const response = await request.post("/api/games", {
     headers: { authorization: `Bearer ${bridgeToken}` },
@@ -53,14 +56,50 @@ test("real authenticated identity can create a ranked session with an account qu
   expect(payload.economy.userTier).toMatch(/^(authed|paid)$/);
   expect(payload.economy.canContinueAfterWin).toBe(false);
 
-  const moveResponse = await request.post(`/api/games/${payload.id}/move`, {
+  let gameId = payload.id as string;
+  let current = payload.current as GameState;
+  let recoverySnapshot = payload.recoverySnapshot as SessionRecoverySnapshot;
+  const priority: Dir[] = ["left", "down", "right", "up"];
+
+  for (let moveCount = 0; moveCount < 500 && !current.over && !current.won; moveCount += 1) {
+    const dir = priority.find((candidate) => applyMove(current, candidate).moved);
+    expect(dir, "unfinished game must have a legal move").toBeTruthy();
+    const moveResponse = await request.post(`/api/games/${gameId}/move`, {
+      headers: { authorization: `Bearer ${bridgeToken}` },
+      data: { dir, recoverySnapshot }
+    });
+    expect(moveResponse.status()).toBe(200);
+    expect(moveResponse.headers()["ratelimit-scope"]).toBe("account");
+    expect(moveResponse.headers()["ratelimit-tier"]).toBe(payload.economy.userTier);
+    expect(Number(moveResponse.headers()["ratelimit-limit"])).toBe(
+      payload.economy.userTier === "paid" ? 1800 : 600
+    );
+    const moved = await moveResponse.json();
+    gameId = moved.id;
+    current = moved.current;
+    recoverySnapshot = moved.recoverySnapshot;
+  }
+
+  expect(current.over || current.won).toBe(true);
+  const submission = await request.post("/api/leaderboard/submit", {
     headers: { authorization: `Bearer ${bridgeToken}` },
-    data: { dir: "left", recoverySnapshot: payload.recoverySnapshot }
+    data: {
+      gameId,
+      recoverySnapshot,
+      isPractice: true
+    }
   });
-  expect(moveResponse.status()).toBe(200);
-  expect(moveResponse.headers()["ratelimit-scope"]).toBe("account");
-  expect(moveResponse.headers()["ratelimit-tier"]).toBe(payload.economy.userTier);
-  expect(Number(moveResponse.headers()["ratelimit-limit"])).toBe(
-    payload.economy.userTier === "paid" ? 1800 : 600
-  );
+  expect(submission.status()).toBe(200);
+  const submitted = await submission.json();
+  expect(submitted).toMatchObject({
+    submitted: true,
+    storedNamespace: "sandbox",
+    entry: {
+      namespace: "sandbox",
+      isPractice: true,
+      gameId
+    }
+  });
+  expect(submitted.entry.playerId).toEqual(expect.any(String));
+  expect(submitted.entry.playerId.length).toBeGreaterThan(0);
 });

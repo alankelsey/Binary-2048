@@ -47,6 +47,24 @@ export async function POST(req: Request) {
     const effectiveSeed = typeof requestedSeed === "number" ? requestedSeed : randomSeed();
     const mode = body.mode === "bitstorm" ? "bitstorm" : "classic";
     const sessionClass = body.economy?.sessionClass === "ranked" ? "ranked" : "unranked";
+    if (sessionClass === "ranked") {
+      const configKeys = Object.keys(body.config ?? {});
+      if (
+        body.initialGrid ||
+        mode !== "classic" ||
+        configKeys.some((key) => key !== "seed" && key !== "spawn")
+      ) {
+        return NextResponse.json(
+          { error: "Ranked sessions require the canonical board and win rules" },
+          { status: 400 }
+        );
+      }
+      config = {
+        seed: effectiveSeed,
+        ...(body.config?.spawn ? { spawn: body.config.spawn } : {})
+      };
+      initialGrid = undefined;
+    }
     const authClaims = getVerifiedAuthClaims(req);
     const userTier = authClaims?.tier ?? body.economy?.userTier ?? "guest";
     const challenge = evaluateChallenge({ req, route: "/api/games", risk: "medium", userTier });
