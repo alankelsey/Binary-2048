@@ -50,6 +50,10 @@ original session ID, deterministic configuration, initial grid, move history,
 ranked integrity, and undo audit. Modified or unsigned snapshots are downgraded
 to unranked imported sessions and cannot be submitted as `ranked_pure`.
 
+This verifies submission behavior, not durable leaderboard retention. The
+leaderboard store remains per-instance memory and must move to shared persistent
+storage before a public ranked launch.
+
 ## Defect found and corrected
 
 The first run returned `503` from `POST /api/auth/bridge-token`. The route's

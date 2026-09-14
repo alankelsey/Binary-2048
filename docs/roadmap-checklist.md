@@ -225,6 +225,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 ## Persistence + ML Backlog (Post-100 Expansion)
 
 - [x] Add MongoDB persistence layer for sessions/runs (replace in-memory store behind interface)
+- [ ] Move leaderboard entries from per-instance memory to a shared persistent store before public ranked launch
 - [ ] Convert Mongo session reads to awaited asynchronous hydration, then enable `BINARY2048_SESSION_STORE=mongo` when ranked/multi-device traffic justifies the additional Atlas operations
 - [x] Persist canonical run records (`seed`, `moves`, `score`, `maxTile`, `engineVersion`, `rulesetId`, `integrity`, `createdAt`)
 - [x] Store top/contest replay artifacts in S3 (compressed payload + checksum + metadata) and keep Mongo pointer
