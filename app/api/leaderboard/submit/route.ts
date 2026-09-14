@@ -36,8 +36,8 @@ export async function POST(req: Request) {
   const submitMode = resolveSandboxSubmissionMode(body);
 
   let activeGameId = body.gameId;
-  let session = getSession(activeGameId);
-  if (!session && body.recoverySnapshot) {
+  let session = body.recoverySnapshot ? null : getSession(activeGameId);
+  if (body.recoverySnapshot) {
     try {
       session = importRecoveryPayload(body.recoverySnapshot);
       activeGameId = session.current.id;

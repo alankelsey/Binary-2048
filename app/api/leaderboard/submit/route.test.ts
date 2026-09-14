@@ -4,7 +4,7 @@ import { POST as validateReplayPOST } from "@/app/api/replay/validate/route";
 import { resetLeaderboard } from "@/lib/binary2048/leaderboard";
 import { resetSandboxRateLimitForTests } from "@/lib/binary2048/league-sandbox";
 import { getRunStore, resetRunStoreForTests } from "@/lib/binary2048/run-store";
-import { createSession, exportRecoverySnapshot, moveSession, undoSession } from "@/lib/binary2048/sessions";
+import { createSession, exportRecoverySnapshot, importRecoverySnapshot, moveSession, undoSession } from "@/lib/binary2048/sessions";
 import { resetSessionStoreForTests } from "@/lib/binary2048/session-store";
 import type { Cell } from "@/lib/binary2048/types";
 
@@ -120,6 +120,50 @@ describe("POST /api/leaderboard/submit", () => {
       namespace: "sandbox",
       isPractice: true
     });
+  });
+
+  it("prefers a newer signed terminal snapshot over a stale local session", async () => {
+    process.env.BINARY2048_RECOVERY_SECRET = "leaderboard-stale-recovery-secret";
+    const grid: Cell[][] = [
+      [{ t: "n", v: 1 }, { t: "n", v: 1 }, null, null],
+      [null, null, null, null],
+      [null, null, null, null],
+      [null, null, null, null]
+    ];
+    const session = createSession(
+      {
+        seed: 605,
+        winTile: 2,
+        spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] }
+      },
+      grid,
+      { sessionClass: "ranked" }
+    );
+    const staleSnapshot = exportRecoverySnapshot(session.current.id)!;
+    moveSession(session.current.id, "left");
+    const terminalSnapshot = exportRecoverySnapshot(session.current.id)!;
+    resetSessionStoreForTests();
+    const stale = importRecoverySnapshot(staleSnapshot);
+    expect(stale.current.won).toBe(false);
+
+    const req = new Request("http://localhost/api/leaderboard/submit", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        ...authHeader("u_stale_submitter", "authed")
+      },
+      body: JSON.stringify({
+        gameId: session.current.id,
+        recoverySnapshot: terminalSnapshot,
+        isPractice: true
+      })
+    });
+
+    const res = await POST(req);
+    const json = await res.json();
+    expect(res.status).toBe(200);
+    expect(json.entry.gameId).toBe(session.current.id);
+    expect(json.entry.namespace).toBe("sandbox");
   });
 
   it("stores replay signature when replay signing secret is configured", async () => {
