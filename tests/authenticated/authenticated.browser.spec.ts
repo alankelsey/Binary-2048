@@ -43,7 +43,7 @@ test("bridge identity authorizes protected read-only user export", async ({ requ
   expect(Array.isArray(payload.leaderboard)).toBe(true);
 });
 
-test("real authenticated identity can create a ranked session with an account quota", async ({ request }) => {
+test("real identity can finish and submit a recovery-safe ranked practice session", async ({ request }) => {
   test.setTimeout(180_000);
   expect(bridgeToken).toBeTruthy();
   const response = await request.post("/api/games", {

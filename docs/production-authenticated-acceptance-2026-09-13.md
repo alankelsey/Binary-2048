@@ -32,6 +32,24 @@ The ranked move supplied the create response's compact recovery snapshot. This
 keeps the acceptance check valid when Amplify sends creation and movement to
 different instance-local session stores.
 
+## Ranked submission acceptance
+
+- Deterministic seed: `91001`
+- Rules: canonical ranked classic rules; custom board size, initial grid, and
+  win conditions are rejected
+- Play policy: engine-evaluated legal moves with a 500-move safety bound
+- Result: reached a genuine terminal state and submitted successfully
+- Identity: real authenticated GitHub OAuth identity (value omitted)
+- Quota: account-scoped authenticated tier
+- Submission mode: `isPractice: true`
+- Stored namespace: `sandbox`, as required by the practice-isolation policy
+- End-to-end ranked test duration: 39.2 seconds
+
+The run used server-signed compact recovery snapshots. The signature covers the
+original session ID, deterministic configuration, initial grid, move history,
+ranked integrity, and undo audit. Modified or unsigned snapshots are downgraded
+to unranked imported sessions and cannot be submitted as `ranked_pure`.
+
 ## Defect found and corrected
 
 The first run returned `503` from `POST /api/auth/bridge-token`. The route's
@@ -47,7 +65,6 @@ build.
 ## Remaining manual and destructive checks
 
 - Verify account/key rate-limit attribution during authenticated gameplay.
-- Finish a ranked game and submit it to the intended leaderboard namespace.
 - Verify authorized user-data deletion separately from the read-only export test.
 - Verify store, inventory, entitlements, and paid-feature behavior.
 - Verify sign-out, expired-session behavior, and reauthentication.

@@ -186,7 +186,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
   - [x] Capture a local-only authenticated Playwright session and pass the automated session, bridge-token, protected-export, and ranked-creation checks
   - [x] Verify authenticated gameplay uses the intended user tier and per-API-key/account rate limits
   - [x] Verify ranked game creation under the real authenticated identity
-  - [ ] Verify leaderboard submission under the real authenticated identity
+  - [x] Verify leaderboard submission under the real authenticated identity
   - [x] Verify protected user-data export authorization
   - [ ] Verify protected user-data deletion authorization
   - [ ] Verify authenticated store, inventory, entitlement, and paid-feature behavior
