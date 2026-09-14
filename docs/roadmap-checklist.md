@@ -190,7 +190,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
   - [x] Verify leaderboard submission under the real authenticated identity
   - [x] Verify protected user-data export authorization
   - [ ] Verify protected user-data deletion authorization
-  - [ ] Verify authenticated store, inventory, entitlement, and paid-feature behavior
+  - [x] Verify authenticated store, inventory, entitlement, and paid-feature behavior
   - [ ] Verify sign-out, expired-session handling, and reauthentication recovery
   - [ ] Repeat the critical sign-in, session-resume, gameplay, and sign-out flow on Android Chrome
 - [x] Notification subscriptions (app updates/player/leaderboard actions)

@@ -34,13 +34,14 @@ AUTH_BASE=https://www.binary2048.com npm run ops:auth:acceptance
 The audit verifies the real session and tier, refresh persistence, bridge-token
 minting, protected read-only data export, and a recovery-safe ranked practice
 run through terminal state and submission. The submission is automatically
-routed to the sandbox namespace and excluded from ordinary standings. The audit
-never prints the token or deletes user data.
+routed to the sandbox namespace and excluded from ordinary standings. It also
+checks account-bound inventory reads, cross-account denial, admin-grant denial,
+disabled direct purchase, and the resolved-tier Store UI. The audit never prints
+the token, changes inventory, initiates payment, or deletes user data.
 
 ## Manual evidence still required
 
 - Restart Chrome and confirm `/auth` remains authenticated.
-- Inspect store/inventory behavior for the account's actual tier.
 - Sign out, verify protected actions return to signed-out messaging, then sign
   in again and confirm recovery.
 - Repeat sign-in, refresh/resume, gameplay, and sign-out on Android Chrome.

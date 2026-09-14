@@ -54,6 +54,28 @@ This verifies submission behavior, not durable leaderboard retention. The
 leaderboard store remains per-instance memory and must move to shared persistent
 storage before a public ranked launch.
 
+## Store, inventory, and paid-feature acceptance
+
+The production suite passed the following checks using the captured real OAuth
+session without purchasing, granting, or consuming inventory:
+
+- Public catalog returned the configured packet list.
+- Inventory API rejected a request without a bridge bearer token.
+- Authenticated inventory resolved to a non-identifying `acct_` SHA-256 account
+  id and returned the session's actual tier and entitlements.
+- A request for a different subscriber id returned `403`.
+- An authenticated non-admin inventory grant returned `401`.
+- Direct grant-style purchase returned `503` because verified checkout is not
+  configured, and no inventory was granted.
+- The Store page loaded the authenticated account inventory and displayed the
+  correct paid-feature message for the session's resolved tier.
+
+The audit found and corrected unsafe placeholder behavior where store routes
+trusted caller-supplied subscriber ids, inventory grants were unauthenticated,
+direct purchase granted items without checkout, and an unconfigured webhook
+failed open. These paths are now account-bound, admin-only, disabled by default,
+or fail-closed as appropriate.
+
 ## Defect found and corrected
 
 The first run returned `503` from `POST /api/auth/bridge-token`. The route's
@@ -70,6 +92,5 @@ build.
 
 - Verify account/key rate-limit attribution during authenticated gameplay.
 - Verify authorized user-data deletion separately from the read-only export test.
-- Verify store, inventory, entitlements, and paid-feature behavior.
 - Verify sign-out, expired-session behavior, and reauthentication.
 - Repeat critical authentication and gameplay flows on Android Chrome.
