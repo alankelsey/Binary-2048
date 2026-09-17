@@ -148,6 +148,7 @@ export default function Home() {
   const [continueAfterWin, setContinueAfterWin] = useState(false);
   const [uiControlOverrides, setUiControlOverrides] = useState<UIControlOverrides>({});
   const [referralCode, setReferralCode] = useState("");
+  const [difficultyHelpOpen, setDifficultyHelpOpen] = useState(false);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const effectTimerRef = useRef<number | null>(null);
   const importInputRef = useRef<HTMLInputElement | null>(null);
@@ -999,6 +1000,19 @@ export default function Home() {
     }
   }, [compactMobile, replay, viewState?.turn]);
 
+  useEffect(() => {
+    if (!difficultyHelpOpen) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setDifficultyHelpOpen(false);
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [difficultyHelpOpen]);
+
+  useEffect(() => {
+    setDifficultyHelpOpen(false);
+  }, [mobileControlsOpen]);
+
   return (
     <main>
       <a className="skip-link" href="#game-controls">
@@ -1011,7 +1025,7 @@ export default function Home() {
           <p className="brand-subtitle">Merge bits. Control chaos. Reach 2048.</p>
         </div>
       </header>
-      <p>Made mostly for bots by mostly bots: Bonus tiles: zero annihilator + wildcard multipliers.</p>
+      <p className="tagline">Made mostly for bots by mostly bots: Bonus tiles: zero annihilator + wildcard multipliers.</p>
       <div ref={fullscreenShellRef} className={`fullscreen-shell ${fullscreenActive ? "fullscreen-active" : ""}`}>
         <div className="card">
         <div className="meta">
@@ -1194,31 +1208,8 @@ export default function Home() {
             }}
           />
         </div>
-        {!replay && compactMobile ? (
-          <button
-            type="button"
-            className="mobile-controls-toggle"
-            aria-expanded={mobileControlsOpen}
-            aria-controls="game-controls"
-            onClick={() =>
-              setMobileControlsOpen((open) => {
-                const nextOpen = !open;
-                void trackMarketing("mobile_controls_toggle", "mobile", {
-                  state: nextOpen ? "open" : "closed",
-                  fullscreen: fullscreenActive ? "true" : "false"
-                });
-                return nextOpen;
-              })
-            }
-          >
-            {mobileControlsOpen ? "Hide Controls" : "Show Controls"}
-          </button>
-        ) : null}
-        <div
-          className={`actions ${compactMobile && !replay && !mobileControlsOpen ? "mobile-collapsed" : ""}`}
-          id="game-controls"
-          onPointerDownCapture={handleControlsPointerDown}
-        >
+        <div onPointerDownCapture={handleControlsPointerDown}>
+        <div className="actions actions-primary" id="game-controls">
           {state ? (
             <button
               disabled={toolbarActionState.disableNewGame || startNewGamePending}
@@ -1250,6 +1241,31 @@ export default function Home() {
               {fullscreenActive ? "Exit Fullscreen" : "Fullscreen"}
             </button>
           ) : null}
+          {!replay && compactMobile ? (
+            <button
+              type="button"
+              className="mobile-controls-toggle"
+              aria-expanded={mobileControlsOpen}
+              aria-controls="game-controls-more"
+              onClick={() =>
+                setMobileControlsOpen((open) => {
+                  const nextOpen = !open;
+                  void trackMarketing("mobile_controls_toggle", "mobile", {
+                    state: nextOpen ? "open" : "closed",
+                    fullscreen: fullscreenActive ? "true" : "false"
+                  });
+                  return nextOpen;
+                })
+              }
+            >
+              {mobileControlsOpen ? "Hide Options" : "Options"}
+            </button>
+          ) : null}
+        </div>
+        <div
+          className={`actions actions-secondary ${compactMobile && !replay && !mobileControlsOpen ? "mobile-collapsed" : ""}`}
+          id="game-controls-more"
+        >
           {controlVisibility.showActiveExport ? (
             <>
               <button
@@ -1277,17 +1293,26 @@ export default function Home() {
               <summary>Options</summary>
               <div className="options-grid">
                 {effectiveUiPolicy.controls.difficulty ? (
-                  <label className="difficulty-select-wrap">
-                    <span className="difficulty-label">
+                  <div className="difficulty-select-wrap">
+                    <span id="difficulty-select-label" className="difficulty-label">
                       Difficulty
-                      <span className="field-help" aria-label="Difficulty help" title={DIFFICULTY_HELP_TEXT}>
-                        ?
-                      </span>
                     </span>
+                    <button
+                      type="button"
+                      className="field-help"
+                      aria-expanded={difficultyHelpOpen}
+                      aria-controls="difficulty-help-note"
+                      onClick={() => setDifficultyHelpOpen((open) => !open)}
+                    >
+                      <span aria-hidden="true">?</span>
+                      <span className="sr-only">
+                        {difficultyHelpOpen ? "Hide difficulty help" : "Show difficulty help"}
+                      </span>
+                    </button>
                     <select
-                      aria-label="Wildcard spawn mode"
+                      id="difficulty-select"
+                      aria-labelledby="difficulty-select-label"
                       className={`difficulty-select mode-${spawnMode}`}
-                      title={DIFFICULTY_HELP_TEXT}
                       value={spawnMode}
                       onChange={(event) => setSpawnMode(event.target.value as SpawnMode)}
                       disabled={busy || difficultyLocked}
@@ -1296,7 +1321,12 @@ export default function Home() {
                       <option value="ltfg">{SPAWN_MODES.ltfg.label}</option>
                       <option value="death">{SPAWN_MODES.death.label}</option>
                     </select>
-                  </label>
+                  </div>
+                ) : null}
+                {effectiveUiPolicy.controls.difficulty && difficultyHelpOpen ? (
+                  <p id="difficulty-help-note" className="field-help-note" role="note">
+                    {DIFFICULTY_HELP_TEXT}
+                  </p>
                 ) : null}
                 {effectiveUiPolicy.controls.color ? (
                   <label className="color-mode-wrap">
@@ -1434,6 +1464,7 @@ export default function Home() {
               void loadReplayFile(file);
             }}
           />
+        </div>
         </div>
         <details className="game-hint">
           <summary>How to play: Swipe on mobile or use arrow keys/WASD. Keep your strongest chain organized.</summary>

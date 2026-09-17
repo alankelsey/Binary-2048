@@ -59,7 +59,14 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add engine collision-matrix and Playwright interaction coverage for zero, wildcard, and lock special tiles
 - [x] Serialize rapid keyboard moves through a bounded client buffer so overlapping API requests cannot race recovered game ids
 - [x] Require an explicit `Start New Game` action when no recoverable game exists instead of generating a board on page load
-- [ ] Run and document a real-device mobile UX audit on iPhone + Android after control/resume fixes
+- [x] Complete the mobile action-dock accessibility follow-up
+  - [x] Add Playwright coverage proving primary controls remain visible, secondary controls toggle through `Options`, and the dock stays on one row at 390px and 412px
+  - [x] Verify long labels such as `Confirm New Game` do not enlarge the fixed dock enough to cover the board or final page content
+  - [x] Replace the `title`-only difficulty help with a keyboard- and touch-accessible visible disclosure
+  - [x] Confirm primary and secondary control targets, focus states, and reduced-motion behavior without weakening the active-run New Game confirmation
+- [ ] Run and document a real-device mobile UX audit after the action-dock and resume fixes
+  - [ ] Verify thumb reach, swipe separation, options disclosure, background/resume, and game continuity on Android Chrome
+  - [ ] Verify the same critical flow, safe-area padding, and dock layout on iPhone Safari
 
 ## Economy + Integrity
 
@@ -181,6 +188,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add auth UI shell (sign in/out controls + session/tier badge in app navigation)
 - [x] Add auth-required UX messaging for protected actions (ranked submit, paid store actions, data export/delete)
 - [x] Add `/auth` account page with provider/session diagnostics and bridge-token helper
+- [ ] Add observable, fail-closed server-session lookup handling for auth-aware pages; read-only views may fall back to guest but authentication failures must be logged and protected actions must never silently downgrade
 - [ ] Complete and document production authenticated-user acceptance testing
   - [x] Complete a real GitHub OAuth sign-in and verify the authenticated identity/session on desktop
   - [x] Verify the authenticated session persists across refresh, browser restart, and return visits
@@ -201,6 +209,15 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add developer-mode top navigation shell for quick switching between core app/admin/data views
 - [x] Add dedicated Store page/view (`/store`) with catalog + inventory panes
 - [x] Add dedicated Leaderboard page/view (`/leaderboard`) with ranked/daily tabs and filters
+- [x] Ship the semantic, responsive leaderboard presentation that replaces raw JSON
+  - [x] Add browser coverage for ranked/daily rows, empty states, active tabs, sandbox labeling, keyboard focus, and narrow-screen horizontal scrolling
+  - [x] Verify the presentation against both populated and empty data without treating the current per-instance leaderboard as durable
+- [ ] Add leaderboard pagination plus a current-player rank/highlight after shared leaderboard persistence and authenticated player identity are available
+- [ ] Build a production operations console only after its authority and data prerequisites exist
+  - [ ] Define an explicit server-verified admin role/claim or allowlist; account tier (`guest`, `authed`, or `paid`) must not grant admin access
+  - [ ] Expose authorized, read-only shared ops APIs for telemetry, storage status, league configuration, leaderboard operations, and model registry data
+  - [ ] Keep active storage smoke writes separate from passive health/status reads
+  - [ ] Build and accessibility-test the responsive ops UI after those backend prerequisites are complete
 - [x] Marketing rollout hooks (social share CTAs, referral tracking)
 - [x] Privacy/compliance essentials: privacy page + user data export/delete endpoints
 - [x] GitHub Pages presence (repo landing page and playable-host strategy decision: iframe vs static mirror)
