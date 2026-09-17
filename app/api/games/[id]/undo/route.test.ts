@@ -1,5 +1,11 @@
 import { POST } from "@/app/api/games/[id]/undo/route";
-import { createSession, exportRecoverySnapshot, moveSession } from "@/lib/binary2048/sessions";
+import {
+  createSession,
+  exportRecoverySnapshot,
+  importRecoveryPayload,
+  moveSession
+} from "@/lib/binary2048/sessions";
+import { resetSessionStoreForTests } from "@/lib/binary2048/session-store";
 import type { Cell, GameConfig } from "@/lib/binary2048/types";
 
 describe("POST /api/games/:id/undo", () => {
@@ -22,6 +28,10 @@ describe("POST /api/games/:id/undo", () => {
     [null, null, null, null],
     [null, null, null, null]
   ];
+
+  afterEach(() => {
+    delete process.env.BINARY2048_RECOVERY_SECRET;
+  });
 
   it("undoes a move and returns undo metadata", async () => {
     const session = createSession(baseConfig, initialGrid);
@@ -81,5 +91,32 @@ describe("POST /api/games/:id/undo", () => {
     expect(json.id).not.toBe("missing_game");
     expect(json.stepCount).toBe(0);
     expect(json.recoverySnapshot.moves).toEqual([]);
+  });
+
+  it("undoes the newer signed browser history instead of stale instance state", async () => {
+    process.env.BINARY2048_RECOVERY_SECRET = "undo-recovery-secret";
+    const session = createSession(baseConfig, initialGrid);
+    const id = session.current.id;
+    moveSession(id, "left");
+    const staleSnapshot = exportRecoverySnapshot(id)!;
+    moveSession(id, "right");
+    const newerSnapshot = exportRecoverySnapshot(id)!;
+
+    resetSessionStoreForTests();
+    importRecoveryPayload(staleSnapshot);
+
+    const res = await POST(
+      new Request("http://localhost/api/games/x/undo", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ recoverySnapshot: newerSnapshot })
+      }),
+      { params: Promise.resolve({ id }) }
+    );
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.recoverySnapshot.moves).toEqual(["left"]);
+    expect(json.stepCount).toBe(1);
   });
 });

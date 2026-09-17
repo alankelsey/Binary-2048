@@ -1,7 +1,7 @@
 import { GET, POST } from "@/app/api/games/[id]/export/route";
 import { POST as moveGame } from "@/app/api/games/[id]/move/route";
 import { POST as undoGame } from "@/app/api/games/[id]/undo/route";
-import { createSession, exportRecoverySnapshot } from "@/lib/binary2048/sessions";
+import { createSession, exportRecoverySnapshot, importRecoveryPayload } from "@/lib/binary2048/sessions";
 import { resetSessionStoreForTests } from "@/lib/binary2048/session-store";
 import type { Cell, GameConfig } from "@/lib/binary2048/types";
 
@@ -28,6 +28,7 @@ describe("GET /api/games/:id/export", () => {
 
   afterEach(() => {
     delete process.env.BINARY2048_REPLAY_CODE_SECRET;
+    delete process.env.BINARY2048_RECOVERY_SECRET;
   });
 
   it("returns downloadable export json for existing game", async () => {
@@ -102,7 +103,42 @@ describe("GET /api/games/:id/export", () => {
     expect(json.header?.rulesetId).toBe("binary2048-v1");
     expect(Array.isArray(json.moves)).toBe(true);
     expect(json.version).toBeUndefined();
-    expect(json.config).toBeUndefined();
+    expect(json.config).toMatchObject({ seed: 616, width: 4, height: 4 });
+    expect(json.initialGrid).toEqual(initialGrid);
+  });
+
+  it("exports the newer signed browser history when the local instance is stale", async () => {
+    process.env.BINARY2048_RECOVERY_SECRET = "export-recovery-secret";
+    const original = createSession(config, initialGrid);
+    const id = original.current.id;
+    const initialSnapshot = exportRecoverySnapshot(id);
+    const moveRes = await moveGame(
+      new Request("http://localhost/api/games/move", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ dir: "left" })
+      }),
+      { params: Promise.resolve({ id }) }
+    );
+    const moved = await moveRes.json();
+
+    resetSessionStoreForTests();
+    importRecoveryPayload(initialSnapshot!);
+
+    const res = await POST(
+      new Request(`http://localhost/api/games/${id}/export?compact=1`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ recoverySnapshot: moved.recoverySnapshot })
+      }),
+      { params: Promise.resolve({ id }) }
+    );
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.moves).toEqual(["left"]);
+    expect(json.config).toMatchObject({ seed: 616 });
+    expect(json.initialGrid).toEqual(initialGrid);
   });
 
   it("adds audit hash chain when audit=1 is requested", async () => {

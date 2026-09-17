@@ -317,7 +317,11 @@ test.describe("mobile action dock", () => {
     await expect(page.getByRole("button", { name: "New Game", exact: true })).toBeEnabled();
     await page.keyboard.press("ArrowLeft");
 
-    await expect(page.getByText("Game session could not be recovered. Your board is still saved; reload to retry.")).toBeVisible();
+    await expect(
+      page.locator(".status-error", {
+        hasText: "Game session could not be recovered. Your board is still saved; reload to retry."
+      })
+    ).toBeVisible();
     await expect(page.getByRole("gridcell", { name: /number 2$/ })).toHaveCount(2);
     expect(moveRecoverySnapshot).toBeTruthy();
     expect(createRequests).toBe(1);
@@ -375,7 +379,8 @@ test.describe("mobile action dock", () => {
       [null, null, null, null],
       [null, { t: "n", v: 2 }, null, null]
     ];
-    const routes = mockGameRoutes(page, grid, standardConfig(43));
+    const config = standardConfig(43);
+    const routes = mockGameRoutes(page, grid, config);
     await routes.install();
     let recoverySnapshot: unknown;
     await page.route("**/api/games/*/export?compact=1", async (route) => {
@@ -383,10 +388,26 @@ test.describe("mobile action dock", () => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({ header: { replayVersion: 1, rulesetId: "binary2048-v1" }, moves: [] })
+        body: JSON.stringify({
+          header: {
+            replayVersion: 1,
+            rulesetId: "binary2048-v1",
+            engineVersion: "test",
+            size: 4,
+            seed: config.seed,
+            createdAt: "2026-09-16T00:00:00.000Z"
+          },
+          config,
+          initialGrid: grid,
+          moves: []
+        })
       });
     });
     await page.route("**/api/replay/code?hosted=1", async (route) => {
+      const compact = route.request().postDataJSON() as Record<string, unknown>;
+      expect(compact.config).toEqual(config);
+      expect(compact.initialGrid).toEqual(grid);
+      expect(compact.moves).toEqual([]);
       await route.fulfill({
         status: 200,
         contentType: "application/json",

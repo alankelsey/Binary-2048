@@ -1,5 +1,6 @@
 import { GET, POST } from "@/app/api/replay/code/route";
 import { runScenario } from "@/lib/binary2048/engine";
+import { exportToCompactReplay } from "@/lib/binary2048/replay-format";
 import type { Cell, GameConfig } from "@/lib/binary2048/types";
 
 describe("api replay code", () => {
@@ -44,6 +45,23 @@ describe("api replay code", () => {
     expect(typeof json.code).toBe("string");
     expect(typeof json.length).toBe("number");
     expect(typeof json.compressed).toBe("boolean");
+  });
+
+  it("creates a hosted share code from the complete compact export contract", async () => {
+    process.env.BINARY2048_REPLAY_SHARE_SECRET = "hosted-route-secret";
+    const compact = exportToCompactReplay(runScenario(config, initialGrid, ["left", "up"]));
+    const res = await POST(
+      new Request("http://localhost/api/replay/code?hosted=1", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(compact)
+      })
+    );
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.hosted).toBe(true);
+    expect(typeof json.code).toBe("string");
   });
 
   it("decodes shareable replay code", async () => {

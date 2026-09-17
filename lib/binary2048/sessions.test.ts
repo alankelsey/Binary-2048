@@ -1,4 +1,12 @@
-import { createSession, exportRecoverySnapshot, getSession, importRecoverySnapshot, moveSession, undoSession } from "@/lib/binary2048/sessions";
+import {
+  createSession,
+  exportRecoverySnapshot,
+  getSession,
+  importRecoverySnapshot,
+  moveSession,
+  resolveSessionWithRecovery,
+  undoSession
+} from "@/lib/binary2048/sessions";
 import type { Cell, GameConfig } from "@/lib/binary2048/types";
 
 describe("session undo", () => {
@@ -21,6 +29,10 @@ describe("session undo", () => {
     [null, null, null, null],
     [null, null, null, null]
   ];
+
+  afterEach(() => {
+    delete process.env.BINARY2048_RECOVERY_SECRET;
+  });
 
   it("reverts current state to previous step", () => {
     const session = createSession(config, initialGrid);
@@ -90,5 +102,33 @@ describe("session undo", () => {
     expect(recovered.current.grid).toEqual(getSession(session.current.id)?.current.grid);
     expect(recovered.current.score).toBe(getSession(session.current.id)?.current.score);
     expect(recovered.steps).toHaveLength(1);
+  });
+
+  it("does not roll current state back to an older signed browser snapshot", () => {
+    process.env.BINARY2048_RECOVERY_SECRET = "session-recovery-secret";
+    const session = createSession(config, initialGrid);
+    const id = session.current.id;
+    moveSession(id, "left");
+    const olderSnapshot = exportRecoverySnapshot(id)!;
+    moveSession(id, "right");
+
+    const resolved = resolveSessionWithRecovery(id, olderSnapshot);
+
+    expect(resolved?.steps.map((step) => step.dir)).toEqual(["left", "right"]);
+  });
+
+  it("does not replace current state with an unsigned browser snapshot", () => {
+    process.env.BINARY2048_RECOVERY_SECRET = "session-recovery-secret";
+    const session = createSession(config, initialGrid);
+    const id = session.current.id;
+    const unsignedSnapshot = {
+      ...exportRecoverySnapshot(id)!,
+      signature: undefined,
+      moves: ["left" as const, "right" as const]
+    };
+
+    const resolved = resolveSessionWithRecovery(id, unsignedSnapshot);
+
+    expect(resolved?.steps).toHaveLength(0);
   });
 });

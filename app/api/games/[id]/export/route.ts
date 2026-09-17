@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { exportToCompactReplay } from "@/lib/binary2048/replay-format";
 import { buildReplayAudit } from "@/lib/binary2048/replay-audit";
 import { createReplaySignature } from "@/lib/binary2048/replay-signature";
-import { exportSession, importRecoveryPayload } from "@/lib/binary2048/sessions";
+import { exportSession, resolveSessionWithRecovery } from "@/lib/binary2048/sessions";
 import type { GameExport, SessionRecoverySnapshot } from "@/lib/binary2048/types";
 
 type ExportBody = {
@@ -10,11 +10,8 @@ type ExportBody = {
 };
 
 function resolveExport(id: string, recoverySnapshot?: GameExport | SessionRecoverySnapshot) {
-  const existing = exportSession(id);
-  if (existing || !recoverySnapshot) return existing;
-
-  const recovered = importRecoveryPayload(recoverySnapshot);
-  return exportSession(recovered.current.id);
+  const session = resolveSessionWithRecovery(id, recoverySnapshot);
+  return session ? exportSession(session.current.id) : null;
 }
 
 function exportResponse(req: Request, id: string, exported: NonNullable<ReturnType<typeof exportSession>>) {
@@ -36,8 +33,7 @@ function exportResponse(req: Request, id: string, exported: NonNullable<ReturnTy
 
   if (wantsCompact) {
     return NextResponse.json({
-      header: replay.header,
-      moves: replay.moves,
+      ...replay,
       signature
     });
   }

@@ -3,7 +3,7 @@ import { parseAction, toActionCode } from "@/lib/binary2048/action";
 import { stateHash } from "@/lib/binary2048/ai";
 import { canContinueAfterWin } from "@/lib/binary2048/continue-policy";
 import { checkMoveRateLimit, rateLimitHeaders } from "@/lib/binary2048/rate-limit";
-import { exportRecoverySnapshot, getSession, getUndoMeta, importRecoveryPayload, moveSession } from "@/lib/binary2048/sessions";
+import { exportRecoverySnapshot, getUndoMeta, moveSession, resolveSessionWithRecovery } from "@/lib/binary2048/sessions";
 import type { GameEvent, GameExport, SessionRecoverySnapshot } from "@/lib/binary2048/types";
 
 function firstSpawn(events: GameEvent[]) {
@@ -37,14 +37,12 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
   const dir = parseAction(body.dir ?? body.action);
   if (!dir) return respond({ error: "dir or action is required" }, 400);
   let activeId = id;
-  let activeSession = getSession(activeId);
-  if (!activeSession && body.recoverySnapshot) {
-    try {
-      activeSession = importRecoveryPayload(body.recoverySnapshot);
-      activeId = activeSession.current.id;
-    } catch {
-      return respond({ error: "Invalid recovery snapshot" }, 400);
-    }
+  let activeSession;
+  try {
+    activeSession = resolveSessionWithRecovery(activeId, body.recoverySnapshot);
+    if (activeSession) activeId = activeSession.current.id;
+  } catch {
+    return respond({ error: "Invalid recovery snapshot" }, 400);
   }
   if (typeof body.expectStateHash === "string") {
     if (!activeSession) return respond({ error: "Game not found" }, 404);

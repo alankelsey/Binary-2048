@@ -8,8 +8,5 @@ export async function GET(_: Request, context: { params: Promise<{ id: string }>
   if (!exported) return NextResponse.json({ error: "Game not found" }, { status: 404 });
 
   const replay = exportToCompactReplay(exported);
-  return NextResponse.json({
-    header: replay.header,
-    moves: replay.moves
-  });
+  return NextResponse.json(replay);
 }

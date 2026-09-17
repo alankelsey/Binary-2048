@@ -53,6 +53,39 @@ export function getSession(id: string) {
   return getSessionStore().get(id) ?? null;
 }
 
+function isRecoverySnapshot(
+  payload: GameExport | SessionRecoverySnapshot
+): payload is SessionRecoverySnapshot {
+  return "recoveryVersion" in payload;
+}
+
+function directionsMatch(session: GameSession, snapshot: SessionRecoverySnapshot) {
+  if (session.steps.length !== snapshot.moves.length) return false;
+  return session.steps.every((step, index) => step.dir === snapshot.moves[index]);
+}
+
+export function resolveSessionWithRecovery(
+  id: string,
+  recoveryPayload?: GameExport | SessionRecoverySnapshot
+) {
+  const existing = getSession(id);
+  if (!recoveryPayload) return existing;
+  if (!existing) return importRecoveryPayload(recoveryPayload);
+  if (!isRecoverySnapshot(recoveryPayload)) return existing;
+
+  const secret = process.env.BINARY2048_RECOVERY_SECRET ?? "";
+  const isTrustedForSession =
+    recoveryPayload.sessionId === id && verifyRecoverySignature(recoveryPayload, secret);
+  if (!isTrustedForSession) return existing;
+
+  const browserIsNewer = recoveryPayload.moves.length > existing.steps.length;
+  const sameLengthButDifferentHistory =
+    recoveryPayload.moves.length === existing.steps.length && !directionsMatch(existing, recoveryPayload);
+  return browserIsNewer || sameLengthButDifferentHistory
+    ? importRecoverySnapshot(recoveryPayload)
+    : existing;
+}
+
 export function moveSession(id: string, dir: Dir) {
   const session = getSessionStore().get(id);
   if (!session) return null;

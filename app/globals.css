@@ -804,6 +804,50 @@ select:focus-visible {
   letter-spacing: 0.01em;
 }
 
+.diagnostics-panel {
+  margin-top: 0.65rem;
+  border: 1px solid #294563;
+  border-radius: 10px;
+  background: #081321;
+  padding: 0.55rem;
+}
+
+.diagnostics-header,
+.diagnostics-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.diagnostics-header {
+  justify-content: space-between;
+  color: #d6e9ff;
+  font-size: 0.78rem;
+}
+
+.diagnostics-actions button {
+  min-height: 34px;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.72rem;
+}
+
+.diagnostics-log {
+  display: block;
+  width: 100%;
+  margin-top: 0.5rem;
+  min-height: 10rem;
+  resize: vertical;
+  border: 1px solid #365b80;
+  border-radius: 7px;
+  background: #030a12;
+  color: #cce6ff;
+  padding: 0.55rem;
+  font: 0.68rem/1.4 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  white-space: pre;
+  overflow: auto;
+}
+
 .game-hint {
   margin-top: 0.55rem;
   border: 1px solid var(--hint-border);

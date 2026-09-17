@@ -15,7 +15,7 @@ describe("GET /api/games/:id/replay", () => {
     [null, null, null, null]
   ];
 
-  it("returns canonical replay payload (header + moves) for existing game", async () => {
+  it("returns a complete canonical replay payload for an existing game", async () => {
     const session = createSession(config, initialGrid);
     const id = session.current.id;
 
@@ -27,9 +27,10 @@ describe("GET /api/games/:id/replay", () => {
     expect(res.status).toBe(200);
     expect(json.header?.replayVersion).toBe(1);
     expect(json.header?.rulesetId).toBe("binary2048-v1");
+    expect(json.config).toEqual(expect.objectContaining({ seed: 919 }));
+    expect(json.initialGrid).toEqual(initialGrid);
     expect(Array.isArray(json.moves)).toBe(true);
     expect(json.moves.length).toBeGreaterThanOrEqual(0);
-    expect(json.config).toBeUndefined();
   });
 
   it("returns 404 for unknown game id", async () => {

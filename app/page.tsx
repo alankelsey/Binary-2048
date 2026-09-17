@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties, type TouchEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type TouchEvent } from "react";
 import { computeCellEffects, type CellEffect, type MoveEvent } from "@/lib/binary2048/cell-effects";
 import { keyToDir, swipeToDir } from "@/lib/binary2048/input";
 import { getUiPolicy } from "@/lib/binary2048/ui-policy";
@@ -25,6 +25,12 @@ import {
   downloadJson,
   filenameFromDisposition
 } from "@/lib/binary2048/browser-actions";
+import {
+  diagnosticValue,
+  formatDiagnosticEntries,
+  type DiagnosticEntry,
+  type DiagnosticLevel
+} from "@/lib/binary2048/diagnostics";
 import {
   exitDocumentFullscreen,
   isFullscreenActive,
@@ -144,6 +150,8 @@ export default function Home() {
   const [replaySpeed, setReplaySpeed] = useState(5);
   const [shareMessage, setShareMessage] = useState<string>("");
   const [preparedReplayUrl, setPreparedReplayUrl] = useState<string>("");
+  const [diagnosticEntries, setDiagnosticEntries] = useState<DiagnosticEntry[]>([]);
+  const [diagnosticsOpen, setDiagnosticsOpen] = useState(true);
   const [newGameConfirmArmed, setNewGameConfirmArmed] = useState(false);
   const [fullscreenSupported, setFullscreenSupported] = useState(false);
   const [fullscreenActive, setFullscreenActive] = useState(false);
@@ -164,6 +172,7 @@ export default function Home() {
   const pendingNewGameRef = useRef(false);
   const moveInFlightRef = useRef(false);
   const bufferedMovesRef = useRef<Dir[]>([]);
+  const diagnosticSequenceRef = useRef(0);
   const authBridgeRef = useRef<ReturnType<typeof createClientAuthBridge> | null>(null);
   if (!authBridgeRef.current) {
     authBridgeRef.current = createClientAuthBridge(
@@ -175,9 +184,74 @@ export default function Home() {
     );
   }
 
+  const addDiagnostic = useCallback(
+    (
+      event: string,
+      details?: Record<string, string | number | boolean | null>,
+      level: DiagnosticLevel = "info"
+    ) => {
+      diagnosticSequenceRef.current += 1;
+      const entry: DiagnosticEntry = {
+        sequence: diagnosticSequenceRef.current,
+        atISO: new Date().toISOString(),
+        level,
+        event,
+        details
+      };
+      setDiagnosticEntries((current) => [...current.slice(-249), entry]);
+    },
+    []
+  );
+
   useEffect(() => {
     void authBridgeRef.current?.authorizationHeader();
   }, []);
+
+  useEffect(() => {
+    addDiagnostic("diagnostics_ready", {
+      commit: APP_COMMIT,
+      userAgent: navigator.userAgent,
+      authenticated:
+        document.querySelector<HTMLElement>(".auth-shell")?.dataset.authenticated === "true"
+    });
+
+    const originalConsoleError = console.error;
+    console.error = (...args: unknown[]) => {
+      originalConsoleError(...args);
+      addDiagnostic(
+        "console_error",
+        { message: args.map((arg) => diagnosticValue(arg)).join(" ").slice(0, 1200) },
+        "error"
+      );
+    };
+
+    const onWindowError = (event: ErrorEvent) => {
+      addDiagnostic(
+        "window_error",
+        {
+          message: diagnosticValue(event.error ?? event.message).slice(0, 1200),
+          file: event.filename || null,
+          line: event.lineno || null,
+          column: event.colno || null
+        },
+        "error"
+      );
+    };
+    const onUnhandledRejection = (event: PromiseRejectionEvent) => {
+      addDiagnostic(
+        "unhandled_rejection",
+        { message: diagnosticValue(event.reason).slice(0, 1200) },
+        "error"
+      );
+    };
+    window.addEventListener("error", onWindowError);
+    window.addEventListener("unhandledrejection", onUnhandledRejection);
+    return () => {
+      console.error = originalConsoleError;
+      window.removeEventListener("error", onWindowError);
+      window.removeEventListener("unhandledrejection", onUnhandledRejection);
+    };
+  }, [addDiagnostic]);
 
   function resolveCanContinueAfterWin(payload: unknown): boolean {
     const response = payload as {
@@ -209,6 +283,13 @@ export default function Home() {
     if (json.recoverySnapshot) {
       saveResumeSnapshot(window.localStorage, json.id, json.recoverySnapshot);
     }
+    addDiagnostic("session_loaded", {
+      gameId: json.id,
+      turn: json.current.turn,
+      score: json.current.score,
+      recoveryMoves: json.recoverySnapshot?.moves.length ?? null,
+      difficultyWildcardRate: json.current.config?.spawn?.pWildcard ?? null
+    });
 
     const importedRate = json?.current?.config?.spawn?.pWildcard;
     if (typeof importedRate === "number") {
@@ -285,6 +366,12 @@ export default function Home() {
       const pLock = SPAWN_MODES[spawnMode].pLock;
       const pOne = 1 - pZero - pWildcard - pLock;
       const authHeaders = await authBridgeRef.current?.authorizationHeader();
+      addDiagnostic("new_game_request", {
+        difficulty: spawnMode,
+        gameMode,
+        pWildcard,
+        pLock
+      });
       const res = await fetch("/api/games", {
         method: "POST",
         headers: { "content-type": "application/json", ...authHeaders },
@@ -302,6 +389,18 @@ export default function Home() {
         })
       });
       const json = await res.json().catch(() => ({}));
+      addDiagnostic(
+        "new_game_response",
+        {
+          status: res.status,
+          gameId: typeof json?.id === "string" ? json.id : null,
+          turn: typeof json?.current?.turn === "number" ? json.current.turn : null,
+          recoveryMoves: Array.isArray(json?.recoverySnapshot?.moves)
+            ? json.recoverySnapshot.moves.length
+            : null
+        },
+        res.ok ? "info" : "error"
+      );
       if (!res.ok || !json?.current || !json?.id) {
         const message = (json && typeof json.error === "string" ? json.error : "Failed to create game");
         throw new Error(message);
@@ -309,6 +408,7 @@ export default function Home() {
       applyLoadedSession(json as { id: string; current: GameState; undo?: UndoMeta });
       window.localStorage.setItem(modeKey, spawnMode);
     } catch (error) {
+      addDiagnostic("new_game_error", { message: diagnosticValue(error) }, "error");
       setErrorMessage(error instanceof Error ? error.message : "Failed to create game");
     } finally {
       setBusy(false);
@@ -339,6 +439,12 @@ export default function Home() {
     if (moveInFlightRef.current) {
       if (bufferedMovesRef.current.length < MAX_BUFFERED_MOVES) {
         bufferedMovesRef.current.push(dir);
+        addDiagnostic("move_buffered", {
+          dir,
+          gameId,
+          queued: bufferedMovesRef.current.length,
+          turn: state.turn
+        });
       }
       return;
     }
@@ -354,15 +460,43 @@ export default function Home() {
           const authHeaders = await authBridgeRef.current?.authorizationHeader();
           const recoverySnapshot =
             recoveredSession?.recoverySnapshot ?? loadResumeSnapshot(window.localStorage, sessionId) ?? undefined;
+          addDiagnostic("move_request", {
+            dir,
+            gameId: sessionId,
+            turn: previous.turn,
+            score: previous.score,
+            recoveryMoves:
+              recoverySnapshot && "recoveryVersion" in recoverySnapshot
+                ? recoverySnapshot.moves.length
+                : recoverySnapshot?.steps.length ?? null,
+            recoveryRetry: Boolean(recoveredSession)
+          });
           const response = await fetch(`/api/games/${sessionId}/move`, {
             method: "POST",
             headers: { "content-type": "application/json", ...authHeaders },
             body: JSON.stringify({ dir, recoverySnapshot })
           });
+          const payload = await response.json().catch(() => ({}));
+          addDiagnostic(
+            "move_response",
+            {
+              dir,
+              status: response.status,
+              requestGameId: sessionId,
+              responseGameId: typeof payload?.id === "string" ? payload.id : null,
+              turn: typeof payload?.current?.turn === "number" ? payload.current.turn : null,
+              score: typeof payload?.current?.score === "number" ? payload.current.score : null,
+              recoveryMoves: Array.isArray(payload?.recoverySnapshot?.moves)
+                ? payload.recoverySnapshot.moves.length
+                : null,
+              error: typeof payload?.error === "string" ? payload.error : null
+            },
+            response.ok ? "info" : "error"
+          );
           return {
             ok: response.ok,
             status: response.status,
-            payload: await response.json().catch(() => ({}))
+            payload
           };
         },
         async recoverSession(staleSessionId) {
@@ -390,7 +524,28 @@ export default function Home() {
         window.localStorage.setItem(gameIdKey, responseId);
       }
       const recoverySnapshot = (json as { recoverySnapshot?: SessionRecoverySnapshot }).recoverySnapshot;
-      if (recoverySnapshot) saveResumeSnapshot(window.localStorage, responseId, recoverySnapshot);
+      if (recoverySnapshot) {
+        saveResumeSnapshot(window.localStorage, responseId, recoverySnapshot);
+        addDiagnostic("recovery_snapshot_saved", {
+          gameId: responseId,
+          moves: recoverySnapshot.moves.length,
+          turn: next.turn
+        });
+      }
+      if (next.turn < previous.turn || next.score < previous.score) {
+        addDiagnostic(
+          "state_regression_detected",
+          {
+            gameId: responseId,
+            previousTurn: previous.turn,
+            nextTurn: next.turn,
+            previousScore: previous.score,
+            nextScore: next.score,
+            recoveryMoves: recoverySnapshot?.moves.length ?? null
+          },
+          "error"
+        );
+      }
       setSessionClass((json?.integrity?.sessionClass as SessionClass) ?? sessionClass);
       setCanContinueAfterWin(resolveCanContinueAfterWin(json));
       if (json?.undo) setUndo(json.undo as UndoMeta);
@@ -403,6 +558,11 @@ export default function Home() {
       }
     } catch (error) {
       bufferedMovesRef.current = [];
+      addDiagnostic(
+        "move_error",
+        { dir, gameId, turn: previous.turn, message: diagnosticValue(error) },
+        "error"
+      );
       setErrorMessage(error instanceof Error ? error.message : "Failed to apply move");
     } finally {
       moveInFlightRef.current = false;
@@ -862,6 +1022,7 @@ export default function Home() {
         })
       : "https://github.com/alankelsey/Binary-2048/issues/new";
   const socialUrls = buildShareUrls(shareText, shareUrl);
+  const diagnosticText = formatDiagnosticEntries(diagnosticEntries);
 
   async function trackMarketing(
     type: MarketingEventType,
@@ -923,15 +1084,43 @@ export default function Home() {
     }
   }
 
+  async function copyDiagnosticLog() {
+    const copied = await copyTextWithFallback(diagnosticText);
+    setShareMessage(copied ? "Diagnostic log copied" : "Unable to copy diagnostic log; select the text manually");
+    window.setTimeout(() => setShareMessage(""), copied ? 1800 : 2600);
+  }
+
   async function fetchGameExport(compact = false) {
     if (!gameId) throw new Error("No active game to export");
     const recoverySnapshot = loadResumeSnapshot(window.localStorage, gameId);
+    const recoveryMoves =
+      recoverySnapshot && "recoveryVersion" in recoverySnapshot
+        ? recoverySnapshot.moves.length
+        : recoverySnapshot?.steps.length ?? null;
+    addDiagnostic("export_request", { gameId, compact, recoveryMoves });
     const exportRes = await fetch(`/api/games/${gameId}/export${compact ? "?compact=1" : ""}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ recoverySnapshot })
     });
     const exported = await exportRes.json().catch(() => ({}));
+    addDiagnostic(
+      "export_response",
+      {
+        gameId,
+        compact,
+        status: exportRes.status,
+        moves: Array.isArray(exported?.moves)
+          ? exported.moves.length
+          : Array.isArray(exported?.meta?.replay?.moves)
+            ? exported.meta.replay.moves.length
+            : null,
+        hasConfig: Boolean(exported?.config),
+        hasInitialGrid: Array.isArray(exported?.initialGrid) || Array.isArray(exported?.initial?.grid),
+        error: typeof exported?.error === "string" ? exported.error : null
+      },
+      exportRes.ok ? "info" : "error"
+    );
     if (!exportRes.ok) {
       throw new Error(
         compact
@@ -956,6 +1145,7 @@ export default function Home() {
       setShareMessage("Game export downloaded");
       window.setTimeout(() => setShareMessage(""), 1800);
     } catch (error) {
+      addDiagnostic("export_error", { gameId, message: diagnosticValue(error) }, "error");
       setShareMessage(error instanceof Error ? error.message : "Unable to export game");
       window.setTimeout(() => setShareMessage(""), 2200);
     }
@@ -980,6 +1170,17 @@ export default function Home() {
         body: JSON.stringify(exported)
       });
       const codeJson = await codeRes.json().catch(() => ({}));
+      addDiagnostic(
+        "replay_code_response",
+        {
+          gameId,
+          status: codeRes.status,
+          hosted: Boolean(codeJson?.hosted),
+          codeLength: typeof codeJson?.length === "number" ? codeJson.length : null,
+          error: typeof codeJson?.error === "string" ? codeJson.error : null
+        },
+        codeRes.ok ? "info" : "error"
+      );
       if (!codeRes.ok || typeof codeJson?.code !== "string") {
         throw new Error("Failed to create replay code");
       }
@@ -995,6 +1196,7 @@ export default function Home() {
       setShareMessage(copied ? "Replay link copied" : "Replay link ready—tap Copy Replay Link again");
       if (copied) window.setTimeout(() => setShareMessage(""), 1800);
     } catch (error) {
+      addDiagnostic("replay_link_error", { gameId, message: diagnosticValue(error) }, "error");
       setShareMessage(error instanceof Error ? error.message : "Unable to copy replay link");
       window.setTimeout(() => setShareMessage(""), 2200);
     }
@@ -1518,6 +1720,37 @@ export default function Home() {
           />
         </div>
         </div>
+        <section className="diagnostics-panel" aria-label="Game diagnostics">
+          <div className="diagnostics-header">
+            <strong>Game Log ({diagnosticEntries.length})</strong>
+            <div className="diagnostics-actions">
+              <button
+                type="button"
+                aria-expanded={diagnosticsOpen}
+                aria-controls="game-diagnostics-log"
+                onClick={() => setDiagnosticsOpen((open) => !open)}
+              >
+                {diagnosticsOpen ? "Hide Log" : "Show Log"}
+              </button>
+              <button type="button" onClick={() => void copyDiagnosticLog()}>
+                Copy Log
+              </button>
+              <button type="button" onClick={() => setDiagnosticEntries([])}>
+                Clear Log
+              </button>
+            </div>
+          </div>
+          {diagnosticsOpen ? (
+            <textarea
+              id="game-diagnostics-log"
+              className="diagnostics-log"
+              aria-label="Game diagnostic log"
+              readOnly
+              rows={10}
+              value={diagnosticText}
+            />
+          ) : null}
+        </section>
         <details className="game-hint">
           <summary>How to play: Swipe on mobile or use arrow keys/WASD. Keep your strongest chain organized.</summary>
           <div className="game-hint-body">

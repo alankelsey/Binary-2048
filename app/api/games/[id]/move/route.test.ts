@@ -1,7 +1,14 @@
 import { stateHash } from "@/lib/binary2048/ai";
 import { POST } from "@/app/api/games/[id]/move/route";
-import { createSession, exportRecoverySnapshot, exportSession, getSession } from "@/lib/binary2048/sessions";
+import {
+  createSession,
+  exportRecoverySnapshot,
+  exportSession,
+  getSession,
+  importRecoveryPayload
+} from "@/lib/binary2048/sessions";
 import { resetRateLimitStore } from "@/lib/binary2048/rate-limit";
+import { resetSessionStoreForTests } from "@/lib/binary2048/session-store";
 import type { Cell, GameConfig } from "@/lib/binary2048/types";
 
 describe("POST /api/games/:id/move hash guard", () => {
@@ -10,6 +17,7 @@ describe("POST /api/games/:id/move hash guard", () => {
     delete process.env.BINARY2048_RATE_LIMIT_MOVE_MAX;
     delete process.env.BINARY2048_RATE_LIMIT_WINDOW_MS;
     delete process.env.BINARY2048_BOT_API_KEY_HASHES;
+    delete process.env.BINARY2048_RECOVERY_SECRET;
   });
 
   const config: Partial<GameConfig> = {
@@ -142,6 +150,42 @@ describe("POST /api/games/:id/move hash guard", () => {
     expect(res.status).toBe(200);
     expect(json.current.turn).toBe(1);
     expect(json.recoverySnapshot).toMatchObject({ recoveryVersion: 1, moves: ["left"] });
+  });
+
+  it("prefers a newer signed browser snapshot over a stale instance-local session", async () => {
+    process.env.BINARY2048_RECOVERY_SECRET = "move-recovery-secret";
+    const original = createSession(config, initialGrid);
+    const id = original.current.id;
+    const initialSnapshot = exportRecoverySnapshot(id);
+    const firstMove = await POST(
+      new Request("http://localhost/api/games/x/move", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ dir: "left" })
+      }),
+      { params: Promise.resolve({ id }) }
+    );
+    const firstJson = await firstMove.json();
+    expect(firstJson.recoverySnapshot.moves).toEqual(["left"]);
+
+    resetSessionStoreForTests();
+    importRecoveryPayload(initialSnapshot!);
+    expect(getSession(id)?.steps).toHaveLength(0);
+
+    const resumed = await POST(
+      new Request("http://localhost/api/games/x/move", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ dir: "down", recoverySnapshot: firstJson.recoverySnapshot })
+      }),
+      { params: Promise.resolve({ id }) }
+    );
+    const resumedJson = await resumed.json();
+
+    expect(resumed.status).toBe(200);
+    expect(resumedJson.id).toBe(id);
+    expect(resumedJson.recoverySnapshot.moves).toEqual(["left", "down"]);
+    expect(getSession(id)?.steps.map((step) => step.dir)).toEqual(["left", "down"]);
   });
 
   it("returns 429 without mutating the game when the move quota is exhausted", async () => {
