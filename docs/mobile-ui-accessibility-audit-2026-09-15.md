@@ -86,7 +86,8 @@ Final UI correction pass (2026-09-16 — see §7):
 
 Verification run each pass: `npx tsc --noEmit -p .` (clean) and
 `npm run test:unit` — 143 suites / 445 tests after the first two passes,
-**145 suites / 457 tests after the final correction pass** (§7), all
+**146 suites / 461 tests after the final correction pass, guest bridge,
+recovery-aware export, and browser-action regression coverage**, all
 passing. The mobile dock and leaderboard page were also visually verified
 with headless Chromium (via Playwright, since `chromium-cli` isn't
 installed on this machine) at
@@ -582,11 +583,11 @@ coverage it was never actually exercising.
 - `git diff --check` — clean.
 - `npx tsc --noEmit -p .` — clean (uses the project's own `tsconfig.json`,
   unaffected by `tsconfig.jest.json`).
-- `npm run test:unit` — **145 suites / 457 tests, all passing** (up from
+- `npm run test:unit` — **146 suites / 461 tests, all passing** (up from
   143/445; the new count is `lib/binary2048/leaderboard-view.test.tsx`'s 4
   tests plus its 1 suite, and there were no losses elsewhere).
-- `npm run test:ui` (`tests/ui/*`, against a local dev server) — **26
-  tests, all passing**: 11 mobile-dock + 8 leaderboard (3 relabeled
+- `npm run test:ui` (`tests/ui/*`, against a local dev server) — **30
+  tests, all passing**: 15 mobile-dock + 8 leaderboard (3 relabeled
   `[fixture]`) + 7 new difficulty-help.
 - Confirmed `playwright.prod.config.ts`'s `testDir` is `./tests/prod` and
   does not include `tests/ui`, by reading the config directly (not

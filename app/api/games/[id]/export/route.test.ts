@@ -1,7 +1,8 @@
-import { GET } from "@/app/api/games/[id]/export/route";
+import { GET, POST } from "@/app/api/games/[id]/export/route";
 import { POST as moveGame } from "@/app/api/games/[id]/move/route";
 import { POST as undoGame } from "@/app/api/games/[id]/undo/route";
-import { createSession } from "@/lib/binary2048/sessions";
+import { createSession, exportRecoverySnapshot } from "@/lib/binary2048/sessions";
+import { resetSessionStoreForTests } from "@/lib/binary2048/session-store";
 import type { Cell, GameConfig } from "@/lib/binary2048/types";
 
 describe("GET /api/games/:id/export", () => {
@@ -62,6 +63,29 @@ describe("GET /api/games/:id/export", () => {
     const json = await res.json();
     expect(res.status).toBe(404);
     expect(json.error).toBe("Game not found");
+  });
+
+  it("recovers an instance-local session from the browser snapshot when exporting", async () => {
+    const session = createSession(config, initialGrid);
+    const id = session.current.id;
+    const recoverySnapshot = exportRecoverySnapshot(id);
+    expect(recoverySnapshot).toBeTruthy();
+    resetSessionStoreForTests();
+
+    const res = await POST(
+      new Request(`http://localhost/api/games/${id}/export`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ recoverySnapshot })
+      }),
+      { params: Promise.resolve({ id }) }
+    );
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.version).toBe(1);
+    expect(json.meta?.rulesetId).toBe("binary2048-v1");
+    expect(json.initial?.grid).toEqual(initialGrid);
   });
 
   it("returns compact replay payload when compact=1 is requested", async () => {

@@ -90,6 +90,33 @@ test.describe("mobile action dock", () => {
     await expect(page.getByRole("button", { name: "Start New Game" })).toBeVisible();
   });
 
+  test("starting a guest game does not request an authenticated bridge token", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    let bridgeRequests = 0;
+    await page.route("**/api/auth/bridge-token", async (route) => {
+      bridgeRequests += 1;
+      await route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: '{"error":"Authenticated session required"}'
+      });
+    });
+    const grid: Cell[][] = [
+      [{ t: "n", v: 2 }, null, null, null],
+      [null, null, null, null],
+      [null, null, null, null],
+      [null, { t: "n", v: 2 }, null, null]
+    ];
+    const routes = mockGameRoutes(page, grid, standardConfig(8));
+    await routes.install();
+
+    await page.goto("/");
+    await expect(page.locator(".auth-shell")).toHaveAttribute("data-authenticated", "false");
+    await page.getByRole("button", { name: "Start New Game" }).click();
+    await expect(page.getByRole("gridcell", { name: /number 2$/ })).toHaveCount(2);
+    expect(bridgeRequests).toBe(0);
+  });
+
   for (const viewport of VIEWPORTS) {
     test(`primary controls stay visible and secondary controls start collapsed at ${viewport.width}x${viewport.height}`, async ({
       page
@@ -238,6 +265,145 @@ test.describe("mobile action dock", () => {
 
     await page.getByRole("button", { name: "Confirm New Game", exact: true }).click();
     await expect.poll(() => routes.getCreateRequests()).toBe(2);
+  });
+
+  test("a failed guest recovery preserves the Normal board instead of silently starting another game", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const config: GameConfig = {
+      ...DEFAULT_CONFIG,
+      seed: 41,
+      spawn: { pZero: 0.15, pOne: 0.72, pWildcard: 0.1, pLock: 0.03, wildcardMultipliers: [2] }
+    };
+    const grid: Cell[][] = [
+      [{ t: "n", v: 2 }, null, null, null],
+      [null, null, null, null],
+      [null, null, null, null],
+      [null, { t: "n", v: 2 }, null, null]
+    ];
+    const current = createGame(config, grid).state;
+    let createRequests = 0;
+    let moveRecoverySnapshot: unknown;
+
+    await page.addInitScript(() => {
+      window.localStorage.removeItem("binary2048.currentGameId");
+      window.localStorage.removeItem("binary2048.resumeSnapshot");
+      window.localStorage.setItem("binary2048.spawnMode", "normal");
+    });
+    await page.route("**/api/games", async (route) => {
+      if (route.request().method() !== "POST") return route.continue();
+      createRequests += 1;
+      const body = route.request().postDataJSON() as { config?: { spawn?: { pWildcard?: number; pLock?: number } } };
+      expect(body.config?.spawn).toMatchObject({ pWildcard: 0.1, pLock: 0.03 });
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          id: current.id,
+          current,
+          recoverySnapshot: { recoveryVersion: 1, rulesetId: "binary2048-v1", config, initialGrid: grid, moves: [] },
+          undo: { limit: 2, used: 0, remaining: 2 },
+          integrity: { sessionClass: "unranked", source: "created" }
+        })
+      });
+    });
+    await page.route("**/api/games/*/move", async (route) => {
+      moveRecoverySnapshot = (route.request().postDataJSON() as { recoverySnapshot?: unknown }).recoverySnapshot;
+      await route.fulfill({ status: 404, contentType: "application/json", body: '{"error":"Game not found"}' });
+    });
+
+    await page.goto("/");
+    await page.getByRole("button", { name: "Start New Game" }).click();
+    await expect(page.getByText("Difficulty: Normal")).toBeVisible();
+    await expect(page.getByRole("button", { name: "New Game", exact: true })).toBeEnabled();
+    await page.keyboard.press("ArrowLeft");
+
+    await expect(page.getByText("Game session could not be recovered. Your board is still saved; reload to retry.")).toBeVisible();
+    await expect(page.getByRole("gridcell", { name: /number 2$/ })).toHaveCount(2);
+    expect(moveRecoverySnapshot).toBeTruthy();
+    expect(createRequests).toBe(1);
+  });
+
+  test("mobile export downloads from the recovery-aware endpoint", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const grid: Cell[][] = [
+      [{ t: "n", v: 2 }, { t: "n", v: 2 }, null, null],
+      [null, null, null, null],
+      [null, null, null, null],
+      [null, null, null, null]
+    ];
+    const routes = mockGameRoutes(page, grid, standardConfig(42));
+    await routes.install();
+    let recoverySnapshot: unknown;
+    await page.route("**/api/games/*/export", async (route) => {
+      expect(route.request().method()).toBe("POST");
+      recoverySnapshot = (route.request().postDataJSON() as { recoverySnapshot?: unknown }).recoverySnapshot;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        headers: { "content-disposition": 'attachment; filename="guest-game.json"' },
+        body: JSON.stringify({ version: 1, meta: { rulesetId: "binary2048-v1" } })
+      });
+    });
+
+    await page.goto("/");
+    await page.getByRole("button", { name: "Start New Game" }).click();
+    await expect(page.getByRole("button", { name: "New Game", exact: true })).toBeEnabled();
+    await page.keyboard.press("ArrowLeft");
+    await expect.poll(() => routes.getCurrent().turn).toBe(1);
+    await page.getByRole("button", { name: "Options", exact: true }).click();
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Export JSON" }).click();
+    const download = await downloadPromise;
+
+    expect(download.suggestedFilename()).toBe("guest-game.json");
+    expect(recoverySnapshot).toBeTruthy();
+    await expect(page.getByText("Game export downloaded")).toBeVisible();
+  });
+
+  test("replay links remain usable when mobile clipboard permission is unavailable", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: { writeText: async () => Promise.reject(new Error("clipboard denied")) }
+      });
+      document.execCommand = () => false;
+    });
+    const grid: Cell[][] = [
+      [{ t: "n", v: 2 }, null, null, null],
+      [null, null, null, null],
+      [null, null, null, null],
+      [null, { t: "n", v: 2 }, null, null]
+    ];
+    const routes = mockGameRoutes(page, grid, standardConfig(43));
+    await routes.install();
+    let recoverySnapshot: unknown;
+    await page.route("**/api/games/*/export?compact=1", async (route) => {
+      recoverySnapshot = (route.request().postDataJSON() as { recoverySnapshot?: unknown }).recoverySnapshot;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ header: { replayVersion: 1, rulesetId: "binary2048-v1" }, moves: [] })
+      });
+    });
+    await page.route("**/api/replay/code?hosted=1", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ code: "rs1.mobile-replay", overLimit: false })
+      });
+    });
+
+    await page.goto("/");
+    await page.getByRole("button", { name: "Start New Game" }).click();
+    await page.getByRole("button", { name: "Copy Replay Link" }).click();
+
+    expect(recoverySnapshot).toBeTruthy();
+    await expect(page.getByText("Replay link ready—tap Copy Replay Link again")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Open Replay Link" })).toHaveAttribute(
+      "href",
+      /\/replay\?code=rs1.mobile-replay$/
+    );
   });
 
   test("the dock does not overlap the board or the final scrollable content", async ({ page }) => {

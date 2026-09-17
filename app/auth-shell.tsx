@@ -12,7 +12,11 @@ export async function AuthShell() {
   }
   const state = buildAuthUiState(session, authOptions.providers?.length ?? 0);
   return (
-    <div className="auth-shell" aria-label="Authentication status">
+    <div
+      className="auth-shell"
+      aria-label="Authentication status"
+      data-authenticated={state.authenticated ? "true" : "false"}
+    >
       <span className={`auth-tier auth-tier-${state.tier}`}>{state.tier}</span>
       {state.showDisplayName ? <span className="auth-user">{state.displayName}</span> : null}
       {state.authenticated ? (

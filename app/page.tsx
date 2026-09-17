@@ -21,6 +21,11 @@ import { getNewGameStartAction } from "@/lib/binary2048/startup-new-game";
 import { requestResumableMove } from "@/lib/binary2048/resumable-move";
 import { createClientAuthBridge } from "@/lib/binary2048/client-auth-bridge";
 import {
+  copyTextWithFallback,
+  downloadJson,
+  filenameFromDisposition
+} from "@/lib/binary2048/browser-actions";
+import {
   exitDocumentFullscreen,
   isFullscreenActive,
   isFullscreenSupported,
@@ -138,6 +143,7 @@ export default function Home() {
   const [replayPlaying, setReplayPlaying] = useState(false);
   const [replaySpeed, setReplaySpeed] = useState(5);
   const [shareMessage, setShareMessage] = useState<string>("");
+  const [preparedReplayUrl, setPreparedReplayUrl] = useState<string>("");
   const [newGameConfirmArmed, setNewGameConfirmArmed] = useState(false);
   const [fullscreenSupported, setFullscreenSupported] = useState(false);
   const [fullscreenActive, setFullscreenActive] = useState(false);
@@ -160,7 +166,13 @@ export default function Home() {
   const bufferedMovesRef = useRef<Dir[]>([]);
   const authBridgeRef = useRef<ReturnType<typeof createClientAuthBridge> | null>(null);
   if (!authBridgeRef.current) {
-    authBridgeRef.current = createClientAuthBridge((input, init) => fetch(input, init));
+    authBridgeRef.current = createClientAuthBridge(
+      (input, init) => fetch(input, init),
+      Date.now,
+      () =>
+        typeof document !== "undefined" &&
+        document.querySelector<HTMLElement>(".auth-shell")?.dataset.authenticated === "true"
+    );
   }
 
   useEffect(() => {
@@ -258,6 +270,7 @@ export default function Home() {
       return;
     }
     setReplay(null);
+    setPreparedReplayUrl("");
     bufferedMovesRef.current = [];
     setContinueAfterWin(false);
     setNewGameConfirmArmed(false);
@@ -339,10 +352,12 @@ export default function Home() {
         sessionId: gameId,
         async requestMove(sessionId, recoveredSession?: { id: string; recoverySnapshot: GameExport | SessionRecoverySnapshot }) {
           const authHeaders = await authBridgeRef.current?.authorizationHeader();
+          const recoverySnapshot =
+            recoveredSession?.recoverySnapshot ?? loadResumeSnapshot(window.localStorage, sessionId) ?? undefined;
           const response = await fetch(`/api/games/${sessionId}/move`, {
             method: "POST",
             headers: { "content-type": "application/json", ...authHeaders },
-            body: JSON.stringify({ dir, recoverySnapshot: recoveredSession?.recoverySnapshot })
+            body: JSON.stringify({ dir, recoverySnapshot })
           });
           return {
             ok: response.ok,
@@ -355,16 +370,15 @@ export default function Home() {
           return recoverySnapshot ? { id: staleSessionId, recoverySnapshot } : null;
         }
       });
-      const { attempt, recoveredSession } = moveResult;
+      const { attempt } = moveResult;
       const json = attempt.payload as { current?: GameState; error?: string; undo?: UndoMeta; lastStep?: { events?: MoveEvent[] }; integrity?: { sessionClass?: SessionClass } };
       if (!attempt.ok || !json?.current) {
-        if (attempt.status === 404 && !recoveredSession) {
-          void trackMarketing("session_reset_after_resume", "resume", {
+        if (attempt.status === 404) {
+          void trackMarketing("session_resume_miss", "resume", {
             gameId,
-            outcome: "move_404_new_game"
+            outcome: "move_404_preserved_board"
           });
-          await newGame({ clearSnapshot: true, allowWhileBusy: true });
-          return;
+          throw new Error("Game session could not be recovered. Your board is still saved; reload to retry.");
         }
         throw new Error(typeof json.error === "string" ? json.error : "Failed to apply move");
       }
@@ -708,6 +722,7 @@ export default function Home() {
 
   useEffect(() => {
     setNewGameConfirmArmed(false);
+    setPreparedReplayUrl("");
   }, [gameId, replay, state?.turn, state?.over]);
 
   useEffect(() => {
@@ -897,28 +912,67 @@ export default function Home() {
   }
 
   async function copyShare() {
-    try {
-      await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
+    const copied = await copyTextWithFallback(`${shareText} ${shareUrl}`);
+    if (copied) {
       void trackMarketing("copy_share", "copy");
       setShareMessage("Share text copied");
       window.setTimeout(() => setShareMessage(""), 1800);
-    } catch {
+    } else {
       setShareMessage("Unable to copy share text");
       window.setTimeout(() => setShareMessage(""), 1800);
+    }
+  }
+
+  async function fetchGameExport(compact = false) {
+    if (!gameId) throw new Error("No active game to export");
+    const recoverySnapshot = loadResumeSnapshot(window.localStorage, gameId);
+    const exportRes = await fetch(`/api/games/${gameId}/export${compact ? "?compact=1" : ""}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ recoverySnapshot })
+    });
+    const exported = await exportRes.json().catch(() => ({}));
+    if (!exportRes.ok) {
+      throw new Error(
+        compact
+          ? getReplayShareErrorMessage(exportRes.status)
+          : exportRes.status === 404
+            ? "Current run is no longer available to export. Your local board is still saved."
+            : "Failed to export game"
+      );
+    }
+    return { exported, response: exportRes };
+  }
+
+  async function exportGameJson() {
+    if (busy || !gameId) return;
+    try {
+      const { exported, response } = await fetchGameExport(false);
+      const filename = filenameFromDisposition(
+        response.headers.get("content-disposition"),
+        `${gameId}-${new Date().toISOString().replace(/[:.]/g, "-")}.json`
+      );
+      downloadJson(exported, filename);
+      setShareMessage("Game export downloaded");
+      window.setTimeout(() => setShareMessage(""), 1800);
+    } catch (error) {
+      setShareMessage(error instanceof Error ? error.message : "Unable to export game");
+      window.setTimeout(() => setShareMessage(""), 2200);
     }
   }
 
   async function copyReplayLink() {
     if (!gameId) return;
     try {
-      const exportRes = await fetch(`/api/games/${gameId}/replay`);
-      const exported = await exportRes.json().catch(() => ({}));
-      if (!exportRes.ok) {
-        if (exportRes.status === 404) {
-          window.localStorage.removeItem(gameIdKey);
-        }
-        throw new Error(getReplayShareErrorMessage(exportRes.status));
+      if (preparedReplayUrl) {
+        const copied = await copyTextWithFallback(preparedReplayUrl);
+        if (!copied) throw new Error("Unable to copy replay link; use Open Replay Link");
+        setShareMessage("Replay link copied");
+        window.setTimeout(() => setShareMessage(""), 1800);
+        return;
       }
+
+      const { exported } = await fetchGameExport(true);
 
       const codeRes = await fetch("/api/replay/code?hosted=1", {
         method: "POST",
@@ -935,10 +989,11 @@ export default function Home() {
       }
 
       const replayUrl = buildReplayUrl(window.location.origin, codeJson.code);
-      await navigator.clipboard.writeText(replayUrl);
+      setPreparedReplayUrl(replayUrl);
+      const copied = await copyTextWithFallback(replayUrl);
       void trackMarketing("copy_replay_link", "replay");
-      setShareMessage("Replay link copied");
-      window.setTimeout(() => setShareMessage(""), 1800);
+      setShareMessage(copied ? "Replay link copied" : "Replay link ready—tap Copy Replay Link again");
+      if (copied) window.setTimeout(() => setShareMessage(""), 1800);
     } catch (error) {
       setShareMessage(error instanceof Error ? error.message : "Unable to copy replay link");
       window.setTimeout(() => setShareMessage(""), 2200);
@@ -1027,7 +1082,7 @@ export default function Home() {
       </header>
       <p className="tagline">Made mostly for bots by mostly bots: Bonus tiles: zero annihilator + wildcard multipliers.</p>
       <div ref={fullscreenShellRef} className={`fullscreen-shell ${fullscreenActive ? "fullscreen-active" : ""}`}>
-        <div className="card">
+        <div className="card" aria-busy={busy}>
         <div className="meta">
           <span>Game: {replay ? `Replay (${replay.sourceName})` : gameId || "-"}</span>
           <span className="score-pill">Score: {viewState?.score ?? 0}</span>
@@ -1271,9 +1326,7 @@ export default function Home() {
               <button
                 disabled={!gameId}
                 onClick={() => {
-                  if (busy || !gameId) return;
-                  if (!gameId) return;
-                  window.open(`/api/games/${gameId}/export`, "_blank");
+                  void exportGameJson();
                 }}
               >
                 Export JSON
@@ -1400,8 +1453,7 @@ export default function Home() {
                   <button
                     disabled={!gameId}
                     onClick={() => {
-                      if (!gameId) return;
-                      window.open(`/api/games/${gameId}/export`, "_blank");
+                      void exportGameJson();
                     }}
                   >
                     Export JSON
@@ -1531,6 +1583,11 @@ export default function Home() {
           <button type="button" disabled={!gameId} onClick={() => void copyReplayLink()}>
             Copy Replay Link
           </button>
+          {preparedReplayUrl ? (
+            <a href={preparedReplayUrl} target="_blank" rel="noopener noreferrer">
+              Open Replay Link
+            </a>
+          ) : null}
           <button
             type="button"
             onClick={() => {

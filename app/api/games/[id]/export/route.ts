@@ -2,12 +2,22 @@ import { NextResponse } from "next/server";
 import { exportToCompactReplay } from "@/lib/binary2048/replay-format";
 import { buildReplayAudit } from "@/lib/binary2048/replay-audit";
 import { createReplaySignature } from "@/lib/binary2048/replay-signature";
-import { exportSession } from "@/lib/binary2048/sessions";
+import { exportSession, importRecoveryPayload } from "@/lib/binary2048/sessions";
+import type { GameExport, SessionRecoverySnapshot } from "@/lib/binary2048/types";
 
-export async function GET(req: Request, context: { params: Promise<{ id: string }> }) {
-  const { id } = await context.params;
-  const exported = exportSession(id);
-  if (!exported) return NextResponse.json({ error: "Game not found" }, { status: 404 });
+type ExportBody = {
+  recoverySnapshot?: GameExport | SessionRecoverySnapshot;
+};
+
+function resolveExport(id: string, recoverySnapshot?: GameExport | SessionRecoverySnapshot) {
+  const existing = exportSession(id);
+  if (existing || !recoverySnapshot) return existing;
+
+  const recovered = importRecoveryPayload(recoverySnapshot);
+  return exportSession(recovered.current.id);
+}
+
+function exportResponse(req: Request, id: string, exported: NonNullable<ReturnType<typeof exportSession>>) {
   const url = new URL(req.url);
   const compact = url.searchParams.get("compact");
   const wantsCompact = compact === "1" || compact === "true";
@@ -43,4 +53,26 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
       "content-disposition": `attachment; filename="${filename}"`
     }
   });
+}
+
+export async function GET(req: Request, context: { params: Promise<{ id: string }> }) {
+  const { id } = await context.params;
+  const exported = exportSession(id);
+  if (!exported) return NextResponse.json({ error: "Game not found" }, { status: 404 });
+  return exportResponse(req, id, exported);
+}
+
+export async function POST(req: Request, context: { params: Promise<{ id: string }> }) {
+  const { id } = await context.params;
+  try {
+    const body = (await req.json().catch(() => ({}))) as ExportBody;
+    const exported = resolveExport(id, body.recoverySnapshot);
+    if (!exported) return NextResponse.json({ error: "Game not found" }, { status: 404 });
+    return exportResponse(req, exported.final.id, exported);
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Invalid recovery snapshot" },
+      { status: 400 }
+    );
+  }
 }

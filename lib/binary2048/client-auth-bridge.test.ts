@@ -33,4 +33,22 @@ describe("client auth bridge", () => {
     expect(await bridge.authorizationHeader()).toEqual({});
     expect(request).toHaveBeenCalledTimes(1);
   });
+
+  it("does not probe the protected token endpoint for a known guest", async () => {
+    const request = jest.fn();
+    let authenticated = false;
+    const bridge = createClientAuthBridge(request, () => 1_000_000, () => authenticated);
+
+    expect(await bridge.authorizationHeader()).toEqual({});
+    expect(request).not.toHaveBeenCalled();
+
+    authenticated = true;
+    request.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ token: "signed-token", exp: 4600 })
+    });
+    expect(await bridge.authorizationHeader()).toEqual({ authorization: "Bearer signed-token" });
+    expect(request).toHaveBeenCalledTimes(1);
+  });
 });

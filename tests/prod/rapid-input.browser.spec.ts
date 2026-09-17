@@ -111,7 +111,7 @@ test("rapid arrow keys stay ordered across instance recovery", async ({ page }) 
 
   await expect.poll(() => completedMoves.length, { timeout: 10_000 }).toBe(expectedMoves.length);
   expect(completedMoves).toEqual(expectedMoves);
-  expect(requestCount).toBe(expectedMoves.length * 2);
+  expect(requestCount).toBe(expectedMoves.length);
   expect(maximumActiveRequests).toBe(1);
   await expect(page.getByText(`Moves: ${expectedMoves.length}`)).toBeVisible();
   expect(

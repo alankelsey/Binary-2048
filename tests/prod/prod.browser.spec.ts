@@ -135,7 +135,7 @@ test("a stale instance-local session is recovered and moved atomically", async (
 
   await page.keyboard.press("ArrowLeft");
   await expect(page.getByRole("gridcell", { name: /number 2$/ })).toHaveCount(1);
-  expect(staleMoveRequests).toBe(2);
+  expect(staleMoveRequests).toBe(1);
   expect(restoredMoveRequests).toBe(1);
 });
 
@@ -219,9 +219,13 @@ test("the manual left-down and right-left loop reaches the game-over overlay", a
 
   async function press(dir: Dir) {
     const key = { left: "ArrowLeft", down: "ArrowDown", right: "ArrowRight", up: "ArrowUp" }[dir];
+    await expect(page.locator(".card")).toHaveAttribute("aria-busy", "false");
     const before = moves.length;
     await page.keyboard.press(key);
     await expect.poll(() => moves.length).toBe(before + 1);
+    await expect(page.locator(".score-pill")).toHaveText(`Score: ${current.score}`);
+    await expect(page.locator(".meta span").filter({ hasText: /^Moves: / })).toHaveText(`Moves: ${current.turn}`);
+    await expect(page.locator(".card")).toHaveAttribute("aria-busy", "false");
     return movedResults.at(-1) ?? false;
   }
 

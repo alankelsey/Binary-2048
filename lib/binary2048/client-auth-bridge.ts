@@ -10,7 +10,8 @@ type BridgeFetch = (
 
 export function createClientAuthBridge(
   request: BridgeFetch,
-  now: () => number = Date.now
+  now: () => number = Date.now,
+  isAuthenticated: () => boolean = () => true
 ) {
   let token = "";
   let expiresAtMs = 0;
@@ -36,6 +37,11 @@ export function createClientAuthBridge(
   }
 
   async function getToken(): Promise<string> {
+    if (!isAuthenticated()) {
+      token = "";
+      expiresAtMs = 0;
+      return "";
+    }
     if (token && expiresAtMs > now() + 30_000) return token;
     if (guestUntilMs > now()) return "";
     if (!pending) {
