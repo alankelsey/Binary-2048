@@ -38,6 +38,8 @@ import {
   requestElementFullscreen
 } from "@/lib/binary2048/fullscreen";
 import { isFullscreenToggleEnabled } from "@/lib/binary2048/fullscreen-visibility";
+import { shouldShowImportJson } from "@/lib/binary2048/import-visibility";
+import { getGameImportErrorMessage, toGameImportPayload } from "@/lib/binary2048/game-import";
 import { clearResumeSnapshot, loadResumeSnapshot, saveResumeSnapshot } from "@/lib/binary2048/resume-recovery";
 import {
   createInitialRageTapState,
@@ -163,6 +165,7 @@ export default function Home() {
   const [uiControlOverrides, setUiControlOverrides] = useState<UIControlOverrides>({});
   const [referralCode, setReferralCode] = useState("");
   const [difficultyHelpOpen, setDifficultyHelpOpen] = useState(false);
+  const [authenticated, setAuthenticated] = useState(false);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const effectTimerRef = useRef<number | null>(null);
   const importInputRef = useRef<HTMLInputElement | null>(null);
@@ -204,6 +207,9 @@ export default function Home() {
   );
 
   useEffect(() => {
+    setAuthenticated(
+      document.querySelector<HTMLElement>(".auth-shell")?.dataset.authenticated === "true"
+    );
     void authBridgeRef.current?.authorizationHeader();
   }, []);
 
@@ -679,7 +685,7 @@ export default function Home() {
     setErrorMessage("");
     try {
       const text = await file.text();
-      const payload = JSON.parse(text);
+      const payload = toGameImportPayload(JSON.parse(text));
       const res = await fetch("/api/games/import", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -687,7 +693,7 @@ export default function Home() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json?.current || !json?.id) {
-        const message = (json && typeof json.error === "string" ? json.error : "Failed to import game");
+        const message = getGameImportErrorMessage(res.status, json?.error);
         throw new Error(message);
       }
       applyLoadedSession(json as { id: string; current: GameState; undo?: UndoMeta });
@@ -1631,25 +1637,25 @@ export default function Home() {
                     </select>
                   </label>
                 ) : null}
+                {shouldShowImportJson(effectiveUiPolicy.controls.import, authenticated) ? (
+                  <button
+                    disabled={busy}
+                    onClick={() => {
+                      importInputRef.current?.click();
+                    }}
+                  >
+                    Import JSON
+                  </button>
+                ) : null}
                 {effectiveUiPolicy.controls.import ? (
-                  <>
-                    <button
-                      disabled={busy}
-                      onClick={() => {
-                        importInputRef.current?.click();
-                      }}
-                    >
-                      Import JSON
-                    </button>
-                    <button
-                      disabled={busy}
-                      onClick={() => {
-                        replayInputRef.current?.click();
-                      }}
-                    >
-                      Replay JSON
-                    </button>
-                  </>
+                  <button
+                    disabled={busy}
+                    onClick={() => {
+                      replayInputRef.current?.click();
+                    }}
+                  >
+                    Replay JSON
+                  </button>
                 ) : null}
                 {effectiveUiPolicy.controls.export ? (
                   <button
@@ -1694,18 +1700,21 @@ export default function Home() {
               </div>
             </details>
           ) : null}
-          <input
-            ref={importInputRef}
-            type="file"
-            accept="application/json,.json"
-            className="file-input-hidden"
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              event.target.value = "";
-              if (!file) return;
-              void importGameFile(file);
-            }}
-          />
+          {authenticated ? (
+            <input
+              ref={importInputRef}
+              data-testid="import-json-input"
+              type="file"
+              accept="application/json,.json"
+              className="file-input-hidden"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                if (!file) return;
+                void importGameFile(file);
+              }}
+            />
+          ) : null}
           <input
             ref={replayInputRef}
             type="file"

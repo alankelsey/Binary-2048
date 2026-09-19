@@ -21,6 +21,13 @@ test("real OAuth session is authenticated and survives refresh", async ({ page, 
   await expect(page.getByText("Authenticated: yes")).toBeVisible();
 });
 
+test("authenticated home exposes game import", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator(".auth-shell")).toHaveAttribute("data-authenticated", "true");
+  await expect(page.locator('button:has-text("Import JSON")')).toHaveCount(1);
+  await expect(page.locator('button:has-text("Replay JSON")')).toHaveCount(1);
+});
+
 test("authenticated session mints a usable short-lived bridge token", async ({ request }) => {
   const response = await request.post("/api/auth/bridge-token", { data: { ttlSeconds: 300 } });
   expect(response.status()).toBe(200);

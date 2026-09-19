@@ -70,4 +70,46 @@ describe("POST /api/games/import", () => {
     expect(json.current.turn).toBe(1);
     expect(json.recoverySnapshot).toMatchObject({ recoveryVersion: 1, moves: ["left"] });
   });
+
+  it("imports a compact recovery history with 250 moves", async () => {
+    const longInitialGrid: Cell[][] = [
+      [{ t: "n", v: 1 }, null, null, null],
+      [null, null, null, null],
+      [null, null, null, null],
+      [null, null, null, null]
+    ];
+    const moves = Array.from({ length: 250 }, () => "left" as const);
+    const req = new Request("http://localhost/api/games/import", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        recoveryVersion: 1,
+        rulesetId: "binary2048-v1",
+        config,
+        initialGrid: longInitialGrid,
+        moves
+      })
+    });
+
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.steps).toHaveLength(250);
+    expect(json.recoverySnapshot.moves).toHaveLength(250);
+  });
+
+  it("returns 413 for an oversized import body", async () => {
+    const req = new Request("http://localhost/api/games/import", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ blob: "x".repeat(257 * 1024) })
+    });
+
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(413);
+    expect(json.error).toBe("Request body too large");
+  });
 });

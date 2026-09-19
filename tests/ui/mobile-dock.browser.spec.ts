@@ -88,6 +88,8 @@ test.describe("mobile action dock", () => {
     await page.goto("/");
     await expect(page.getByRole("dialog", { name: "NEW GAME" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Start New Game" })).toBeVisible();
+    await expect(page.locator('button:has-text("Import JSON")')).toHaveCount(0);
+    await expect(page.locator('button:has-text("Replay JSON")')).toHaveCount(1);
   });
 
   test("starting a guest game does not request an authenticated bridge token", async ({ page }) => {
