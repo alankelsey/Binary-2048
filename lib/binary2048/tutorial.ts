@@ -3,6 +3,9 @@ import type { Cell, Dir, GameConfig, GameEvent, GameState } from "@/lib/binary20
 
 export const TUTORIAL_VERSION = 1;
 export const TUTORIAL_STORAGE_KEY = "binary2048.tutorial.v1";
+export const TUTORIAL_SUPPRESS_COOKIE = "binary2048_tutorial_suppress";
+export const TUTORIAL_SUPPRESS_VALUE = "1";
+export const TUTORIAL_SUPPRESS_MAX_AGE_SECONDS = 31_536_000;
 
 export type TutorialPreference = {
   version: typeof TUTORIAL_VERSION;
@@ -18,13 +21,15 @@ export type TutorialLesson = {
   initialGrid: Cell[][];
   expectedMoves: Dir[];
   outcome: string;
+  focusCells: Array<[number, number]>;
+  tileName?: string;
 };
 
 export type TutorialSession = {
   version: typeof TUTORIAL_VERSION;
   lessonIndex: number;
   moveIndex: number;
-  phase: "active" | "lesson_complete" | "completed";
+  phase: "coach" | "active" | "success" | "completed";
   board: GameState;
   feedback: string;
   events: GameEvent[];
@@ -66,7 +71,8 @@ export const TUTORIAL_LESSONS: readonly TutorialLesson[] = [
     hint: "Move the 1 tile toward the left edge.",
     initialGrid: [[E, E, n(1), E], [E, E, E, E], [E, E, E, E], [E, E, E, E]],
     expectedMoves: ["left"],
-    outcome: "The tile moved to the left edge."
+    outcome: "The tile moved to the left edge.",
+    focusCells: [[0, 2]]
   },
   {
     id: "move-right",
@@ -75,7 +81,8 @@ export const TUTORIAL_LESSONS: readonly TutorialLesson[] = [
     hint: "Equal number tiles merge when they collide.",
     initialGrid: [[n(1), n(1), E, E], [E, E, E, E], [E, E, E, E], [E, E, E, E]],
     expectedMoves: ["right"],
-    outcome: "The two 1 tiles merged into 2."
+    outcome: "The two 1 tiles merged into 2.",
+    focusCells: [[0, 0], [0, 1]]
   },
   {
     id: "move-up",
@@ -84,7 +91,8 @@ export const TUTORIAL_LESSONS: readonly TutorialLesson[] = [
     hint: "Move the lower tile toward the top edge.",
     initialGrid: [[E, E, E, E], [E, E, E, E], [E, n(2), E, E], [E, E, E, E]],
     expectedMoves: ["up"],
-    outcome: "The tile moved to the top edge."
+    outcome: "The tile moved to the top edge.",
+    focusCells: [[2, 1]]
   },
   {
     id: "move-down",
@@ -93,7 +101,8 @@ export const TUTORIAL_LESSONS: readonly TutorialLesson[] = [
     hint: "Move the upper tile toward the bottom edge.",
     initialGrid: [[E, E, n(2), E], [E, E, E, E], [E, E, E, E], [E, E, E, E]],
     expectedMoves: ["down"],
-    outcome: "You have now used all four movement directions."
+    outcome: "You have now used all four movement directions.",
+    focusCells: [[0, 2]]
   },
   {
     id: "zero",
@@ -102,7 +111,9 @@ export const TUTORIAL_LESSONS: readonly TutorialLesson[] = [
     hint: "Bring the 1 and 0 together by moving left.",
     initialGrid: [[n(1), z, E, E], [E, E, E, E], [E, E, E, E], [E, E, E, E]],
     expectedMoves: ["left"],
-    outcome: "Zero disappeared on collision. Two zero tiles would both disappear."
+    outcome: "Zero disappeared on collision. Two zero tiles would both disappear.",
+    focusCells: [[0, 0], [0, 1]],
+    tileName: "Zero"
   },
   {
     id: "wildcard",
@@ -111,7 +122,9 @@ export const TUTORIAL_LESSONS: readonly TutorialLesson[] = [
     hint: "A 2× wildcard doubles the number it touches.",
     initialGrid: [[n(8), w2, E, E], [E, E, E, E], [E, E, E, E], [E, E, E, E]],
     expectedMoves: ["left"],
-    outcome: "The 2× wildcard multiplied 8 into 16."
+    outcome: "The 2× wildcard multiplied 8 into 16.",
+    focusCells: [[0, 0], [0, 1]],
+    tileName: "2× wildcard"
   },
   {
     id: "lock-zero",
@@ -120,7 +133,9 @@ export const TUTORIAL_LESSONS: readonly TutorialLesson[] = [
     hint: "Right creates the blocked collision; left returns for the break.",
     initialGrid: [[lock, n(8), E, E], [E, E, E, E], [E, E, E, E], [E, E, E, E]],
     expectedMoves: ["right", "left"],
-    outcome: "Lock-0 blocked once, then broke and behaved like zero."
+    outcome: "Lock-0 blocked once, then broke and behaved like zero.",
+    focusCells: [[0, 0], [0, 1]],
+    tileName: "Lock-0"
   },
   {
     id: "mixed-practice",
@@ -134,7 +149,9 @@ export const TUTORIAL_LESSONS: readonly TutorialLesson[] = [
       [E, E, E, E]
     ],
     expectedMoves: ["left"],
-    outcome: "One move resolved ordinary and special-tile collisions in separate rows."
+    outcome: "One move resolved ordinary and special-tile collisions in separate rows.",
+    focusCells: [[0, 0], [0, 1], [1, 0], [1, 1], [2, 0], [2, 1]],
+    tileName: "Special tiles"
   },
   {
     id: "build-2048",
@@ -143,7 +160,8 @@ export const TUTORIAL_LESSONS: readonly TutorialLesson[] = [
     hint: "The new 1024 cannot merge again during the same move.",
     initialGrid: [[n(512), n(512), n(1024), E], [E, E, E, E], [E, E, E, E], [E, E, E, E]],
     expectedMoves: ["left"],
-    outcome: "Two 1024 tiles are ready for the final lesson."
+    outcome: "Two 1024 tiles are ready for the final lesson.",
+    focusCells: [[0, 0], [0, 1], [0, 2]]
   },
   {
     id: "create-2048",
@@ -152,7 +170,8 @@ export const TUTORIAL_LESSONS: readonly TutorialLesson[] = [
     hint: "Merge the matching 1024 tiles.",
     initialGrid: [[n(1024), n(1024), E, E], [E, E, E, E], [E, E, E, E], [E, E, E, E]],
     expectedMoves: ["left"],
-    outcome: "You created 2048 and completed the tutorial."
+    outcome: "You created 2048 and completed the tutorial.",
+    focusCells: [[0, 0], [0, 1]]
   }
 ] as const;
 
@@ -189,9 +208,9 @@ export function createTutorialSession(lessonIndex = 0): TutorialSession {
     version: TUTORIAL_VERSION,
     lessonIndex: safeIndex,
     moveIndex: 0,
-    phase: "active",
+    phase: "coach",
     board: createLessonBoard(safeIndex),
-    feedback: TUTORIAL_LESSONS[safeIndex].instruction,
+    feedback: "",
     events: []
   };
 }
@@ -202,7 +221,7 @@ export function applyTutorialMove(session: TutorialSession, dir: Dir): TutorialM
   const expected = lesson.expectedMoves[session.moveIndex];
   if (dir !== expected) {
     return {
-      session: { ...session, feedback: `Try ${expected}. ${lesson.hint}`, events: [] },
+      session: { ...session, feedback: `Try ${expected}.`, events: [] },
       accepted: false,
       advanced: false
     };
@@ -211,39 +230,63 @@ export function applyTutorialMove(session: TutorialSession, dir: Dir): TutorialM
   const result = applyWithoutSpawn(session.board, dir);
   const nextMoveIndex = session.moveIndex + 1;
   const lessonDone = nextMoveIndex >= lesson.expectedMoves.length;
-  if (!lessonDone) {
-    const nextExpected = lesson.expectedMoves[nextMoveIndex];
-    return {
-      session: {
-        ...session,
-        board: result.state,
-        moveIndex: nextMoveIndex,
-        feedback: `Good. Now move ${nextExpected}.`,
-        events: result.events
-      },
-      accepted: true,
-      advanced: false
-    };
-  }
-
   const finalLesson = session.lessonIndex === TUTORIAL_LESSONS.length - 1;
   return {
     session: {
       ...session,
       board: result.state,
       moveIndex: nextMoveIndex,
-      phase: finalLesson ? "completed" : "lesson_complete",
-      feedback: lesson.outcome,
+      phase: finalLesson && lessonDone ? "completed" : "success",
+      feedback: lessonDone ? `Good job! ${lesson.outcome}` : "Good job! Lock-0 blocked the first collision.",
       events: result.events
     },
     accepted: true,
-    advanced: true
+    advanced: lessonDone
   };
 }
 
 export function continueTutorial(session: TutorialSession): TutorialSession {
-  if (session.phase !== "lesson_complete") return session;
+  if (session.phase !== "success") return session;
+  const lesson = TUTORIAL_LESSONS[session.lessonIndex];
+  if (session.moveIndex < lesson.expectedMoves.length) {
+    return { ...session, phase: "coach", feedback: "", events: [] };
+  }
   return createTutorialSession(session.lessonIndex + 1);
+}
+
+export function armTutorial(session: TutorialSession): TutorialSession {
+  return session.phase === "coach" ? { ...session, phase: "active", feedback: "" } : session;
+}
+
+export function tutorialExpectedDirection(session: TutorialSession): Dir {
+  return TUTORIAL_LESSONS[session.lessonIndex].expectedMoves[session.moveIndex];
+}
+
+export function hasTutorialSuppressCookie(cookieHeader: string): boolean {
+  return cookieHeader
+    .split(";")
+    .map((part) => part.trim())
+    .some((part) => part === `${TUTORIAL_SUPPRESS_COOKIE}=${TUTORIAL_SUPPRESS_VALUE}`);
+}
+
+export function tutorialSuppressCookie(secure: boolean): string {
+  return [
+    `${TUTORIAL_SUPPRESS_COOKIE}=${TUTORIAL_SUPPRESS_VALUE}`,
+    "Path=/",
+    `Max-Age=${TUTORIAL_SUPPRESS_MAX_AGE_SECONDS}`,
+    "SameSite=Lax",
+    ...(secure ? ["Secure"] : [])
+  ].join("; ");
+}
+
+export function clearTutorialSuppressCookie(secure: boolean): string {
+  return [
+    `${TUTORIAL_SUPPRESS_COOKIE}=`,
+    "Path=/",
+    "Max-Age=0",
+    "SameSite=Lax",
+    ...(secure ? ["Secure"] : [])
+  ].join("; ");
 }
 
 export function tutorialPreference(status: TutorialPreference["status"], lessonIndex?: number): TutorialPreference {

@@ -86,7 +86,7 @@ function standardConfig(seed: number): GameConfig {
 }
 
 test.describe("mobile action dock", () => {
-  test("offers the tutorial before the Start New Game overlay on a first visit", async ({ page }) => {
+  test("empty-state overlay offers new game, tutorial, and options on first visit", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.addInitScript(() => {
       window.localStorage.removeItem("binary2048.currentGameId");
@@ -94,11 +94,12 @@ test.describe("mobile action dock", () => {
       window.localStorage.removeItem("binary2048.tutorial.v1");
     });
     await page.goto("/");
-    await expect(page.getByRole("dialog", { name: "LEARN TO PLAY" })).toBeVisible();
-    await page.getByRole("button", { name: "Not Now" }).click();
     await expect(page.getByRole("dialog", { name: "NEW GAME" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Start New Game" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Play tutorial" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Options", exact: true })).toHaveCount(1);
     await expect(page.locator('button:has-text("Import JSON")')).toHaveCount(0);
+    await page.getByRole("button", { name: "Options", exact: true }).click();
     await expect(page.locator('button:has-text("Replay JSON")')).toHaveCount(1);
   });
 
@@ -206,6 +207,7 @@ test.describe("mobile action dock", () => {
       await page.goto("/");
       await page.getByRole("button", { name: "Start New Game" }).click();
       await expect(page.getByRole("gridcell", { name: /number 2$/ })).toHaveCount(2);
+      await expect(page.locator(".card")).toHaveAttribute("aria-busy", "false");
       await page.keyboard.press("ArrowLeft");
       await expect.poll(() => routes.getCurrent().turn).toBe(1);
 
@@ -263,6 +265,7 @@ test.describe("mobile action dock", () => {
     await page.goto("/");
     await page.getByRole("button", { name: "Start New Game" }).click();
     await expect(page.getByRole("gridcell", { name: /number 2$/ })).toHaveCount(2);
+    await expect(page.locator(".card")).toHaveAttribute("aria-busy", "false");
     await page.keyboard.press("ArrowLeft");
     await expect.poll(() => routes.getCurrent().turn).toBe(1);
     expect(routes.getCreateRequests()).toBe(1);

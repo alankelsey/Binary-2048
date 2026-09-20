@@ -20,20 +20,48 @@ type NewGameOverlayProps = {
   visible: boolean;
   starting: boolean;
   onStart: () => void;
+  onTutorial: () => void;
+  onOptions: () => void;
+  tutorialReminder: boolean;
+  suppressTutorialReminder: boolean;
+  onSuppressTutorialReminderChange: (checked: boolean) => void;
 };
 
-export function NewGameOverlay({ visible, starting, onStart }: NewGameOverlayProps) {
+export function NewGameOverlay({
+  visible,
+  starting,
+  onStart,
+  onTutorial,
+  onOptions,
+  tutorialReminder,
+  suppressTutorialReminder,
+  onSuppressTutorialReminderChange
+}: NewGameOverlayProps) {
   if (!visible) return null;
-  return React.createElement(
-    "div",
-    { className: "newgame-overlay", role: "dialog", "aria-labelledby": "newgame-overlay-title" },
-    React.createElement("div", { className: "newgame-title", id: "newgame-overlay-title" }, "NEW GAME"),
-    React.createElement("p", { className: "newgame-copy" }, "Start a fresh Binary 2048 board."),
-    React.createElement(
-      "button",
-      { type: "button", disabled: starting, onClick: onStart },
-      starting ? "Starting…" : "Start New Game"
-    )
+  return (
+    <div className="newgame-overlay" role="dialog" aria-modal="true" aria-labelledby="newgame-overlay-title">
+      <div className="newgame-title" id="newgame-overlay-title">NEW GAME</div>
+      <p className="newgame-copy">
+        {tutorialReminder ? "New here? Learn every move and special tile first." : "Start a fresh Binary 2048 board."}
+      </p>
+      <div className="newgame-actions">
+        <button type="button" className="primary-action" disabled={starting} onClick={onStart} autoFocus>
+          {starting ? "Starting…" : "Start New Game"}
+        </button>
+        <button type="button" onClick={onTutorial}>Play tutorial</button>
+        <button type="button" onClick={onOptions}>Options</button>
+      </div>
+      {tutorialReminder ? (
+        <label className="tutorial-suppress-choice">
+          <input
+            type="checkbox"
+            checked={suppressTutorialReminder}
+            onChange={(event) => onSuppressTutorialReminderChange(event.target.checked)}
+          />
+          <span>Don&apos;t show this again</span>
+        </label>
+      ) : null}
+    </div>
   );
 }
 

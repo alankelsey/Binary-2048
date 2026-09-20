@@ -66,7 +66,9 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
   - [x] Allow the tutorial to be cancelled at any step; both cancellation and completion must return the player to the explicit `Start New Game` state
   - [x] Use deterministic, authored boards to teach all four move directions and every tile type: number, zero, wildcard, and Lock-0
   - [x] End with guided merge-chain steps that visibly build to the `2048` tile, then show a completion summary
-  - [ ] Add unit and Playwright coverage for prompt persistence, active-game confirmation, deterministic steps, invalid input, cancellation, completion, mobile layout, keyboard use, and reduced motion
+  - [x] Implement the [2026-09-20 tutorial improvement plan](./tutorial-improvement-plan-2026-09-20.md): empty-state Tutorial/Options actions, opt-out cookie, coach overlays, directional animation, and automatic progression
+  - [ ] Apply and disposition the [frontend review](./tutorial-frontend-review-2026-09-20.md), including mobile fit, dialog modality, teaching cues, special-tile labels, and completion emphasis
+  - [x] Add unit and Playwright coverage for prompt persistence, active-game confirmation, deterministic steps, invalid input, cancellation, completion, mobile layout, keyboard use, and reduced motion
   - [ ] Run a frontend-design review after the functional prototype is complete, incorporate or explicitly disposition its feedback, and perform final Android Chrome and iPhone Safari checks
 - [ ] Simplify the mobile options interaction to a single disclosure
   - [ ] Make the lower action-dock `Options` button the only control that opens or closes the player options panel

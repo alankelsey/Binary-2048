@@ -3,18 +3,32 @@ import React from "react";
 import { GameOverOverlay, NewGameOverlay, WinOverlay } from "@/app/game-overlays";
 
 describe("game overlays", () => {
+  const newGameProps = {
+    visible: true,
+    starting: false,
+    onStart: () => {},
+    onTutorial: () => {},
+    onOptions: () => {},
+    tutorialReminder: true,
+    suppressTutorialReminder: false,
+    onSuppressTutorialReminderChange: () => {}
+  };
+
   it("renders a direct new-game action for an empty board", () => {
     const html = renderToStaticMarkup(
-      React.createElement(NewGameOverlay, { visible: true, starting: false, onStart: () => {} })
+      React.createElement(NewGameOverlay, newGameProps)
     );
     expect(html).toContain('role="dialog"');
     expect(html).toContain("NEW GAME");
     expect(html).toContain(">Start New Game<");
+    expect(html).toContain(">Play tutorial<");
+    expect(html).toContain(">Options<");
+    expect(html).toContain("Don&#x27;t show this again");
   });
 
   it("disables the new-game overlay action while starting", () => {
     const html = renderToStaticMarkup(
-      React.createElement(NewGameOverlay, { visible: true, starting: true, onStart: () => {} })
+      React.createElement(NewGameOverlay, { ...newGameProps, starting: true })
     );
     expect(html).toContain("disabled");
     expect(html).toContain("Starting…");

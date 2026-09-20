@@ -1,6 +1,12 @@
 # Guided Tutorial Design Plan
 
-Status: functional prototype implemented; expanded acceptance coverage, design review, and real-device checks remain
+Status: functional prototype implemented; interaction redesign planned in
+[`tutorial-improvement-plan-2026-09-20.md`](./tutorial-improvement-plan-2026-09-20.md)
+
+The 2026-09-20 improvement plan supersedes this document where behavior
+differs, specifically the reminder cookie, empty-state actions, coach overlay,
+automatic lesson progression, and completion actions. This document remains
+the baseline for deterministic rules, data separation, and completion gates.
 
 This document defines the product behavior and acceptance criteria for the
 Binary-2048 new-player tutorial. The tutorial is an authored teaching mode,

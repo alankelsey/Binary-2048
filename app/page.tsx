@@ -44,11 +44,15 @@ import {
   TUTORIAL_LESSONS,
   TUTORIAL_STORAGE_KEY,
   applyTutorialMove,
+  armTutorial,
+  clearTutorialSuppressCookie,
   continueTutorial,
   createTutorialSession,
+  hasTutorialSuppressCookie,
   parseTutorialPreference,
-  shouldOfferTutorial,
+  tutorialExpectedDirection,
   tutorialPreference,
+  tutorialSuppressCookie,
   type TutorialSession
 } from "@/lib/binary2048/tutorial";
 import { clearResumeSnapshot, loadResumeSnapshot, saveResumeSnapshot } from "@/lib/binary2048/resume-recovery";
@@ -178,12 +182,14 @@ export default function Home() {
   const [difficultyHelpOpen, setDifficultyHelpOpen] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
   const [tutorial, setTutorial] = useState<TutorialSession | null>(null);
-  const [tutorialPromptOpen, setTutorialPromptOpen] = useState(false);
+  const [tutorialReminder, setTutorialReminder] = useState(true);
+  const [suppressTutorialReminder, setSuppressTutorialReminder] = useState(false);
+  const [emptyOptionsOpen, setEmptyOptionsOpen] = useState(false);
   const [tutorialLaunchConfirmOpen, setTutorialLaunchConfirmOpen] = useState(false);
   const [tutorialExitConfirmOpen, setTutorialExitConfirmOpen] = useState(false);
-  const [tutorialHintOpen, setTutorialHintOpen] = useState(false);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const effectTimerRef = useRef<number | null>(null);
+  const tutorialAdvanceTimerRef = useRef<number | null>(null);
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const replayInputRef = useRef<HTMLInputElement | null>(null);
   const fullscreenShellRef = useRef<HTMLDivElement | null>(null);
@@ -458,14 +464,14 @@ export default function Home() {
 
   async function move(dir: Dir) {
     if (tutorial) {
+      if (tutorial.phase !== "active" || tutorialExitConfirmOpen || tutorialLaunchConfirmOpen) return;
       const result = applyTutorialMove(tutorial, dir);
       setTutorial(result.session);
-      setTutorialHintOpen(false);
       window.localStorage.setItem(
         TUTORIAL_STORAGE_KEY,
         JSON.stringify(
           tutorialPreference(
-            result.session.phase === "completed" ? "completed" : "active",
+            "active",
             result.session.lessonIndex
           )
         )
@@ -851,9 +857,10 @@ export default function Home() {
       );
       if (tutorialPreferenceValue?.status === "active") {
         setTutorial(createTutorialSession(tutorialPreferenceValue.lessonIndex ?? 0));
-      } else if (shouldOfferTutorial(tutorialPreferenceValue, false)) {
-        setTutorialPromptOpen(true);
       }
+      const suppressed = hasTutorialSuppressCookie(document.cookie);
+      setSuppressTutorialReminder(suppressed);
+      setTutorialReminder(!suppressed);
       await finishInitialization();
     }
     void initializeGame();
@@ -962,16 +969,42 @@ export default function Home() {
     function onKeyDown(event: KeyboardEvent) {
       const dir = keyToDir(event.key);
       if (!dir) return;
+      if (
+        emptyOptionsOpen ||
+        tutorialLaunchConfirmOpen ||
+        tutorialExitConfirmOpen ||
+        (tutorial && tutorial.phase !== "active")
+      ) return;
       event.preventDefault();
       void move(dir);
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [gameId, state, busy, tutorial]);
+  }, [gameId, state, busy, tutorial, emptyOptionsOpen, tutorialLaunchConfirmOpen, tutorialExitConfirmOpen]);
+
+  useEffect(() => {
+    if (!tutorial || tutorial.phase !== "success") return;
+    tutorialAdvanceTimerRef.current = window.setTimeout(() => {
+      setTutorial((current) => {
+        if (!current || current.phase !== "success") return current;
+        const next = continueTutorial(current);
+        window.localStorage.setItem(
+          TUTORIAL_STORAGE_KEY,
+          JSON.stringify(tutorialPreference("active", next.lessonIndex))
+        );
+        return next;
+      });
+    }, 850);
+    return () => {
+      if (tutorialAdvanceTimerRef.current) window.clearTimeout(tutorialAdvanceTimerRef.current);
+      tutorialAdvanceTimerRef.current = null;
+    };
+  }, [tutorial]);
 
   useEffect(() => {
     return () => {
       if (effectTimerRef.current) window.clearTimeout(effectTimerRef.current);
+      if (tutorialAdvanceTimerRef.current) window.clearTimeout(tutorialAdvanceTimerRef.current);
     };
   }, []);
 
@@ -998,6 +1031,10 @@ export default function Home() {
       !touchStartRef.current ||
       replay ||
       busy ||
+      emptyOptionsOpen ||
+      tutorialLaunchConfirmOpen ||
+      tutorialExitConfirmOpen ||
+      (tutorial && tutorial.phase !== "active") ||
       (!tutorial && (!state || state.over || (state.won && !continueAfterWin)))
     ) return;
     const touch = event.changedTouches[0];
@@ -1017,10 +1054,9 @@ export default function Home() {
     setGameId("");
     setState(null);
     setReplay(null);
-    setTutorialPromptOpen(false);
+    setEmptyOptionsOpen(false);
     setTutorialLaunchConfirmOpen(false);
     setTutorialExitConfirmOpen(false);
-    setTutorialHintOpen(false);
     const next = createTutorialSession();
     setTutorial(next);
     window.localStorage.setItem(
@@ -1038,18 +1074,15 @@ export default function Home() {
     enterTutorial();
   }
 
-  function leaveTutorial(completed = false) {
+  function leaveTutorial() {
     setTutorial(null);
-    setTutorialHintOpen(false);
     setTutorialExitConfirmOpen(false);
     setGameId("");
     setState(null);
     window.localStorage.removeItem(gameIdKey);
     clearResumeSnapshot(window.localStorage);
-    window.localStorage.setItem(
-      TUTORIAL_STORAGE_KEY,
-      JSON.stringify(tutorialPreference(completed ? "completed" : "dismissed"))
-    );
+    window.localStorage.removeItem(TUTORIAL_STORAGE_KEY);
+    setTutorialReminder(!hasTutorialSuppressCookie(document.cookie));
   }
 
   function requestTutorialExit() {
@@ -1058,7 +1091,14 @@ export default function Home() {
       setTutorialExitConfirmOpen(true);
       return;
     }
-    leaveTutorial(false);
+    leaveTutorial();
+  }
+
+  function setTutorialReminderSuppressed(checked: boolean) {
+    setSuppressTutorialReminder(checked);
+    document.cookie = checked
+      ? tutorialSuppressCookie(window.location.protocol === "https:")
+      : clearTutorialSuppressCookie(window.location.protocol === "https:");
   }
 
   const viewState = tutorial?.board ?? (replay ? replayStateAtStep(replay.data, replay.step) : state);
@@ -1368,6 +1408,19 @@ export default function Home() {
   }, [difficultyHelpOpen]);
 
   useEffect(() => {
+    if (!emptyOptionsOpen && !tutorialLaunchConfirmOpen && !tutorialExitConfirmOpen) return;
+    function onModalKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      if (emptyOptionsOpen) setEmptyOptionsOpen(false);
+      if (tutorialLaunchConfirmOpen) setTutorialLaunchConfirmOpen(false);
+      if (tutorialExitConfirmOpen) setTutorialExitConfirmOpen(false);
+    }
+    document.addEventListener("keydown", onModalKeyDown);
+    return () => document.removeEventListener("keydown", onModalKeyDown);
+  }, [emptyOptionsOpen, tutorialLaunchConfirmOpen, tutorialExitConfirmOpen]);
+
+  useEffect(() => {
     setDifficultyHelpOpen(false);
   }, [mobileControlsOpen]);
 
@@ -1376,17 +1429,17 @@ export default function Home() {
       <a className="skip-link" href="#game-controls">
         Skip to game controls
       </a>
-      <header className="brand">
+      {!tutorial ? <header className="brand">
         <Binary2048Logo />
         <div>
           <h1>Binary 2048</h1>
           <p className="brand-subtitle">Merge bits. Control chaos. Reach 2048.</p>
         </div>
-      </header>
-      <p className="tagline">Made mostly for bots by mostly bots: Bonus tiles: zero annihilator + wildcard multipliers.</p>
+      </header> : null}
+      {!tutorial ? <p className="tagline">Made mostly for bots by mostly bots: Bonus tiles: zero annihilator + wildcard multipliers.</p> : null}
       <div ref={fullscreenShellRef} className={`fullscreen-shell ${fullscreenActive ? "fullscreen-active" : ""}`}>
         <div className="card" aria-busy={busy}>
-        <div className="meta">
+        {!tutorial ? <div className="meta">
           <span>Game: {tutorial ? "Tutorial" : replay ? `Replay (${replay.sourceName})` : gameId || "-"}</span>
           <span className="score-pill">Score: {viewState?.score ?? 0}</span>
           <span>Moves: {viewState?.turn ?? 0}</span>
@@ -1394,10 +1447,16 @@ export default function Home() {
           <span>Difficulty: {SPAWN_MODES[activeMode].label}</span>
           <span>Mode: {GAME_MODES[gameMode].label}</span>
           <span>{tutorial ? "Tutorial" : replay ? "Replay" : state?.won ? "Won" : state?.over ? "Game Over" : "Active"}</span>
-        </div>
+        </div> : (
+          <div className="tutorial-status-bar">
+            <span>Lesson {tutorial.lessonIndex + 1} of {TUTORIAL_LESSONS.length}</span>
+            <span>{TUTORIAL_LESSONS[tutorial.lessonIndex].title}</span>
+            <button type="button" onClick={requestTutorialExit}>Quit tutorial</button>
+          </div>
+        )}
         <p className="sr-only" aria-live="polite">
             {tutorial
-              ? `Tutorial step ${tutorial.lessonIndex + 1} of ${TUTORIAL_LESSONS.length}. ${tutorial.feedback}`
+              ? `Tutorial lesson ${tutorial.lessonIndex + 1} of ${TUTORIAL_LESSONS.length}. ${tutorial.feedback}`
               : replay
             ? `Replay step ${replayStep} of ${replayStepsTotal}. Score ${viewState?.score ?? 0}. Moves ${viewState?.turn ?? 0}.`
             : `Game ${gameId || "-"}, score ${viewState?.score ?? 0}, moves ${viewState?.turn ?? 0}, ${
@@ -1495,54 +1554,6 @@ export default function Home() {
             </button>
           </div>
         ) : null}
-        {tutorial ? (
-          <section className="tutorial-panel" aria-labelledby="tutorial-title">
-            <div className="tutorial-progress">
-              Step {tutorial.lessonIndex + 1} of {TUTORIAL_LESSONS.length}
-            </div>
-            <h2 id="tutorial-title">{TUTORIAL_LESSONS[tutorial.lessonIndex].title}</h2>
-            <p>{TUTORIAL_LESSONS[tutorial.lessonIndex].instruction}</p>
-            <p className="tutorial-feedback" aria-live="polite">{tutorial.feedback}</p>
-            {tutorial.phase === "completed" ? (
-              <div className="tutorial-summary" role="status" aria-label="Tutorial complete">
-                <strong>Tutorial complete</strong>
-                <ul>
-                  <li>Move every tile with swipes, Arrow keys, or WASD.</li>
-                  <li>Merge matching numbers and use 0 to annihilate collisions.</li>
-                  <li>Wildcards multiply numbers; Lock-0 blocks once, then breaks like 0.</li>
-                </ul>
-              </div>
-            ) : null}
-            {tutorialHintOpen ? (
-              <p className="tutorial-hint" role="note">{TUTORIAL_LESSONS[tutorial.lessonIndex].hint}</p>
-            ) : null}
-            <div className="tutorial-actions">
-              <button type="button" onClick={() => setTutorialHintOpen((open) => !open)}>
-                {tutorialHintOpen ? "Hide Hint" : "Show Hint"}
-              </button>
-              {tutorial.phase === "lesson_complete" ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const next = continueTutorial(tutorial);
-                    setTutorial(next);
-                    setTutorialHintOpen(false);
-                    window.localStorage.setItem(
-                      TUTORIAL_STORAGE_KEY,
-                      JSON.stringify(tutorialPreference("active", next.lessonIndex))
-                    );
-                  }}
-                >
-                  Next Lesson
-                </button>
-              ) : null}
-              {tutorial.phase === "completed" ? (
-                <button type="button" onClick={() => leaveTutorial(true)}>Finish Tutorial</button>
-              ) : null}
-              <button type="button" onClick={requestTutorialExit}>Exit Tutorial</button>
-            </div>
-          </section>
-        ) : null}
         {errorMessage ? <p className="status-error">{errorMessage}</p> : null}
         <div className={`board-shell ${viewState?.over ? "game-over" : ""} ${winPending ? "game-won" : ""}`}>
           <div
@@ -1557,6 +1568,9 @@ export default function Home() {
               row.map((cell, c) => {
                 const effect = cellEffects[`${r}-${c}`];
                 const effectClass = effect ? `fx-${effect}` : "";
+                const tutorialFocus = Boolean(
+                  tutorial && TUTORIAL_LESSONS[tutorial.lessonIndex].focusCells.some(([row, col]) => row === r && col === c)
+                );
                 const tileLabel = cell
                   ? cell.t === "n"
                     ? `number ${cell.v}`
@@ -1569,18 +1583,18 @@ export default function Home() {
                 return (
                   <div
                     key={`${r}-${c}`}
-                    className={`cell ${cell ? "filled" : "empty"} ${cellTypeClass(cell)} ${effectClass}`}
+                    className={`cell ${cell ? "filled" : "empty"} ${cellTypeClass(cell)} ${effectClass} ${tutorialFocus ? "tutorial-focus-cell" : ""}`}
                     style={numberTileStyle(cell)}
                     role="gridcell"
                     aria-label={`row ${r + 1} column ${c + 1} ${tileLabel}`}
                   >
                     {cell?.t === "w" ? (
                       <span className="wild-icon" aria-label="wildcard tile">
-                        ✦
+                        ✦<small>2×</small>
                       </span>
                     ) : cell?.t === "i" ? (
                       <span className="lock-icon" aria-label="lock zero tile">
-                        ⛓
+                        ⛓<small>Lock</small>
                       </span>
                     ) : (
                       label(cell)
@@ -1590,18 +1604,106 @@ export default function Home() {
               })
             )}
           </div>
+          {tutorial?.phase === "coach" ? (
+            <div className="newgame-overlay tutorial-coach" role="dialog" aria-modal="true" aria-labelledby="tutorial-coach-title" aria-describedby="tutorial-coach-copy">
+              <div className="tutorial-progress">Lesson {tutorial.lessonIndex + 1} of {TUTORIAL_LESSONS.length}</div>
+              <div className="newgame-title" id="tutorial-coach-title">{TUTORIAL_LESSONS[tutorial.lessonIndex].title}</div>
+              {TUTORIAL_LESSONS[tutorial.lessonIndex].tileName ? (
+                <strong className="tutorial-tile-name">{TUTORIAL_LESSONS[tutorial.lessonIndex].tileName}</strong>
+              ) : null}
+              <p className="newgame-copy" id="tutorial-coach-copy">{TUTORIAL_LESSONS[tutorial.lessonIndex].instruction}</p>
+              <div className="tutorial-swipe-arrow" data-direction={tutorialExpectedDirection(tutorial)} aria-hidden="true">➜</div>
+              <div className="tutorial-actions">
+                <button type="button" className="primary-action" autoFocus onClick={() => setTutorial((current) => current ? armTutorial(current) : current)}>Try it</button>
+                <button type="button" onClick={requestTutorialExit}>Quit tutorial</button>
+              </div>
+            </div>
+          ) : null}
+          {tutorial?.phase === "success" ? (
+            <div className="tutorial-success" role="status" aria-live="polite">
+              {tutorial.feedback}
+            </div>
+          ) : null}
+          {tutorial?.phase === "active" && tutorial.feedback ? (
+            <div className="tutorial-feedback-float" role="status" aria-live="polite">{tutorial.feedback}</div>
+          ) : null}
+          {tutorial?.phase === "completed" ? (
+            <div className="newgame-overlay tutorial-complete" role="dialog" aria-modal="true" aria-labelledby="tutorial-complete-title">
+              <div className="win-burst" aria-hidden="true" />
+              <div className="newgame-title" id="tutorial-complete-title">You made 2048!</div>
+              <ul className="tutorial-complete-summary">
+                <li>Move and merge matching number tiles.</li>
+                <li>Zero annihilates a collision.</li>
+                <li>The 2× wildcard multiplies a number.</li>
+                <li>Lock-0 blocks once, then breaks like zero.</li>
+              </ul>
+              <div className="tutorial-actions">
+                <button type="button" className="primary-action" autoFocus onClick={leaveTutorial}>Start playing</button>
+                <button type="button" onClick={enterTutorial}>Replay tutorial</button>
+              </div>
+            </div>
+          ) : null}
           <GameOverOverlay
             visible={Boolean(!tutorial && viewState?.over)}
             score={viewState?.score ?? 0}
             highScore={Math.max(highScore, viewState?.score ?? 0)}
           />
           <NewGameOverlay
-            visible={!initializing && !tutorial && !tutorialPromptOpen && !replay && !state}
+            visible={!initializing && !tutorial && !emptyOptionsOpen && !replay && !state}
             starting={startNewGamePending || busy}
             onStart={() => {
               void newGame();
             }}
+            onTutorial={requestTutorial}
+            onOptions={() => setEmptyOptionsOpen(true)}
+            tutorialReminder={tutorialReminder}
+            suppressTutorialReminder={suppressTutorialReminder}
+            onSuppressTutorialReminderChange={setTutorialReminderSuppressed}
           />
+          {emptyOptionsOpen && !state && !tutorial && !replay ? (
+            <div className="newgame-overlay empty-options-dialog" role="dialog" aria-modal="true" aria-labelledby="empty-options-title">
+              <div className="newgame-title" id="empty-options-title">Options</div>
+              <div className="options-grid">
+                <label className="difficulty-select-wrap">
+                  <span className="difficulty-label">Difficulty</span>
+                  <select aria-label="Difficulty" value={spawnMode} onChange={(event) => setSpawnMode(event.target.value as SpawnMode)}>
+                    <option value="normal">{SPAWN_MODES.normal.label}</option>
+                    <option value="ltfg">{SPAWN_MODES.ltfg.label}</option>
+                    <option value="death">{SPAWN_MODES.death.label}</option>
+                  </select>
+                </label>
+                <label className="color-mode-wrap">
+                  <span className="difficulty-label">Color</span>
+                  <select aria-label="Color mode" value={colorMode} onChange={(event) => setColorMode(event.target.value as ColorMode)}>
+                    <option value="default">Default</option>
+                    <option value="cb-protanopia">CB Protanopia</option>
+                    <option value="cb-deuteranopia">CB Deuteranopia</option>
+                    <option value="cb-tritanopia">CB Tritanopia</option>
+                  </select>
+                </label>
+                <label className="theme-mode-wrap">
+                  <span className="difficulty-label">Theme</span>
+                  <select aria-label="Theme mode" value={themeMode} onChange={(event) => setThemeMode(event.target.value as ThemeMode)}>
+                    {Object.entries(THEMES).map(([key, value]) => <option key={key} value={key}>{value.label}</option>)}
+                  </select>
+                </label>
+                <label className="mode-select-wrap">
+                  <span className="difficulty-label">Mode</span>
+                  <select aria-label="Game mode" value={gameMode} onChange={(event) => setGameMode(event.target.value as GameMode)}>
+                    <option value="classic">{GAME_MODES.classic.label}</option>
+                    <option value="bitstorm">{GAME_MODES.bitstorm.label}</option>
+                  </select>
+                </label>
+                {shouldShowImportJson(effectiveUiPolicy.controls.import, authenticated) ? (
+                  <button type="button" onClick={() => importInputRef.current?.click()}>Import JSON</button>
+                ) : null}
+                {effectiveUiPolicy.controls.import ? (
+                  <button type="button" onClick={() => replayInputRef.current?.click()}>Replay JSON</button>
+                ) : null}
+              </div>
+              <button type="button" className="primary-action" autoFocus onClick={() => setEmptyOptionsOpen(false)}>Done</button>
+            </div>
+          ) : null}
           <WinOverlay
             visible={winPending}
             score={viewState?.score ?? 0}
@@ -1615,44 +1717,23 @@ export default function Home() {
               void newGame();
             }}
           />
-          {tutorialPromptOpen ? (
-            <div className="newgame-overlay tutorial-dialog" role="dialog" aria-labelledby="tutorial-prompt-title">
-              <div className="newgame-title" id="tutorial-prompt-title">LEARN TO PLAY</div>
-              <p className="newgame-copy">Try a short guided tutorial covering movement and every special tile.</p>
-              <div className="tutorial-actions">
-                <button type="button" onClick={enterTutorial}>Start Tutorial</button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    window.localStorage.setItem(
-                      TUTORIAL_STORAGE_KEY,
-                      JSON.stringify(tutorialPreference("dismissed"))
-                    );
-                    setTutorialPromptOpen(false);
-                  }}
-                >
-                  Not Now
-                </button>
-              </div>
-            </div>
-          ) : null}
           {tutorialLaunchConfirmOpen ? (
-            <div className="newgame-overlay tutorial-dialog" role="dialog" aria-labelledby="tutorial-launch-title">
+            <div className="newgame-overlay tutorial-dialog" role="dialog" aria-modal="true" aria-labelledby="tutorial-launch-title">
               <div className="newgame-title" id="tutorial-launch-title">END CURRENT GAME?</div>
               <p className="newgame-copy">Starting the tutorial will end this run and clear its resumable snapshot.</p>
               <div className="tutorial-actions">
-                <button type="button" onClick={enterTutorial}>End Game and Start Tutorial</button>
-                <button type="button" onClick={() => setTutorialLaunchConfirmOpen(false)}>Keep Playing</button>
+                <button type="button" onClick={enterTutorial}>End game and start tutorial</button>
+                <button type="button" autoFocus onClick={() => setTutorialLaunchConfirmOpen(false)}>Keep playing</button>
               </div>
             </div>
           ) : null}
           {tutorialExitConfirmOpen ? (
-            <div className="newgame-overlay tutorial-dialog" role="dialog" aria-labelledby="tutorial-exit-title">
+            <div className="newgame-overlay tutorial-dialog" role="dialog" aria-modal="true" aria-labelledby="tutorial-exit-title">
               <div className="newgame-title" id="tutorial-exit-title">EXIT TUTORIAL?</div>
               <p className="newgame-copy">Your tutorial progress will end and no game will start automatically.</p>
               <div className="tutorial-actions">
-                <button type="button" onClick={() => leaveTutorial(false)}>Exit Tutorial</button>
-                <button type="button" onClick={() => setTutorialExitConfirmOpen(false)}>Keep Learning</button>
+                <button type="button" onClick={leaveTutorial}>Leave tutorial</button>
+                <button type="button" autoFocus onClick={() => setTutorialExitConfirmOpen(false)}>Keep learning</button>
               </div>
             </div>
           ) : null}
@@ -1690,7 +1771,7 @@ export default function Home() {
               {fullscreenActive ? "Exit Fullscreen" : "Fullscreen"}
             </button>
           ) : null}
-          {!replay && compactMobile ? (
+          {!replay && !tutorial && Boolean(state) && compactMobile ? (
             <button
               type="button"
               className="mobile-controls-toggle"
@@ -1715,7 +1796,7 @@ export default function Home() {
           className={`actions actions-secondary ${compactMobile && !replay && !mobileControlsOpen ? "mobile-collapsed" : ""}`}
           id="game-controls-more"
         >
-          {!replay && !tutorial ? (
+          {!replay && !tutorial && Boolean(state) ? (
             <button type="button" onClick={requestTutorial}>Tutorial</button>
           ) : null}
           {controlVisibility.showActiveExport ? (
@@ -1738,7 +1819,7 @@ export default function Home() {
                 Replay JSON
               </button>
             </>
-          ) : controlVisibility.showOptionsPanel ? (
+          ) : controlVisibility.showOptionsPanel && Boolean(state) ? (
             <details className="options-panel">
               <summary>Options</summary>
               <div className="options-grid">
