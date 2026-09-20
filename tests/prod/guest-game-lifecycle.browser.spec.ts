@@ -158,8 +158,8 @@ test("a real guest game renders moving and increasing tiles until game over or w
   expect(terminalState!.over || terminalState!.won).toBe(true);
   await expect(page.locator(".meta span").filter({ hasText: /^(Game Over|Won)$/ })).toBeVisible();
   if (terminalState!.over) {
-    await expect(page.getByRole("status").filter({ hasText: "GAME OVER" })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "GAME OVER" })).toBeVisible();
   } else {
-    await expect(page.getByRole("status").filter({ hasText: "YOU WIN" })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "YOU WIN" })).toBeVisible();
   }
 });

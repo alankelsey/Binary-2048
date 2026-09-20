@@ -5,6 +5,7 @@ import type { Dir, GameConfig, GameState } from "@/lib/binary2048/types";
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.setItem("binary2048.tutorial.v1", '{"version":1,"status":"dismissed"}');
+    document.cookie = "binary2048_tutorial_suppress=1; Path=/; SameSite=Lax";
   });
 });
 
@@ -253,7 +254,7 @@ test("the manual left-down and right-left loop reaches the game-over overlay", a
   expect(current.over).toBe(true);
   expect(current.id).toBe(createdId);
   expect(createRequests).toBe(1);
-  const gameOver = page.getByRole("status").filter({ hasText: "GAME OVER" });
+  const gameOver = page.getByRole("dialog", { name: "GAME OVER" });
   await expect(gameOver).toBeVisible();
   await expect(gameOver.getByText(`Score: ${current.score}`)).toBeVisible();
 

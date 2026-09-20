@@ -5,6 +5,7 @@ import type { Cell, Dir, GameConfig, GameState } from "@/lib/binary2048/types";
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.setItem("binary2048.tutorial.v1", '{"version":1,"status":"dismissed"}');
+    document.cookie = "binary2048_tutorial_suppress=1; Path=/; SameSite=Lax";
   });
 });
 

@@ -28,9 +28,11 @@ Only one Options trigger is visible at a time. The empty-state overlay owns it
 before a game starts; the lower action dock owns it during an active game.
 Closing Options returns focus to the trigger that opened it.
 
-If the tutorial reminder has not been suppressed, the overlay also asks the
-player whether they want to learn first and displays a `Don't show this again`
-checkbox. The Tutorial action remains available even after suppression.
+The empty-state overlay never hides Tutorial based on reminder state. If the
+player chooses `Start new game` and has not suppressed the reminder, a compact
+choice dialog offers `Play tutorial`, `Start game`, and `Back`. No current game
+or recovery snapshot is cleared until the player chooses one of the first two
+actions. The choice dialog includes the suppression checkbox.
 
 ### Reminder cookie
 
@@ -42,15 +44,14 @@ binary2048_tutorial_suppress=1
 Path=/; Max-Age=31536000; SameSite=Lax; Secure (production)
 ```
 
-- No cookie: show the tutorial invitation every time the app enters the
-  no-active-game overlay, including after a normal run, tutorial quit, or
-  tutorial completion. Because the invitation is part of that overlay rather
-  than a second modal, it does not create a reopen loop.
-- Checking `Don't show this again` sets the cookie immediately; unchecking it
-  removes the cookie. The current overlay stays stable, and later empty-state
-  overlays stop automatically emphasizing the invitation.
-- Cookie present: retain the `Play tutorial` button, but do not automatically
-  ask.
+- No cookie: show the tutorial invitation only after the player explicitly
+  chooses New Game. Do not interrupt an active game merely to advertise the
+  tutorial.
+- Checking the opt-out sets the cookie immediately; unchecking it in Options
+  removes the cookie. The choice remains effective in the current page and
+  after reload.
+- Cookie present: retain Tutorial buttons in the empty, active, win, and game
+  over states, but let New Game proceed without the extra choice.
 - Finishing or quitting the tutorial does not set the suppression cookie.
 - Keep current-lesson resume state separate from this cookie. A versioned local
   progress value may restart the active lesson after refresh, but must be
@@ -58,6 +59,10 @@ Path=/; Max-Age=31536000; SameSite=Lax; Secure (production)
 
 The cookie contains no identity, gameplay, analytics, or consent data and does
 not need server-side storage.
+
+Win and game-over overlays expose New Game, Tutorial, and Options. Starting a
+tutorial from a terminal state needs no end-game confirmation. Starting it from
+an active game remains confirmation-gated.
 
 ### Continuous guided flow
 

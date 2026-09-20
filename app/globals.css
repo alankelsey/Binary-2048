@@ -1167,7 +1167,7 @@ select:focus-visible {
   display: grid;
   place-content: center;
   text-align: center;
-  pointer-events: none;
+  pointer-events: auto;
   background: linear-gradient(180deg, rgba(7, 12, 20, 0.5), rgba(7, 12, 20, 0.68));
   border-radius: 12px;
 }
@@ -1203,7 +1203,8 @@ select:focus-visible {
 }
 
 .newgame-actions,
-.tutorial-actions {
+.tutorial-actions,
+.gameover-actions {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -1212,6 +1213,8 @@ select:focus-visible {
 
 .newgame-actions button,
 .tutorial-actions button,
+.gameover-actions button,
+.win-actions button,
 .empty-options-dialog > button {
   min-height: 44px;
 }
@@ -1493,6 +1496,13 @@ select:focus-visible {
   display: inline-flex;
   gap: 0.45rem;
   justify-content: center;
+  flex-wrap: wrap;
+}
+
+.gameover-actions {
+  margin-top: 0.7rem;
+  position: relative;
+  z-index: 1;
 }
 
 .gameover-title {

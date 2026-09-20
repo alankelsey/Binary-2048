@@ -24,6 +24,7 @@ const VIEWPORTS = [
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.setItem("binary2048.tutorial.v1", '{"version":1,"status":"dismissed"}');
+    document.cookie = "binary2048_tutorial_suppress=1; Path=/; SameSite=Lax";
   });
 });
 
@@ -40,6 +41,7 @@ function mockGameRoutes(page: Page, initialGrid: Cell[][], config: GameConfig) {
         window.localStorage.removeItem("binary2048.currentGameId");
         window.localStorage.removeItem("binary2048.resumeSnapshot");
         window.localStorage.setItem("binary2048.tutorial.v1", '{"version":1,"status":"dismissed"}');
+        document.cookie = "binary2048_tutorial_suppress=1; Path=/; SameSite=Lax";
       });
       await page.route("**/api/games", async (route) => {
         if (route.request().method() !== "POST") return route.continue();

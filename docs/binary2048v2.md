@@ -35,6 +35,18 @@ the available trace, are listed under **Discrepancies and proof required**.
    server, and deployment behavior rather than assumptions.
 7. Players and researchers can visually build deterministic board scenarios,
    save drafts, export them, and reuse them in simulations and tournaments.
+8. Tutorial reminder preferences follow authenticated players across devices
+   without removing the always-available Tutorial entry points.
+
+### Tutorial preference synchronization
+
+V1 keeps the guest `offer tutorial before new games` preference in a
+non-sensitive first-party cookie. In v2, authenticated users should store a
+versioned equivalent in their Mongo user settings. Authentication should
+reconcile the guest cookie with the server preference without overwriting a
+newer server value, and sign-out should fall back to the guest cookie. This
+preference must remain outside ranked records, game sessions, and training
+data; a storage outage must not block starting a game or tutorial.
 
 ## Shared findings from both reports
 

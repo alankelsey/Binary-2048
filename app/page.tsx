@@ -168,7 +168,7 @@ export default function Home() {
   const [shareMessage, setShareMessage] = useState<string>("");
   const [preparedReplayUrl, setPreparedReplayUrl] = useState<string>("");
   const [diagnosticEntries, setDiagnosticEntries] = useState<DiagnosticEntry[]>([]);
-  const [diagnosticsOpen, setDiagnosticsOpen] = useState(true);
+  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const [newGameConfirmArmed, setNewGameConfirmArmed] = useState(false);
   const [fullscreenSupported, setFullscreenSupported] = useState(false);
   const [fullscreenActive, setFullscreenActive] = useState(false);
@@ -185,6 +185,7 @@ export default function Home() {
   const [tutorialReminder, setTutorialReminder] = useState(true);
   const [suppressTutorialReminder, setSuppressTutorialReminder] = useState(false);
   const [emptyOptionsOpen, setEmptyOptionsOpen] = useState(false);
+  const [newGameTutorialChoiceOpen, setNewGameTutorialChoiceOpen] = useState(false);
   const [tutorialLaunchConfirmOpen, setTutorialLaunchConfirmOpen] = useState(false);
   const [tutorialExitConfirmOpen, setTutorialExitConfirmOpen] = useState(false);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -378,6 +379,8 @@ export default function Home() {
       }
       return;
     }
+    setNewGameTutorialChoiceOpen(false);
+    setEmptyOptionsOpen(false);
     setReplay(null);
     setPreparedReplayUrl("");
     bufferedMovesRef.current = [];
@@ -817,6 +820,9 @@ export default function Home() {
     }
     async function initializeGame() {
       setBusy(true);
+      const suppressed = hasTutorialSuppressCookie(document.cookie);
+      setSuppressTutorialReminder(suppressed);
+      setTutorialReminder(!suppressed);
       const sharedReplayCode = getReplayCodeFromSearch(window.location.search);
       if (sharedReplayCode) {
         await loadReplayCode(sharedReplayCode);
@@ -858,9 +864,6 @@ export default function Home() {
       if (tutorialPreferenceValue?.status === "active") {
         setTutorial(createTutorialSession(tutorialPreferenceValue.lessonIndex ?? 0));
       }
-      const suppressed = hasTutorialSuppressCookie(document.cookie);
-      setSuppressTutorialReminder(suppressed);
-      setTutorialReminder(!suppressed);
       await finishInitialization();
     }
     void initializeGame();
@@ -971,6 +974,7 @@ export default function Home() {
       if (!dir) return;
       if (
         emptyOptionsOpen ||
+        newGameTutorialChoiceOpen ||
         tutorialLaunchConfirmOpen ||
         tutorialExitConfirmOpen ||
         (tutorial && tutorial.phase !== "active")
@@ -980,7 +984,7 @@ export default function Home() {
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [gameId, state, busy, tutorial, emptyOptionsOpen, tutorialLaunchConfirmOpen, tutorialExitConfirmOpen]);
+  }, [gameId, state, busy, tutorial, emptyOptionsOpen, newGameTutorialChoiceOpen, tutorialLaunchConfirmOpen, tutorialExitConfirmOpen]);
 
   useEffect(() => {
     if (!tutorial || tutorial.phase !== "success") return;
@@ -1032,6 +1036,7 @@ export default function Home() {
       replay ||
       busy ||
       emptyOptionsOpen ||
+      newGameTutorialChoiceOpen ||
       tutorialLaunchConfirmOpen ||
       tutorialExitConfirmOpen ||
       (tutorial && tutorial.phase !== "active") ||
@@ -1055,6 +1060,7 @@ export default function Home() {
     setState(null);
     setReplay(null);
     setEmptyOptionsOpen(false);
+    setNewGameTutorialChoiceOpen(false);
     setTutorialLaunchConfirmOpen(false);
     setTutorialExitConfirmOpen(false);
     const next = createTutorialSession();
@@ -1067,7 +1073,7 @@ export default function Home() {
 
   function requestTutorial() {
     if (tutorial) return;
-    if (state && !state.over) {
+    if (state && !state.over && !state.won) {
       setTutorialLaunchConfirmOpen(true);
       return;
     }
@@ -1096,9 +1102,19 @@ export default function Home() {
 
   function setTutorialReminderSuppressed(checked: boolean) {
     setSuppressTutorialReminder(checked);
+    setTutorialReminder(!checked);
     document.cookie = checked
       ? tutorialSuppressCookie(window.location.protocol === "https:")
       : clearTutorialSuppressCookie(window.location.protocol === "https:");
+  }
+
+  function requestNewGameWithTutorialOffer() {
+    if (tutorialReminder) {
+      setNewGameConfirmArmed(false);
+      setNewGameTutorialChoiceOpen(true);
+      return;
+    }
+    void newGame();
   }
 
   const viewState = tutorial?.board ?? (replay ? replayStateAtStep(replay.data, replay.step) : state);
@@ -1106,6 +1122,7 @@ export default function Home() {
   const activeMode = typeof wildcardRate === "number" ? modeFromWildcardRate(wildcardRate) : spawnMode;
   const difficultyLocked = Boolean(state && !state.over && !state.won && (state.turn ?? 0) > 0);
   const winPending = Boolean(!tutorial && !replay && state?.won && !continueAfterWin);
+  const terminalOverlayBlocked = emptyOptionsOpen || newGameTutorialChoiceOpen;
   const isPlayable = Boolean(!replay && state && !state.over && !winPending);
   const isActiveRun = Boolean(!replay && state && !state.over && !winPending && (state.turn ?? 0) > 0);
   const effectiveUiPolicy = applyUiPolicyOverrides(UI_POLICY, uiControlOverrides);
@@ -1408,17 +1425,18 @@ export default function Home() {
   }, [difficultyHelpOpen]);
 
   useEffect(() => {
-    if (!emptyOptionsOpen && !tutorialLaunchConfirmOpen && !tutorialExitConfirmOpen) return;
+    if (!emptyOptionsOpen && !newGameTutorialChoiceOpen && !tutorialLaunchConfirmOpen && !tutorialExitConfirmOpen) return;
     function onModalKeyDown(event: KeyboardEvent) {
       if (event.key !== "Escape") return;
       event.preventDefault();
       if (emptyOptionsOpen) setEmptyOptionsOpen(false);
+      if (newGameTutorialChoiceOpen) setNewGameTutorialChoiceOpen(false);
       if (tutorialLaunchConfirmOpen) setTutorialLaunchConfirmOpen(false);
       if (tutorialExitConfirmOpen) setTutorialExitConfirmOpen(false);
     }
     document.addEventListener("keydown", onModalKeyDown);
     return () => document.removeEventListener("keydown", onModalKeyDown);
-  }, [emptyOptionsOpen, tutorialLaunchConfirmOpen, tutorialExitConfirmOpen]);
+  }, [emptyOptionsOpen, newGameTutorialChoiceOpen, tutorialLaunchConfirmOpen, tutorialExitConfirmOpen]);
 
   useEffect(() => {
     setDifficultyHelpOpen(false);
@@ -1644,23 +1662,21 @@ export default function Home() {
             </div>
           ) : null}
           <GameOverOverlay
-            visible={Boolean(!tutorial && viewState?.over)}
+            visible={Boolean(!tutorial && !terminalOverlayBlocked && viewState?.over)}
             score={viewState?.score ?? 0}
             highScore={Math.max(highScore, viewState?.score ?? 0)}
-          />
-          <NewGameOverlay
-            visible={!initializing && !tutorial && !emptyOptionsOpen && !replay && !state}
-            starting={startNewGamePending || busy}
-            onStart={() => {
-              void newGame();
-            }}
+            onNewGame={requestNewGameWithTutorialOffer}
             onTutorial={requestTutorial}
             onOptions={() => setEmptyOptionsOpen(true)}
-            tutorialReminder={tutorialReminder}
-            suppressTutorialReminder={suppressTutorialReminder}
-            onSuppressTutorialReminderChange={setTutorialReminderSuppressed}
           />
-          {emptyOptionsOpen && !state && !tutorial && !replay ? (
+          <NewGameOverlay
+            visible={!initializing && !tutorial && !terminalOverlayBlocked && !replay && !state}
+            starting={startNewGamePending || busy}
+            onStart={requestNewGameWithTutorialOffer}
+            onTutorial={requestTutorial}
+            onOptions={() => setEmptyOptionsOpen(true)}
+          />
+          {emptyOptionsOpen && !tutorial && !replay ? (
             <div className="newgame-overlay empty-options-dialog" role="dialog" aria-modal="true" aria-labelledby="empty-options-title">
               <div className="newgame-title" id="empty-options-title">Options</div>
               <div className="options-grid">
@@ -1694,6 +1710,14 @@ export default function Home() {
                     <option value="bitstorm">{GAME_MODES.bitstorm.label}</option>
                   </select>
                 </label>
+                <label className="tutorial-suppress-choice">
+                  <input
+                    type="checkbox"
+                    checked={!suppressTutorialReminder}
+                    onChange={(event) => setTutorialReminderSuppressed(!event.target.checked)}
+                  />
+                  Offer tutorial before new games
+                </label>
                 {shouldShowImportJson(effectiveUiPolicy.controls.import, authenticated) ? (
                   <button type="button" onClick={() => importInputRef.current?.click()}>Import JSON</button>
                 ) : null}
@@ -1705,7 +1729,7 @@ export default function Home() {
             </div>
           ) : null}
           <WinOverlay
-            visible={winPending}
+            visible={winPending && !terminalOverlayBlocked}
             score={viewState?.score ?? 0}
             highScore={Math.max(highScore, viewState?.score ?? 0)}
             sessionClass={sessionClass}
@@ -1713,10 +1737,29 @@ export default function Home() {
             onContinue={() => {
               setContinueAfterWin(true);
             }}
-            onNewGame={() => {
-              void newGame();
-            }}
+            onNewGame={requestNewGameWithTutorialOffer}
+            onTutorial={requestTutorial}
+            onOptions={() => setEmptyOptionsOpen(true)}
           />
+          {newGameTutorialChoiceOpen ? (
+            <div className="newgame-overlay tutorial-dialog" role="dialog" aria-modal="true" aria-labelledby="new-game-tutorial-title">
+              <div className="newgame-title" id="new-game-tutorial-title">PLAY THE TUTORIAL?</div>
+              <p className="newgame-copy">Learn movement and every special tile before starting a new game.</p>
+              <label className="tutorial-suppress-choice">
+                <input
+                  type="checkbox"
+                  checked={suppressTutorialReminder}
+                  onChange={(event) => setTutorialReminderSuppressed(event.target.checked)}
+                />
+                Don&apos;t offer this before new games
+              </label>
+              <div className="tutorial-actions">
+                <button type="button" className="primary-action" autoFocus onClick={enterTutorial}>Play tutorial</button>
+                <button type="button" onClick={() => void newGame()}>Start game</button>
+                <button type="button" onClick={() => setNewGameTutorialChoiceOpen(false)}>Back</button>
+              </div>
+            </div>
+          ) : null}
           {tutorialLaunchConfirmOpen ? (
             <div className="newgame-overlay tutorial-dialog" role="dialog" aria-modal="true" aria-labelledby="tutorial-launch-title">
               <div className="newgame-title" id="tutorial-launch-title">END CURRENT GAME?</div>
@@ -1755,7 +1798,7 @@ export default function Home() {
                   setNewGameConfirmArmed(newGameGuard.nextConfirmArmed);
                   return;
                 }
-                void newGame();
+                requestNewGameWithTutorialOffer();
               }}
             >
               {startNewGamePending ? "Starting…" : newGameGuard.label}
@@ -1907,6 +1950,14 @@ export default function Home() {
                     </select>
                   </label>
                 ) : null}
+                <label className="tutorial-suppress-choice">
+                  <input
+                    type="checkbox"
+                    checked={!suppressTutorialReminder}
+                    onChange={(event) => setTutorialReminderSuppressed(!event.target.checked)}
+                  />
+                  Offer tutorial before new games
+                </label>
                 {shouldShowImportJson(effectiveUiPolicy.controls.import, authenticated) ? (
                   <button
                     disabled={busy}

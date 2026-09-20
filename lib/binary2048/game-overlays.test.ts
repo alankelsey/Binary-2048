@@ -8,10 +8,7 @@ describe("game overlays", () => {
     starting: false,
     onStart: () => {},
     onTutorial: () => {},
-    onOptions: () => {},
-    tutorialReminder: true,
-    suppressTutorialReminder: false,
-    onSuppressTutorialReminderChange: () => {}
+    onOptions: () => {}
   };
 
   it("renders a direct new-game action for an empty board", () => {
@@ -23,7 +20,7 @@ describe("game overlays", () => {
     expect(html).toContain(">Start New Game<");
     expect(html).toContain(">Play tutorial<");
     expect(html).toContain(">Options<");
-    expect(html).toContain("Don&#x27;t show this again");
+    expect(html).toContain("adjust options");
   });
 
   it("disables the new-game overlay action while starting", () => {
@@ -36,11 +33,21 @@ describe("game overlays", () => {
 
   it("renders game over overlay with score and high score", () => {
     const html = renderToStaticMarkup(
-      React.createElement(GameOverOverlay, { visible: true, score: 321, highScore: 999 })
+      React.createElement(GameOverOverlay, {
+        visible: true,
+        score: 321,
+        highScore: 999,
+        onNewGame: () => {},
+        onTutorial: () => {},
+        onOptions: () => {}
+      })
     );
     expect(html).toContain("GAME OVER");
     expect(html).toContain("Score: 321");
     expect(html).toContain("High: 999");
+    expect(html).toContain(">New Game<");
+    expect(html).toContain(">Tutorial<");
+    expect(html).toContain(">Options<");
   });
 
   it("renders win overlay with continue/new game actions in free play", () => {
@@ -52,13 +59,17 @@ describe("game overlays", () => {
         sessionClass: "unranked",
         canContinue: true,
         onContinue: () => {},
-        onNewGame: () => {}
+        onNewGame: () => {},
+        onTutorial: () => {},
+        onOptions: () => {}
       })
     );
     expect(html).toContain("YOU WIN");
     expect(html).toContain("Session: unranked");
     expect(html).toContain(">Continue<");
     expect(html).toContain(">New Game<");
+    expect(html).toContain(">Tutorial<");
+    expect(html).toContain(">Options<");
   });
 
   it("renders disabled continue state for ranked sessions", () => {
@@ -70,7 +81,9 @@ describe("game overlays", () => {
         sessionClass: "ranked",
         canContinue: false,
         onContinue: () => {},
-        onNewGame: () => {}
+        onNewGame: () => {},
+        onTutorial: () => {},
+        onOptions: () => {}
       })
     );
     expect(html).toContain("YOU WIN");

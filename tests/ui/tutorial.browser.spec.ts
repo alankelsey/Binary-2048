@@ -10,7 +10,7 @@ const normalGameConfig: GameConfig = {
   spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] }
 };
 
-async function mockNormalGame(page: Page) {
+async function mockNormalGame(page: Page, onCreate?: () => void) {
   const initialGrid: Cell[][] = [
     [{ t: "n", v: 2 }, null, null, null],
     [null, null, null, null],
@@ -18,6 +18,41 @@ async function mockNormalGame(page: Page) {
     [null, { t: "n", v: 2 }, null, null]
   ];
   const current = createGame(normalGameConfig, initialGrid).state;
+  await page.route("**/api/games", async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    onCreate?.();
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        id: current.id,
+        current,
+        recoverySnapshot: { recoveryVersion: 1, rulesetId: "binary2048-v1", config: normalGameConfig, initialGrid, moves: [] },
+        undo: { limit: 2, used: 0, remaining: 2 },
+        integrity: { sessionClass: "unranked", source: "created" }
+      })
+    });
+  });
+}
+
+async function mockTerminalGame(page: Page, terminal: "over" | "won") {
+  const initialGrid: Cell[][] = [
+    [{ t: "n", v: terminal === "won" ? 2048 : 2 }, null, null, null],
+    [null, null, null, null],
+    [null, null, null, null],
+    [null, null, null, null]
+  ];
+  const current = {
+    ...createGame(normalGameConfig, initialGrid).state,
+    over: terminal === "over",
+    won: terminal === "won",
+    score: terminal === "won" ? 2048 : 64
+  };
+  await page.addInitScript(() => {
+    window.localStorage.removeItem("binary2048.currentGameId");
+    window.localStorage.removeItem("binary2048.resumeSnapshot");
+    document.cookie = "binary2048_tutorial_suppress=1; Path=/; SameSite=Lax";
+  });
   await page.route("**/api/games", async (route) => {
     if (route.request().method() !== "POST") return route.continue();
     await route.fulfill({
@@ -34,25 +69,41 @@ async function mockNormalGame(page: Page) {
   });
 }
 
-test("empty state exposes game, tutorial, and one-tap options with cookie suppression", async ({ page, context }) => {
+test("new game offers tutorial without hiding entry points and persists guest opt-out", async ({ page, context }) => {
+  let createRequests = 0;
   await context.clearCookies();
+  await mockNormalGame(page, () => { createRequests += 1; });
   await page.goto("/");
   const empty = page.getByRole("dialog", { name: "NEW GAME" });
   await expect(empty).toBeVisible();
   await expect(empty.getByRole("button", { name: "Start New Game" })).toBeVisible();
   await expect(empty.getByRole("button", { name: "Play tutorial" })).toBeVisible();
-  await expect(empty.getByText("New here?")).toBeVisible();
   await expect(page.getByRole("button", { name: "Options", exact: true })).toHaveCount(1);
   await empty.getByRole("button", { name: "Options" }).click();
   await expect(page.getByRole("dialog", { name: "Options" })).toBeVisible();
   await expect(page.getByLabel("Difficulty", { exact: true })).toBeVisible();
+  await expect(page.getByRole("checkbox", { name: "Offer tutorial before new games" })).toBeChecked();
   await page.getByRole("button", { name: "Done" }).click();
-  await empty.getByRole("checkbox", { name: "Don't show this again" }).check();
+  await empty.getByRole("button", { name: "Start New Game" }).click();
+  const offer = page.getByRole("dialog", { name: "PLAY THE TUTORIAL?" });
+  await expect(offer).toBeVisible();
+  expect(createRequests).toBe(0);
+  await offer.getByRole("checkbox", { name: "Don't offer this before new games" }).check();
   await expect.poll(async () => (await context.cookies()).some((cookie) => cookie.name === "binary2048_tutorial_suppress")).toBe(true);
+  await offer.getByRole("button", { name: "Back" }).click();
+  await empty.getByRole("button", { name: "Start New Game" }).click();
+  await expect(page.getByRole("grid", { name: "Binary 2048 game board" })).toBeVisible();
+  expect(createRequests).toBe(1);
+  await page.evaluate(() => {
+    window.localStorage.removeItem("binary2048.currentGameId");
+    window.localStorage.removeItem("binary2048.resumeSnapshot");
+  });
   await page.reload();
   await expect(page.getByRole("dialog", { name: "NEW GAME" })).toBeVisible();
-  await expect(page.getByText("New here?")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Play tutorial" })).toBeVisible();
+  await page.getByRole("button", { name: "Start New Game" }).click();
+  await expect(page.getByRole("dialog", { name: "PLAY THE TUTORIAL?" })).toHaveCount(0);
+  expect(createRequests).toBe(2);
 });
 
 test("guided tutorial automatically advances through every lesson without gameplay APIs", async ({ page }) => {
@@ -88,7 +139,8 @@ test("guided tutorial automatically advances through every lesson without gamepl
   await expect(page.getByRole("button", { name: "Next lesson" })).toHaveCount(0);
   await page.getByRole("button", { name: "Start playing" }).click();
   await expect(page.getByRole("dialog", { name: "NEW GAME" })).toBeVisible();
-  await expect(page.getByText("New here?")).toBeVisible();
+  await page.getByRole("button", { name: "Start New Game" }).click();
+  await expect(page.getByRole("dialog", { name: "PLAY THE TUTORIAL?" })).toBeVisible();
   expect(gameplayRequests).toBe(0);
 });
 
@@ -149,6 +201,7 @@ test("refresh restarts the current lesson and quit returns to empty state", asyn
 });
 
 test("launching from an active game is gated and cancellation preserves the board", async ({ page }) => {
+  await page.context().addCookies([{ name: "binary2048_tutorial_suppress", value: "1", url: "http://localhost:3000" }]);
   await page.addInitScript(() => {
     window.localStorage.removeItem("binary2048.currentGameId");
     window.localStorage.removeItem("binary2048.resumeSnapshot");
@@ -166,3 +219,91 @@ test("launching from an active game is gated and cancellation preserves the boar
   await expect(page.getByRole("grid", { name: "Binary 2048 tutorial board" })).toBeVisible();
   await expect.poll(() => page.evaluate(() => window.localStorage.getItem("binary2048.currentGameId"))).toBeNull();
 });
+
+test("new-game tutorial offer does not interrupt an active guest game until confirmed", async ({ page, context }) => {
+  let createRequests = 0;
+  await context.clearCookies();
+  await page.addInitScript(() => {
+    window.localStorage.removeItem("binary2048.currentGameId");
+    window.localStorage.removeItem("binary2048.resumeSnapshot");
+  });
+  await mockNormalGame(page, () => { createRequests += 1; });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Start New Game" }).click();
+  await page.getByRole("dialog", { name: "PLAY THE TUTORIAL?" }).getByRole("button", { name: "Start game" }).click();
+  const boardBefore = await page.getByRole("gridcell").evaluateAll((cells) => cells.map((cell) => cell.getAttribute("aria-label")));
+  const gameIdBefore = await page.evaluate(() => window.localStorage.getItem("binary2048.currentGameId"));
+  expect(createRequests).toBe(1);
+
+  await page.getByRole("button", { name: "New Game" }).click();
+  await expect(page.getByRole("dialog", { name: "PLAY THE TUTORIAL?" })).toBeVisible();
+  await page.keyboard.press("ArrowLeft");
+  expect(await page.getByRole("gridcell").evaluateAll((cells) => cells.map((cell) => cell.getAttribute("aria-label")))).toEqual(boardBefore);
+  expect(await page.evaluate(() => window.localStorage.getItem("binary2048.currentGameId"))).toBe(gameIdBefore);
+  expect(createRequests).toBe(1);
+
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog", { name: "PLAY THE TUTORIAL?" })).toHaveCount(0);
+  expect(await page.getByRole("gridcell").evaluateAll((cells) => cells.map((cell) => cell.getAttribute("aria-label")))).toEqual(boardBefore);
+});
+
+test("a restored guest game honors the tutorial opt-out cookie", async ({ page, context }) => {
+  let createRequests = 0;
+  const initialGrid: Cell[][] = [
+    [{ t: "n", v: 2 }, null, null, null],
+    [null, null, null, null],
+    [null, null, null, null],
+    [null, { t: "n", v: 2 }, null, null]
+  ];
+  const current = createGame(normalGameConfig, initialGrid).state;
+  await context.addCookies([{ name: "binary2048_tutorial_suppress", value: "1", url: "http://localhost:3000" }]);
+  await page.addInitScript((gameId) => {
+    window.localStorage.setItem("binary2048.currentGameId", gameId);
+    window.localStorage.removeItem("binary2048.resumeSnapshot");
+  }, current.id);
+  await page.route(`**/api/games/${current.id}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ id: current.id, current, undo: { limit: 2, used: 0, remaining: 2 } })
+    });
+  });
+  await page.route("**/api/games", async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    createRequests += 1;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ id: current.id, current, undo: { limit: 2, used: 0, remaining: 2 } })
+    });
+  });
+
+  await page.goto("/");
+  await expect(page.getByRole("gridcell", { name: /number 2$/ })).toHaveCount(2);
+  await page.getByRole("button", { name: "New Game" }).click();
+  await expect(page.getByRole("dialog", { name: "PLAY THE TUTORIAL?" })).toHaveCount(0);
+  await expect.poll(() => createRequests).toBe(1);
+});
+
+for (const terminal of ["over", "won"] as const) {
+  test(`${terminal} overlay exposes new game, tutorial, and options`, async ({ page }) => {
+    await mockTerminalGame(page, terminal);
+    await page.goto("/");
+    await page.getByRole("button", { name: "Start New Game" }).click();
+    const name = terminal === "over" ? "GAME OVER" : "YOU WIN";
+    const dialog = page.getByRole("dialog", { name });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "New Game" })).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "Tutorial" })).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "Options" })).toBeVisible();
+
+    await dialog.getByRole("button", { name: "Options" }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByRole("dialog", { name: "Options" })).toBeVisible();
+    await page.getByRole("button", { name: "Done" }).click();
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole("button", { name: "Tutorial" }).click();
+    await expect(page.getByRole("dialog", { name: "END CURRENT GAME?" })).toHaveCount(0);
+    await expect(page.getByRole("grid", { name: "Binary 2048 tutorial board" })).toBeVisible();
+  });
+}

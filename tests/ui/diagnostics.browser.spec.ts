@@ -21,6 +21,7 @@ test("game log captures moves, export/replay results, console errors, and suppor
     window.localStorage.removeItem("binary2048.currentGameId");
     window.localStorage.removeItem("binary2048.resumeSnapshot");
     window.localStorage.setItem("binary2048.tutorial.v1", '{"version":1,"status":"dismissed"}');
+    document.cookie = "binary2048_tutorial_suppress=1; Path=/; SameSite=Lax";
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
       value: {
@@ -116,6 +117,9 @@ test("game log captures moves, export/replay results, console errors, and suppor
 
   await page.goto("/");
   const log = page.getByRole("textbox", { name: "Game diagnostic log" });
+  await expect(log).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Show Log" })).toHaveAttribute("aria-expanded", "false");
+  await page.getByRole("button", { name: "Show Log" }).click();
   await expect(log).toBeVisible();
   await expect(log).toHaveValue(/diagnostics_ready/);
 
