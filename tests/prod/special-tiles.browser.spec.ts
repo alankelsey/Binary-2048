@@ -2,6 +2,12 @@ import { expect, test } from "@playwright/test";
 import { applyMove, createGame, DEFAULT_CONFIG } from "@/lib/binary2048/engine";
 import type { Cell, Dir, GameConfig, GameState } from "@/lib/binary2048/types";
 
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("binary2048.tutorial.v1", '{"version":1,"status":"dismissed"}');
+  });
+});
+
 test("special tiles render and resolve through a browser move", async ({ page }) => {
   const config: GameConfig = {
     ...DEFAULT_CONFIG,

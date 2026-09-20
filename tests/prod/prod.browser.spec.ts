@@ -2,6 +2,12 @@ import { expect, test } from "@playwright/test";
 import { applyMove, createGame, DEFAULT_CONFIG, generateBitstormInitialGrid } from "@/lib/binary2048/engine";
 import type { Dir, GameConfig, GameState } from "@/lib/binary2048/types";
 
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("binary2048.tutorial.v1", '{"version":1,"status":"dismissed"}');
+  });
+});
+
 test("prod home renders core app shell", async ({ page }) => {
   const response = await page.goto("/");
   expect(response).toBeTruthy();

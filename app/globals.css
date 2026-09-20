@@ -1215,6 +1215,69 @@ select:focus-visible {
   font-size: 0.95rem;
 }
 
+.tutorial-panel {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0.65rem 0;
+  padding: 0.75rem;
+  border: 1px solid rgba(56, 189, 248, 0.42);
+  border-radius: 0.75rem;
+  background: rgba(10, 31, 54, 0.72);
+}
+
+.tutorial-panel h2,
+.tutorial-panel p {
+  margin: 0;
+}
+
+.tutorial-progress {
+  color: #7dd3fc;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tutorial-feedback {
+  color: #ddecff;
+  font-weight: 700;
+}
+
+.tutorial-summary {
+  padding: 0.65rem;
+  border: 1px solid rgba(34, 197, 94, 0.45);
+  border-radius: 0.55rem;
+  color: #dcfce7;
+  background: rgba(34, 197, 94, 0.09);
+}
+
+.tutorial-summary ul {
+  margin: 0.35rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.tutorial-hint {
+  padding: 0.5rem;
+  border-left: 3px solid #facc15;
+  color: #fff4b8;
+  background: rgba(250, 204, 21, 0.08);
+}
+
+.tutorial-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.tutorial-dialog {
+  z-index: 6;
+}
+
+.tutorial-dialog .newgame-title {
+  font-size: clamp(1.35rem, 5vw, 2.35rem);
+}
+
 .win-burst {
   position: absolute;
   inset: -30%;

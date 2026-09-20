@@ -59,6 +59,20 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add engine collision-matrix and Playwright interaction coverage for zero, wildcard, and lock special tiles
 - [x] Serialize rapid keyboard moves through a bounded client buffer so overlapping API requests cannot race recovered game ids
 - [x] Require an explicit `Start New Game` action when no recoverable game exists instead of generating a board on page load
+- [ ] Design and ship the guided new-player tutorial ([design plan](./tutorial-design-plan.md))
+  - [x] Prompt first-time players to start the tutorial, with clear `Start Tutorial` and `Not Now` actions and no automatic board generation
+  - [x] Keep a persistent, accessible `Tutorial` launcher available after dismissal or completion
+  - [x] Require confirmation before launching from an active game; accepting must end that run and must not preserve it as resumable gameplay
+  - [x] Allow the tutorial to be cancelled at any step; both cancellation and completion must return the player to the explicit `Start New Game` state
+  - [x] Use deterministic, authored boards to teach all four move directions and every tile type: number, zero, wildcard, and Lock-0
+  - [x] End with guided merge-chain steps that visibly build to the `2048` tile, then show a completion summary
+  - [ ] Add unit and Playwright coverage for prompt persistence, active-game confirmation, deterministic steps, invalid input, cancellation, completion, mobile layout, keyboard use, and reduced motion
+  - [ ] Run a frontend-design review after the functional prototype is complete, incorporate or explicitly disposition its feedback, and perform final Android Chrome and iPhone Safari checks
+- [ ] Simplify the mobile options interaction to a single disclosure
+  - [ ] Make the lower action-dock `Options` button the only control that opens or closes the player options panel
+  - [ ] Show the actual Difficulty, Color, Theme, Mode, Import, Replay, and Export controls immediately after one tap; remove the nested `Options` summary and second expansion step
+  - [ ] Keep `aria-expanded` and `aria-controls` on the lower button, move focus predictably, and preserve keyboard, touch, safe-area, and reduced-motion behavior
+  - [ ] Add Playwright coverage proving one tap exposes the settings, a second tap closes them, no duplicate `Options` disclosure is present, and the panel does not overlap the board at 390px and 412px
 - [x] Complete the mobile action-dock accessibility follow-up
   - [x] Add Playwright coverage proving primary controls remain visible, secondary controls toggle through `Options`, and the dock stays on one row at 390px and 412px
   - [x] Verify long labels such as `Confirm New Game` do not enlarge the fixed dock enough to cover the board or final page content

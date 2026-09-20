@@ -20,6 +20,7 @@ test("game log captures moves, export/replay results, console errors, and suppor
   await page.addInitScript(() => {
     window.localStorage.removeItem("binary2048.currentGameId");
     window.localStorage.removeItem("binary2048.resumeSnapshot");
+    window.localStorage.setItem("binary2048.tutorial.v1", '{"version":1,"status":"dismissed"}');
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
       value: {

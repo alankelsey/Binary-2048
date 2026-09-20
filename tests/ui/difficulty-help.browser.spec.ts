@@ -23,8 +23,9 @@ function mockGameRoutes(page: Page, initialGrid: Cell[][], config: GameConfig) {
   return {
     async install() {
       await page.addInitScript(() => {
-        window.localStorage.removeItem("binary2048.currentGameId");
-        window.localStorage.removeItem("binary2048.resumeSnapshot");
+    window.localStorage.removeItem("binary2048.currentGameId");
+    window.localStorage.removeItem("binary2048.resumeSnapshot");
+    window.localStorage.setItem("binary2048.tutorial.v1", '{"version":1,"status":"dismissed"}');
       });
       await page.route("**/api/games", async (route) => {
         if (route.request().method() !== "POST") return route.continue();

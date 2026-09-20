@@ -21,6 +21,12 @@ const VIEWPORTS = [
   { width: 412, height: 915 }
 ] as const;
 
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("binary2048.tutorial.v1", '{"version":1,"status":"dismissed"}');
+  });
+});
+
 function mockGameRoutes(page: Page, initialGrid: Cell[][], config: GameConfig) {
   const created = createGame(config, initialGrid).state;
   let current: GameState = created;
@@ -33,6 +39,7 @@ function mockGameRoutes(page: Page, initialGrid: Cell[][], config: GameConfig) {
       await page.addInitScript(() => {
         window.localStorage.removeItem("binary2048.currentGameId");
         window.localStorage.removeItem("binary2048.resumeSnapshot");
+        window.localStorage.setItem("binary2048.tutorial.v1", '{"version":1,"status":"dismissed"}');
       });
       await page.route("**/api/games", async (route) => {
         if (route.request().method() !== "POST") return route.continue();
@@ -79,13 +86,16 @@ function standardConfig(seed: number): GameConfig {
 }
 
 test.describe("mobile action dock", () => {
-  test("shows the Start New Game overlay when no recoverable game exists", async ({ page }) => {
+  test("offers the tutorial before the Start New Game overlay on a first visit", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.addInitScript(() => {
       window.localStorage.removeItem("binary2048.currentGameId");
       window.localStorage.removeItem("binary2048.resumeSnapshot");
+      window.localStorage.removeItem("binary2048.tutorial.v1");
     });
     await page.goto("/");
+    await expect(page.getByRole("dialog", { name: "LEARN TO PLAY" })).toBeVisible();
+    await page.getByRole("button", { name: "Not Now" }).click();
     await expect(page.getByRole("dialog", { name: "NEW GAME" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Start New Game" })).toBeVisible();
     await expect(page.locator('button:has-text("Import JSON")')).toHaveCount(0);

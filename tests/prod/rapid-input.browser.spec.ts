@@ -2,6 +2,12 @@ import { expect, test } from "@playwright/test";
 import { DEFAULT_CONFIG } from "@/lib/binary2048/engine";
 import type { Cell, Dir, GameState } from "@/lib/binary2048/types";
 
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("binary2048.tutorial.v1", '{"version":1,"status":"dismissed"}');
+  });
+});
+
 test("rapid arrow keys stay ordered across instance recovery", async ({ page }) => {
   const initialGrid: Cell[][] = [
     [{ t: "n", v: 1 }, null, null, null],
