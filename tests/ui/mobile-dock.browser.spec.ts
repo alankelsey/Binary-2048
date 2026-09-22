@@ -88,7 +88,7 @@ function standardConfig(seed: number): GameConfig {
 }
 
 test.describe("mobile action dock", () => {
-  test("empty-state overlay offers new game, tutorial, and options on first visit", async ({ page }) => {
+  test("empty-state overlay shows new game choices without an Options button", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.addInitScript(() => {
       window.localStorage.removeItem("binary2048.currentGameId");
@@ -99,9 +99,11 @@ test.describe("mobile action dock", () => {
     await expect(page.getByRole("dialog", { name: "NEW GAME" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Start New Game" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Play tutorial" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Options", exact: true })).toHaveCount(1);
+    await expect(page.getByRole("button", { name: "Options", exact: true })).toHaveCount(0);
+    await expect(page.getByLabel("New game choices")).toBeVisible();
+    await expect(page.getByLabel("Difficulty", { exact: true })).toBeVisible();
+    await expect(page.getByLabel("Game mode")).toBeVisible();
     await expect(page.locator('button:has-text("Import JSON")')).toHaveCount(0);
-    await page.getByRole("button", { name: "Options", exact: true }).click();
     await expect(page.locator('button:has-text("Replay JSON")')).toHaveCount(1);
   });
 
@@ -151,9 +153,9 @@ test.describe("mobile action dock", () => {
       await expect(page.getByRole("gridcell", { name: /number 2$/ })).toHaveCount(2);
       await expect(page.getByRole("button", { name: "New Game", exact: true })).toBeVisible();
       await expect(page.getByRole("button", { name: /^Undo/ })).toBeVisible();
-      const optionsToggle = page.getByRole("button", { name: "Options", exact: true });
-      await expect(optionsToggle).toBeVisible();
-      await expect(optionsToggle).toHaveAttribute("aria-expanded", "false");
+      const moreToggle = page.getByRole("button", { name: "More", exact: true });
+      await expect(moreToggle).toBeVisible();
+      await expect(moreToggle).toHaveAttribute("aria-expanded", "false");
 
       // Secondary drawer exists in the DOM (for the toggle's aria-controls
       // target) but must not be visible/collapsed by default on mobile.
@@ -162,7 +164,7 @@ test.describe("mobile action dock", () => {
       await expect(secondary).not.toBeVisible();
     });
 
-    test(`Options opens and closes the secondary controls at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+    test(`More opens and closes the secondary controls at ${viewport.width}x${viewport.height}`, async ({ page }) => {
       await page.setViewportSize(viewport);
       const grid: Cell[][] = [
         [{ t: "n", v: 2 }, null, null, null],
@@ -177,19 +179,19 @@ test.describe("mobile action dock", () => {
       await page.getByRole("button", { name: "Start New Game" }).click();
       await expect(page.getByRole("gridcell", { name: /number 2$/ })).toHaveCount(2);
       // Locate by the stable class rather than accessible name: the name
-      // itself flips between "Options" and "Hide Options" as it toggles.
-      const optionsToggle = page.locator(".mobile-controls-toggle");
+      // itself flips between "More" and "Hide More" as it toggles.
+      const moreToggle = page.locator(".mobile-controls-toggle");
       const secondary = page.locator("#game-controls-more");
 
-      await optionsToggle.click();
-      await expect(optionsToggle).toHaveAttribute("aria-expanded", "true");
-      await expect(optionsToggle).toHaveText("Hide Options");
+      await moreToggle.click();
+      await expect(moreToggle).toHaveAttribute("aria-expanded", "true");
+      await expect(moreToggle).toHaveText("Hide More");
       await expect(secondary).toBeVisible();
       await expect(secondary).not.toHaveClass(/mobile-collapsed/);
 
-      await optionsToggle.click();
-      await expect(optionsToggle).toHaveAttribute("aria-expanded", "false");
-      await expect(optionsToggle).toHaveText("Options");
+      await moreToggle.click();
+      await expect(moreToggle).toHaveAttribute("aria-expanded", "false");
+      await expect(moreToggle).toHaveText("More");
       await expect(secondary).not.toBeVisible();
     });
 
@@ -234,7 +236,7 @@ test.describe("mobile action dock", () => {
         }
       }
 
-      // Unarmed row: New Game / Undo / (Fullscreen) / Options.
+      // Unarmed row: New Game / Undo / (Fullscreen) / More.
       await assertSingleRow();
 
       // Arm the confirmation — label becomes "Confirm New Game", the
@@ -251,7 +253,7 @@ test.describe("mobile action dock", () => {
     });
   }
 
-  test("New Game requires a second tap to confirm during an active run, and the first tap does not start a new game", async ({
+  test("New Game confirmation opens setup without replacing the active run", async ({
     page
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -281,6 +283,12 @@ test.describe("mobile action dock", () => {
     expect(routes.getCurrent().turn).toBe(1);
 
     await page.getByRole("button", { name: "Confirm New Game", exact: true }).click();
+    const setup = page.getByRole("dialog", { name: "NEW GAME" });
+    await expect(setup).toBeVisible();
+    expect(routes.getCreateRequests()).toBe(1);
+    expect(routes.getCurrent().id).toBe(gameIdBeforeConfirm);
+    expect(routes.getCurrent().turn).toBe(1);
+    await setup.getByRole("button", { name: "Start New Game" }).click();
     await expect.poll(() => routes.getCreateRequests()).toBe(2);
   });
 
@@ -371,7 +379,7 @@ test.describe("mobile action dock", () => {
     await expect(page.getByRole("button", { name: "New Game", exact: true })).toBeEnabled();
     await page.keyboard.press("ArrowLeft");
     await expect.poll(() => routes.getCurrent().turn).toBe(1);
-    await page.getByRole("button", { name: "Options", exact: true }).click();
+    await page.getByRole("button", { name: "More", exact: true }).click();
     const downloadPromise = page.waitForEvent("download");
     await page.getByRole("button", { name: "Export JSON" }).click();
     const download = await downloadPromise;

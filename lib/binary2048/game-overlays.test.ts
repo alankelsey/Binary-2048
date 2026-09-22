@@ -8,7 +8,7 @@ describe("game overlays", () => {
     starting: false,
     onStart: () => {},
     onTutorial: () => {},
-    onOptions: () => {}
+    children: React.createElement("div", { "aria-label": "New game choices" }, "Difficulty Mode Theme")
   };
 
   it("renders a direct new-game action for an empty board", () => {
@@ -19,7 +19,7 @@ describe("game overlays", () => {
     expect(html).toContain("NEW GAME");
     expect(html).toContain(">Start New Game<");
     expect(html).toContain(">Play tutorial<");
-    expect(html).toContain(">Options<");
+    expect(html).toContain("New game choices");
     expect(html).toContain("adjust options");
   });
 
@@ -38,8 +38,7 @@ describe("game overlays", () => {
         score: 321,
         highScore: 999,
         onNewGame: () => {},
-        onTutorial: () => {},
-        onOptions: () => {}
+        onTutorial: () => {}
       })
     );
     expect(html).toContain("GAME OVER");
@@ -47,7 +46,7 @@ describe("game overlays", () => {
     expect(html).toContain("High: 999");
     expect(html).toContain(">New Game<");
     expect(html).toContain(">Tutorial<");
-    expect(html).toContain(">Options<");
+    expect(html).not.toContain(">Options<");
   });
 
   it("renders win overlay with continue/new game actions in free play", () => {
@@ -60,8 +59,7 @@ describe("game overlays", () => {
         canContinue: true,
         onContinue: () => {},
         onNewGame: () => {},
-        onTutorial: () => {},
-        onOptions: () => {}
+        onTutorial: () => {}
       })
     );
     expect(html).toContain("YOU WIN");
@@ -69,7 +67,7 @@ describe("game overlays", () => {
     expect(html).toContain(">Continue<");
     expect(html).toContain(">New Game<");
     expect(html).toContain(">Tutorial<");
-    expect(html).toContain(">Options<");
+    expect(html).not.toContain(">Options<");
   });
 
   it("renders disabled continue state for ranked sessions", () => {
@@ -82,8 +80,7 @@ describe("game overlays", () => {
         canContinue: false,
         onContinue: () => {},
         onNewGame: () => {},
-        onTutorial: () => {},
-        onOptions: () => {}
+        onTutorial: () => {}
       })
     );
     expect(html).toContain("YOU WIN");

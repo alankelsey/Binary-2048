@@ -63,7 +63,8 @@ test("the empty mobile board shows a start overlay after recovery finishes", asy
   });
 
   await page.goto("/");
-  await expect(page.getByRole("button", { name: "Options" })).toBeVisible();
+  await expect(page.getByLabel("New game choices")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Options" })).toHaveCount(0);
   const startButton = page.getByRole("button", { name: "Start New Game" });
   await expect(startButton).toBeVisible();
   await startButton.click();

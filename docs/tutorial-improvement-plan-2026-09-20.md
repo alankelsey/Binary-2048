@@ -17,16 +17,16 @@ but the player experience becomes one continuous guided tutorial.
 ### One empty-state overlay
 
 When no normal game or replay is active, show one empty-state overlay with
-three immediately available actions:
+two immediately available actions:
 
 1. `Start new game` — primary action.
 2. `Play tutorial` — starts or restarts the guided tutorial.
-3. `Options` — opens the same one-tap options panel used by the lower action
-   dock without first creating a board.
 
-Only one Options trigger is visible at a time. The empty-state overlay owns it
-before a game starts; the lower action dock owns it during an active game.
-Closing Options returns focus to the trigger that opened it.
+Difficulty, mode, color, theme, tutorial-offer preference, and permitted
+import/replay actions appear directly below those buttons. There is no
+intermediate Options button or panel. Choosing New Game from an active, win,
+or game-over state opens this same setup overlay without clearing the current
+board; `Back` returns to that board or terminal overlay.
 
 The empty-state overlay never hides Tutorial based on reminder state. If the
 player chooses `Start new game` and has not suppressed the reminder, a compact
@@ -47,9 +47,9 @@ Path=/; Max-Age=31536000; SameSite=Lax; Secure (production)
 - No cookie: show the tutorial invitation only after the player explicitly
   chooses New Game. Do not interrupt an active game merely to advertise the
   tutorial.
-- Checking the opt-out sets the cookie immediately; unchecking it in Options
-  removes the cookie. The choice remains effective in the current page and
-  after reload.
+- Checking the opt-out sets the cookie immediately; unchecking it in the New
+  Game choices removes the cookie. The choice remains effective in the current
+  page and after reload.
 - Cookie present: retain Tutorial buttons in the empty, active, win, and game
   over states, but let New Game proceed without the extra choice.
 - Finishing or quitting the tutorial does not set the suppression cookie.
@@ -60,9 +60,10 @@ Path=/; Max-Age=31536000; SameSite=Lax; Secure (production)
 The cookie contains no identity, gameplay, analytics, or consent data and does
 not need server-side storage.
 
-Win and game-over overlays expose New Game, Tutorial, and Options. Starting a
-tutorial from a terminal state needs no end-game confirmation. Starting it from
-an active game remains confirmation-gated.
+Win and game-over overlays expose New Game and Tutorial. New Game opens the
+inline setup choices; neither terminal overlay has an Options button. Starting
+a tutorial from a terminal state needs no end-game confirmation. Starting it
+from an active game remains confirmation-gated.
 
 ### Continuous guided flow
 
@@ -172,7 +173,7 @@ selected `Don't show this again`.
 
 - Replace the single-action New Game overlay contract with Start, Tutorial,
   Options, reminder copy, and checkbox callbacks.
-- Connect overlay Options to the existing one-tap options disclosure.
+- Render New Game choices inline and remove overlay Options buttons.
 - Ensure overlay and lower-dock Options triggers are mutually exclusive.
 - Preserve the active-game warning before Tutorial can end a normal run.
 

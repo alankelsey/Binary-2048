@@ -184,7 +184,7 @@ export default function Home() {
   const [tutorial, setTutorial] = useState<TutorialSession | null>(null);
   const [tutorialReminder, setTutorialReminder] = useState(true);
   const [suppressTutorialReminder, setSuppressTutorialReminder] = useState(false);
-  const [emptyOptionsOpen, setEmptyOptionsOpen] = useState(false);
+  const [newGameSetupOpen, setNewGameSetupOpen] = useState(false);
   const [newGameTutorialChoiceOpen, setNewGameTutorialChoiceOpen] = useState(false);
   const [tutorialLaunchConfirmOpen, setTutorialLaunchConfirmOpen] = useState(false);
   const [tutorialExitConfirmOpen, setTutorialExitConfirmOpen] = useState(false);
@@ -380,7 +380,7 @@ export default function Home() {
       return;
     }
     setNewGameTutorialChoiceOpen(false);
-    setEmptyOptionsOpen(false);
+    setNewGameSetupOpen(false);
     setReplay(null);
     setPreparedReplayUrl("");
     bufferedMovesRef.current = [];
@@ -973,7 +973,7 @@ export default function Home() {
       const dir = keyToDir(event.key);
       if (!dir) return;
       if (
-        emptyOptionsOpen ||
+        newGameSetupOpen ||
         newGameTutorialChoiceOpen ||
         tutorialLaunchConfirmOpen ||
         tutorialExitConfirmOpen ||
@@ -984,7 +984,7 @@ export default function Home() {
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [gameId, state, busy, tutorial, emptyOptionsOpen, newGameTutorialChoiceOpen, tutorialLaunchConfirmOpen, tutorialExitConfirmOpen]);
+  }, [gameId, state, busy, tutorial, newGameSetupOpen, newGameTutorialChoiceOpen, tutorialLaunchConfirmOpen, tutorialExitConfirmOpen]);
 
   useEffect(() => {
     if (!tutorial || tutorial.phase !== "success") return;
@@ -1035,7 +1035,7 @@ export default function Home() {
       !touchStartRef.current ||
       replay ||
       busy ||
-      emptyOptionsOpen ||
+      newGameSetupOpen ||
       newGameTutorialChoiceOpen ||
       tutorialLaunchConfirmOpen ||
       tutorialExitConfirmOpen ||
@@ -1059,7 +1059,7 @@ export default function Home() {
     setGameId("");
     setState(null);
     setReplay(null);
-    setEmptyOptionsOpen(false);
+    setNewGameSetupOpen(false);
     setNewGameTutorialChoiceOpen(false);
     setTutorialLaunchConfirmOpen(false);
     setTutorialExitConfirmOpen(false);
@@ -1117,12 +1117,16 @@ export default function Home() {
     void newGame();
   }
 
+  function openNewGameSetup() {
+    setNewGameConfirmArmed(false);
+    setNewGameSetupOpen(true);
+  }
+
   const viewState = tutorial?.board ?? (replay ? replayStateAtStep(replay.data, replay.step) : state);
   const wildcardRate = viewState?.config?.spawn?.pWildcard;
   const activeMode = typeof wildcardRate === "number" ? modeFromWildcardRate(wildcardRate) : spawnMode;
-  const difficultyLocked = Boolean(state && !state.over && !state.won && (state.turn ?? 0) > 0);
   const winPending = Boolean(!tutorial && !replay && state?.won && !continueAfterWin);
-  const terminalOverlayBlocked = emptyOptionsOpen || newGameTutorialChoiceOpen;
+  const terminalOverlayBlocked = newGameSetupOpen || newGameTutorialChoiceOpen;
   const isPlayable = Boolean(!replay && state && !state.over && !winPending);
   const isActiveRun = Boolean(!replay && state && !state.over && !winPending && (state.turn ?? 0) > 0);
   const effectiveUiPolicy = applyUiPolicyOverrides(UI_POLICY, uiControlOverrides);
@@ -1425,18 +1429,18 @@ export default function Home() {
   }, [difficultyHelpOpen]);
 
   useEffect(() => {
-    if (!emptyOptionsOpen && !newGameTutorialChoiceOpen && !tutorialLaunchConfirmOpen && !tutorialExitConfirmOpen) return;
+    if (!newGameSetupOpen && !newGameTutorialChoiceOpen && !tutorialLaunchConfirmOpen && !tutorialExitConfirmOpen) return;
     function onModalKeyDown(event: KeyboardEvent) {
       if (event.key !== "Escape") return;
       event.preventDefault();
-      if (emptyOptionsOpen) setEmptyOptionsOpen(false);
+      if (newGameSetupOpen && state) setNewGameSetupOpen(false);
       if (newGameTutorialChoiceOpen) setNewGameTutorialChoiceOpen(false);
       if (tutorialLaunchConfirmOpen) setTutorialLaunchConfirmOpen(false);
       if (tutorialExitConfirmOpen) setTutorialExitConfirmOpen(false);
     }
     document.addEventListener("keydown", onModalKeyDown);
     return () => document.removeEventListener("keydown", onModalKeyDown);
-  }, [emptyOptionsOpen, newGameTutorialChoiceOpen, tutorialLaunchConfirmOpen, tutorialExitConfirmOpen]);
+  }, [newGameSetupOpen, newGameTutorialChoiceOpen, tutorialLaunchConfirmOpen, tutorialExitConfirmOpen, state]);
 
   useEffect(() => {
     setDifficultyHelpOpen(false);
@@ -1665,69 +1669,80 @@ export default function Home() {
             visible={Boolean(!tutorial && !terminalOverlayBlocked && viewState?.over)}
             score={viewState?.score ?? 0}
             highScore={Math.max(highScore, viewState?.score ?? 0)}
-            onNewGame={requestNewGameWithTutorialOffer}
+            onNewGame={openNewGameSetup}
             onTutorial={requestTutorial}
-            onOptions={() => setEmptyOptionsOpen(true)}
           />
           <NewGameOverlay
-            visible={!initializing && !tutorial && !terminalOverlayBlocked && !replay && !state}
+            visible={!initializing && !tutorial && !newGameTutorialChoiceOpen && !replay && (newGameSetupOpen || !state)}
             starting={startNewGamePending || busy}
             onStart={requestNewGameWithTutorialOffer}
             onTutorial={requestTutorial}
-            onOptions={() => setEmptyOptionsOpen(true)}
-          />
-          {emptyOptionsOpen && !tutorial && !replay ? (
-            <div className="newgame-overlay empty-options-dialog" role="dialog" aria-modal="true" aria-labelledby="empty-options-title">
-              <div className="newgame-title" id="empty-options-title">Options</div>
-              <div className="options-grid">
-                <label className="difficulty-select-wrap">
-                  <span className="difficulty-label">Difficulty</span>
-                  <select aria-label="Difficulty" value={spawnMode} onChange={(event) => setSpawnMode(event.target.value as SpawnMode)}>
-                    <option value="normal">{SPAWN_MODES.normal.label}</option>
-                    <option value="ltfg">{SPAWN_MODES.ltfg.label}</option>
-                    <option value="death">{SPAWN_MODES.death.label}</option>
-                  </select>
-                </label>
-                <label className="color-mode-wrap">
-                  <span className="difficulty-label">Color</span>
-                  <select aria-label="Color mode" value={colorMode} onChange={(event) => setColorMode(event.target.value as ColorMode)}>
-                    <option value="default">Default</option>
-                    <option value="cb-protanopia">CB Protanopia</option>
-                    <option value="cb-deuteranopia">CB Deuteranopia</option>
-                    <option value="cb-tritanopia">CB Tritanopia</option>
-                  </select>
-                </label>
-                <label className="theme-mode-wrap">
-                  <span className="difficulty-label">Theme</span>
-                  <select aria-label="Theme mode" value={themeMode} onChange={(event) => setThemeMode(event.target.value as ThemeMode)}>
-                    {Object.entries(THEMES).map(([key, value]) => <option key={key} value={key}>{value.label}</option>)}
-                  </select>
-                </label>
-                <label className="mode-select-wrap">
-                  <span className="difficulty-label">Mode</span>
-                  <select aria-label="Game mode" value={gameMode} onChange={(event) => setGameMode(event.target.value as GameMode)}>
-                    <option value="classic">{GAME_MODES.classic.label}</option>
-                    <option value="bitstorm">{GAME_MODES.bitstorm.label}</option>
-                  </select>
-                </label>
-                <label className="tutorial-suppress-choice">
-                  <input
-                    type="checkbox"
-                    checked={!suppressTutorialReminder}
-                    onChange={(event) => setTutorialReminderSuppressed(!event.target.checked)}
-                  />
-                  Offer tutorial before new games
-                </label>
-                {shouldShowImportJson(effectiveUiPolicy.controls.import, authenticated) ? (
-                  <button type="button" onClick={() => importInputRef.current?.click()}>Import JSON</button>
-                ) : null}
-                {effectiveUiPolicy.controls.import ? (
-                  <button type="button" onClick={() => replayInputRef.current?.click()}>Replay JSON</button>
-                ) : null}
+            onBack={state ? () => setNewGameSetupOpen(false) : undefined}
+          >
+            <div className="newgame-settings options-grid" aria-label="New game choices">
+              <div className="difficulty-select-wrap">
+                <span id="new-game-difficulty-label" className="difficulty-label">Difficulty</span>
+                <button
+                  type="button"
+                  className="field-help"
+                  aria-expanded={difficultyHelpOpen}
+                  aria-controls="difficulty-help-note"
+                  onClick={() => setDifficultyHelpOpen((open) => !open)}
+                >
+                  <span aria-hidden="true">?</span>
+                  <span className="sr-only">{difficultyHelpOpen ? "Hide difficulty help" : "Show difficulty help"}</span>
+                </button>
+                <select
+                  id="new-game-difficulty"
+                  aria-labelledby="new-game-difficulty-label"
+                  className={`difficulty-select mode-${spawnMode}`}
+                  value={spawnMode}
+                  onChange={(event) => setSpawnMode(event.target.value as SpawnMode)}
+                >
+                  <option value="normal">{SPAWN_MODES.normal.label}</option>
+                  <option value="ltfg">{SPAWN_MODES.ltfg.label}</option>
+                  <option value="death">{SPAWN_MODES.death.label}</option>
+                </select>
               </div>
-              <button type="button" className="primary-action" autoFocus onClick={() => setEmptyOptionsOpen(false)}>Done</button>
+              {difficultyHelpOpen ? <p id="difficulty-help-note" className="field-help-note" role="note">{DIFFICULTY_HELP_TEXT}</p> : null}
+              <label className="color-mode-wrap">
+                <span className="difficulty-label">Color</span>
+                <select aria-label="Color mode" value={colorMode} onChange={(event) => setColorMode(event.target.value as ColorMode)}>
+                  <option value="default">Default</option>
+                  <option value="cb-protanopia">CB Protanopia</option>
+                  <option value="cb-deuteranopia">CB Deuteranopia</option>
+                  <option value="cb-tritanopia">CB Tritanopia</option>
+                </select>
+              </label>
+              <label className="theme-mode-wrap">
+                <span className="difficulty-label">Theme</span>
+                <select aria-label="Theme mode" value={themeMode} onChange={(event) => setThemeMode(event.target.value as ThemeMode)}>
+                  {Object.entries(THEMES).map(([key, value]) => <option key={key} value={key}>{value.label}</option>)}
+                </select>
+              </label>
+              <label className="mode-select-wrap">
+                <span className="difficulty-label">Mode</span>
+                <select aria-label="Game mode" value={gameMode} onChange={(event) => setGameMode(event.target.value as GameMode)}>
+                  <option value="classic">{GAME_MODES.classic.label}</option>
+                  <option value="bitstorm">{GAME_MODES.bitstorm.label}</option>
+                </select>
+              </label>
+              <label className="tutorial-suppress-choice">
+                <input
+                  type="checkbox"
+                  checked={!suppressTutorialReminder}
+                  onChange={(event) => setTutorialReminderSuppressed(!event.target.checked)}
+                />
+                Offer tutorial before new games
+              </label>
+              {shouldShowImportJson(effectiveUiPolicy.controls.import, authenticated) ? (
+                <button type="button" onClick={() => importInputRef.current?.click()}>Import JSON</button>
+              ) : null}
+              {effectiveUiPolicy.controls.import ? (
+                <button type="button" onClick={() => replayInputRef.current?.click()}>Replay JSON</button>
+              ) : null}
             </div>
-          ) : null}
+          </NewGameOverlay>
           <WinOverlay
             visible={winPending && !terminalOverlayBlocked}
             score={viewState?.score ?? 0}
@@ -1737,9 +1752,8 @@ export default function Home() {
             onContinue={() => {
               setContinueAfterWin(true);
             }}
-            onNewGame={requestNewGameWithTutorialOffer}
+            onNewGame={openNewGameSetup}
             onTutorial={requestTutorial}
-            onOptions={() => setEmptyOptionsOpen(true)}
           />
           {newGameTutorialChoiceOpen ? (
             <div className="newgame-overlay tutorial-dialog" role="dialog" aria-modal="true" aria-labelledby="new-game-tutorial-title">
@@ -1798,7 +1812,7 @@ export default function Home() {
                   setNewGameConfirmArmed(newGameGuard.nextConfirmArmed);
                   return;
                 }
-                requestNewGameWithTutorialOffer();
+                openNewGameSetup();
               }}
             >
               {startNewGamePending ? "Starting…" : newGameGuard.label}
@@ -1831,7 +1845,7 @@ export default function Home() {
                 })
               }
             >
-              {mobileControlsOpen ? "Hide Options" : "Options"}
+              {mobileControlsOpen ? "Hide More" : "More"}
             </button>
           ) : null}
         </div>
@@ -1862,134 +1876,6 @@ export default function Home() {
                 Replay JSON
               </button>
             </>
-          ) : controlVisibility.showOptionsPanel && Boolean(state) ? (
-            <details className="options-panel">
-              <summary>Options</summary>
-              <div className="options-grid">
-                {effectiveUiPolicy.controls.difficulty ? (
-                  <div className="difficulty-select-wrap">
-                    <span id="difficulty-select-label" className="difficulty-label">
-                      Difficulty
-                    </span>
-                    <button
-                      type="button"
-                      className="field-help"
-                      aria-expanded={difficultyHelpOpen}
-                      aria-controls="difficulty-help-note"
-                      onClick={() => setDifficultyHelpOpen((open) => !open)}
-                    >
-                      <span aria-hidden="true">?</span>
-                      <span className="sr-only">
-                        {difficultyHelpOpen ? "Hide difficulty help" : "Show difficulty help"}
-                      </span>
-                    </button>
-                    <select
-                      id="difficulty-select"
-                      aria-labelledby="difficulty-select-label"
-                      className={`difficulty-select mode-${spawnMode}`}
-                      value={spawnMode}
-                      onChange={(event) => setSpawnMode(event.target.value as SpawnMode)}
-                      disabled={busy || difficultyLocked}
-                    >
-                      <option value="normal">{SPAWN_MODES.normal.label}</option>
-                      <option value="ltfg">{SPAWN_MODES.ltfg.label}</option>
-                      <option value="death">{SPAWN_MODES.death.label}</option>
-                    </select>
-                  </div>
-                ) : null}
-                {effectiveUiPolicy.controls.difficulty && difficultyHelpOpen ? (
-                  <p id="difficulty-help-note" className="field-help-note" role="note">
-                    {DIFFICULTY_HELP_TEXT}
-                  </p>
-                ) : null}
-                {effectiveUiPolicy.controls.color ? (
-                  <label className="color-mode-wrap">
-                    <span className="difficulty-label">Color</span>
-                    <select
-                      aria-label="Color mode"
-                      className="color-mode-select"
-                      value={colorMode}
-                      onChange={(event) => setColorMode(event.target.value as ColorMode)}
-                    >
-                      <option value="default">Default</option>
-                      <option value="cb-protanopia">CB Protanopia</option>
-                      <option value="cb-deuteranopia">CB Deuteranopia</option>
-                      <option value="cb-tritanopia">CB Tritanopia</option>
-                    </select>
-                  </label>
-                ) : null}
-                {effectiveUiPolicy.controls.color ? (
-                  <label className="theme-mode-wrap">
-                    <span className="difficulty-label">Theme</span>
-                    <select
-                      aria-label="Theme mode"
-                      className="theme-mode-select"
-                      value={themeMode}
-                      onChange={(event) => setThemeMode(event.target.value as ThemeMode)}
-                    >
-                      {Object.entries(THEMES).map(([key, value]) => (
-                        <option key={key} value={key}>
-                          {value.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                ) : null}
-                {effectiveUiPolicy.controls.mode ? (
-                  <label className="mode-select-wrap">
-                    <span className="difficulty-label">Mode</span>
-                    <select
-                      aria-label="Game mode"
-                      className="game-mode-select"
-                      value={gameMode}
-                      onChange={(event) => setGameMode(event.target.value as GameMode)}
-                      disabled={busy || difficultyLocked}
-                    >
-                      <option value="classic">{GAME_MODES.classic.label}</option>
-                      <option value="bitstorm">{GAME_MODES.bitstorm.label}</option>
-                    </select>
-                  </label>
-                ) : null}
-                <label className="tutorial-suppress-choice">
-                  <input
-                    type="checkbox"
-                    checked={!suppressTutorialReminder}
-                    onChange={(event) => setTutorialReminderSuppressed(!event.target.checked)}
-                  />
-                  Offer tutorial before new games
-                </label>
-                {shouldShowImportJson(effectiveUiPolicy.controls.import, authenticated) ? (
-                  <button
-                    disabled={busy}
-                    onClick={() => {
-                      importInputRef.current?.click();
-                    }}
-                  >
-                    Import JSON
-                  </button>
-                ) : null}
-                {effectiveUiPolicy.controls.import ? (
-                  <button
-                    disabled={busy}
-                    onClick={() => {
-                      replayInputRef.current?.click();
-                    }}
-                  >
-                    Replay JSON
-                  </button>
-                ) : null}
-                {effectiveUiPolicy.controls.export ? (
-                  <button
-                    disabled={!gameId}
-                    onClick={() => {
-                      void exportGameJson();
-                    }}
-                  >
-                    Export JSON
-                  </button>
-                ) : null}
-              </div>
-            </details>
           ) : null}
           {UI_POLICY.allOnInDev || UI_POLICY.adminMode ? (
             <details className="options-panel">

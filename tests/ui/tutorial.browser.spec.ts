@@ -78,12 +78,11 @@ test("new game offers tutorial without hiding entry points and persists guest op
   await expect(empty).toBeVisible();
   await expect(empty.getByRole("button", { name: "Start New Game" })).toBeVisible();
   await expect(empty.getByRole("button", { name: "Play tutorial" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Options", exact: true })).toHaveCount(1);
-  await empty.getByRole("button", { name: "Options" }).click();
-  await expect(page.getByRole("dialog", { name: "Options" })).toBeVisible();
-  await expect(page.getByLabel("Difficulty", { exact: true })).toBeVisible();
-  await expect(page.getByRole("checkbox", { name: "Offer tutorial before new games" })).toBeChecked();
-  await page.getByRole("button", { name: "Done" }).click();
+  await expect(empty.getByRole("button", { name: "Options", exact: true })).toHaveCount(0);
+  await expect(empty.getByLabel("New game choices")).toBeVisible();
+  await expect(empty.getByLabel("Difficulty", { exact: true })).toBeVisible();
+  await expect(empty.getByLabel("Game mode")).toBeVisible();
+  await expect(empty.getByRole("checkbox", { name: "Offer tutorial before new games" })).toBeChecked();
   await empty.getByRole("button", { name: "Start New Game" }).click();
   const offer = page.getByRole("dialog", { name: "PLAY THE TUTORIAL?" });
   await expect(offer).toBeVisible();
@@ -236,6 +235,7 @@ test("new-game tutorial offer does not interrupt an active guest game until conf
   expect(createRequests).toBe(1);
 
   await page.getByRole("button", { name: "New Game" }).click();
+  await page.getByRole("dialog", { name: "NEW GAME" }).getByRole("button", { name: "Start New Game" }).click();
   await expect(page.getByRole("dialog", { name: "PLAY THE TUTORIAL?" })).toBeVisible();
   await page.keyboard.press("ArrowLeft");
   expect(await page.getByRole("gridcell").evaluateAll((cells) => cells.map((cell) => cell.getAttribute("aria-label")))).toEqual(boardBefore);
@@ -281,12 +281,13 @@ test("a restored guest game honors the tutorial opt-out cookie", async ({ page, 
   await page.goto("/");
   await expect(page.getByRole("gridcell", { name: /number 2$/ })).toHaveCount(2);
   await page.getByRole("button", { name: "New Game" }).click();
+  await page.getByRole("dialog", { name: "NEW GAME" }).getByRole("button", { name: "Start New Game" }).click();
   await expect(page.getByRole("dialog", { name: "PLAY THE TUTORIAL?" })).toHaveCount(0);
   await expect.poll(() => createRequests).toBe(1);
 });
 
 for (const terminal of ["over", "won"] as const) {
-  test(`${terminal} overlay exposes new game, tutorial, and options`, async ({ page }) => {
+  test(`${terminal} overlay routes New Game to inline choices and keeps Tutorial`, async ({ page }) => {
     await mockTerminalGame(page, terminal);
     await page.goto("/");
     await page.getByRole("button", { name: "Start New Game" }).click();
@@ -295,12 +296,13 @@ for (const terminal of ["over", "won"] as const) {
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole("button", { name: "New Game" })).toBeVisible();
     await expect(dialog.getByRole("button", { name: "Tutorial" })).toBeVisible();
-    await expect(dialog.getByRole("button", { name: "Options" })).toBeVisible();
-
-    await dialog.getByRole("button", { name: "Options" }).click();
+    await expect(dialog.getByRole("button", { name: "Options" })).toHaveCount(0);
+    await dialog.getByRole("button", { name: "New Game" }).click();
     await expect(dialog).toHaveCount(0);
-    await expect(page.getByRole("dialog", { name: "Options" })).toBeVisible();
-    await page.getByRole("button", { name: "Done" }).click();
+    const setup = page.getByRole("dialog", { name: "NEW GAME" });
+    await expect(setup.getByLabel("New game choices")).toBeVisible();
+    await expect(setup.getByRole("button", { name: "Options" })).toHaveCount(0);
+    await setup.getByRole("button", { name: "Back" }).click();
     await expect(dialog).toBeVisible();
     await dialog.getByRole("button", { name: "Tutorial" }).click();
     await expect(page.getByRole("dialog", { name: "END CURRENT GAME?" })).toHaveCount(0);

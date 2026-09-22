@@ -68,7 +68,6 @@ test("authenticated browser converts a realistic full export before importing", 
   });
 
   await page.goto("/");
-  await page.getByRole("button", { name: "Options", exact: true }).click();
   await expect(page.locator('button:has-text("Import JSON")')).toHaveCount(1);
   await page.getByTestId("import-json-input").setInputFiles(fullExportFile());
 

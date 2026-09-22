@@ -1215,8 +1215,32 @@ select:focus-visible {
 .tutorial-actions button,
 .gameover-actions button,
 .win-actions button,
-.empty-options-dialog > button {
+.empty-options-dialog > button,
+.newgame-setup > button {
   min-height: 44px;
+}
+
+.newgame-setup {
+  align-content: start;
+  overflow-y: auto;
+}
+
+.newgame-settings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: min(100%, 430px);
+  margin-top: 0;
+}
+
+.newgame-settings > label,
+.newgame-settings > .difficulty-select-wrap {
+  min-width: 0;
+  justify-content: center;
+}
+
+.newgame-settings select {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .primary-action {
@@ -1376,6 +1400,24 @@ select:focus-visible {
 
   .empty-options-dialog .options-grid {
     grid-template-columns: 1fr;
+  }
+
+  .newgame-setup {
+    gap: 0.4rem;
+    padding: 0.65rem;
+  }
+
+  .newgame-setup .newgame-title {
+    font-size: 1.35rem;
+  }
+
+  .newgame-setup .newgame-copy {
+    margin: 0;
+    font-size: 0.78rem;
+  }
+
+  .newgame-settings {
+    gap: 0.35rem;
   }
 }
 

@@ -6,7 +6,6 @@ type GameOverOverlayProps = {
   highScore: number;
   onNewGame: () => void;
   onTutorial: () => void;
-  onOptions: () => void;
 };
 
 type WinOverlayProps = {
@@ -18,7 +17,6 @@ type WinOverlayProps = {
   onContinue: () => void;
   onNewGame: () => void;
   onTutorial: () => void;
-  onOptions: () => void;
 };
 
 type NewGameOverlayProps = {
@@ -26,7 +24,8 @@ type NewGameOverlayProps = {
   starting: boolean;
   onStart: () => void;
   onTutorial: () => void;
-  onOptions: () => void;
+  onBack?: () => void;
+  children: React.ReactNode;
 };
 
 export function NewGameOverlay({
@@ -34,11 +33,12 @@ export function NewGameOverlay({
   starting,
   onStart,
   onTutorial,
-  onOptions
+  onBack,
+  children
 }: NewGameOverlayProps) {
   if (!visible) return null;
   return (
-    <div className="newgame-overlay" role="dialog" aria-modal="true" aria-labelledby="newgame-overlay-title">
+    <div className="newgame-overlay newgame-setup" role="dialog" aria-modal="true" aria-labelledby="newgame-overlay-title">
       <div className="newgame-title" id="newgame-overlay-title">NEW GAME</div>
       <p className="newgame-copy">Start a fresh Binary 2048 board, learn the rules, or adjust options.</p>
       <div className="newgame-actions">
@@ -46,13 +46,14 @@ export function NewGameOverlay({
           {starting ? "Starting…" : "Start New Game"}
         </button>
         <button type="button" onClick={onTutorial}>Play tutorial</button>
-        <button type="button" onClick={onOptions}>Options</button>
       </div>
+      {children}
+      {onBack ? <button type="button" onClick={onBack}>Back</button> : null}
     </div>
   );
 }
 
-export function GameOverOverlay({ visible, score, highScore, onNewGame, onTutorial, onOptions }: GameOverOverlayProps) {
+export function GameOverOverlay({ visible, score, highScore, onNewGame, onTutorial }: GameOverOverlayProps) {
   if (!visible) return null;
   return (
     <div className="gameover-overlay" role="dialog" aria-modal="true" aria-labelledby="gameover-title">
@@ -61,7 +62,6 @@ export function GameOverOverlay({ visible, score, highScore, onNewGame, onTutori
       <div className="gameover-actions">
         <button type="button" className="primary-action" onClick={onNewGame}>New Game</button>
         <button type="button" onClick={onTutorial}>Tutorial</button>
-        <button type="button" onClick={onOptions}>Options</button>
       </div>
     </div>
   );
@@ -75,8 +75,7 @@ export function WinOverlay({
   canContinue,
   onContinue,
   onNewGame,
-  onTutorial,
-  onOptions
+  onTutorial
 }: WinOverlayProps) {
   if (!visible) return null;
   return (
@@ -96,7 +95,6 @@ export function WinOverlay({
         )}
         <button type="button" className="primary-action" onClick={onNewGame}>New Game</button>
         <button type="button" onClick={onTutorial}>Tutorial</button>
-        <button type="button" onClick={onOptions}>Options</button>
       </div>
     </div>
   );
