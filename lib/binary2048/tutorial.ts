@@ -6,6 +6,7 @@ export const TUTORIAL_STORAGE_KEY = "binary2048.tutorial.v1";
 export const TUTORIAL_SUPPRESS_COOKIE = "binary2048_tutorial_suppress";
 export const TUTORIAL_SUPPRESS_VALUE = "1";
 export const TUTORIAL_SUPPRESS_MAX_AGE_SECONDS = 31_536_000;
+export const TUTORIAL_SUCCESS_DURATION_MS = 1_700;
 
 export type TutorialPreference = {
   version: typeof TUTORIAL_VERSION;

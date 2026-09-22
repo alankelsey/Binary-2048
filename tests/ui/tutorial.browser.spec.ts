@@ -181,6 +181,18 @@ test("tap-to-try accepts a real tutorial swipe gesture", async ({ page }) => {
   await expect(page.locator(".tutorial-success")).toContainText("Good job!");
 });
 
+test("successful-step feedback remains visible for more than 1.2 seconds", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Play tutorial" }).click();
+  await page.getByRole("button", { name: "Try it" }).click();
+  await page.keyboard.press("ArrowLeft");
+  const success = page.locator(".tutorial-success");
+  await expect(success).toContainText("Good job!");
+  await page.waitForTimeout(1_200);
+  await expect(success).toBeVisible();
+  await expect(page.getByRole("dialog", { name: TUTORIAL_LESSONS[1].title })).toBeVisible();
+});
+
 test("refresh restarts the current lesson and quit returns to empty state", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Play tutorial" }).click();

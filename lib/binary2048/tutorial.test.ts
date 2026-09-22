@@ -1,5 +1,6 @@
 import {
   TUTORIAL_LESSONS,
+  TUTORIAL_SUCCESS_DURATION_MS,
   TUTORIAL_VERSION,
   applyTutorialMove,
   armTutorial,
@@ -14,6 +15,10 @@ import {
 } from "@/lib/binary2048/tutorial";
 
 describe("guided tutorial", () => {
+  it("keeps successful-step feedback visible for 1.7 seconds", () => {
+    expect(TUTORIAL_SUCCESS_DURATION_MS).toBe(1_700);
+  });
+
   it("uses ten versioned lessons covering every direction and special tile", () => {
     expect(TUTORIAL_VERSION).toBe(1);
     expect(TUTORIAL_LESSONS).toHaveLength(10);

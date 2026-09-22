@@ -43,6 +43,7 @@ import { getGameImportErrorMessage, toGameImportPayload } from "@/lib/binary2048
 import {
   TUTORIAL_LESSONS,
   TUTORIAL_STORAGE_KEY,
+  TUTORIAL_SUCCESS_DURATION_MS,
   applyTutorialMove,
   armTutorial,
   clearTutorialSuppressCookie,
@@ -998,7 +999,7 @@ export default function Home() {
         );
         return next;
       });
-    }, 850);
+    }, TUTORIAL_SUCCESS_DURATION_MS);
     return () => {
       if (tutorialAdvanceTimerRef.current) window.clearTimeout(tutorialAdvanceTimerRef.current);
       tutorialAdvanceTimerRef.current = null;

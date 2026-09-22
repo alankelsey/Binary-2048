@@ -85,7 +85,7 @@ coach overlay -> tap to try -> expected move -> success message -> next coach ov
    board. Incorrect input leaves the board unchanged and presents a concise
    direction hint.
 5. On success, announce `Good job` plus the rule outcome in a live region for
-   approximately 700–1000 ms, then automatically load the next checkpoint and
+   approximately 1700 ms, then automatically load the next checkpoint and
    open its coach overlay.
 6. Multi-move rules such as Lock-0 use checkpoints inside one lesson: the first
    success explains the block, then the next coach overlay asks for the move
