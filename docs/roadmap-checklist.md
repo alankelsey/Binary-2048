@@ -70,6 +70,8 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
   - [x] Apply and disposition the [frontend review](./tutorial-frontend-review-2026-09-20.md), including mobile fit, dialog modality, teaching cues, special-tile labels, and completion emphasis
   - [x] Add unit and Playwright coverage for prompt persistence, active-game confirmation, deterministic steps, invalid input, cancellation, completion, mobile layout, keyboard use, and reduced motion
   - [ ] Run a frontend-design review after the functional prototype is complete, incorporate or explicitly disposition its feedback, and perform final Android Chrome and iPhone Safari checks
+    - [x] Re-review and disposition the deployed tutorial/New Game flow; rerun automated acceptance and record results ([evidence](./tutorial-mobile-acceptance-2026-09-24.md))
+    - [ ] Complete the physical Android Chrome and iPhone Safari checklist in the acceptance evidence
 - [x] Consolidate pre-game choices into the New Game overlay
   - [x] Remove player-facing `Options` buttons and render Difficulty, Color, Theme, Mode, tutorial preference, and permitted Import/Replay actions below New Game and Tutorial
   - [x] Route active, win, and game-over New Game actions through the same setup overlay without clearing the current board before confirmation
@@ -81,6 +83,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
   - [x] Replace the `title`-only difficulty help with a keyboard- and touch-accessible visible disclosure
   - [x] Confirm primary and secondary control targets, focus states, and reduced-motion behavior without weakening the active-run New Game confirmation
 - [ ] Run and document a real-device mobile UX audit after the action-dock and resume fixes
+  - [x] Rerun automated mobile viewport, dock, swipe, rapid-input, and recovery coverage ([evidence](./tutorial-mobile-acceptance-2026-09-24.md))
   - [ ] Verify thumb reach, swipe separation, inline New Game choices, the `More` disclosure, background/resume, and game continuity on Android Chrome
   - [ ] Verify the same critical flow, safe-area padding, and dock layout on iPhone Safari
 

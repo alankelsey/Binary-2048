@@ -2,7 +2,7 @@
 
 Date: 2026-09-24
 
-Status: ready for a fresh implementation session
+Status: tutorial/mobile automated acceptance complete; local V1 fixes ready for review; physical-device gate remains open
 
 ## Production baseline
 
@@ -27,16 +27,21 @@ Status: ready for a fresh implementation session
 
 ## Next V1 task
 
-Complete the tutorial/mobile acceptance gate:
+The deployed re-review, disposition log, automated evidence, and exact remaining
+device checklist are in
+[`tutorial-mobile-acceptance-2026-09-24.md`](./tutorial-mobile-acceptance-2026-09-24.md).
 
-1. Run a frontend-design re-review against the deployed flow and record any
-   accepted, modified, or declined follow-up findings.
-2. Perform the full flow on Android Chrome: inline New Game choices, tutorial
-   offer preference, every lesson, quit/completion, active-game preservation,
-   `More`, rapid swipes, and background/resume continuity.
-3. Repeat critical layout, safe-area, swipe, and dock checks on iPhone Safari.
-4. Record evidence and only then mark the guided-tutorial and real-device
-   roadmap parents complete.
+This pass confirmed and fixed two local V1 defects: backgrounded tutorial
+success timers could advance unseen, and tutorial confirmations did not trap or
+restore keyboard focus. Regression coverage was added. Final reruns passed 150
+unit suites / 484 tests, 48 local Playwright UI tests, and 9 production-safe
+Playwright tests. The production build compiled and type-checked; its final
+local auth smoke expected a configured bridge secret and received `503`, while
+the production browser auth/API health checks passed.
+
+Next, deploy and verify these two fixes, then execute the recorded checklist on
+physical Android Chrome and iPhone Safari. Do not mark the guided-tutorial or
+real-device roadmap parents complete until both device passes are recorded.
 
 After that gate, finish authenticated V1 acceptance: protected data deletion,
 sign-out/expired-session/reauthentication recovery, and the authenticated

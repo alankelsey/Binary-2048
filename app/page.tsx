@@ -201,6 +201,7 @@ export default function Home() {
   const bufferedMovesRef = useRef<Dir[]>([]);
   const diagnosticSequenceRef = useRef(0);
   const authBridgeRef = useRef<ReturnType<typeof createClientAuthBridge> | null>(null);
+  const modalTriggerRef = useRef<HTMLElement | null>(null);
   if (!authBridgeRef.current) {
     authBridgeRef.current = createClientAuthBridge(
       (input, init) => fetch(input, init),
@@ -989,7 +990,22 @@ export default function Home() {
 
   useEffect(() => {
     if (!tutorial || tutorial.phase !== "success") return;
-    tutorialAdvanceTimerRef.current = window.setTimeout(() => {
+    let remainingMs = TUTORIAL_SUCCESS_DURATION_MS;
+    let timerStartedAt: number | null = null;
+
+    const clearAdvanceTimer = () => {
+      if (tutorialAdvanceTimerRef.current === null) return;
+      window.clearTimeout(tutorialAdvanceTimerRef.current);
+      tutorialAdvanceTimerRef.current = null;
+      if (timerStartedAt !== null) {
+        remainingMs = Math.max(0, remainingMs - (Date.now() - timerStartedAt));
+        timerStartedAt = null;
+      }
+    };
+    const advanceTutorial = () => {
+      tutorialAdvanceTimerRef.current = null;
+      timerStartedAt = null;
+      if (document.hidden) return;
       setTutorial((current) => {
         if (!current || current.phase !== "success") return current;
         const next = continueTutorial(current);
@@ -999,10 +1015,22 @@ export default function Home() {
         );
         return next;
       });
-    }, TUTORIAL_SUCCESS_DURATION_MS);
+    };
+    const scheduleAdvance = () => {
+      if (document.hidden || tutorialAdvanceTimerRef.current !== null) return;
+      timerStartedAt = Date.now();
+      tutorialAdvanceTimerRef.current = window.setTimeout(advanceTutorial, remainingMs);
+    };
+    const onVisibilityChange = () => {
+      if (document.hidden) clearAdvanceTimer();
+      else scheduleAdvance();
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    scheduleAdvance();
     return () => {
-      if (tutorialAdvanceTimerRef.current) window.clearTimeout(tutorialAdvanceTimerRef.current);
-      tutorialAdvanceTimerRef.current = null;
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      clearAdvanceTimer();
     };
   }, [tutorial]);
 
@@ -1075,6 +1103,7 @@ export default function Home() {
   function requestTutorial() {
     if (tutorial) return;
     if (state && !state.over && !state.won) {
+      modalTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       setTutorialLaunchConfirmOpen(true);
       return;
     }
@@ -1095,6 +1124,7 @@ export default function Home() {
   function requestTutorialExit() {
     if (!tutorial) return;
     if (tutorial.lessonIndex > 0 || tutorial.moveIndex > 0) {
+      modalTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       setTutorialExitConfirmOpen(true);
       return;
     }
@@ -1111,6 +1141,7 @@ export default function Home() {
 
   function requestNewGameWithTutorialOffer() {
     if (tutorialReminder) {
+      modalTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       setNewGameConfirmArmed(false);
       setNewGameTutorialChoiceOpen(true);
       return;
@@ -1119,6 +1150,7 @@ export default function Home() {
   }
 
   function openNewGameSetup() {
+    modalTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setNewGameConfirmArmed(false);
     setNewGameSetupOpen(true);
   }
@@ -1442,6 +1474,66 @@ export default function Home() {
     document.addEventListener("keydown", onModalKeyDown);
     return () => document.removeEventListener("keydown", onModalKeyDown);
   }, [newGameSetupOpen, newGameTutorialChoiceOpen, tutorialLaunchConfirmOpen, tutorialExitConfirmOpen, state]);
+
+  useEffect(() => {
+    const dialogs = Array.from(document.querySelectorAll<HTMLElement>('[role="dialog"][aria-modal="true"]'));
+    const dialog = dialogs.at(-1);
+    if (!dialog) return;
+    const modalDialog = dialog;
+
+    const focusableSelector =
+      'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])';
+    const focusable = () => Array.from(modalDialog.querySelectorAll<HTMLElement>(focusableSelector));
+
+    if (!modalDialog.contains(document.activeElement)) {
+      (focusable()[0] ?? modalDialog).focus();
+    }
+
+    function keepFocusInDialog(event: FocusEvent) {
+      if (event.target instanceof Node && modalDialog.contains(event.target)) return;
+      (focusable()[0] ?? modalDialog).focus();
+    }
+
+    function trapTab(event: KeyboardEvent) {
+      if (event.key !== "Tab") return;
+      const controls = focusable();
+      if (controls.length === 0) {
+        event.preventDefault();
+        modalDialog.focus();
+        return;
+      }
+      const first = controls[0];
+      const last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener("focusin", keepFocusInDialog);
+    document.addEventListener("keydown", trapTab);
+    return () => {
+      document.removeEventListener("focusin", keepFocusInDialog);
+      document.removeEventListener("keydown", trapTab);
+      const trigger = modalTriggerRef.current;
+      window.queueMicrotask(() => {
+        if (trigger?.isConnected) trigger.focus();
+      });
+    };
+  }, [
+    newGameSetupOpen,
+    newGameTutorialChoiceOpen,
+    tutorialLaunchConfirmOpen,
+    tutorialExitConfirmOpen,
+    tutorial?.phase,
+    tutorial?.lessonIndex,
+    state?.over,
+    state?.won,
+    winPending
+  ]);
 
   useEffect(() => {
     setDifficultyHelpOpen(false);

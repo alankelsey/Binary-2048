@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { createGame, DEFAULT_CONFIG } from "@/lib/binary2048/engine";
-import { TUTORIAL_LESSONS } from "@/lib/binary2048/tutorial";
+import { TUTORIAL_LESSONS, TUTORIAL_SUCCESS_DURATION_MS } from "@/lib/binary2048/tutorial";
 import type { Cell, GameConfig } from "@/lib/binary2048/types";
 
 const keyForDirection = { left: "ArrowLeft", right: "ArrowRight", up: "ArrowUp", down: "ArrowDown" } as const;
@@ -193,6 +193,42 @@ test("successful-step feedback remains visible for more than 1.2 seconds", async
   await expect(page.getByRole("dialog", { name: TUTORIAL_LESSONS[1].title })).toBeVisible();
 });
 
+test("tutorial success auto-advance pauses while the page is hidden", async ({ page }) => {
+  await page.addInitScript(() => {
+    let visibilityState: DocumentVisibilityState = "visible";
+    Object.defineProperty(document, "visibilityState", {
+      configurable: true,
+      get: () => visibilityState
+    });
+    Object.defineProperty(document, "hidden", {
+      configurable: true,
+      get: () => visibilityState === "hidden"
+    });
+    (window as typeof window & { setTestVisibilityState: (state: DocumentVisibilityState) => void }).setTestVisibilityState = (state) => {
+      visibilityState = state;
+      document.dispatchEvent(new Event("visibilitychange"));
+    };
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Play tutorial" }).click();
+  await page.getByRole("button", { name: "Try it" }).click();
+  await page.keyboard.press("ArrowLeft");
+  const success = page.locator(".tutorial-success");
+  await expect(success).toContainText("Good job!");
+
+  await page.evaluate(() => {
+    (window as typeof window & { setTestVisibilityState: (state: DocumentVisibilityState) => void }).setTestVisibilityState("hidden");
+  });
+  await page.waitForTimeout(TUTORIAL_SUCCESS_DURATION_MS + 200);
+  await expect(success).toBeVisible();
+  await expect(page.getByRole("dialog", { name: TUTORIAL_LESSONS[1].title })).toHaveCount(0);
+
+  await page.evaluate(() => {
+    (window as typeof window & { setTestVisibilityState: (state: DocumentVisibilityState) => void }).setTestVisibilityState("visible");
+  });
+  await expect(page.getByRole("dialog", { name: TUTORIAL_LESSONS[1].title })).toBeVisible();
+});
+
 test("refresh restarts the current lesson and quit returns to empty state", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Play tutorial" }).click();
@@ -202,11 +238,17 @@ test("refresh restarts the current lesson and quit returns to empty state", asyn
   await page.reload();
   await expect(page.getByRole("dialog", { name: TUTORIAL_LESSONS[1].title })).toBeVisible();
   await page.getByRole("button", { name: "Try it" }).click();
-  await page.getByRole("button", { name: "Quit tutorial" }).click();
-  await expect(page.getByRole("dialog", { name: "EXIT TUTORIAL?" })).toBeVisible();
+  const quitTutorial = page.getByRole("button", { name: "Quit tutorial" });
+  await quitTutorial.click();
+  const exitDialog = page.getByRole("dialog", { name: "EXIT TUTORIAL?" });
+  await expect(exitDialog).toBeVisible();
+  await expect(exitDialog.getByRole("button", { name: "Keep learning" })).toBeFocused();
+  await exitDialog.getByRole("button", { name: "Keep learning" }).press("Tab");
+  await expect(exitDialog.getByRole("button", { name: "Leave tutorial" })).toBeFocused();
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("dialog", { name: "EXIT TUTORIAL?" })).toHaveCount(0);
-  await page.getByRole("button", { name: "Quit tutorial" }).click();
+  await expect(exitDialog).toHaveCount(0);
+  await expect(quitTutorial).toBeFocused();
+  await quitTutorial.click();
   await page.getByRole("button", { name: "Leave tutorial" }).click();
   await expect(page.getByRole("dialog", { name: "NEW GAME" })).toBeVisible();
 });
@@ -221,11 +263,17 @@ test("launching from an active game is gated and cancellation preserves the boar
   await page.goto("/");
   await page.getByRole("button", { name: "Start New Game" }).click();
   const boardBefore = await page.getByRole("gridcell").evaluateAll((cells) => cells.map((cell) => cell.getAttribute("aria-label")));
-  await page.getByRole("button", { name: "Tutorial", exact: true }).click();
-  await expect(page.getByRole("dialog", { name: "END CURRENT GAME?" })).toBeVisible();
+  const tutorialButton = page.getByRole("button", { name: "Tutorial", exact: true });
+  await tutorialButton.click();
+  const launchDialog = page.getByRole("dialog", { name: "END CURRENT GAME?" });
+  await expect(launchDialog).toBeVisible();
+  await expect(launchDialog.getByRole("button", { name: "Keep playing" })).toBeFocused();
+  await launchDialog.getByRole("button", { name: "Keep playing" }).press("Tab");
+  await expect(launchDialog.getByRole("button", { name: "End game and start tutorial" })).toBeFocused();
   await page.keyboard.press("Escape");
+  await expect(tutorialButton).toBeFocused();
   expect(await page.getByRole("gridcell").evaluateAll((cells) => cells.map((cell) => cell.getAttribute("aria-label")))).toEqual(boardBefore);
-  await page.getByRole("button", { name: "Tutorial", exact: true }).click();
+  await tutorialButton.click();
   await page.getByRole("button", { name: "End game and start tutorial" }).click();
   await expect(page.getByRole("grid", { name: "Binary 2048 tutorial board" })).toBeVisible();
   await expect.poll(() => page.evaluate(() => window.localStorage.getItem("binary2048.currentGameId"))).toBeNull();
