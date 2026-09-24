@@ -15,3 +15,14 @@ test("How to Play documents shipped tile rules without advertising unavailable s
   await expect(howToPlay).not.toContainText("Theme Pack");
   await expect(howToPlay).not.toContainText("Undo Charge");
 });
+
+test("accessibility behavior is documented without a developer-style gameplay disclosure", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByText(/^Accessibility: Keyboard shortcuts/)).toHaveCount(0);
+  await expect(page.locator(".skip-link")).toHaveAttribute("href", "#game-controls");
+
+  await page.goto("/docs/user");
+  const accessibility = page.getByRole("heading", { name: "Accessibility" }).locator("+ p");
+  await expect(accessibility).toContainText("keyboard and tab navigation");
+  await expect(accessibility).toContainText("reduced-motion preferences");
+});

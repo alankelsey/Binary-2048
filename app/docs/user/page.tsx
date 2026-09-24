@@ -31,7 +31,10 @@ export default function UserDocsPage() {
         </ul>
 
         <h2>Accessibility</h2>
-        <p>Use the in-app accessibility section for keyboard shortcut and tab-order map details.</p>
+        <p>
+          The game supports keyboard and tab navigation, visible focus states, a skip link, reduced-motion preferences,
+          and labelled controls. Use Arrow keys or W/A/S/D to move tiles.
+        </p>
 
         <h2>Monetization Policy</h2>
         <p>

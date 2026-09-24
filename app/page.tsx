@@ -62,7 +62,6 @@ import {
   recordRageTap
 } from "@/lib/binary2048/ux-audit";
 import { GameOverOverlay, NewGameOverlay, WinOverlay } from "@/app/game-overlays";
-import { buildAccessibilityTabMap, keyboardShortcutMap } from "@/lib/binary2048/accessibility-map";
 import { applyUiPolicyOverrides, type UIControlOverrides } from "@/lib/binary2048/ui-policy-override";
 import type { UIControl } from "@/lib/binary2048/ui-policy";
 import { createReferralCode, type MarketingEventType } from "@/lib/binary2048/marketing";
@@ -1182,14 +1181,6 @@ export default function Home() {
     over: Boolean(state?.over),
     confirmArmed: newGameConfirmArmed
   });
-  const accessibilityTabMap = buildAccessibilityTabMap({
-    replay: Boolean(replay),
-    showUndo: controlVisibility.showUndo,
-    showOptionsPanel: controlVisibility.showOptionsPanel,
-    showActiveExport: controlVisibility.showActiveExport,
-    showActiveReplay: controlVisibility.showActiveReplay
-  });
-  const accessibilityShortcuts = keyboardShortcutMap();
   const replayStepsTotal = replay?.data.steps.length ?? 0;
   const replayStep = replay?.step ?? 0;
   const shareText = buildShareText(viewState?.score ?? 0, highScore, viewState?.turn ?? 0);
@@ -2068,23 +2059,6 @@ export default function Home() {
             <p>Wildcard tiles (`✦`) double any number tile they collide with, then disappear.</p>
             <p>Game ends when no empty cells and no valid merges remain.</p>
             <p>Tip: keep your highest value anchored to one side and avoid breaking the chain.</p>
-          </div>
-        </details>
-        <details className="game-hint">
-          <summary>Accessibility: Keyboard shortcuts and tab order map</summary>
-          <div className="game-hint-body">
-            <p>Tab order map:</p>
-            <ol>
-              {accessibilityTabMap.map((row) => (
-                <li key={row}>{row}</li>
-              ))}
-            </ol>
-            <p>Keyboard shortcuts:</p>
-            <ul>
-              {accessibilityShortcuts.map((row) => (
-                <li key={row}>{row}</li>
-              ))}
-            </ul>
           </div>
         </details>
         <div className="share-row" aria-label="share actions">

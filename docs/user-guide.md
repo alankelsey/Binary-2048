@@ -44,7 +44,8 @@
 
 - Keyboard + tab navigation supported.
 - Skip link is available at page top.
-- In-app accessibility section documents current shortcut map and tab order.
+- Visible focus states and labelled controls support keyboard and assistive-technology navigation.
+- Reduced-motion preferences shorten or remove non-essential animation.
 
 ## Troubleshooting
 

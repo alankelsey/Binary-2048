@@ -84,7 +84,8 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
   - [x] Confirm primary and secondary control targets, focus states, and reduced-motion behavior without weakening the active-run New Game confirmation
 - [ ] Complete player-facing help and terminal-action cleanup
   - [x] Remove the unavailable store-product icon legend from How to Play while retaining the actual tile rules and add regression coverage
-  - [ ] Remove the developer-style keyboard shortcut/tab-order disclosure from the gameplay page while preserving accessible behavior and concise user documentation
+  - [x] Remove the developer-style keyboard shortcut/tab-order disclosure from the gameplay page while preserving accessible behavior and concise user documentation
+  - [ ] Add an application-level debug configuration flag for the Game Log; when disabled, do not render its UI and do not collect, retain, copy, or emit diagnostic log output. Do not expose this as a player-facing UI toggle
   - [ ] Add `Replay JSON` to the game-over and win overlays through the existing replay-file flow, with keyboard and Playwright coverage
 - [ ] Run and document a real-device mobile UX audit after the action-dock and resume fixes
   - [x] Rerun automated mobile viewport, dock, swipe, rapid-input, and recovery coverage ([evidence](./tutorial-mobile-acceptance-2026-09-24.md))

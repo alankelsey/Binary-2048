@@ -106,8 +106,7 @@ npm run test:unit -- \
 ```bash
 npm run test:unit -- \
   lib/binary2048/theme.test.ts \
-  lib/binary2048/mobile-layout.test.ts \
-  lib/binary2048/accessibility-map.test.ts
+  lib/binary2048/mobile-layout.test.ts
 ```
 
 - [ ] In browser, verify:
