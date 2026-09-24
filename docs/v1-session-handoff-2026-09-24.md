@@ -42,15 +42,23 @@ After that gate, finish authenticated V1 acceptance: protected data deletion,
 sign-out/expired-session/reauthentication recovery, and the authenticated
 Android session-resume flow.
 
-## Working-tree caution
+## V2 evidence preserved
 
-The following performance reports are intentionally untracked and must not be
-staged, committed, deleted, or rewritten unless the user explicitly requests
-performance-plan work:
+The performance evidence needed for later V2 work is tracked in:
 
-- `docs/performance-analysis-2026-09-17.md`
-- `docs/performance-improvement-report-2026-09-17.md`
-- `docs/performance_research.md`
+- `docs/performance_research.md` — sanitized source discussion and production
+  guest-game trace; the game ID is anonymized as `g_perf_sample`.
+- `docs/performance-analysis-2026-09-17.md` — measured latency analysis.
+- `docs/performance-improvement-report-2026-09-17.md` — independent code-path
+  review and prioritized recommendations.
+- `docs/binary2048v2.md` — consolidated plan, including discrepancies and
+  claims that must be proven before implementation.
+
+These reports contain no credentials or authenticated browser state. Preserve
+the benchmark ledgers, challenge corpus, V1 behavior contracts, and Mongo
+planning when V2 begins. Never commit `.env` files, authentication storage
+state, cookies, access tokens, or local build output.
 
 Use `docs/roadmap-checklist.md` as the completion source of truth. Do not start
-Binary 2048 v2 implementation while completing the V1 acceptance work.
+Binary 2048 v2 implementation while completing the V1 acceptance work unless
+the user explicitly changes scope.
