@@ -205,11 +205,11 @@ Recommendations:
 | P1-1 | Board highlight + direction chevron via fixture `focus` | Accepted | Add fixture focus targets plus the requested one-shot directional swipe arrow; retain a static cue for reduced motion. |
 | P1-2 | Inline tile sprites/labels for special tiles | Accepted | Coach copy and tutorial tiles will pair glyphs with player-facing text labels. |
 | P1-3 | "Try again" + before → after outcome | Modified | Outcomes appear in the automatic success message. Continuous auto-advance replaces the finished-lesson button row; replay remains available at completion. |
-| P1-4 | Primary/tertiary button hierarchy | Accepted | Start/try/play actions are primary; Options, quit, and reminder suppression are secondary. |
+| P1-4 | Primary/tertiary button hierarchy | Modified | Start/try/play actions are primary; quit and reminder suppression are secondary. Settings are inline on New Game, and active mobile secondary actions use `More`. |
 | P1-5 | Segmented progress; consider merging lessons 1–4 | Modified | Keep all ten authored lessons for explicit rule coverage, use compact grouped progress, and remove manual Next actions. |
 | P1-6 | Strip game chrome in tutorial mode | Accepted | Hide Score, High, Difficulty, Mode, export, replay, and other non-teaching controls. |
 | P1-7 | Single completion reveal; recap four rule groups | Accepted | Add one reduced-motion-safe 2048 reveal, `Start playing`, and `Replay tutorial`. |
-| P1-8 | Prompt hierarchy and copy | Modified | Consolidate the prompt into the empty-state overlay with Start, Tutorial, Options, and a cookie-backed `Don't show this again` choice. |
+| P1-8 | Prompt hierarchy and copy | Modified | Keep Start and Tutorial prominent, place game choices inline below them, and ask whether to launch the tutorial only after New Game when the cookie preference has not suppressed the offer. |
 | P2 | Touch targets, live regions, swipe, contrast, accents | Accepted | Add automated checks where possible and retain real-device/screen-reader verification as the completion gate. |
 
 ## Evidence files

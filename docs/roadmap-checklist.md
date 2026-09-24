@@ -66,22 +66,22 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
   - [x] Allow the tutorial to be cancelled at any step; both cancellation and completion must return the player to the explicit `Start New Game` state
   - [x] Use deterministic, authored boards to teach all four move directions and every tile type: number, zero, wildcard, and Lock-0
   - [x] End with guided merge-chain steps that visibly build to the `2048` tile, then show a completion summary
-  - [x] Implement the [2026-09-20 tutorial improvement plan](./tutorial-improvement-plan-2026-09-20.md): empty-state Tutorial/Options actions, opt-out cookie, coach overlays, directional animation, and automatic progression
-  - [ ] Apply and disposition the [frontend review](./tutorial-frontend-review-2026-09-20.md), including mobile fit, dialog modality, teaching cues, special-tile labels, and completion emphasis
+  - [x] Implement the [2026-09-20 tutorial improvement plan](./tutorial-improvement-plan-2026-09-20.md): inline New Game choices, persistent Tutorial access, opt-out cookie, coach overlays, directional animation, and automatic progression
+  - [x] Apply and disposition the [frontend review](./tutorial-frontend-review-2026-09-20.md), including mobile fit, dialog modality, teaching cues, special-tile labels, and completion emphasis
   - [x] Add unit and Playwright coverage for prompt persistence, active-game confirmation, deterministic steps, invalid input, cancellation, completion, mobile layout, keyboard use, and reduced motion
   - [ ] Run a frontend-design review after the functional prototype is complete, incorporate or explicitly disposition its feedback, and perform final Android Chrome and iPhone Safari checks
-- [ ] Simplify the mobile options interaction to a single disclosure
-  - [ ] Make the lower action-dock `Options` button the only control that opens or closes the player options panel
-  - [ ] Show the actual Difficulty, Color, Theme, Mode, Import, Replay, and Export controls immediately after one tap; remove the nested `Options` summary and second expansion step
-  - [ ] Keep `aria-expanded` and `aria-controls` on the lower button, move focus predictably, and preserve keyboard, touch, safe-area, and reduced-motion behavior
-  - [ ] Add Playwright coverage proving one tap exposes the settings, a second tap closes them, no duplicate `Options` disclosure is present, and the panel does not overlap the board at 390px and 412px
+- [x] Consolidate pre-game choices into the New Game overlay
+  - [x] Remove player-facing `Options` buttons and render Difficulty, Color, Theme, Mode, tutorial preference, and permitted Import/Replay actions below New Game and Tutorial
+  - [x] Route active, win, and game-over New Game actions through the same setup overlay without clearing the current board before confirmation
+  - [x] Rename the mobile secondary-action disclosure to `More`; retain `aria-expanded`/`aria-controls` and keep Tutorial/export/replay reachable during play
+  - [x] Add Playwright coverage for inline choices, absence of duplicate Options buttons, active-board preservation, terminal routing, and 390px/412px mobile controls
 - [x] Complete the mobile action-dock accessibility follow-up
-  - [x] Add Playwright coverage proving primary controls remain visible, secondary controls toggle through `Options`, and the dock stays on one row at 390px and 412px
+  - [x] Add Playwright coverage proving primary controls remain visible, secondary controls toggle through `More`, and the dock stays on one row at 390px and 412px
   - [x] Verify long labels such as `Confirm New Game` do not enlarge the fixed dock enough to cover the board or final page content
   - [x] Replace the `title`-only difficulty help with a keyboard- and touch-accessible visible disclosure
   - [x] Confirm primary and secondary control targets, focus states, and reduced-motion behavior without weakening the active-run New Game confirmation
 - [ ] Run and document a real-device mobile UX audit after the action-dock and resume fixes
-  - [ ] Verify thumb reach, swipe separation, options disclosure, background/resume, and game continuity on Android Chrome
+  - [ ] Verify thumb reach, swipe separation, inline New Game choices, the `More` disclosure, background/resume, and game continuity on Android Chrome
   - [ ] Verify the same critical flow, safe-area padding, and dock layout on iPhone Safari
 
 ## Economy + Integrity

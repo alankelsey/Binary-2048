@@ -172,9 +172,10 @@ selected `Don't show this again`.
 ### Phase 2 — Empty state and options
 
 - Replace the single-action New Game overlay contract with Start, Tutorial,
-  Options, reminder copy, and checkbox callbacks.
+  inline setup choices, reminder preference, and an optional Back action.
 - Render New Game choices inline and remove overlay Options buttons.
-- Ensure overlay and lower-dock Options triggers are mutually exclusive.
+- Use `More` only for secondary actions during active mobile play; it is not a
+  second settings editor.
 - Preserve the active-game warning before Tutorial can end a normal run.
 
 ### Phase 3 — Coach overlay and teaching visuals
@@ -212,14 +213,17 @@ Unit tests must cover:
 
 Playwright must cover:
 
-- empty-state Start, Tutorial, and Options actions;
+- empty-state Start and Tutorial actions with inline Difficulty, Color, Theme,
+  Mode, tutorial preference, and permitted Import/Replay choices;
 - invitation shown every time the no-game overlay is entered without the
   cookie;
 - leaving the checkbox unchecked prompting again after a normal run, tutorial
   quit/completion, reload, and a new browser context;
 - checked `Don't show this again` setting the cookie and suppressing later
   invitations while leaving the Tutorial button available;
-- Options opening in one tap and returning focus correctly;
+- no player-facing Options button or nested settings disclosure;
+- active, win, and game-over New Game actions opening the same setup choices
+  without clearing the current board before confirmation;
 - tapping a coach overlay, then completing all checkpoints without any Next
   button;
 - arrow direction for left/right/up/down and the reduced-motion static state;
