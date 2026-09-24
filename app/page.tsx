@@ -8,7 +8,6 @@ import { parseReplayExport, replayStateAtStep, type ReplayData } from "@/lib/bin
 import { buildShareLandingUrl, buildShareText, buildShareUrls } from "@/lib/binary2048/share";
 import { buildIssueReportUrl } from "@/lib/binary2048/issue-report";
 import { isThemeMode, THEMES, type ThemeMode } from "@/lib/binary2048/theme";
-import { rarityCssClass, STORE_ITEM_ICONS } from "@/lib/binary2048/store-icons";
 import { getControlVisibility } from "@/lib/binary2048/control-visibility";
 import { getReplayCodeFromSearch } from "@/lib/binary2048/replay-link";
 import { buildReplayUrl, getReplayShareErrorMessage } from "@/lib/binary2048/replay-share";
@@ -2069,17 +2068,6 @@ export default function Home() {
             <p>Wildcard tiles (`✦`) double any number tile they collide with, then disappear.</p>
             <p>Game ends when no empty cells and no valid merges remain.</p>
             <p>Tip: keep your highest value anchored to one side and avoid breaking the chain.</p>
-            <div className="store-icon-legend" aria-label="store icon legend">
-              <p>Store icon legend:</p>
-              <div className="store-icon-row">
-                {STORE_ITEM_ICONS.map((item) => (
-                  <span key={item.id} className={`store-icon-chip ${rarityCssClass(item.rarity)}`}>
-                    <span aria-hidden="true">{item.glyph}</span>
-                    <span>{item.label}</span>
-                  </span>
-                ))}
-              </div>
-            </div>
           </div>
         </details>
         <details className="game-hint">
