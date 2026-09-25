@@ -2,16 +2,17 @@
 
 Date: 2026-09-24
 
-Status: Replay JSON terminal actions implemented and locally verified; deployment pending
+Status: Replay JSON terminal actions deployed and verified; physical-device audit is next
 
 ## Production baseline
 
-- Current production commit: `1b8e2f1` (`refresh v1 deployment handoff`).
-- Amplify job `313` succeeded and `/api/health` reported the expected commit.
+- Production feature commit: `6d49af2` (`add replay import to terminal overlays`).
+- Amplify job `314` succeeded and `/api/health` reported the expected commit.
 - Post-deployment production smoke verification passed on its first attempt.
 - Production-safe Playwright: 9/9 passed.
-- A targeted production browser check confirmed the Game Log region, Show Log,
-  and Copy Log controls are all absent with the default configuration.
+- A targeted production browser check reached Game Over and confirmed the
+  deployed `Replay JSON` action is visible. Earlier targeted production
+  evidence also confirms the Game Log is absent with the default configuration.
 
 ## Current V1 behavior
 
@@ -50,6 +51,8 @@ Status: Replay JSON terminal actions implemented and locally verified; deploymen
   - Default-config Playwright: 50 passed / 1 flag-enabled case skipped.
   - Typecheck passed.
   - Focused terminal-overlay Playwright: 2/2 passed.
+  - Post-deploy smoke passed on its first attempt; production-safe Playwright
+    passed 9/9; focused deployed Game Over assertion passed 1/1.
 
 ## Next V1 task
 

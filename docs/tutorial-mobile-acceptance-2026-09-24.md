@@ -50,6 +50,8 @@ accepted tutorial/mobile review release.
 - Unit: `149/149` suites and `481/481` tests passed.
 - Local Playwright UI: `50` passed / `1` debug-flag case skipped.
 - Production-safe Playwright: `9/9` passed.
+- Focused production Game Over check: `1/1` passed and explicitly confirmed
+  the deployed `Replay JSON` action.
 - Typecheck passed. The production browser auth/API health checks passed.
 - Terminal-overlay regression coverage verifies that keyboard activation of
   `Replay JSON` imports a valid replay, enters replay mode, and restores the

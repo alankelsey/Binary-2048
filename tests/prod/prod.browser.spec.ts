@@ -258,6 +258,7 @@ test("the manual left-down and right-left loop reaches the game-over overlay", a
   const gameOver = page.getByRole("dialog", { name: "GAME OVER" });
   await expect(gameOver).toBeVisible();
   await expect(gameOver.getByText(`Score: ${current.score}`)).toBeVisible();
+  await expect(gameOver.getByRole("button", { name: "Replay JSON" })).toBeVisible();
 
   const terminalMoveCount = moves.length;
   await page.keyboard.press("ArrowRight");
