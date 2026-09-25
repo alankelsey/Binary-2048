@@ -2,12 +2,12 @@
 
 Date: 2026-09-24
 
-Status: Physical-device checks deferred to the final V1 gate; fail-closed server-session handling implemented locally
+Status: Physical-device checks deferred to the final V1 gate; fail-closed server-session handling deployed and verified
 
 ## Production baseline
 
-- Production feature commit: `6d49af2` (`add replay import to terminal overlays`).
-- Amplify job `314` succeeded and `/api/health` reported the expected commit.
+- Production commit: `f88b8b9` (`fail closed on session lookup errors`).
+- Amplify job `316` succeeded and `/api/health` reported the expected commit.
 - Post-deployment production smoke verification passed on its first attempt.
 - Production-safe Playwright: 9/9 passed.
 - A targeted production browser check reached Game Over and confirmed the
@@ -54,14 +54,14 @@ Status: Physical-device checks deferred to the final V1 gate; fail-closed server
   - Post-deploy smoke passed on its first attempt; production-safe Playwright
     passed 9/9; focused deployed Game Over assertion passed 1/1.
 
-## Current V1 item
+## Latest completed V1 item
 
 - Auth-aware read-only pages now use a shared optional session lookup that logs
   PII-free failure metadata before falling back to guest state.
 - Protected auth-bridge token creation uses a required lookup: a confirmed
   missing session remains `401`, while session-service failure returns `503`
   and never silently downgrades.
-- Verification before deployment:
+- Verification:
   - Focused helper and route coverage: 2 suites / 8 tests passed.
   - Full unit suite: 150 suites / 486 tests passed.
   - Default-config Playwright: 50 passed / 1 debug-flag case skipped.
@@ -70,6 +70,9 @@ Status: Physical-device checks deferred to the final V1 gate; fail-closed server
     auth-bridge secret is configured locally, so the bridge endpoint returns
     `503` instead of the configured environment's unauthenticated `401`.
   - `git diff --check` passed.
+  - Amplify job `316` succeeded; production health and smoke passed on the
+    first attempt; production-safe Playwright passed 9/9, including the auth
+    page and browser-context auth/session API health checks.
 
 ## Next V1 task
 
@@ -89,10 +92,10 @@ iOS Simulator runtime, neither of which is installed. These are supplemental
 checks and cannot prove physical touch, safe areas, browser suspension,
 VoiceOver, latency, or thumb reach.
 
-After the fail-closed session item is deployed, continue authenticated V1
-acceptance with protected user-data deletion authorization, followed by
-sign-out/expired-session/reauthentication recovery. Save the authenticated
-Android session-resume flow for the final physical-device gate.
+Continue authenticated V1 acceptance with protected user-data deletion
+authorization, followed by sign-out/expired-session/reauthentication recovery.
+Save the authenticated Android session-resume flow for the final physical-
+device gate.
 
 ## V2 evidence preserved
 
