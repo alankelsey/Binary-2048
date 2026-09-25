@@ -2,7 +2,21 @@ import { expect, test } from "@playwright/test";
 import { applyMove, createGame, DEFAULT_CONFIG } from "@/lib/binary2048/engine";
 import type { Cell, Dir, GameConfig, GameState } from "@/lib/binary2048/types";
 
+const gameLogEnabled = process.env.NEXT_PUBLIC_GAME_LOG_ENABLED === "1";
+
+test("game log collection and UI are disabled by default", async ({ page }) => {
+  test.skip(gameLogEnabled, "Runs only against the normal app configuration");
+  await page.goto("/");
+  await expect(page.getByRole("region", { name: "Game diagnostics" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Show Log" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Copy Log" })).toHaveCount(0);
+  await expect(page.getByRole("textbox", { name: "Game diagnostic log" })).toHaveCount(0);
+  await page.evaluate(() => console.error("disabled-game-log-probe"));
+  await expect(page.getByText("disabled-game-log-probe")).toHaveCount(0);
+});
+
 test("game log captures moves, export/replay results, console errors, and supports toggle/copy/clear", async ({ page }) => {
+  test.skip(!gameLogEnabled, "Requires NEXT_PUBLIC_GAME_LOG_ENABLED=1");
   const config: GameConfig = {
     ...DEFAULT_CONFIG,
     seed: 5150,

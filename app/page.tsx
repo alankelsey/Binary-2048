@@ -113,6 +113,7 @@ const DIFFICULTY_HELP_TEXT =
   "Difficulty changes wildcard/lock spawn rates: Normal = balanced, LTFG = more wildcards and fewer locks, Death by AI = fewer wildcards and more locks.";
 const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.1.0";
 const APP_COMMIT = process.env.NEXT_PUBLIC_APP_COMMIT ?? "dev";
+const GAME_LOG_ENABLED = process.env.NEXT_PUBLIC_GAME_LOG_ENABLED === "1";
 const UI_POLICY = getUiPolicy();
 const FULLSCREEN_TOGGLE_ENABLED = isFullscreenToggleEnabled();
 const MAX_BUFFERED_MOVES = 8;
@@ -216,6 +217,7 @@ export default function Home() {
       details?: Record<string, string | number | boolean | null>,
       level: DiagnosticLevel = "info"
     ) => {
+      if (!GAME_LOG_ENABLED) return;
       diagnosticSequenceRef.current += 1;
       const entry: DiagnosticEntry = {
         sequence: diagnosticSequenceRef.current,
@@ -237,6 +239,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    if (!GAME_LOG_ENABLED) return;
     addDiagnostic("diagnostics_ready", {
       commit: APP_COMMIT,
       userAgent: navigator.userAgent,
@@ -1207,7 +1210,7 @@ export default function Home() {
         })
       : "https://github.com/alankelsey/Binary-2048/issues/new";
   const socialUrls = buildShareUrls(shareText, shareUrl);
-  const diagnosticText = formatDiagnosticEntries(diagnosticEntries);
+  const diagnosticText = GAME_LOG_ENABLED ? formatDiagnosticEntries(diagnosticEntries) : "";
 
   async function trackMarketing(
     type: MarketingEventType,
@@ -1270,6 +1273,7 @@ export default function Home() {
   }
 
   async function copyDiagnosticLog() {
+    if (!GAME_LOG_ENABLED) return;
     const copied = await copyTextWithFallback(diagnosticText);
     setShareMessage(copied ? "Diagnostic log copied" : "Unable to copy diagnostic log; select the text manually");
     window.setTimeout(() => setShareMessage(""), copied ? 1800 : 2600);
@@ -2019,7 +2023,7 @@ export default function Home() {
           />
         </div>
         </div>
-        <section className="diagnostics-panel" aria-label="Game diagnostics">
+        {GAME_LOG_ENABLED ? <section className="diagnostics-panel" aria-label="Game diagnostics">
           <div className="diagnostics-header">
             <strong>Game Log ({diagnosticEntries.length})</strong>
             <div className="diagnostics-actions">
@@ -2049,7 +2053,7 @@ export default function Home() {
               value={diagnosticText}
             />
           ) : null}
-        </section>
+        </section> : null}
         <details className="game-hint">
           <summary>How to play: Swipe on mobile or use arrow keys/WASD. Keep your strongest chain organized.</summary>
           <div className="game-hint-body">

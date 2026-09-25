@@ -262,6 +262,7 @@ test("launching from an active game is gated and cancellation preserves the boar
   await mockNormalGame(page);
   await page.goto("/");
   await page.getByRole("button", { name: "Start New Game" }).click();
+  await expect(page.getByRole("gridcell", { name: /number 2$/ })).toHaveCount(2);
   const boardBefore = await page.getByRole("gridcell").evaluateAll((cells) => cells.map((cell) => cell.getAttribute("aria-label")));
   const tutorialButton = page.getByRole("button", { name: "Tutorial", exact: true });
   await tutorialButton.click();

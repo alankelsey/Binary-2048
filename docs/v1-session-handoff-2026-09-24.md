@@ -2,16 +2,17 @@
 
 Date: 2026-09-24
 
-Status: tutorial/mobile automated acceptance complete; local V1 fixes ready for review; physical-device gate remains open
+Status: Game Log configuration item complete locally; ready for review, commit, and deployment
 
 ## Production baseline
 
-- Last behavior-changing production commit: `7e15eb4` (`extend tutorial
-  success feedback`).
-- Amplify job `306` succeeded.
-- Post-deployment production smoke verification passed.
-- Last full local verification: 150 unit suites / 484 tests and 47 Playwright
-  UI tests passed.
+- Last production commit: `7e62cfd` (`move accessibility guidance out of
+  gameplay`).
+- Amplify job `311` succeeded and `/api/health` reported the expected commit.
+- Post-deployment production smoke verification passed on its second attempt;
+  the first hit the known per-instance guest-session miss, then recovery-aware
+  production browser coverage passed.
+- Production-safe Playwright: 9/9 passed.
 
 ## Current V1 behavior
 
@@ -23,7 +24,28 @@ Status: tutorial/mobile automated acceptance complete; local V1 fixes ready for 
   without clearing the current board. Tutorial remains directly accessible.
 - Guests receive a cookie-backed tutorial offer after choosing New Game unless
   they opt out. The tutorial success message remains visible for 1700 ms.
-- The Game Log is collapsed by default.
+- The unavailable store-product legend and developer-style accessibility map
+  have been removed from the gameplay page. Concise accessibility guidance
+  remains in the User Guide.
+- Production still has the collapsed Game Log from `7e62cfd`. The completed
+  local change described below makes it opt-in and entirely absent by default.
+
+## Completed local V1 item awaiting commit
+
+- `NEXT_PUBLIC_GAME_LOG_ENABLED=1` now opts into the debugging Game Log. The
+  default/unset value disables the feature.
+- Disabled means the client does not render the viewer, accumulate or retain
+  diagnostic entries, intercept console/window errors, copy log text, or emit
+  diagnostic output. There is no player-facing toggle.
+- `.env.example` documents the flag. `npm run test:ui:game-log` launches an
+  isolated flag-enabled app for the existing collection/copy regression.
+- Verification after the change:
+  - 149 unit suites / 481 tests passed (the count dropped when the obsolete
+    accessibility-map helper and its three tests were removed).
+  - Default-config Playwright: 50 passed / 1 flag-enabled case skipped.
+  - Flag-enabled Game Log Playwright: 1 passed / 1 default-only case skipped.
+  - Typecheck passed.
+  - `git diff --check` passed.
 
 ## Next V1 task
 
@@ -31,17 +53,16 @@ The deployed re-review, disposition log, automated evidence, and exact remaining
 device checklist are in
 [`tutorial-mobile-acceptance-2026-09-24.md`](./tutorial-mobile-acceptance-2026-09-24.md).
 
-This pass confirmed and fixed two local V1 defects: backgrounded tutorial
-success timers could advance unseen, and tutorial confirmations did not trap or
-restore keyboard focus. Regression coverage was added. Final reruns passed 150
-unit suites / 484 tests, 48 local Playwright UI tests, and 9 production-safe
-Playwright tests. The production build compiled and type-checked; its final
-local auth smoke expected a configured bridge secret and received `503`, while
-the production browser auth/API health checks passed.
+First review, commit, deploy, and production-verify the completed Game Log flag
+item. The next implementation item in roadmap order is to add `Replay JSON` to
+the game-over and win overlays through the existing hidden replay-file input,
+with keyboard and Playwright coverage. Keep active-board and terminal New Game
+routing unchanged.
 
-Next, deploy and verify these two fixes, then execute the recorded checklist on
-physical Android Chrome and iPhone Safari. Do not mark the guided-tutorial or
-real-device roadmap parents complete until both device passes are recorded.
+After the player-facing cleanup parent is complete, execute the recorded
+physical Android Chrome and iPhone Safari checklist. Do not mark the guided-
+tutorial or real-device roadmap parents complete until both device passes are
+recorded.
 
 After that gate, finish authenticated V1 acceptance: protected data deletion,
 sign-out/expired-session/reauthentication recovery, and the authenticated

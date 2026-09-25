@@ -73,6 +73,7 @@
     "ops:incident:bundle": "bash ./scripts/incident-evidence-bundle.sh",
     "ops:prod:browser": "playwright test -c playwright.prod.config.ts",
     "test:ui": "playwright test -c playwright.ui.config.ts",
+    "test:ui:game-log": "NEXT_PUBLIC_GAME_LOG_ENABLED=1 playwright test -c playwright.game-log.config.ts",
     "ops:prod:regional": "bash ./scripts/prod-regional-check.sh",
     "ops:prod:admin-token:sync": "bash ./scripts/prod-admin-token-sync.sh",
     "ops:prod:storage-check": "bash ./scripts/prod-storage-check.sh",
