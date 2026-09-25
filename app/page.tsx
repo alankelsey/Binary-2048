@@ -1758,6 +1758,7 @@ export default function Home() {
             highScore={Math.max(highScore, viewState?.score ?? 0)}
             onNewGame={openNewGameSetup}
             onTutorial={requestTutorial}
+            onReplay={effectiveUiPolicy.controls.import ? () => replayInputRef.current?.click() : undefined}
           />
           <NewGameOverlay
             visible={!initializing && !tutorial && !newGameTutorialChoiceOpen && !replay && (newGameSetupOpen || !state)}
@@ -1841,6 +1842,7 @@ export default function Home() {
             }}
             onNewGame={openNewGameSetup}
             onTutorial={requestTutorial}
+            onReplay={effectiveUiPolicy.controls.import ? () => replayInputRef.current?.click() : undefined}
           />
           {newGameTutorialChoiceOpen ? (
             <div className="newgame-overlay tutorial-dialog" role="dialog" aria-modal="true" aria-labelledby="new-game-tutorial-title">

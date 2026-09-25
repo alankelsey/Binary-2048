@@ -2,12 +2,12 @@
 
 Date: 2026-09-24
 
-Status: Game Log configuration item deployed; ready for the Replay JSON terminal-overlay item
+Status: Replay JSON terminal actions implemented and locally verified; deployment pending
 
 ## Production baseline
 
-- Last production commit: `fddebb1` (`gate game log behind debug config`).
-- Amplify job `312` succeeded and `/api/health` reported the expected commit.
+- Current production commit: `1b8e2f1` (`refresh v1 deployment handoff`).
+- Amplify job `313` succeeded and `/api/health` reported the expected commit.
 - Post-deployment production smoke verification passed on its first attempt.
 - Production-safe Playwright: 9/9 passed.
 - A targeted production browser check confirmed the Game Log region, Show Log,
@@ -21,6 +21,9 @@ Status: Game Log configuration item deployed; ready for the Replay JSON terminal
   `More` only to reveal secondary gameplay actions.
 - New Game from active, win, or game-over states opens the shared setup overlay
   without clearing the current board. Tutorial remains directly accessible.
+- Game-over and win overlays offer `Replay JSON` whenever replay import is
+  permitted by the effective UI policy. The action uses the existing replay
+  file picker and accepts keyboard activation.
 - Guests receive a cookie-backed tutorial offer after choosing New Game unless
   they opt out. The tutorial success message remains visible for 1700 ms.
 - The unavailable store-product legend and developer-style accessibility map
@@ -29,7 +32,7 @@ Status: Game Log configuration item deployed; ready for the Replay JSON terminal
 - The Game Log is opt-in and entirely absent in the default production
   configuration.
 
-## Completed V1 item
+## Completed V1 items
 
 - `NEXT_PUBLIC_GAME_LOG_ENABLED=1` now opts into the debugging Game Log. The
   default/unset value disables the feature.
@@ -38,13 +41,15 @@ Status: Game Log configuration item deployed; ready for the Replay JSON terminal
   diagnostic output. There is no player-facing toggle.
 - `.env.example` documents the flag. `npm run test:ui:game-log` launches an
   isolated flag-enabled app for the existing collection/copy regression.
-- Verification before and after deployment:
-  - 149 unit suites / 481 tests passed (the count dropped when the obsolete
-    accessibility-map helper and its three tests were removed).
+- Game-over and win overlays now expose `Replay JSON` through the existing
+  hidden replay-file input. Browser coverage proves keyboard activation, a
+  valid JSON import, replay-mode entry, and restoration of each terminal
+  overlay after exiting replay.
+- Local verification for the Replay JSON item:
+  - 149 unit suites / 481 tests passed.
   - Default-config Playwright: 50 passed / 1 flag-enabled case skipped.
-  - Flag-enabled Game Log Playwright: 1 passed / 1 default-only case skipped.
   - Typecheck passed.
-  - `git diff --check` passed.
+  - Focused terminal-overlay Playwright: 2/2 passed.
 
 ## Next V1 task
 
@@ -52,15 +57,12 @@ The deployed re-review, disposition log, automated evidence, and exact remaining
 device checklist are in
 [`tutorial-mobile-acceptance-2026-09-24.md`](./tutorial-mobile-acceptance-2026-09-24.md).
 
-The next implementation item in roadmap order is to add `Replay JSON` to the
-game-over and win overlays through the existing hidden replay-file input, with
-keyboard and Playwright coverage. Keep active-board and terminal New Game
-routing unchanged.
-
-After the player-facing cleanup parent is complete, execute the recorded
-physical Android Chrome and iPhone Safari checklist. Do not mark the guided-
-tutorial or real-device roadmap parents complete until both device passes are
-recorded.
+The next roadmap item is the physical Android Chrome and iPhone Safari audit in
+the acceptance evidence. It must verify thumb reach, swipe/scroll separation,
+inline New Game choices, the `More` disclosure, background/resume continuity,
+iPhone safe-area padding, and dock layout. This requires real devices; do not
+mark the guided-tutorial or real-device roadmap parents complete until both
+device passes are recorded.
 
 After that gate, finish authenticated V1 acceptance: protected data deletion,
 sign-out/expired-session/reauthentication recovery, and the authenticated

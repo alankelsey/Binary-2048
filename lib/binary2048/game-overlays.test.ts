@@ -38,7 +38,8 @@ describe("game overlays", () => {
         score: 321,
         highScore: 999,
         onNewGame: () => {},
-        onTutorial: () => {}
+        onTutorial: () => {},
+        onReplay: () => {}
       })
     );
     expect(html).toContain("GAME OVER");
@@ -46,6 +47,7 @@ describe("game overlays", () => {
     expect(html).toContain("High: 999");
     expect(html).toContain(">New Game<");
     expect(html).toContain(">Tutorial<");
+    expect(html).toContain(">Replay JSON<");
     expect(html).not.toContain(">Options<");
   });
 
@@ -59,7 +61,8 @@ describe("game overlays", () => {
         canContinue: true,
         onContinue: () => {},
         onNewGame: () => {},
-        onTutorial: () => {}
+        onTutorial: () => {},
+        onReplay: () => {}
       })
     );
     expect(html).toContain("YOU WIN");
@@ -67,6 +70,7 @@ describe("game overlays", () => {
     expect(html).toContain(">Continue<");
     expect(html).toContain(">New Game<");
     expect(html).toContain(">Tutorial<");
+    expect(html).toContain(">Replay JSON<");
     expect(html).not.toContain(">Options<");
   });
 
@@ -80,7 +84,8 @@ describe("game overlays", () => {
         canContinue: false,
         onContinue: () => {},
         onNewGame: () => {},
-        onTutorial: () => {}
+        onTutorial: () => {},
+        onReplay: () => {}
       })
     );
     expect(html).toContain("YOU WIN");

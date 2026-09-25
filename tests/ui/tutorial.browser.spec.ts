@@ -291,6 +291,7 @@ test("new-game tutorial offer does not interrupt an active guest game until conf
   await page.goto("/");
   await page.getByRole("button", { name: "Start New Game" }).click();
   await page.getByRole("dialog", { name: "PLAY THE TUTORIAL?" }).getByRole("button", { name: "Start game" }).click();
+  await expect(page.getByRole("gridcell", { name: /number 2$/ })).toHaveCount(2);
   const boardBefore = await page.getByRole("gridcell").evaluateAll((cells) => cells.map((cell) => cell.getAttribute("aria-label")));
   const gameIdBefore = await page.evaluate(() => window.localStorage.getItem("binary2048.currentGameId"));
   expect(createRequests).toBe(1);
@@ -357,6 +358,28 @@ for (const terminal of ["over", "won"] as const) {
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole("button", { name: "New Game" })).toBeVisible();
     await expect(dialog.getByRole("button", { name: "Tutorial" })).toBeVisible();
+    const replayJson = dialog.getByRole("button", { name: "Replay JSON" });
+    await expect(replayJson).toBeVisible();
+    await replayJson.focus();
+    const fileChooser = page.waitForEvent("filechooser");
+    await replayJson.press("Enter");
+    const chooser = await fileChooser;
+    const replayState = createGame(normalGameConfig, [
+      [{ t: "n", v: 2 }, null, null, null],
+      [null, null, null, null],
+      [null, null, null, null],
+      [null, { t: "n", v: 2 }, null, null]
+    ]).state;
+    await chooser.setFiles({
+      name: "terminal-replay.json",
+      mimeType: "application/json",
+      buffer: Buffer.from(JSON.stringify({ initial: replayState, steps: [], final: replayState }))
+    });
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByText("Game: Replay (terminal-replay.json)")).toBeVisible();
+    await expect(page.getByText("Replay step 0/0")).toBeVisible();
+    await page.getByRole("button", { name: "Exit Replay" }).click();
+    await expect(dialog).toBeVisible();
     await expect(dialog.getByRole("button", { name: "Options" })).toHaveCount(0);
     await dialog.getByRole("button", { name: "New Game" }).click();
     await expect(dialog).toHaveCount(0);

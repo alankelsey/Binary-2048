@@ -42,19 +42,18 @@ and iPhone Safari acceptance remains open
    focus or return it to the invoking control. Focus now stays within the
    topmost modal and returns after cancellation.
 
-Both fixes have Playwright regression coverage. They are local changes and are
-not claimed as deployed evidence until a later deployment is verified.
+Both fixes have Playwright regression coverage and were deployed in the
+accepted tutorial/mobile review release.
 
 ## Automated results
 
-- Unit: `150/150` suites and `484/484` tests passed.
-- Local Playwright UI: `48/48` passed.
+- Unit: `149/149` suites and `481/481` tests passed.
+- Local Playwright UI: `50` passed / `1` debug-flag case skipped.
 - Production-safe Playwright: `9/9` passed.
-- Next production build compiled and type-checked successfully. Its final local
-  smoke step could not assert the unauthenticated bridge response because the
-  local build environment has no auth-bridge secret (`503` instead of the
-  configured environment's expected `401`). The production browser auth/API
-  health checks passed.
+- Typecheck passed. The production browser auth/API health checks passed.
+- Terminal-overlay regression coverage verifies that keyboard activation of
+  `Replay JSON` imports a valid replay, enters replay mode, and restores the
+  game-over or win overlay after replay exit.
 
 ## Physical-device checklist
 
@@ -72,6 +71,8 @@ not claimed as deployed evidence until a later deployment is verified.
 - During an active run, cancel New Game and Tutorial launch and confirm the exact
   board and turn remain. Open/close `More`; confirm reachable targets, one-row
   dock layout, and no board/final-content overlap.
+- Reach both Game Over and You Win, activate `Replay JSON`, select a valid JSON
+  file from the Android picker, and confirm replay mode opens and exits cleanly.
 - Send a rapid swipe burst and confirm moves stay ordered with no silent drops or
   errors.
 - Background/lock during an active game and during tutorial success feedback;
@@ -83,7 +84,8 @@ not claimed as deployed evidence until a later deployment is verified.
 ### iPhone Safari
 
 - Repeat the critical New Game offer, tutorial launch, all-direction swipe,
-  quit/completion, active-game cancellation, and `More` checks.
+  quit/completion, active-game cancellation, `More`, and both terminal-overlay
+  `Replay JSON` file-picker checks.
 - Expand/collapse Safari's address bar and check portrait notch/home-indicator
   safe areas: coach, full board, primary dock, and final content must remain
   visible without overlap.
@@ -91,4 +93,3 @@ not claimed as deployed evidence until a later deployment is verified.
   on the coach or beside the board must not cause an accidental game move.
 - Background/lock Safari and return to confirm game and tutorial continuity.
 - With VoiceOver, confirm modal focus containment and single announcements.
-
