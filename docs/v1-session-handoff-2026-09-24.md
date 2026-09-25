@@ -8,9 +8,8 @@ Status: Physical-device checks deferred to the final V1 gate; fail-closed server
 
 - Production feature commit: `f88b8b9` (`fail closed on session lookup errors`);
   Amplify job `316` succeeded.
-- Current deployed main: `96a204e` (`record session handling deployment`);
-  handoff-only Amplify job `317` succeeded and `/api/health` reported the
-  expected commit.
+- Current deployed main: `0532743` (`guard production deletion acceptance`);
+  Amplify job `318` succeeded and `/api/health` reported the expected commit.
 - Post-deployment production smoke verification passed on its first attempt.
 - Production-safe Playwright: 9/9 passed.
 - A targeted production browser check reached Game Over and confirmed the
@@ -111,6 +110,8 @@ rechecks every guard and validates the active session identity before issuing
 `DELETE`, then requires an empty protected export. The harness has not been run
 and no production data has been deleted. Full unit verification is 150 suites /
 487 tests; typecheck passed; the unguarded command correctly refused to start.
+Amplify job `318` deployed the guarded harness/test commit; production health
+and smoke passed on the first attempt.
 
 ## V2 evidence preserved
 
