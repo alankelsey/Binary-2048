@@ -1,10 +1,10 @@
-import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { buildAuthUiState } from "@/lib/binary2048/auth-ui";
 import { getAuthUxMessages } from "@/lib/binary2048/auth-ux";
+import { getOptionalServerSession } from "@/lib/binary2048/server-session";
 
 export default async function PrivacyPage() {
-  const session = await getServerSession(authOptions);
+  const session = await getOptionalServerSession("privacy-page");
   const authState = buildAuthUiState(session, authOptions.providers?.length ?? 0);
   const authUx = getAuthUxMessages(authState);
   return (

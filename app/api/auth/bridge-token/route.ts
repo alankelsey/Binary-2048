@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/auth";
 import { createAuthBridgeToken } from "@/lib/binary2048/auth-bridge";
 import type { UserTier } from "@/lib/binary2048/security-policy";
+import {
+  getRequiredServerSession,
+  ServerSessionLookupError
+} from "@/lib/binary2048/server-session";
 
 type BridgeBody = {
   ttlSeconds?: number;
@@ -21,7 +23,18 @@ export async function POST(req: Request) {
     );
   }
 
-  const session = await getServerSession(authOptions);
+  let session;
+  try {
+    session = await getRequiredServerSession("auth-bridge-token");
+  } catch (error) {
+    if (error instanceof ServerSessionLookupError) {
+      return NextResponse.json(
+        { error: "Authentication service temporarily unavailable" },
+        { status: 503 }
+      );
+    }
+    throw error;
+  }
   const user = session?.user;
   const sub = user?.email || user?.name;
   if (!sub) {

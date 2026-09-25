@@ -1,13 +1,13 @@
-import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { buildAuthUiState } from "@/lib/binary2048/auth-ui";
 import { getAuthUxMessages } from "@/lib/binary2048/auth-ux";
 import { getInventory, listInventoryLedger } from "@/lib/binary2048/inventory";
 import { listStorePackets } from "@/lib/binary2048/store-catalog";
 import { storeSubscriberIdForSubject } from "@/lib/binary2048/store-auth";
+import { getOptionalServerSession } from "@/lib/binary2048/server-session";
 
 export default async function StorePage() {
-  const session = await getServerSession(authOptions);
+  const session = await getOptionalServerSession("store-page");
   const authState = buildAuthUiState(session, authOptions.providers?.length ?? 0);
   const authUx = getAuthUxMessages(authState);
   const subject = authState.email ?? (authState.authenticated ? authState.displayName : null);

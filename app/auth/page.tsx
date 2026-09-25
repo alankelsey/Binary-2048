@@ -1,14 +1,9 @@
-import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { buildAuthUiState } from "@/lib/binary2048/auth-ui";
+import { getOptionalServerSession } from "@/lib/binary2048/server-session";
 
 export default async function AuthPage() {
-  let session = null;
-  try {
-    session = await getServerSession(authOptions);
-  } catch {
-    session = null;
-  }
+  const session = await getOptionalServerSession("auth-page");
   const state = buildAuthUiState(session, authOptions.providers?.length ?? 0);
   return (
     <main>

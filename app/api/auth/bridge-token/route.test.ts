@@ -9,9 +9,15 @@ const { getServerSession } = jest.requireMock("next-auth") as {
 };
 
 describe("POST /api/auth/bridge-token", () => {
+  const consoleWarn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+
   beforeEach(() => {
     jest.clearAllMocks();
     delete process.env.BINARY2048_AUTH_BRIDGE_SECRET;
+  });
+
+  afterAll(() => {
+    consoleWarn.mockRestore();
   });
 
   it("returns 503 when bridge secret missing", async () => {
@@ -26,6 +32,22 @@ describe("POST /api/auth/bridge-token", () => {
 
     const res = await POST(new Request("http://localhost/api/auth/bridge-token", { method: "POST" }));
     expect(res.status).toBe(401);
+  });
+
+  it("returns 503 when the protected session lookup fails", async () => {
+    process.env.BINARY2048_AUTH_BRIDGE_SECRET = "bridge-secret";
+    getServerSession.mockRejectedValue(new Error("session backend unavailable"));
+
+    const res = await POST(new Request("http://localhost/api/auth/bridge-token", { method: "POST" }));
+    expect(res.status).toBe(503);
+    await expect(res.json()).resolves.toEqual({
+      error: "Authentication service temporarily unavailable"
+    });
+    expect(consoleWarn).toHaveBeenCalledWith("Server session lookup failed", {
+      event: "server_session_lookup_failed",
+      surface: "auth-bridge-token",
+      errorName: "Error"
+    });
   });
 
   it("mints bridge token from authenticated session", async () => {

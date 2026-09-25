@@ -1,15 +1,10 @@
 import Link from "next/link";
-import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { buildAuthUiState } from "@/lib/binary2048/auth-ui";
+import { getOptionalServerSession } from "@/lib/binary2048/server-session";
 
 export async function AuthShell() {
-  let session = null;
-  try {
-    session = await getServerSession(authOptions);
-  } catch {
-    session = null;
-  }
+  const session = await getOptionalServerSession("auth-shell");
   const state = buildAuthUiState(session, authOptions.providers?.length ?? 0);
   return (
     <div

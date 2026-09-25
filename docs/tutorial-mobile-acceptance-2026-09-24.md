@@ -3,7 +3,7 @@
 Date: 2026-09-24
 
 Status: automated and deployed-browser review complete; physical Android Chrome
-and iPhone Safari acceptance remains open
+and iPhone Safari acceptance is intentionally deferred to the final V1 gate
 
 ## Evidence and limits
 
@@ -15,6 +15,11 @@ and iPhone Safari acceptance remains open
 - Headless viewport and synthetic touch checks do not prove physical-device
   safe areas, dynamic browser chrome, touch latency, browser suspension, or
   TalkBack/VoiceOver behavior. The two roadmap parents therefore remain open.
+- The current Playwright lane uses Chromium. A supplemental iPhone/WebKit lane
+  is planned; its browser binary is not installed in this workspace. Full
+  Mobile Safari simulation additionally requires Xcode and an iOS Simulator
+  runtime, which are also absent. Emulation results will be recorded separately
+  and will not close either physical-device parent.
 
 ## Frontend-review follow-up disposition
 

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { buildAuthUiState } from "@/lib/binary2048/auth-ui";
 import { getAuthUxMessages } from "@/lib/binary2048/auth-ux";
@@ -7,6 +6,7 @@ import { getDailyChallenge, listDailyChallengeEntries } from "@/lib/binary2048/d
 import { listLeaderboardEntries } from "@/lib/binary2048/leaderboard";
 import { DailyTable, RankedTable } from "@/app/leaderboard-view";
 import { formatSubmittedAt } from "@/lib/binary2048/leaderboard-view";
+import { getOptionalServerSession } from "@/lib/binary2048/server-session";
 
 type LeaderboardPageProps = {
   searchParams?: Promise<{ tab?: string; limit?: string; namespace?: string; seasonMode?: string }>;
@@ -20,12 +20,7 @@ function parseLimit(raw: string | undefined) {
 
 export default async function LeaderboardPage({ searchParams }: LeaderboardPageProps) {
   const params = (await searchParams) ?? {};
-  let session = null;
-  try {
-    session = await getServerSession(authOptions);
-  } catch {
-    session = null;
-  }
+  const session = await getOptionalServerSession("leaderboard-page");
   const authState = buildAuthUiState(session, authOptions.providers?.length ?? 0);
   const authUx = getAuthUxMessages(authState);
   const tab = params.tab === "daily" ? "daily" : "ranked";

@@ -69,7 +69,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
   - [x] Implement the [2026-09-20 tutorial improvement plan](./tutorial-improvement-plan-2026-09-20.md): inline New Game choices, persistent Tutorial access, opt-out cookie, coach overlays, directional animation, and automatic progression
   - [x] Apply and disposition the [frontend review](./tutorial-frontend-review-2026-09-20.md), including mobile fit, dialog modality, teaching cues, special-tile labels, and completion emphasis
   - [x] Add unit and Playwright coverage for prompt persistence, active-game confirmation, deterministic steps, invalid input, cancellation, completion, mobile layout, keyboard use, and reduced motion
-  - [ ] Run a frontend-design review after the functional prototype is complete, incorporate or explicitly disposition its feedback, and perform final Android Chrome and iPhone Safari checks
+  - [ ] Run a frontend-design review after the functional prototype is complete, incorporate or explicitly disposition its feedback, and perform final Android Chrome and iPhone Safari checks (physical-device checks deferred to the final V1 gate)
     - [x] Re-review and disposition the deployed tutorial/New Game flow; rerun automated acceptance and record results ([evidence](./tutorial-mobile-acceptance-2026-09-24.md))
     - [ ] Complete the physical Android Chrome and iPhone Safari checklist in the acceptance evidence
 - [x] Consolidate pre-game choices into the New Game overlay
@@ -87,8 +87,10 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
   - [x] Remove the developer-style keyboard shortcut/tab-order disclosure from the gameplay page while preserving accessible behavior and concise user documentation
   - [x] Add an application-level debug configuration flag for the Game Log; when disabled, do not render its UI and do not collect, retain, copy, or emit diagnostic log output. Do not expose this as a player-facing UI toggle
   - [x] Add `Replay JSON` to the game-over and win overlays through the existing replay-file flow, with keyboard and Playwright coverage
-- [ ] Run and document a real-device mobile UX audit after the action-dock and resume fixes
+- [ ] Run and document a real-device mobile UX audit after the action-dock and resume fixes (deferred to the final V1 gate)
   - [x] Rerun automated mobile viewport, dock, swipe, rapid-input, and recovery coverage ([evidence](./tutorial-mobile-acceptance-2026-09-24.md))
+  - [x] Evaluate supplemental iPhone emulation: Playwright WebKit can cover compatibility, layout, and synthetic touch, while Xcode Simulator can exercise Mobile Safari; neither replaces physical-device acceptance
+  - [ ] Add a supplemental Playwright WebKit iPhone compatibility lane for the critical V1 mobile flow before final physical-device acceptance
   - [ ] Verify thumb reach, swipe separation, inline New Game choices, the `More` disclosure, background/resume, and game continuity on Android Chrome
   - [ ] Verify the same critical flow, safe-area padding, and dock layout on iPhone Safari
 
@@ -212,7 +214,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add auth UI shell (sign in/out controls + session/tier badge in app navigation)
 - [x] Add auth-required UX messaging for protected actions (ranked submit, paid store actions, data export/delete)
 - [x] Add `/auth` account page with provider/session diagnostics and bridge-token helper
-- [ ] Add observable, fail-closed server-session lookup handling for auth-aware pages; read-only views may fall back to guest but authentication failures must be logged and protected actions must never silently downgrade
+- [x] Add observable, fail-closed server-session lookup handling for auth-aware pages; read-only views may fall back to guest but authentication failures must be logged and protected actions must never silently downgrade
 - [ ] Complete and document production authenticated-user acceptance testing
   - [x] Complete a real GitHub OAuth sign-in and verify the authenticated identity/session on desktop
   - [x] Verify the authenticated session persists across refresh, browser restart, and return visits

@@ -2,7 +2,7 @@
 
 Date: 2026-09-24
 
-Status: Replay JSON terminal actions deployed and verified; physical-device audit is next
+Status: Physical-device checks deferred to the final V1 gate; fail-closed server-session handling implemented locally
 
 ## Production baseline
 
@@ -54,22 +54,45 @@ Status: Replay JSON terminal actions deployed and verified; physical-device audi
   - Post-deploy smoke passed on its first attempt; production-safe Playwright
     passed 9/9; focused deployed Game Over assertion passed 1/1.
 
+## Current V1 item
+
+- Auth-aware read-only pages now use a shared optional session lookup that logs
+  PII-free failure metadata before falling back to guest state.
+- Protected auth-bridge token creation uses a required lookup: a confirmed
+  missing session remains `401`, while session-service failure returns `503`
+  and never silently downgrades.
+- Verification before deployment:
+  - Focused helper and route coverage: 2 suites / 8 tests passed.
+  - Full unit suite: 150 suites / 486 tests passed.
+  - Default-config Playwright: 50 passed / 1 debug-flag case skipped.
+  - Typecheck passed; production compilation succeeded.
+  - The local build smoke wrapper reached its known environment-only stop: no
+    auth-bridge secret is configured locally, so the bridge endpoint returns
+    `503` instead of the configured environment's unauthenticated `401`.
+  - `git diff --check` passed.
+
 ## Next V1 task
 
 The deployed re-review, disposition log, automated evidence, and exact remaining
 device checklist are in
 [`tutorial-mobile-acceptance-2026-09-24.md`](./tutorial-mobile-acceptance-2026-09-24.md).
 
-The next roadmap item is the physical Android Chrome and iPhone Safari audit in
-the acceptance evidence. It must verify thumb reach, swipe/scroll separation,
-inline New Game choices, the `More` disclosure, background/resume continuity,
-iPhone safe-area padding, and dock layout. This requires real devices; do not
-mark the guided-tutorial or real-device roadmap parents complete until both
-device passes are recorded.
+Physical Android Chrome and iPhone Safari acceptance is intentionally deferred
+to the final V1 gate. The exact checklist remains in the acceptance evidence;
+do not close either physical-device parent from emulation results.
 
-After that gate, finish authenticated V1 acceptance: protected data deletion,
-sign-out/expired-session/reauthentication recovery, and the authenticated
-Android session-resume flow.
+The iPhone-emulation audit found that the current Playwright mobile coverage is
+Chromium-only. A supplemental Playwright WebKit/iPhone lane can cover WebKit
+compatibility, layout, and synthetic touch after its browser binary is
+installed. Full Mobile Safari simulation additionally requires Xcode and an
+iOS Simulator runtime, neither of which is installed. These are supplemental
+checks and cannot prove physical touch, safe areas, browser suspension,
+VoiceOver, latency, or thumb reach.
+
+After the fail-closed session item is deployed, continue authenticated V1
+acceptance with protected user-data deletion authorization, followed by
+sign-out/expired-session/reauthentication recovery. Save the authenticated
+Android session-resume flow for the final physical-device gate.
 
 ## V2 evidence preserved
 
