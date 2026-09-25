@@ -6,8 +6,11 @@ Status: Physical-device checks deferred to the final V1 gate; fail-closed server
 
 ## Production baseline
 
-- Production commit: `f88b8b9` (`fail closed on session lookup errors`).
-- Amplify job `316` succeeded and `/api/health` reported the expected commit.
+- Production feature commit: `f88b8b9` (`fail closed on session lookup errors`);
+  Amplify job `316` succeeded.
+- Current deployed main: `96a204e` (`record session handling deployment`);
+  handoff-only Amplify job `317` succeeded and `/api/health` reported the
+  expected commit.
 - Post-deployment production smoke verification passed on its first attempt.
 - Production-safe Playwright: 9/9 passed.
 - A targeted production browser check reached Game Over and confirmed the
@@ -96,6 +99,18 @@ Continue authenticated V1 acceptance with protected user-data deletion
 authorization, followed by sign-out/expired-session/reauthentication recovery.
 Save the authenticated Android session-resume flow for the final physical-
 device gate.
+
+The deletion item is in progress. Route coverage now proves rejection of
+unauthenticated, tampered, and expired credentials and proves deleting account
+A preserves account B's inventory, ledger, subscriptions, and leaderboard
+entries. A separate `npm run ops:auth:acceptance:delete` harness is fail-closed
+unless all of the following are supplied deliberately: the exact destructive
+confirmation phrase, the production URL, the dedicated deletion-test storage
+state path, and the SHA-256 of the disposable account identity. The config
+rechecks every guard and validates the active session identity before issuing
+`DELETE`, then requires an empty protected export. The harness has not been run
+and no production data has been deleted. Full unit verification is 150 suites /
+487 tests; typecheck passed; the unguarded command correctly refused to start.
 
 ## V2 evidence preserved
 

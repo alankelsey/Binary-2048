@@ -68,6 +68,7 @@
     "ops:release:auth-check": "bash ./scripts/release-auth-check.sh",
     "ops:auth:capture": "bash ./scripts/authenticated-acceptance-capture.sh",
     "ops:auth:acceptance": "bash ./scripts/authenticated-acceptance-run.sh",
+    "ops:auth:acceptance:delete": "bash ./scripts/authenticated-deletion-acceptance-run.sh",
     "ops:auth:amplify-fix": "bash ./scripts/auth-amplify-fix.sh",
     "ops:iam:amplify-ssm-check": "bash ./scripts/iam-amplify-ssm-check.sh",
     "ops:incident:bundle": "bash ./scripts/incident-evidence-bundle.sh",

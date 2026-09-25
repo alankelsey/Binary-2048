@@ -224,6 +224,8 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
   - [x] Verify leaderboard submission under the real authenticated identity
   - [x] Verify protected user-data export authorization
   - [ ] Verify protected user-data deletion authorization
+    - [x] Add route regressions for unauthenticated, tampered, expired, and cross-account deletion behavior plus a fail-closed dedicated-account production harness
+    - [ ] Execute the destructive production acceptance only with explicit approval and a dedicated disposable OAuth account, then verify its export is empty
   - [x] Verify authenticated store, inventory, entitlement, and paid-feature behavior
   - [ ] Verify sign-out, expired-session handling, and reauthentication recovery
   - [ ] Repeat the critical sign-in, session-resume, gameplay, and sign-out flow on Android Chrome
