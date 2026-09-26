@@ -4,6 +4,7 @@ export type MovePerformancePhase =
   | "input_capture"
   | "accepted"
   | "queued"
+  | "dropped"
   | "local_engine_not_run"
   | "request_start"
   | "response_headers"
@@ -11,6 +12,23 @@ export type MovePerformancePhase =
   | "response_parse_end"
   | "react_commit"
   | "next_animation_frame";
+
+export type MoveQueueDepthStage = "capture" | "enqueue" | "dequeue" | "drop";
+
+export type MoveInputDropReason =
+  | "modal_open"
+  | "tutorial_unavailable"
+  | "replay_active"
+  | "game_unavailable"
+  | "game_over"
+  | "win_continuation_required"
+  | "queue_full"
+  | "busy"
+  | "buffer_cleared_new_game"
+  | "buffer_cleared_move_error"
+  | "buffer_cleared_terminal_state"
+  | "buffer_cleared_tutorial_start"
+  | "component_unmounted";
 
 type PerformanceEntryLike = { name: string };
 
@@ -32,10 +50,16 @@ export type MovePerformanceTrace = {
     atMs: number;
     attempt?: number;
   }>;
+  queueDepthSamples: Array<{
+    stage: MoveQueueDepthStage;
+    depth: number;
+    atMs: number;
+  }>;
 };
 
 export const MOVE_PERFORMANCE_COMPLETE_MARK = "binary2048:move-complete";
 export const MOVE_PERFORMANCE_MEASURE = "binary2048:move-input-to-next-frame";
+export const MOVE_PERFORMANCE_DROPPED_MARK = "binary2048:move-dropped";
 const MAX_COMPLETED_ENTRIES = 100;
 let nextTraceSequence = 0;
 
@@ -55,12 +79,22 @@ function markName(trace: MovePerformanceTrace, phase: MovePerformancePhase, atte
   return `binary2048:move:${trace.id}:${phase}${attempt ? `:${attempt}` : ""}`;
 }
 
+function queueDepthMarkName(trace: MovePerformanceTrace, stage: MoveQueueDepthStage) {
+  return `binary2048:move:${trace.id}:queue_depth:${stage}`;
+}
+
 function trimCompletedEntries(target: MovePerformanceTarget) {
   if (target.getEntriesByName(MOVE_PERFORMANCE_COMPLETE_MARK).length >= MAX_COMPLETED_ENTRIES) {
     target.clearMarks(MOVE_PERFORMANCE_COMPLETE_MARK);
   }
   if (target.getEntriesByName(MOVE_PERFORMANCE_MEASURE).length >= MAX_COMPLETED_ENTRIES) {
     target.clearMeasures(MOVE_PERFORMANCE_MEASURE);
+  }
+}
+
+function trimDroppedEntries(target: MovePerformanceTarget) {
+  if (target.getEntriesByName(MOVE_PERFORMANCE_DROPPED_MARK).length >= MAX_COMPLETED_ENTRIES) {
+    target.clearMarks(MOVE_PERFORMANCE_DROPPED_MARK);
   }
 }
 
@@ -74,10 +108,32 @@ export function startMovePerformanceTrace(
     id: `${nextTraceSequence.toString(36)}-${Math.round(target?.now() ?? 0).toString(36)}`,
     direction,
     source,
-    phases: []
+    phases: [],
+    queueDepthSamples: []
   };
   markMovePerformancePhase(trace, "input_capture", undefined, target);
   return trace;
+}
+
+export function recordMoveQueueDepth(
+  trace: MovePerformanceTrace,
+  stage: MoveQueueDepthStage,
+  depth: number,
+  target: MovePerformanceTarget | null = browserPerformance()
+) {
+  if (!target) return;
+  const atMs = target.now();
+  const normalizedDepth = Math.max(0, Math.trunc(depth));
+  trace.queueDepthSamples.push({ stage, depth: normalizedDepth, atMs });
+  target.mark(queueDepthMarkName(trace, stage), {
+    detail: {
+      traceId: trace.id,
+      direction: trace.direction,
+      source: trace.source,
+      stage,
+      depth: normalizedDepth
+    }
+  });
 }
 
 export function markMovePerformancePhase(
@@ -102,6 +158,33 @@ export function discardMovePerformanceTrace(
   for (const phase of trace.phases) {
     target.clearMarks(markName(trace, phase.phase, phase.attempt));
   }
+  for (const sample of trace.queueDepthSamples) {
+    target.clearMarks(queueDepthMarkName(trace, sample.stage));
+  }
+}
+
+export function dropMovePerformanceTrace(
+  trace: MovePerformanceTrace,
+  reason: MoveInputDropReason,
+  queueDepth: number,
+  target: MovePerformanceTarget | null = browserPerformance()
+) {
+  if (!target) return;
+  recordMoveQueueDepth(trace, "drop", queueDepth, target);
+  markMovePerformancePhase(trace, "dropped", undefined, target);
+  trimDroppedEntries(target);
+  target.mark(MOVE_PERFORMANCE_DROPPED_MARK, {
+    detail: {
+      traceId: trace.id,
+      direction: trace.direction,
+      source: trace.source,
+      outcome: "dropped",
+      dropReason: reason,
+      queueDepthSamples: trace.queueDepthSamples.map((sample) => ({ ...sample })),
+      phases: trace.phases.map((phase) => ({ ...phase }))
+    }
+  });
+  discardMovePerformanceTrace(trace, target);
 }
 
 export function finishMovePerformanceTrace(
@@ -120,6 +203,8 @@ export function finishMovePerformanceTrace(
     direction: trace.direction,
     source: trace.source,
     localEngineStatus: "not_run",
+    outcome: "completed",
+    queueDepthSamples: trace.queueDepthSamples.map((sample) => ({ ...sample })),
     phases: trace.phases.map((phase) => ({ ...phase }))
   };
   target.measure(MOVE_PERFORMANCE_MEASURE, { start: first.atMs, end: last.atMs, detail });

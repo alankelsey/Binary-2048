@@ -2,6 +2,37 @@ import { expect, test } from "@playwright/test";
 import { DEFAULT_CONFIG } from "@/lib/binary2048/engine";
 import type { Cell, Dir, GameState } from "@/lib/binary2048/types";
 
+test("classifies a directional input when no playable game is available", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.removeItem("binary2048.currentGameId");
+    window.localStorage.removeItem("binary2048.resumeSnapshot");
+    window.localStorage.setItem("binary2048.tutorial.v1", '{"version":1,"status":"dismissed"}');
+    document.cookie = "binary2048_tutorial_suppress=1; Path=/; SameSite=Lax";
+    performance.clearMarks();
+    performance.clearMeasures();
+  });
+
+  await page.goto("/");
+  await page.keyboard.press("ArrowLeft");
+
+  await expect.poll(() =>
+    page.evaluate(() => performance.getEntriesByName("binary2048:move-dropped").length)
+  ).toBe(1);
+  const detail = await page.evaluate(() =>
+    (performance.getEntriesByName("binary2048:move-dropped")[0] as PerformanceMark).detail
+  );
+  expect(detail).toMatchObject({
+    direction: "left",
+    source: "keyboard",
+    outcome: "dropped",
+    dropReason: "game_unavailable",
+    queueDepthSamples: [
+      { stage: "capture", depth: 0 },
+      { stage: "drop", depth: 0 }
+    ]
+  });
+});
+
 test("records accepted and queued moves through the next painted frame", async ({ page }) => {
   const initialGrid: Cell[][] = [
     [{ t: "n", v: 1 }, null, null, null],
@@ -88,25 +119,33 @@ test("records accepted and queued moves through the next painted frame", async (
     { key: "ArrowLeft", direction: "left" },
     { key: "ArrowDown", direction: "down" },
     { key: "ArrowRight", direction: "right" },
-    { key: "ArrowLeft", direction: "left" }
+    { key: "ArrowLeft", direction: "left" },
+    { key: "ArrowUp", direction: "up" },
+    { key: "ArrowRight", direction: "right" },
+    { key: "ArrowDown", direction: "down" },
+    { key: "ArrowUp", direction: "up" }
   ];
   for (const move of rapidMoves) await page.keyboard.press(move.key);
 
-  await expect.poll(() => completedMoves.length, { timeout: 10_000 }).toBe(rapidMoves.length);
-  expect(completedMoves).toEqual(rapidMoves.map((move) => move.direction));
+  const acceptedRapidMoves = rapidMoves.slice(0, 9);
+  await expect.poll(() => completedMoves.length, { timeout: 10_000 }).toBe(acceptedRapidMoves.length);
+  expect(completedMoves).toEqual(acceptedRapidMoves.map((move) => move.direction));
   await expect.poll(() =>
     page.evaluate(() => performance.getEntriesByName("binary2048:move-complete").length)
-  ).toBe(rapidMoves.length);
+  ).toBe(acceptedRapidMoves.length);
+  await expect.poll(() =>
+    page.evaluate(() => performance.getEntriesByName("binary2048:move-dropped").length)
+  ).toBe(1);
   await page.locator(".board").evaluate((board) => {
     const start = new Touch({ identifier: 1, target: board, clientX: 80, clientY: 80 });
     const end = new Touch({ identifier: 1, target: board, clientX: 160, clientY: 80 });
     board.dispatchEvent(new TouchEvent("touchstart", { bubbles: true, touches: [start] }));
     board.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }));
   });
-  await expect.poll(() => completedMoves.length).toBe(rapidMoves.length + 1);
+  await expect.poll(() => completedMoves.length).toBe(acceptedRapidMoves.length + 1);
   await expect.poll(() =>
     page.evaluate(() => performance.getEntriesByName("binary2048:move-complete").length)
-  ).toBe(rapidMoves.length + 1);
+  ).toBe(acceptedRapidMoves.length + 1);
 
   const traces = await page.evaluate(() =>
     performance.getEntriesByName("binary2048:move-complete").map((entry) =>
@@ -115,19 +154,23 @@ test("records accepted and queued moves through the next painted frame", async (
         direction: string;
         source: string;
         localEngineStatus: string;
+        outcome: string;
+        queueDepthSamples: Array<{ stage: string; depth: number; atMs: number }>;
         phases: Array<{ phase: string; atMs: number; attempt?: number }>;
       }
     )
   );
   expect(traces.map((trace) => trace.direction)).toEqual([
-    ...rapidMoves.map((move) => move.direction),
+    ...acceptedRapidMoves.map((move) => move.direction),
     "right"
   ]);
   expect(traces.map((trace) => trace.source)).toEqual([
-    ...rapidMoves.map(() => "keyboard"),
+    ...acceptedRapidMoves.map(() => "keyboard"),
     "touch"
   ]);
   expect(traces.every((trace) => trace.localEngineStatus === "not_run")).toBe(true);
+  expect(traces.every((trace) => trace.outcome === "completed")).toBe(true);
+  expect(traces[0].queueDepthSamples).toMatchObject([{ stage: "capture", depth: 0 }]);
   expect(traces[0].phases.map((phase) => phase.phase)).toEqual([
     "input_capture",
     "accepted",
@@ -150,8 +193,13 @@ test("records accepted and queued moves through the next painted frame", async (
     "react_commit",
     "next_animation_frame"
   ];
-  for (const trace of traces.slice(1, rapidMoves.length)) {
+  for (const [index, trace] of traces.slice(1, acceptedRapidMoves.length).entries()) {
     expect(trace.phases.map((phase) => phase.phase)).toEqual(queuedPhases);
+    expect(trace.queueDepthSamples).toMatchObject([
+      { stage: "capture", depth: index },
+      { stage: "enqueue", depth: index + 1 },
+      { stage: "dequeue", depth: acceptedRapidMoves.length - index - 2 }
+    ]);
   }
   expect(traces.at(-1)?.phases.map((phase) => phase.phase)).toEqual(
     traces[0].phases.map((phase) => phase.phase)
@@ -162,5 +210,26 @@ test("records accepted and queued moves through the next painted frame", async (
   }
   expect(
     await page.evaluate(() => performance.getEntriesByName("binary2048:move-input-to-next-frame").length)
-  ).toBe(rapidMoves.length + 1);
+  ).toBe(acceptedRapidMoves.length + 1);
+  const dropped = await page.evaluate(() =>
+    (performance.getEntriesByName("binary2048:move-dropped")[0] as PerformanceMark).detail as {
+      direction: string;
+      source: string;
+      outcome: string;
+      dropReason: string;
+      queueDepthSamples: Array<{ stage: string; depth: number }>;
+      phases: Array<{ phase: string }>;
+    }
+  );
+  expect(dropped).toMatchObject({
+    direction: rapidMoves.at(-1)?.direction,
+    source: "keyboard",
+    outcome: "dropped",
+    dropReason: "queue_full",
+    queueDepthSamples: [
+      { stage: "capture", depth: 8 },
+      { stage: "drop", depth: 8 }
+    ],
+    phases: [{ phase: "input_capture" }, { phase: "dropped" }]
+  });
 });

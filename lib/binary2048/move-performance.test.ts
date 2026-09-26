@@ -1,9 +1,12 @@
 import {
   MOVE_PERFORMANCE_COMPLETE_MARK,
+  MOVE_PERFORMANCE_DROPPED_MARK,
   MOVE_PERFORMANCE_MEASURE,
   discardMovePerformanceTrace,
+  dropMovePerformanceTrace,
   finishMovePerformanceTrace,
   markMovePerformancePhase,
+  recordMoveQueueDepth,
   startMovePerformanceTrace,
   type MovePerformanceTarget
 } from "@/lib/binary2048/move-performance";
@@ -38,6 +41,7 @@ describe("move performance tracing", () => {
   it("records the input-to-frame phase order and removes per-trace marks", () => {
     const { target, marks, measures } = fakePerformance();
     const trace = startMovePerformanceTrace("left", "keyboard", target);
+    recordMoveQueueDepth(trace, "capture", 0, target);
     markMovePerformancePhase(trace, "accepted", undefined, target);
     markMovePerformancePhase(trace, "local_engine_not_run", undefined, target);
     markMovePerformancePhase(trace, "request_start", 1, target);
@@ -63,13 +67,59 @@ describe("move performance tracing", () => {
     expect(measures).toEqual([
       expect.objectContaining({
         name: MOVE_PERFORMANCE_MEASURE,
-        options: expect.objectContaining({ start: 11, end: 19 })
+        options: expect.objectContaining({ start: 11, end: 20 })
       })
     ]);
     expect(measures[0].options.detail).toMatchObject({
       traceId: trace.id,
-      localEngineStatus: "not_run"
+      localEngineStatus: "not_run",
+      outcome: "completed",
+      queueDepthSamples: [{ stage: "capture", depth: 0, atMs: 12 }]
     });
+  });
+
+  it("records queue depth through enqueue and dequeue", () => {
+    const { target, marks } = fakePerformance();
+    const trace = startMovePerformanceTrace("left", "keyboard", target);
+    recordMoveQueueDepth(trace, "capture", 2, target);
+    recordMoveQueueDepth(trace, "enqueue", 3, target);
+    recordMoveQueueDepth(trace, "dequeue", 1, target);
+    markMovePerformancePhase(trace, "queued", undefined, target);
+    finishMovePerformanceTrace(trace, target);
+
+    const completed = marks.find((entry) => entry.name === MOVE_PERFORMANCE_COMPLETE_MARK);
+    expect(completed?.options?.detail).toMatchObject({
+      outcome: "completed",
+      queueDepthSamples: [
+        { stage: "capture", depth: 2 },
+        { stage: "enqueue", depth: 3 },
+        { stage: "dequeue", depth: 1 }
+      ]
+    });
+    expect(marks.some((entry) => entry.name.includes(trace.id))).toBe(false);
+  });
+
+  it("retains a classified drop while removing per-trace marks", () => {
+    const { target, marks, measures } = fakePerformance();
+    const trace = startMovePerformanceTrace("right", "touch", target);
+    recordMoveQueueDepth(trace, "capture", 8, target);
+    dropMovePerformanceTrace(trace, "queue_full", 8, target);
+
+    const dropped = marks.find((entry) => entry.name === MOVE_PERFORMANCE_DROPPED_MARK);
+    expect(dropped?.options?.detail).toMatchObject({
+      traceId: trace.id,
+      direction: "right",
+      source: "touch",
+      outcome: "dropped",
+      dropReason: "queue_full",
+      queueDepthSamples: [
+        { stage: "capture", depth: 8 },
+        { stage: "drop", depth: 8 }
+      ],
+      phases: [{ phase: "input_capture" }, { phase: "dropped" }]
+    });
+    expect(marks.filter((entry) => entry.name.includes(trace.id))).toHaveLength(0);
+    expect(measures).toHaveLength(0);
   });
 
   it("distinguishes retry attempts and can discard an unfinished trace", () => {
@@ -90,7 +140,9 @@ describe("move performance tracing", () => {
     const trace = startMovePerformanceTrace("right", "control", null);
     expect(() => {
       markMovePerformancePhase(trace, "accepted", undefined, null);
+      recordMoveQueueDepth(trace, "capture", 0, null);
       finishMovePerformanceTrace(trace, null);
+      dropMovePerformanceTrace(trace, "busy", 0, null);
       discardMovePerformanceTrace(trace, null);
     }).not.toThrow();
   });
@@ -105,5 +157,15 @@ describe("move performance tracing", () => {
 
     expect(target.getEntriesByName(MOVE_PERFORMANCE_COMPLETE_MARK).length).toBeLessThanOrEqual(100);
     expect(target.getEntriesByName(MOVE_PERFORMANCE_MEASURE).length).toBeLessThanOrEqual(100);
+  });
+
+  it("bounds retained dropped-input marks independently", () => {
+    const { target } = fakePerformance();
+    for (let index = 0; index < 101; index += 1) {
+      const trace = startMovePerformanceTrace("right", "touch", target);
+      dropMovePerformanceTrace(trace, "busy", index, target);
+    }
+
+    expect(target.getEntriesByName(MOVE_PERFORMANCE_DROPPED_MARK).length).toBeLessThanOrEqual(100);
   });
 });

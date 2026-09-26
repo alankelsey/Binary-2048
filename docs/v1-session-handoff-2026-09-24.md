@@ -2,7 +2,7 @@
 
 Date: 2026-09-25
 
-Status: V2 Phase 0 started after V1 deletion acceptance; first move-timing slice implemented locally
+Status: V2 Phase 0 in progress after V1 deletion acceptance; move timing and queue/drop observability implemented
 
 ## Production baseline
 
@@ -132,12 +132,28 @@ unchanged. Because normal gameplay is still server-gated, traces record
 `localEngineStatus: not_run` rather than inventing a client-engine duration.
 
 Focused unit and browser coverage proves accepted keyboard, queued keyboard,
-and touch traces through the next painted frame. The next V2 item is to record
-queue depth and every input-drop reason. The newly added anchored Lock-0 and
-`Death by Luck` wildcard items remain research spikes; production tile rules
-have not changed. The V2 backlog also includes auditing the existing OpenAPI
-endpoint and developer page, then prototyping Swagger UI or an equivalent
-interactive explorer with complete contracts and automated drift checks.
+and touch traces through the next painted frame. The second Phase 0 slice adds
+queue-depth samples at capture, enqueue, dequeue, and drop plus bounded dropped
+input marks classified by every valid directional-input rejection path. It
+does not classify non-direction keys or sub-threshold gestures as moves, and
+accepted request failures remain execution errors rather than input drops.
+Gameplay behavior and the eight-move keyboard buffer are unchanged. The next
+V2 item is to record request/response byte counts, recovery-history length,
+local-storage duration, and checkpoint duration.
+
+For the second slice, 151 unit suites / 494 tests passed, typecheck passed, and
+the full local Playwright suite passed 52 with the debug-only case skipped. The
+production build compiled successfully; its smoke wrapper stopped at the known
+missing local auth-bridge secret (`503` rather than the configured environment's
+unauthenticated `401`). The initial sandboxed Playwright attempt could not
+launch Chromium because macOS denied its IPC registration; the required
+unsandboxed rerun passed completely.
+
+The newly added anchored Lock-0 and `Death by Luck` wildcard items remain
+research spikes; production tile rules have not changed. The V2 backlog also
+includes auditing the existing OpenAPI endpoint and developer page, then
+prototyping Swagger UI or an equivalent interactive explorer with complete
+contracts and automated drift checks.
 
 Pre-deployment verification for this slice: 151 unit suites / 491 tests passed;
 default Playwright passed 51 with the debug-only case skipped; typecheck passed;

@@ -68,9 +68,13 @@ import { createReferralCode, type MarketingEventType } from "@/lib/binary2048/ma
 import type { GameExport, SessionRecoverySnapshot } from "@/lib/binary2048/types";
 import {
   discardMovePerformanceTrace,
+  dropMovePerformanceTrace,
   finishMovePerformanceTrace,
   markMovePerformancePhase,
+  recordMoveQueueDepth,
   startMovePerformanceTrace,
+  type MoveInputDropReason,
+  type MoveInputSource,
   type MovePerformanceTrace
 } from "@/lib/binary2048/move-performance";
 
@@ -242,11 +246,18 @@ export default function Home() {
     []
   );
 
-  function clearBufferedMoves() {
-    for (const buffered of bufferedMovesRef.current) {
-      discardMovePerformanceTrace(buffered.trace);
+  function clearBufferedMoves(reason: MoveInputDropReason) {
+    while (bufferedMovesRef.current.length > 0) {
+      const queueDepth = bufferedMovesRef.current.length;
+      const buffered = bufferedMovesRef.current.shift();
+      if (buffered) dropMovePerformanceTrace(buffered.trace, reason, queueDepth);
     }
-    bufferedMovesRef.current = [];
+  }
+
+  function dropDirectionalInput(dir: Dir, source: MoveInputSource, reason: MoveInputDropReason) {
+    const trace = startMovePerformanceTrace(dir, source);
+    recordMoveQueueDepth(trace, "capture", bufferedMovesRef.current.length);
+    dropMovePerformanceTrace(trace, reason, bufferedMovesRef.current.length);
   }
 
   useEffect(() => {
@@ -404,7 +415,7 @@ export default function Home() {
     setNewGameSetupOpen(false);
     setReplay(null);
     setPreparedReplayUrl("");
-    clearBufferedMoves();
+    clearBufferedMoves("buffer_cleared_new_game");
     setContinueAfterWin(false);
     setNewGameConfirmArmed(false);
     setBusy(true);
@@ -487,9 +498,13 @@ export default function Home() {
   }
 
   async function move(dir: Dir, trace?: MovePerformanceTrace) {
+    const inputTrace = trace ?? startMovePerformanceTrace(dir, "control");
+    if (!inputTrace.queueDepthSamples.some((sample) => sample.stage === "capture")) {
+      recordMoveQueueDepth(inputTrace, "capture", bufferedMovesRef.current.length);
+    }
     if (tutorial) {
       if (tutorial.phase !== "active" || tutorialExitConfirmOpen || tutorialLaunchConfirmOpen) {
-        if (trace) discardMovePerformanceTrace(trace);
+        dropMovePerformanceTrace(inputTrace, "tutorial_unavailable", bufferedMovesRef.current.length);
         return;
       }
       const result = applyTutorialMove(tutorial, dir);
@@ -503,18 +518,30 @@ export default function Home() {
           )
         )
       );
-      if (trace) discardMovePerformanceTrace(trace);
+      discardMovePerformanceTrace(inputTrace);
       return;
     }
-    if (replay || !gameId || !state || state.over || (state.won && !continueAfterWin)) {
-      if (trace) discardMovePerformanceTrace(trace);
+    if (replay) {
+      dropMovePerformanceTrace(inputTrace, "replay_active", bufferedMovesRef.current.length);
+      return;
+    }
+    if (!gameId || !state) {
+      dropMovePerformanceTrace(inputTrace, "game_unavailable", bufferedMovesRef.current.length);
+      return;
+    }
+    if (state.over) {
+      dropMovePerformanceTrace(inputTrace, "game_over", bufferedMovesRef.current.length);
+      return;
+    }
+    if (state.won && !continueAfterWin) {
+      dropMovePerformanceTrace(inputTrace, "win_continuation_required", bufferedMovesRef.current.length);
       return;
     }
     if (moveInFlightRef.current) {
       if (bufferedMovesRef.current.length < MAX_BUFFERED_MOVES) {
-        const queuedTrace = trace ?? startMovePerformanceTrace(dir, "control");
-        markMovePerformancePhase(queuedTrace, "queued");
-        bufferedMovesRef.current.push({ dir, trace: queuedTrace });
+        markMovePerformancePhase(inputTrace, "queued");
+        bufferedMovesRef.current.push({ dir, trace: inputTrace });
+        recordMoveQueueDepth(inputTrace, "enqueue", bufferedMovesRef.current.length);
         addDiagnostic("move_buffered", {
           dir,
           gameId,
@@ -522,14 +549,14 @@ export default function Home() {
           turn: state.turn
         });
       }
-      else if (trace) discardMovePerformanceTrace(trace);
+      else dropMovePerformanceTrace(inputTrace, "queue_full", bufferedMovesRef.current.length);
       return;
     }
     if (busy) {
-      if (trace) discardMovePerformanceTrace(trace);
+      dropMovePerformanceTrace(inputTrace, "busy", bufferedMovesRef.current.length);
       return;
     }
-    const activeTrace = trace ?? startMovePerformanceTrace(dir, "control");
+    const activeTrace = inputTrace;
     if (!activeTrace.phases.some((phase) => phase.phase === "queued")) {
       markMovePerformancePhase(activeTrace, "accepted");
     }
@@ -649,7 +676,7 @@ export default function Home() {
       }
     } catch (error) {
       discardMovePerformanceTrace(activeTrace);
-      clearBufferedMoves();
+      clearBufferedMoves("buffer_cleared_move_error");
       addDiagnostic(
         "move_error",
         { dir, gameId, turn: previous.turn, message: diagnosticValue(error) },
@@ -1020,11 +1047,14 @@ export default function Home() {
   useEffect(() => {
     if (busy || moveInFlightRef.current || bufferedMovesRef.current.length === 0) return;
     if (replay || !gameId || !state || state.over || (state.won && !continueAfterWin)) {
-      clearBufferedMoves();
+      clearBufferedMoves("buffer_cleared_terminal_state");
       return;
     }
     const nextMove = bufferedMovesRef.current.shift();
-    if (nextMove) void move(nextMove.dir, nextMove.trace);
+    if (nextMove) {
+      recordMoveQueueDepth(nextMove.trace, "dequeue", bufferedMovesRef.current.length);
+      void move(nextMove.dir, nextMove.trace);
+    }
   }, [busy, gameId, state, replay, continueAfterWin]);
 
   keyboardInputHandlerRef.current = (event: KeyboardEvent) => {
@@ -1036,7 +1066,14 @@ export default function Home() {
       tutorialLaunchConfirmOpen ||
       tutorialExitConfirmOpen ||
       (tutorial && tutorial.phase !== "active")
-    ) return;
+    ) {
+      dropDirectionalInput(
+        dir,
+        "keyboard",
+        tutorial && tutorial.phase !== "active" ? "tutorial_unavailable" : "modal_open"
+      );
+      return;
+    }
     event.preventDefault();
     void move(dir, startMovePerformanceTrace(dir, "keyboard"));
   };
@@ -1102,6 +1139,7 @@ export default function Home() {
       if (paintFrameRef.current !== null) window.cancelAnimationFrame(paintFrameRef.current);
       if (paintFrameTraceRef.current) discardMovePerformanceTrace(paintFrameTraceRef.current);
       if (pendingPaintTraceRef.current) discardMovePerformanceTrace(pendingPaintTraceRef.current.trace);
+      clearBufferedMoves("component_unmounted");
     };
   }, []);
 
@@ -1124,29 +1162,53 @@ export default function Home() {
   }
 
   function onBoardTouchEnd(event: TouchEvent<HTMLDivElement>) {
-    if (
-      !touchStartRef.current ||
-      replay ||
-      busy ||
-      newGameSetupOpen ||
-      newGameTutorialChoiceOpen ||
-      tutorialLaunchConfirmOpen ||
-      tutorialExitConfirmOpen ||
-      (tutorial && tutorial.phase !== "active") ||
-      (!tutorial && (!state || state.over || (state.won && !continueAfterWin)))
-    ) return;
+    if (!touchStartRef.current) return;
     const touch = event.changedTouches[0];
     if (!touch) return;
 
     const dx = touch.clientX - touchStartRef.current.x;
     const dy = touch.clientY - touchStartRef.current.y;
+    touchStartRef.current = null;
     const dir = swipeToDir(dx, dy, 24);
     if (!dir) return;
+    if (
+      newGameSetupOpen ||
+      newGameTutorialChoiceOpen ||
+      tutorialLaunchConfirmOpen ||
+      tutorialExitConfirmOpen
+    ) {
+      dropDirectionalInput(dir, "touch", "modal_open");
+      return;
+    }
+    if (tutorial && tutorial.phase !== "active") {
+      dropDirectionalInput(dir, "touch", "tutorial_unavailable");
+      return;
+    }
+    if (replay) {
+      dropDirectionalInput(dir, "touch", "replay_active");
+      return;
+    }
+    if (busy) {
+      dropDirectionalInput(dir, "touch", "busy");
+      return;
+    }
+    if (!tutorial && !state) {
+      dropDirectionalInput(dir, "touch", "game_unavailable");
+      return;
+    }
+    if (!tutorial && state?.over) {
+      dropDirectionalInput(dir, "touch", "game_over");
+      return;
+    }
+    if (!tutorial && state?.won && !continueAfterWin) {
+      dropDirectionalInput(dir, "touch", "win_continuation_required");
+      return;
+    }
     void move(dir, startMovePerformanceTrace(dir, "touch"));
   }
 
   function enterTutorial() {
-    clearBufferedMoves();
+    clearBufferedMoves("buffer_cleared_tutorial_start");
     window.localStorage.removeItem(gameIdKey);
     clearResumeSnapshot(window.localStorage);
     setGameId("");

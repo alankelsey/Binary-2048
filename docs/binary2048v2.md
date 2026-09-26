@@ -219,7 +219,11 @@ approved.
   React commit, and next animation frame. The current server-gated gameplay
   path truthfully records `localEngineStatus: not_run`; a duration will be
   measured when Phase 2 introduces client engine execution.
-- [ ] Record queue depth and every input-drop reason.
+- [x] Record queue depth at capture, enqueue, dequeue, and drop, and retain a
+  bounded classified record for every valid directional input that gameplay or
+  UI state rejects. Non-direction keys and sub-threshold gestures are not move
+  inputs; accepted request failures remain execution errors rather than input
+  drops.
 - [ ] Record request and response byte counts, recovery-history length,
   local-storage duration, and checkpoint duration.
 - [ ] Add `Server-Timing` for rate-limit identity, session lookup, recovery
