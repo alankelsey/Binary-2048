@@ -2,14 +2,14 @@
 
 Date: 2026-09-26
 
-Status: V1 Stripe-native webhook verification complete locally; physical mobile gates remain deferred; V2 implementation frozen until V1 is complete
+Status: V1 Stripe-native webhook verification deployed; physical mobile gates remain deferred; V2 implementation frozen until V1 is complete
 
 ## Production baseline
 
 - Production feature commit: `f88b8b9` (`fail closed on session lookup errors`);
   Amplify job `316` succeeded.
-- Current production application baseline: `264f1de` (`verify desktop auth
-  lifecycle`); Amplify job `330` succeeded and `/api/health` reported the
+- Current production application baseline: `3abefa4` (`verify Stripe store
+  webhooks`); Amplify job `332` succeeded and `/api/health` reported the
   expected commit.
 - Post-deployment production smoke verification passed on its first attempt.
 - Production-safe Playwright: 9/9 passed.
@@ -77,7 +77,7 @@ Status: V1 Stripe-native webhook verification complete locally; physical mobile 
     first attempt; production-safe Playwright passed 9/9, including the auth
     page and browser-context auth/session API health checks.
 
-## Current V1 item
+## Latest completed V1 item
 
 The store webhook now uses Stripe's maintained server SDK to verify the exact
 raw request body, `Stripe-Signature` header, endpoint signing secret from
@@ -98,7 +98,19 @@ with the debug-only case skipped; and the production build compiled. Its smoke
 wrapper stopped only at the known missing local auth-bridge secret (`503`
 rather than the configured environment's unauthenticated `401`).
 
+Commit `3abefa4` deployed through Amplify job `332`. Production health/smoke
+passed on the first attempt and production-safe Playwright passed 9/9. An
+unsigned production webhook probe returned `503` with `Store webhook is not
+configured`, confirming that the handler fails closed and no production Stripe
+endpoint secret or payment acceptance was enabled.
+
 ## Next V1 task
+
+The next unchecked roadmap entry after the webhook is the fixed-egress Atlas
+allowlist reduction, but its own acceptance condition says to perform it only
+after the runtime is migrated. Reconfirm that dependency before starting work;
+do not treat the current Amplify WEB_COMPUTE runtime as having stable outbound
+IP addresses.
 
 The deployed re-review, disposition log, automated evidence, and exact remaining
 device checklist are in
