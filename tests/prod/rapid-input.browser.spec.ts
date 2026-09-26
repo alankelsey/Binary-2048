@@ -102,6 +102,7 @@ test("rapid arrow keys stay ordered across instance recovery", async ({ page }) 
 
   await page.goto("/");
   await page.getByRole("button", { name: "Start New Game" }).click();
+  await expect(page.locator(".card")).toHaveAttribute("aria-busy", "false");
   await page.evaluate(() => {
     const seen: string[] = [];
     (window as typeof window & { __binary2048Errors?: string[] }).__binary2048Errors = seen;

@@ -55,7 +55,7 @@ test("records accepted and queued moves through the next painted frame", async (
   });
   await page.route("**/api/games/*/move", async (route) => {
     const body = route.request().postDataJSON() as { dir: Dir };
-    await new Promise((resolve) => setTimeout(resolve, 40));
+    await new Promise((resolve) => setTimeout(resolve, 150));
     completedMoves.push(body.dir);
     current = { ...current, turn: completedMoves.length, score: completedMoves.length };
     await route.fulfill({
@@ -81,23 +81,32 @@ test("records accepted and queued moves through the next painted frame", async (
 
   await page.goto("/");
   await page.getByRole("button", { name: "Start New Game" }).click();
-  await page.keyboard.press("ArrowLeft");
-  await page.keyboard.press("ArrowDown");
+  await expect(page.locator(".card")).toHaveAttribute("aria-busy", "false");
+  const rapidMoves: Array<{ key: string; direction: Dir }> = [
+    { key: "ArrowLeft", direction: "left" },
+    { key: "ArrowDown", direction: "down" },
+    { key: "ArrowLeft", direction: "left" },
+    { key: "ArrowDown", direction: "down" },
+    { key: "ArrowRight", direction: "right" },
+    { key: "ArrowLeft", direction: "left" }
+  ];
+  for (const move of rapidMoves) await page.keyboard.press(move.key);
 
-  await expect.poll(() => completedMoves.length).toBe(2);
+  await expect.poll(() => completedMoves.length, { timeout: 10_000 }).toBe(rapidMoves.length);
+  expect(completedMoves).toEqual(rapidMoves.map((move) => move.direction));
   await expect.poll(() =>
     page.evaluate(() => performance.getEntriesByName("binary2048:move-complete").length)
-  ).toBe(2);
+  ).toBe(rapidMoves.length);
   await page.locator(".board").evaluate((board) => {
     const start = new Touch({ identifier: 1, target: board, clientX: 80, clientY: 80 });
     const end = new Touch({ identifier: 1, target: board, clientX: 160, clientY: 80 });
     board.dispatchEvent(new TouchEvent("touchstart", { bubbles: true, touches: [start] }));
     board.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }));
   });
-  await expect.poll(() => completedMoves.length).toBe(3);
+  await expect.poll(() => completedMoves.length).toBe(rapidMoves.length + 1);
   await expect.poll(() =>
     page.evaluate(() => performance.getEntriesByName("binary2048:move-complete").length)
-  ).toBe(3);
+  ).toBe(rapidMoves.length + 1);
 
   const traces = await page.evaluate(() =>
     performance.getEntriesByName("binary2048:move-complete").map((entry) =>
@@ -110,8 +119,14 @@ test("records accepted and queued moves through the next painted frame", async (
       }
     )
   );
-  expect(traces.map((trace) => trace.direction)).toEqual(["left", "down", "right"]);
-  expect(traces.map((trace) => trace.source)).toEqual(["keyboard", "keyboard", "touch"]);
+  expect(traces.map((trace) => trace.direction)).toEqual([
+    ...rapidMoves.map((move) => move.direction),
+    "right"
+  ]);
+  expect(traces.map((trace) => trace.source)).toEqual([
+    ...rapidMoves.map(() => "keyboard"),
+    "touch"
+  ]);
   expect(traces.every((trace) => trace.localEngineStatus === "not_run")).toBe(true);
   expect(traces[0].phases.map((phase) => phase.phase)).toEqual([
     "input_capture",
@@ -124,7 +139,7 @@ test("records accepted and queued moves through the next painted frame", async (
     "react_commit",
     "next_animation_frame"
   ]);
-  expect(traces[1].phases.map((phase) => phase.phase)).toEqual([
+  const queuedPhases = [
     "input_capture",
     "queued",
     "local_engine_not_run",
@@ -134,13 +149,18 @@ test("records accepted and queued moves through the next painted frame", async (
     "response_parse_end",
     "react_commit",
     "next_animation_frame"
-  ]);
-  expect(traces[2].phases.map((phase) => phase.phase)).toEqual(traces[0].phases.map((phase) => phase.phase));
+  ];
+  for (const trace of traces.slice(1, rapidMoves.length)) {
+    expect(trace.phases.map((phase) => phase.phase)).toEqual(queuedPhases);
+  }
+  expect(traces.at(-1)?.phases.map((phase) => phase.phase)).toEqual(
+    traces[0].phases.map((phase) => phase.phase)
+  );
   for (const trace of traces) {
     expect(trace.phases.every((phase, index) => index === 0 || phase.atMs >= trace.phases[index - 1].atMs)).toBe(true);
     expect(trace.phases.find((phase) => phase.phase === "request_start")?.attempt).toBe(1);
   }
   expect(
     await page.evaluate(() => performance.getEntriesByName("binary2048:move-input-to-next-frame").length)
-  ).toBe(3);
+  ).toBe(rapidMoves.length + 1);
 });

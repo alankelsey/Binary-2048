@@ -208,6 +208,7 @@ export default function Home() {
   const pendingPaintTraceRef = useRef<{ trace: MovePerformanceTrace; turn: number } | null>(null);
   const paintFrameRef = useRef<number | null>(null);
   const paintFrameTraceRef = useRef<MovePerformanceTrace | null>(null);
+  const keyboardInputHandlerRef = useRef<(event: KeyboardEvent) => void>(() => undefined);
   const diagnosticSequenceRef = useRef(0);
   const authBridgeRef = useRef<ReturnType<typeof createClientAuthBridge> | null>(null);
   const modalTriggerRef = useRef<HTMLElement | null>(null);
@@ -1026,23 +1027,27 @@ export default function Home() {
     if (nextMove) void move(nextMove.dir, nextMove.trace);
   }, [busy, gameId, state, replay, continueAfterWin]);
 
+  keyboardInputHandlerRef.current = (event: KeyboardEvent) => {
+    const dir = keyToDir(event.key);
+    if (!dir) return;
+    if (
+      newGameSetupOpen ||
+      newGameTutorialChoiceOpen ||
+      tutorialLaunchConfirmOpen ||
+      tutorialExitConfirmOpen ||
+      (tutorial && tutorial.phase !== "active")
+    ) return;
+    event.preventDefault();
+    void move(dir, startMovePerformanceTrace(dir, "keyboard"));
+  };
+
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      const dir = keyToDir(event.key);
-      if (!dir) return;
-      if (
-        newGameSetupOpen ||
-        newGameTutorialChoiceOpen ||
-        tutorialLaunchConfirmOpen ||
-        tutorialExitConfirmOpen ||
-        (tutorial && tutorial.phase !== "active")
-      ) return;
-      event.preventDefault();
-      void move(dir, startMovePerformanceTrace(dir, "keyboard"));
+      keyboardInputHandlerRef.current(event);
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [gameId, state, busy, tutorial, newGameSetupOpen, newGameTutorialChoiceOpen, tutorialLaunchConfirmOpen, tutorialExitConfirmOpen]);
+  }, []);
 
   useEffect(() => {
     if (!tutorial || tutorial.phase !== "success") return;
