@@ -8,8 +8,9 @@ Status: V2 Phase 0 started after V1 deletion acceptance; first move-timing slice
 
 - Production feature commit: `f88b8b9` (`fail closed on session lookup errors`);
   Amplify job `316` succeeded.
-- Current deployed main: `b477040` (`record deletion harness deployment`);
-  Amplify job `319` succeeded and `/api/health` reported the expected commit.
+- Current deployed main: `52fc75a` (`stabilize rapid input capture`);
+  corrective Amplify job `322` succeeded and `/api/health` reported the
+  expected commit.
 - Post-deployment production smoke verification passed on its first attempt.
 - Production-safe Playwright: 9/9 passed.
 - A targeted production browser check reached Game Over and confirmed the
@@ -140,6 +141,15 @@ default Playwright passed 51 with the debug-only case skipped; typecheck passed;
 and the production build compiled successfully. Its local smoke wrapper stopped
 at the known missing local auth-bridge secret (`503` rather than the configured
 environment's unauthenticated `401`).
+
+Initial Amplify job `321` deployed the instrumentation commit `ab48e16`, but
+the production rapid-input canary exposed a readiness/listener race by
+processing 5/6 keys twice. The correction keeps one stable keyboard listener,
+waits for New Game readiness in both rapid-input canaries, and strengthens the
+local trace regression to six ordered keys plus touch. Commit `52fc75a` deployed
+through job `322`; production health/smoke passed on the first attempt and the
+full production-safe browser suite passed 9/9, including all six ordered rapid
+inputs. Treat job `322`, not job `321`, as the accepted V2 baseline.
 
 ## V2 evidence preserved
 
