@@ -6,9 +6,10 @@ Status: V1 Stripe-native webhook verification deployed; physical mobile gates re
 
 ## Production baseline
 
-- Current deployed commit: `c4e7874` (`record Stripe webhook deployment`);
-  docs-only Amplify job `333` succeeded and production verification reported
-  the expected commit.
+- Last verified deployment recorded before this handoff-only audit: `c4e7874`
+  (`record Stripe webhook deployment`); docs-only Amplify job `333` succeeded
+  and production verification reported the expected commit. Later handoff-only
+  commits do not change the application baseline below.
 - Current application-change baseline: `3abefa4` (`verify Stripe store
   webhooks`); Amplify job `332` succeeded before the docs-only deployment.
 - Post-deployment production smoke verification passed on its first attempt.
