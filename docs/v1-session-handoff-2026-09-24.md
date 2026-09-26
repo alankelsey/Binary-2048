@@ -6,11 +6,11 @@ Status: V1 Stripe-native webhook verification deployed; physical mobile gates re
 
 ## Production baseline
 
-- Production feature commit: `f88b8b9` (`fail closed on session lookup errors`);
-  Amplify job `316` succeeded.
-- Current production application baseline: `3abefa4` (`verify Stripe store
-  webhooks`); Amplify job `332` succeeded and `/api/health` reported the
-  expected commit.
+- Current deployed commit: `c4e7874` (`record Stripe webhook deployment`);
+  docs-only Amplify job `333` succeeded and production verification reported
+  the expected commit.
+- Current application-change baseline: `3abefa4` (`verify Stripe store
+  webhooks`); Amplify job `332` succeeded before the docs-only deployment.
 - Post-deployment production smoke verification passed on its first attempt.
 - Production-safe Playwright: 9/9 passed.
 - A targeted production browser check reached Game Over and confirmed the
@@ -57,7 +57,7 @@ Status: V1 Stripe-native webhook verification deployed; physical mobile gates re
   - Post-deploy smoke passed on its first attempt; production-safe Playwright
     passed 9/9; focused deployed Game Over assertion passed 1/1.
 
-## Latest completed V1 item
+## Previous completed V1 item — auth lifecycle
 
 - Auth-aware read-only pages now use a shared optional session lookup that logs
   PII-free failure metadata before falling back to guest state.
@@ -106,11 +106,20 @@ endpoint secret or payment acceptance was enabled.
 
 ## Next V1 task
 
-The next unchecked roadmap entry after the webhook is the fixed-egress Atlas
-allowlist reduction, but its own acceptance condition says to perform it only
-after the runtime is migrated. Reconfirm that dependency before starting work;
-do not treat the current Amplify WEB_COMPUTE runtime as having stable outbound
-IP addresses.
+Use `docs/roadmap-checklist.md` as the completion source of truth. It currently
+reports 292/332 checked (88%). No additional checkbox was closed by the
+docs-only deployment.
+
+The first remaining roadmap entries are the tutorial/mobile acceptance parents;
+they stay open until their physical-device children pass. The user asked to
+save physical mobile work for the final gate. The next non-mobile entry in file
+order is the fixed-egress Atlas allowlist reduction, but it is dependency-gated:
+its own acceptance condition says to perform it only after the runtime is
+migrated, and the checked child records the decision to defer that spend until
+traffic or persistence needs justify it. Do not execute that infrastructure
+change merely because it is the next unchecked line, and do not treat Amplify
+WEB_COMPUTE as having stable outbound IP addresses. Before beginning another
+unchecked non-mobile item, confirm that its stated prerequisite is satisfied.
 
 The deployed re-review, disposition log, automated evidence, and exact remaining
 device checklist are in
@@ -177,8 +186,9 @@ is complete. Do not start or continue another V2 item. The observability slices
 below were already deployed before that boundary was reaffirmed and are retained
 as historical production evidence only.
 
-The user explicitly authorized starting V2 on 2026-09-25. The first Phase 0
-slice adds bounded, privacy-safe browser performance entries for input capture,
+Historical context: the user briefly authorized starting V2 on 2026-09-25
+before restoring the V1-only boundary. The first completed Phase 0 slice added
+bounded, privacy-safe browser performance entries for input capture,
 accepted/queued disposition, request start, response headers, response parsing,
 React commit, and the following animation frame. Existing queue behavior is
 unchanged. Because normal gameplay is still server-gated, traces record
@@ -192,13 +202,14 @@ does not classify non-direction keys or sub-threshold gestures as moves, and
 accepted request failures remain execution errors rather than input drops.
 Gameplay behavior and the eight-move keyboard buffer are unchanged.
 
-The third Phase 0 slice adds per-attempt UTF-8 request and response body byte
+The third completed Phase 0 slice added per-attempt UTF-8 request and response body byte
 counts, request and response recovery-history lengths, synchronous
 local-storage read/write duration, and checkpoint duration across envelope
 creation, JSON serialization, and storage. Recovery retry attempts remain
-separately tagged. The next V2 item is to add server timing for rate-limit
-identity, session lookup, recovery work, engine execution, snapshot signing,
-persistence scheduling, and total route time.
+separately tagged. At the freeze point, the next planned Phase 0 work was server
+timing for rate-limit identity, session lookup, recovery work, engine execution,
+snapshot signing, persistence scheduling, and total route time. Do not start it
+until every V1 gate is complete or the user explicitly changes scope.
 
 For the second slice, 151 unit suites / 494 tests passed, typecheck passed, and
 the full local Playwright suite passed 52 with the debug-only case skipped. The
@@ -211,7 +222,7 @@ unsandboxed rerun passed completely.
 Commit `675ade8` deployed through Amplify job `326`. Production health/smoke
 passed on the first attempt and the full production-safe browser suite passed
 9/9, including the six-command rapid-input recovery canary. Treat this as the
-accepted application baseline for the next Phase 0 slice.
+historical accepted baseline for the following Phase 0 slice.
 
 Local verification for the third slice: 151 unit suites / 496 tests passed;
 typecheck passed; focused metric unit coverage passed 11/11; focused Chromium
@@ -224,7 +235,8 @@ than the configured environment's unauthenticated `401`).
 Commit `67026df` deployed through Amplify job `328`. Production health/smoke
 passed on the first attempt and the production-safe browser suite passed 9/9,
 including rapid input, stale-session recovery, special tiles, guest lifecycle,
-and auth/session health. Treat this as the accepted application baseline for
+and auth/session health. This is the historical accepted V2 baseline at the
+freeze point; it is not the current production baseline and does not authorize
 the Server-Timing slice.
 
 The newly added anchored Lock-0 and `Death by Luck` wildcard items remain
