@@ -8,8 +8,8 @@ Status: V2 Phase 0 in progress after V1 deletion acceptance; move, queue/drop, p
 
 - Production feature commit: `f88b8b9` (`fail closed on session lookup errors`);
   Amplify job `316` succeeded.
-- Current production application baseline: `675ade8` (`record v2 move queue
-  observability`); Amplify job `326` succeeded and `/api/health` reported the
+- Current production application baseline: `67026df` (`measure v2 move payload
+  persistence`); Amplify job `328` succeeded and `/api/health` reported the
   expected commit.
 - Post-deployment production smoke verification passed on its first attempt.
 - Production-safe Playwright: 9/9 passed.
@@ -166,6 +166,12 @@ debug-only case skipped. The production build compiled after replacing an
 initial explicit-`any` response type caught by the lint gate. Its smoke wrapper
 then stopped only at the known missing local auth-bridge secret (`503` rather
 than the configured environment's unauthenticated `401`).
+
+Commit `67026df` deployed through Amplify job `328`. Production health/smoke
+passed on the first attempt and the production-safe browser suite passed 9/9,
+including rapid input, stale-session recovery, special tiles, guest lifecycle,
+and auth/session health. Treat this as the accepted application baseline for
+the Server-Timing slice.
 
 The newly added anchored Lock-0 and `Death by Luck` wildcard items remain
 research spikes; production tile rules have not changed. The V2 backlog also
