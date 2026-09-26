@@ -8,9 +8,10 @@ Status: V2 Phase 0 started after V1 deletion acceptance; first move-timing slice
 
 - Production feature commit: `f88b8b9` (`fail closed on session lookup errors`);
   Amplify job `316` succeeded.
-- Current deployed main: `52fc75a` (`stabilize rapid input capture`);
-  corrective Amplify job `322` succeeded and `/api/health` reported the
-  expected commit.
+- Current production application baseline: `52fc75a` (`stabilize rapid input
+  capture`); corrective Amplify job `322` succeeded and `/api/health` reported
+  the expected commit. Later docs-only checkpoint `d24751c` deployed through
+  Amplify job `323` and passed production verification on its first attempt.
 - Post-deployment production smoke verification passed on its first attempt.
 - Production-safe Playwright: 9/9 passed.
 - A targeted production browser check reached Game Over and confirmed the
