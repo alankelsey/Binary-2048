@@ -8,10 +8,9 @@ Status: V2 Phase 0 in progress after V1 deletion acceptance; move timing and que
 
 - Production feature commit: `f88b8b9` (`fail closed on session lookup errors`);
   Amplify job `316` succeeded.
-- Current production application baseline: `52fc75a` (`stabilize rapid input
-  capture`); corrective Amplify job `322` succeeded and `/api/health` reported
-  the expected commit. Later docs-only checkpoint `d24751c` deployed through
-  Amplify job `323` and passed production verification on its first attempt.
+- Current production application baseline: `675ade8` (`record v2 move queue
+  observability`); Amplify job `326` succeeded and `/api/health` reported the
+  expected commit.
 - Post-deployment production smoke verification passed on its first attempt.
 - Production-safe Playwright: 9/9 passed.
 - A targeted production browser check reached Game Over and confirmed the
@@ -148,6 +147,11 @@ missing local auth-bridge secret (`503` rather than the configured environment's
 unauthenticated `401`). The initial sandboxed Playwright attempt could not
 launch Chromium because macOS denied its IPC registration; the required
 unsandboxed rerun passed completely.
+
+Commit `675ade8` deployed through Amplify job `326`. Production health/smoke
+passed on the first attempt and the full production-safe browser suite passed
+9/9, including the six-command rapid-input recovery canary. Treat this as the
+accepted application baseline for the next Phase 0 slice.
 
 The newly added anchored Lock-0 and `Death by Luck` wildcard items remain
 research spikes; production tile rules have not changed. The V2 backlog also
