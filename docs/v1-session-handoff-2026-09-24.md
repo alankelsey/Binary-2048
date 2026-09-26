@@ -2,7 +2,7 @@
 
 Date: 2026-09-25
 
-Status: Protected production data-deletion acceptance complete; sign-out/session recovery is next
+Status: V2 Phase 0 started after V1 deletion acceptance; first move-timing slice implemented locally
 
 ## Production baseline
 
@@ -119,6 +119,27 @@ and smoke passed on the first attempt.
 Next, verify sign-out, expired-session handling, and reauthentication recovery
 on desktop. Keep the authenticated Android session-resume flow deferred to the
 final physical-device gate.
+
+## V2 work started
+
+The user explicitly authorized starting V2 on 2026-09-25. The first Phase 0
+slice adds bounded, privacy-safe browser performance entries for input capture,
+accepted/queued disposition, request start, response headers, response parsing,
+React commit, and the following animation frame. Existing queue behavior is
+unchanged. Because normal gameplay is still server-gated, traces record
+`localEngineStatus: not_run` rather than inventing a client-engine duration.
+
+Focused unit and browser coverage proves accepted keyboard, queued keyboard,
+and touch traces through the next painted frame. The next V2 item is to record
+queue depth and every input-drop reason. The newly added anchored Lock-0 and
+`Death by Luck` wildcard items remain research spikes; production tile rules
+have not changed.
+
+Pre-deployment verification for this slice: 151 unit suites / 491 tests passed;
+default Playwright passed 51 with the debug-only case skipped; typecheck passed;
+and the production build compiled successfully. Its local smoke wrapper stopped
+at the known missing local auth-bridge secret (`503` rather than the configured
+environment's unauthenticated `401`).
 
 ## V2 evidence preserved
 

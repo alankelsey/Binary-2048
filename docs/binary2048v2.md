@@ -2,7 +2,7 @@
 
 Status: initial planning document  
 Created: 2026-09-17  
-Implementation status: no v2 work started
+Implementation status: Phase 0 started; first client move-timing slice implemented
 
 ## Purpose
 
@@ -160,13 +160,65 @@ renderer.
 - If optimistic ranked rendering is rejected as policy, keep server-gated
   behavior only in ranked mode rather than imposing it on casual play.
 
+## Experimental mechanic spikes
+
+These are decision gates and prototypes, not approved production rule changes.
+Each spike must preserve deterministic replay/versioning and record its decision
+before implementation is promoted into a shipped ruleset.
+
+### Anchored Lock-0 behavior
+
+- [ ] Prototype line resolution where a spawned Lock-0 remains at its board
+  coordinate instead of sliding. For the active swipe, it partitions its row or
+  column like a board edge while tiles in each resulting segment continue to
+  slide and merge normally.
+- [ ] Define and prototype the Lock-0 lifecycle/despawn trigger. A tile moving
+  toward an active lock must stop in the adjacent cell; when the lock despawns,
+  that tile may enter or pass the vacated cell only on a later swipe.
+- [ ] Cover all four directions, tiles on both sides, multiple locks, adjacent
+  merges, no-op/turn/spawn semantics, undo, win/game-over detection,
+  replay/export/import, recovery, simulation/action masks, and deterministic
+  RNG.
+- [ ] Decide whether anchored locks replace the V1 rule globally or ship in a
+  versioned V2 ruleset, including replay migration and event semantics.
+
+The spike must explicitly decide whether despawn remains tied to global turn
+parity or becomes per-lock lifetime/collision state, whether zero or wildcard
+tiles can trigger despawn, and how several locks age independently.
+
+### Death by Luck wildcard mode
+
+- [ ] Prototype an explicitly serialized, unranked `Death by Luck` game mode
+  with an overabundance of wildcard spawns, rather than inferring its identity
+  from `pWildcard`.
+- [ ] In this mode, prototype non-combinable wildcard-to-wildcard collisions
+  while preserving wildcard-plus-number multiplication as the high-upside path
+  to a fast win.
+- [ ] Define interactions with zero, Lock-0, equal and unequal wildcard
+  multipliers, scoring, win/game-over, undo, replay/import/export,
+  simulation/action masks, and leaderboard eligibility.
+- [ ] Run fixed-seed and Monte Carlo balance experiments across candidate
+  wildcard rates and multiplier distributions. Report win rate,
+  loss-by-board-fill rate, moves to win/loss, score/max-tile distribution, and
+  sensitivity to luck before choosing defaults.
+- [ ] Produce deterministic engine/schema regressions and browser/tutorial/help
+  acceptance criteria with the spike decision; do not ship the mode until that
+  decision is recorded.
+
+Exit criterion: checked-in decision records choose precise semantics,
+configuration, versioning, and balance targets with deterministic prototype
+evidence. Current production behavior remains unchanged until separately
+approved.
+
 ## Delivery plan
 
 ### Phase 0: establish a trustworthy baseline
 
-- [ ] Add performance marks for input capture, acceptance/queueing, local
-  engine duration, request start, response headers, response parsing, React
-  commit, and next animation frame.
+- [x] Add performance marks for input capture, acceptance/queueing, local
+  engine duration/status, request start, response headers, response parsing,
+  React commit, and next animation frame. The current server-gated gameplay
+  path truthfully records `localEngineStatus: not_run`; a duration will be
+  measured when Phase 2 introduces client engine execution.
 - [ ] Record queue depth and every input-drop reason.
 - [ ] Record request and response byte counts, recovery-history length,
   local-storage duration, and checkpoint duration.

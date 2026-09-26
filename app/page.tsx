@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type TouchEvent } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type TouchEvent } from "react";
 import { computeCellEffects, type CellEffect, type MoveEvent } from "@/lib/binary2048/cell-effects";
 import { keyToDir, swipeToDir } from "@/lib/binary2048/input";
 import { getUiPolicy } from "@/lib/binary2048/ui-policy";
@@ -66,6 +66,13 @@ import { applyUiPolicyOverrides, type UIControlOverrides } from "@/lib/binary204
 import type { UIControl } from "@/lib/binary2048/ui-policy";
 import { createReferralCode, type MarketingEventType } from "@/lib/binary2048/marketing";
 import type { GameExport, SessionRecoverySnapshot } from "@/lib/binary2048/types";
+import {
+  discardMovePerformanceTrace,
+  finishMovePerformanceTrace,
+  markMovePerformancePhase,
+  startMovePerformanceTrace,
+  type MovePerformanceTrace
+} from "@/lib/binary2048/move-performance";
 
 type Tile = { t: "n"; v: number } | { t: "z" } | { t: "w"; m: number } | { t: "i" };
 type Cell = Tile | null;
@@ -197,7 +204,10 @@ export default function Home() {
   const controlTapStateRef = useRef(createInitialRageTapState());
   const pendingNewGameRef = useRef(false);
   const moveInFlightRef = useRef(false);
-  const bufferedMovesRef = useRef<Dir[]>([]);
+  const bufferedMovesRef = useRef<Array<{ dir: Dir; trace: MovePerformanceTrace }>>([]);
+  const pendingPaintTraceRef = useRef<{ trace: MovePerformanceTrace; turn: number } | null>(null);
+  const paintFrameRef = useRef<number | null>(null);
+  const paintFrameTraceRef = useRef<MovePerformanceTrace | null>(null);
   const diagnosticSequenceRef = useRef(0);
   const authBridgeRef = useRef<ReturnType<typeof createClientAuthBridge> | null>(null);
   const modalTriggerRef = useRef<HTMLElement | null>(null);
@@ -230,6 +240,13 @@ export default function Home() {
     },
     []
   );
+
+  function clearBufferedMoves() {
+    for (const buffered of bufferedMovesRef.current) {
+      discardMovePerformanceTrace(buffered.trace);
+    }
+    bufferedMovesRef.current = [];
+  }
 
   useEffect(() => {
     setAuthenticated(
@@ -386,7 +403,7 @@ export default function Home() {
     setNewGameSetupOpen(false);
     setReplay(null);
     setPreparedReplayUrl("");
-    bufferedMovesRef.current = [];
+    clearBufferedMoves();
     setContinueAfterWin(false);
     setNewGameConfirmArmed(false);
     setBusy(true);
@@ -468,9 +485,12 @@ export default function Home() {
     }
   }
 
-  async function move(dir: Dir) {
+  async function move(dir: Dir, trace?: MovePerformanceTrace) {
     if (tutorial) {
-      if (tutorial.phase !== "active" || tutorialExitConfirmOpen || tutorialLaunchConfirmOpen) return;
+      if (tutorial.phase !== "active" || tutorialExitConfirmOpen || tutorialLaunchConfirmOpen) {
+        if (trace) discardMovePerformanceTrace(trace);
+        return;
+      }
       const result = applyTutorialMove(tutorial, dir);
       setTutorial(result.session);
       window.localStorage.setItem(
@@ -482,12 +502,18 @@ export default function Home() {
           )
         )
       );
+      if (trace) discardMovePerformanceTrace(trace);
       return;
     }
-    if (replay || !gameId || !state || state.over || (state.won && !continueAfterWin)) return;
+    if (replay || !gameId || !state || state.over || (state.won && !continueAfterWin)) {
+      if (trace) discardMovePerformanceTrace(trace);
+      return;
+    }
     if (moveInFlightRef.current) {
       if (bufferedMovesRef.current.length < MAX_BUFFERED_MOVES) {
-        bufferedMovesRef.current.push(dir);
+        const queuedTrace = trace ?? startMovePerformanceTrace(dir, "control");
+        markMovePerformancePhase(queuedTrace, "queued");
+        bufferedMovesRef.current.push({ dir, trace: queuedTrace });
         addDiagnostic("move_buffered", {
           dir,
           gameId,
@@ -495,9 +521,18 @@ export default function Home() {
           turn: state.turn
         });
       }
+      else if (trace) discardMovePerformanceTrace(trace);
       return;
     }
-    if (busy) return;
+    if (busy) {
+      if (trace) discardMovePerformanceTrace(trace);
+      return;
+    }
+    const activeTrace = trace ?? startMovePerformanceTrace(dir, "control");
+    if (!activeTrace.phases.some((phase) => phase.phase === "queued")) {
+      markMovePerformancePhase(activeTrace, "accepted");
+    }
+    markMovePerformancePhase(activeTrace, "local_engine_not_run");
     moveInFlightRef.current = true;
     const previous = state;
     setBusy(true);
@@ -506,6 +541,7 @@ export default function Home() {
       const moveResult = await requestResumableMove({
         sessionId: gameId,
         async requestMove(sessionId, recoveredSession?: { id: string; recoverySnapshot: GameExport | SessionRecoverySnapshot }) {
+          const attempt = recoveredSession ? 2 : 1;
           const authHeaders = await authBridgeRef.current?.authorizationHeader();
           const recoverySnapshot =
             recoveredSession?.recoverySnapshot ?? loadResumeSnapshot(window.localStorage, sessionId) ?? undefined;
@@ -520,12 +556,16 @@ export default function Home() {
                 : recoverySnapshot?.steps.length ?? null,
             recoveryRetry: Boolean(recoveredSession)
           });
+          markMovePerformancePhase(activeTrace, "request_start", attempt);
           const response = await fetch(`/api/games/${sessionId}/move`, {
             method: "POST",
             headers: { "content-type": "application/json", ...authHeaders },
             body: JSON.stringify({ dir, recoverySnapshot })
           });
+          markMovePerformancePhase(activeTrace, "response_headers", attempt);
+          markMovePerformancePhase(activeTrace, "response_parse_start", attempt);
           const payload = await response.json().catch(() => ({}));
+          markMovePerformancePhase(activeTrace, "response_parse_end", attempt);
           addDiagnostic(
             "move_response",
             {
@@ -599,6 +639,7 @@ export default function Home() {
       setCanContinueAfterWin(resolveCanContinueAfterWin(json));
       if (json?.undo) setUndo(json.undo as UndoMeta);
       const events = Array.isArray(json?.lastStep?.events) ? (json.lastStep.events as MoveEvent[]) : [];
+      pendingPaintTraceRef.current = { trace: activeTrace, turn: next.turn };
       setState(next);
       setNewGameConfirmArmed(false);
       startCellEffects(computeCellEffects(previous, next, events, dir));
@@ -606,7 +647,8 @@ export default function Home() {
         window.localStorage.removeItem(gameIdKey);
       }
     } catch (error) {
-      bufferedMovesRef.current = [];
+      discardMovePerformanceTrace(activeTrace);
+      clearBufferedMoves();
       addDiagnostic(
         "move_error",
         { dir, gameId, turn: previous.turn, message: diagnosticValue(error) },
@@ -961,14 +1003,27 @@ export default function Home() {
     document.documentElement.setAttribute("data-theme", themeMode);
   }, [themeMode]);
 
+  useLayoutEffect(() => {
+    const pending = pendingPaintTraceRef.current;
+    if (!pending || !state || state.turn !== pending.turn) return;
+    pendingPaintTraceRef.current = null;
+    markMovePerformancePhase(pending.trace, "react_commit");
+    paintFrameTraceRef.current = pending.trace;
+    paintFrameRef.current = window.requestAnimationFrame(() => {
+      paintFrameRef.current = null;
+      paintFrameTraceRef.current = null;
+      finishMovePerformanceTrace(pending.trace);
+    });
+  }, [state]);
+
   useEffect(() => {
     if (busy || moveInFlightRef.current || bufferedMovesRef.current.length === 0) return;
     if (replay || !gameId || !state || state.over || (state.won && !continueAfterWin)) {
-      bufferedMovesRef.current = [];
+      clearBufferedMoves();
       return;
     }
     const nextMove = bufferedMovesRef.current.shift();
-    if (nextMove) void move(nextMove);
+    if (nextMove) void move(nextMove.dir, nextMove.trace);
   }, [busy, gameId, state, replay, continueAfterWin]);
 
   useEffect(() => {
@@ -983,7 +1038,7 @@ export default function Home() {
         (tutorial && tutorial.phase !== "active")
       ) return;
       event.preventDefault();
-      void move(dir);
+      void move(dir, startMovePerformanceTrace(dir, "keyboard"));
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -1039,6 +1094,9 @@ export default function Home() {
     return () => {
       if (effectTimerRef.current) window.clearTimeout(effectTimerRef.current);
       if (tutorialAdvanceTimerRef.current) window.clearTimeout(tutorialAdvanceTimerRef.current);
+      if (paintFrameRef.current !== null) window.cancelAnimationFrame(paintFrameRef.current);
+      if (paintFrameTraceRef.current) discardMovePerformanceTrace(paintFrameTraceRef.current);
+      if (pendingPaintTraceRef.current) discardMovePerformanceTrace(pendingPaintTraceRef.current.trace);
     };
   }, []);
 
@@ -1079,11 +1137,11 @@ export default function Home() {
     const dy = touch.clientY - touchStartRef.current.y;
     const dir = swipeToDir(dx, dy, 24);
     if (!dir) return;
-    void move(dir);
+    void move(dir, startMovePerformanceTrace(dir, "touch"));
   }
 
   function enterTutorial() {
-    bufferedMovesRef.current = [];
+    clearBufferedMoves();
     window.localStorage.removeItem(gameIdKey);
     clearResumeSnapshot(window.localStorage);
     setGameId("");

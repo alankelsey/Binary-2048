@@ -374,3 +374,11 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add public issue-reporting path to GitHub (header/footer links, issue templates, bug vs idea categories)
 - [x] Add in-app “Report issue” flow with prefilled GitHub issue link carrying page/build/version context
 - [x] Add triage labels/project convention for player-reported bugs, gameplay ideas, and balance feedback
+
+## Binary 2048 V2
+
+- [ ] Execute the [Binary 2048 V2 delivery plan](./binary2048v2.md)
+  - [ ] Complete Phase 0 measurement and input-observability baseline
+    - [x] Add end-to-end move performance marks for input capture, acceptance/queueing, request/response parsing, React commit, and next animation frame; record that the local engine is not run on the current server-gated path
+  - [ ] Complete the anchored Lock-0 behavior spike without changing production rules
+  - [ ] Complete the unranked `Death by Luck` wildcard-mode spike without changing production rules
