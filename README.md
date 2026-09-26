@@ -644,7 +644,11 @@ Challenge policy env:
 - `POST /api/store/webhook`
   - Idempotent webhook processor for payment completion events
   - Supports grant-once behavior by event id and payment reference
-  - Fails closed unless `BINARY2048_STORE_WEBHOOK_SECRET` is configured; callers provide it via `x-store-webhook-secret`
+  - Verifies Stripe's `Stripe-Signature` against the exact raw request body with
+    the endpoint's `STRIPE_WEBHOOK_SECRET` (`whsec_...`) and a five-minute
+    timestamp tolerance
+  - Fails closed when the endpoint secret or a valid provider signature is absent;
+    the former `x-store-webhook-secret` shortcut is not accepted
 - `POST /api/store/inventory`
   - Grants inventory only with operator authorization via `x-admin-token`
   - Body: `{ "subscriberId": string, "sku": "undo_charge" | "wild_boost_pack" | "lock_breaker", "quantity": number, "reason"?: "grant" | "consume" | "adjust" }`

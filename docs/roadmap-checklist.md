@@ -111,7 +111,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Ranked vs boosted mode separation enforcement for leaderboard eligibility
 - [x] Undo entitlement accounting in audit trail (server-side consume + replay-visible usage)
 - [x] Stripe webhook idempotency + grant-once purchase handling
-- [ ] Replace the placeholder shared-secret store webhook with payment-provider-native signature verification before accepting real payments
+- [x] Replace the placeholder shared-secret store webhook with payment-provider-native signature verification before accepting real payments
 
 ## Platform + Ops
 

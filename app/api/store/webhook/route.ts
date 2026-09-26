@@ -1,24 +1,36 @@
 import { NextResponse } from "next/server";
+import Stripe from "stripe";
 import { processStoreWebhookEvent } from "@/lib/binary2048/store-webhook";
 
-function webhookSecretStatus(req: Request): "missing" | "invalid" | "valid" {
-  const expected = process.env.BINARY2048_STORE_WEBHOOK_SECRET;
-  if (!expected) return "missing";
-  const provided = req.headers.get("x-store-webhook-secret") ?? "";
-  return provided.length > 0 && provided === expected ? "valid" : "invalid";
-}
+const stripe = new Stripe("not_used_for_webhook_verification");
+const STORE_WEBHOOK_SIGNATURE_TOLERANCE_SECONDS = 300;
 
 export async function POST(req: Request) {
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    return NextResponse.json({ error: "Store webhook is not configured" }, { status: 503 });
+  }
+
+  const signature = req.headers.get("stripe-signature");
+  if (!signature) {
+    return NextResponse.json({ error: "Invalid Stripe webhook signature" }, { status: 400 });
+  }
+
+  const rawBody = await req.text();
+  let event: Stripe.Event;
   try {
-    const secretStatus = webhookSecretStatus(req);
-    if (secretStatus === "missing") {
-      return NextResponse.json({ error: "Store webhook is not configured" }, { status: 503 });
-    }
-    if (secretStatus === "invalid") {
-      return NextResponse.json({ error: "Invalid webhook secret" }, { status: 401 });
-    }
-    const body = await req.json().catch(() => ({}));
-    const processed = processStoreWebhookEvent(body);
+    event = stripe.webhooks.constructEvent(
+      rawBody,
+      signature,
+      webhookSecret,
+      STORE_WEBHOOK_SIGNATURE_TOLERANCE_SECONDS
+    );
+  } catch {
+    return NextResponse.json({ error: "Invalid Stripe webhook signature" }, { status: 400 });
+  }
+
+  try {
+    const processed = processStoreWebhookEvent(event);
     return NextResponse.json(processed, { status: 200 });
   } catch (error) {
     return NextResponse.json(

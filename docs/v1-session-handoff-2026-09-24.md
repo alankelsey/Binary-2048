@@ -1,8 +1,8 @@
 # Binary 2048 V1 Session Handoff
 
-Date: 2026-09-25
+Date: 2026-09-26
 
-Status: V1 desktop auth lifecycle complete; physical mobile gates remain deferred; V2 implementation frozen until V1 is complete
+Status: V1 Stripe-native webhook verification complete locally; physical mobile gates remain deferred; V2 implementation frozen until V1 is complete
 
 ## Production baseline
 
@@ -76,6 +76,27 @@ Status: V1 desktop auth lifecycle complete; physical mobile gates remain deferre
   - Amplify job `316` succeeded; production health and smoke passed on the
     first attempt; production-safe Playwright passed 9/9, including the auth
     page and browser-context auth/session API health checks.
+
+## Current V1 item
+
+The store webhook now uses Stripe's maintained server SDK to verify the exact
+raw request body, `Stripe-Signature` header, endpoint signing secret from
+`STRIPE_WEBHOOK_SECRET`, and a five-minute timestamp tolerance before parsing
+or granting inventory. The former `x-store-webhook-secret` shortcut and
+`BINARY2048_STORE_WEBHOOK_SECRET` configuration are not accepted. Missing
+configuration returns `503`; missing, stale, or body-mismatched provider
+signatures return `400` without granting inventory. Existing event/payment
+idempotency remains in place.
+
+Checkout, direct purchase, and real payments remain disabled. Deploying this
+verification does not authorize enabling them or adding a production Stripe
+endpoint secret without separate approval.
+
+Local verification: focused webhook coverage passed 7/7; the full unit suite
+passed 151 suites / 498 tests; typecheck passed; default Playwright passed 52
+with the debug-only case skipped; and the production build compiled. Its smoke
+wrapper stopped only at the known missing local auth-bridge secret (`503`
+rather than the configured environment's unauthenticated `401`).
 
 ## Next V1 task
 
