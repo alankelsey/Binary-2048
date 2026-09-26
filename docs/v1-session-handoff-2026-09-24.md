@@ -8,8 +8,8 @@ Status: V1 desktop auth lifecycle complete; physical mobile gates remain deferre
 
 - Production feature commit: `f88b8b9` (`fail closed on session lookup errors`);
   Amplify job `316` succeeded.
-- Current production application baseline: `67026df` (`measure v2 move payload
-  persistence`); Amplify job `328` succeeded and `/api/health` reported the
+- Current production application baseline: `264f1de` (`verify desktop auth
+  lifecycle`); Amplify job `330` succeeded and `/api/health` reported the
   expected commit.
 - Post-deployment production smoke verification passed on its first attempt.
 - Production-safe Playwright: 9/9 passed.
@@ -132,6 +132,10 @@ passed 9/9. No credential, cookie value, token, email address, or account
 identifier was printed or committed. The desktop lifecycle roadmap item is
 complete; the authenticated parent stays open for the final physical Android
 Chrome flow.
+
+Commit `264f1de` deployed through Amplify job `330`. Production health/smoke
+passed on the first attempt and the focused lifecycle suite passed 3/3 again
+against the deployed commit.
 
 ## V2 planning boundary
 

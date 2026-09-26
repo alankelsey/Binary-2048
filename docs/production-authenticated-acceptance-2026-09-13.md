@@ -111,6 +111,8 @@ verify three isolated desktop flows without logging cookie or token values:
 The focused lifecycle run passed 3/3. The complete non-destructive production
 authenticated suite passed 9/9, including session refresh, ranked practice and
 sandbox submission, protected export, account-bound store reads, and fail-closed
-paid mutations. The deployed production head was `88cb5ca`; no credentials,
-cookie values, tokens, email addresses, or account identifiers were printed or
+paid mutations. The lifecycle coverage deployed in commit `264f1de` through
+Amplify job `330`; production health/smoke passed on the first attempt and the
+focused lifecycle suite passed 3/3 again afterward. No credentials, cookie
+values, tokens, email addresses, or account identifiers were printed or
 committed.
