@@ -135,7 +135,9 @@ Focused unit and browser coverage proves accepted keyboard, queued keyboard,
 and touch traces through the next painted frame. The next V2 item is to record
 queue depth and every input-drop reason. The newly added anchored Lock-0 and
 `Death by Luck` wildcard items remain research spikes; production tile rules
-have not changed.
+have not changed. The V2 backlog also includes auditing the existing OpenAPI
+endpoint and developer page, then prototyping Swagger UI or an equivalent
+interactive explorer with complete contracts and automated drift checks.
 
 Pre-deployment verification for this slice: 151 unit suites / 491 tests passed;
 default Playwright passed 51 with the debug-only case skipped; typecheck passed;

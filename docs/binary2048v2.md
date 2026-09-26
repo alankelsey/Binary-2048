@@ -295,6 +295,13 @@ and a closed diagnostic panel performs no full-log formatting per move.
 
 ### Phase 5: isolate research and compute workloads
 
+- [ ] Audit the existing OpenAPI endpoint and developer docs, then prototype
+  Swagger UI or an equivalent interactive API explorer for V2. The published
+  contract must cover every supported gameplay, replay, simulation, job, and
+  research endpoint with authentication, authorization scopes, rate limits,
+  request/response examples, error shapes, and schema/version compatibility.
+  Generate from canonical schemas where practical and add automated coverage
+  that fails when implemented routes and the published contract drift.
 - [ ] Inventory every simulation, tournament, training, and model-inference
   entry point and its deployed authorization and rate limit.
 - [ ] Apply scoped API keys or research/admin roles and hard request/job caps.
@@ -305,8 +312,10 @@ and a closed diagnostic panel performs no full-log formatting per move.
 - [ ] Store generated artifacts rather than rebuilding them in web requests.
 - [ ] Load-test gameplay while controlled training/tournament jobs run.
 
-Exit criterion: research saturation does not materially change gameplay
-input-to-paint or warm acknowledgement p95.
+Exit criterion: developers can discover and exercise authorized V2 APIs from
+the published contract, contract drift is caught automatically, and research
+saturation does not materially change gameplay input-to-paint or warm
+acknowledgement p95.
 
 ### Phase 6: perceived-motion and startup polish
 

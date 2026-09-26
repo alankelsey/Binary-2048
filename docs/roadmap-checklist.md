@@ -380,5 +380,6 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [ ] Execute the [Binary 2048 V2 delivery plan](./binary2048v2.md)
   - [ ] Complete Phase 0 measurement and input-observability baseline
     - [x] Add end-to-end move performance marks for input capture, acceptance/queueing, request/response parsing, React commit, and next animation frame; record that the local engine is not run on the current server-gated path
+  - [ ] Audit and upgrade the existing OpenAPI documentation into a Swagger UI or equivalent interactive V2 API explorer, with complete contracts, examples, security/rate-limit details, versioning, and automated route/schema drift checks
   - [ ] Complete the anchored Lock-0 behavior spike without changing production rules
   - [ ] Complete the unranked `Death by Luck` wildcard-mode spike without changing production rules
