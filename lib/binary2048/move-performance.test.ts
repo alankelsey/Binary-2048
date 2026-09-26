@@ -6,8 +6,12 @@ import {
   dropMovePerformanceTrace,
   finishMovePerformanceTrace,
   markMovePerformancePhase,
+  recordMoveCheckpointDuration,
+  recordMoveLocalStorageDuration,
+  recordMovePayloadMetrics,
   recordMoveQueueDepth,
   startMovePerformanceTrace,
+  utf8ByteLength,
   type MovePerformanceTarget
 } from "@/lib/binary2048/move-performance";
 
@@ -48,6 +52,16 @@ describe("move performance tracing", () => {
     markMovePerformancePhase(trace, "response_headers", 1, target);
     markMovePerformancePhase(trace, "response_parse_start", 1, target);
     markMovePerformancePhase(trace, "response_parse_end", 1, target);
+    recordMovePayloadMetrics(trace, {
+      attempt: 1,
+      requestBytes: 81.9,
+      responseBytes: 144.7,
+      requestRecoveryHistoryLength: 2.8,
+      responseRecoveryHistoryLength: 3.9
+    });
+    recordMoveLocalStorageDuration(trace, "read", 0.25, 1);
+    recordMoveLocalStorageDuration(trace, "write", 0.5, 1);
+    recordMoveCheckpointDuration(trace, 0.75, 3.9);
     markMovePerformancePhase(trace, "react_commit", undefined, target);
     finishMovePerformanceTrace(trace, target);
 
@@ -74,8 +88,24 @@ describe("move performance tracing", () => {
       traceId: trace.id,
       localEngineStatus: "not_run",
       outcome: "completed",
-      queueDepthSamples: [{ stage: "capture", depth: 0, atMs: 12 }]
+      queueDepthSamples: [{ stage: "capture", depth: 0, atMs: 12 }],
+      payloadSamples: [{
+        attempt: 1,
+        requestBytes: 81,
+        responseBytes: 144,
+        requestRecoveryHistoryLength: 2,
+        responseRecoveryHistoryLength: 3
+      }],
+      localStorageSamples: [
+        { operation: "read", durationMs: 0.25, attempt: 1 },
+        { operation: "write", durationMs: 0.5, attempt: 1 }
+      ],
+      checkpointSamples: [{ durationMs: 0.75, recoveryHistoryLength: 3 }]
     });
+  });
+
+  it("counts UTF-8 request and response bytes rather than UTF-16 code units", () => {
+    expect(utf8ByteLength('{"label":"2048 ⚡"}')).toBe(20);
   });
 
   it("records queue depth through enqueue and dequeue", () => {

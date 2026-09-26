@@ -2,7 +2,7 @@
 
 Date: 2026-09-25
 
-Status: V2 Phase 0 in progress after V1 deletion acceptance; move timing and queue/drop observability implemented
+Status: V2 Phase 0 in progress after V1 deletion acceptance; move, queue/drop, payload, and checkpoint observability implemented
 
 ## Production baseline
 
@@ -136,9 +136,15 @@ queue-depth samples at capture, enqueue, dequeue, and drop plus bounded dropped
 input marks classified by every valid directional-input rejection path. It
 does not classify non-direction keys or sub-threshold gestures as moves, and
 accepted request failures remain execution errors rather than input drops.
-Gameplay behavior and the eight-move keyboard buffer are unchanged. The next
-V2 item is to record request/response byte counts, recovery-history length,
-local-storage duration, and checkpoint duration.
+Gameplay behavior and the eight-move keyboard buffer are unchanged.
+
+The third Phase 0 slice adds per-attempt UTF-8 request and response body byte
+counts, request and response recovery-history lengths, synchronous
+local-storage read/write duration, and checkpoint duration across envelope
+creation, JSON serialization, and storage. Recovery retry attempts remain
+separately tagged. The next V2 item is to add server timing for rate-limit
+identity, session lookup, recovery work, engine execution, snapshot signing,
+persistence scheduling, and total route time.
 
 For the second slice, 151 unit suites / 494 tests passed, typecheck passed, and
 the full local Playwright suite passed 52 with the debug-only case skipped. The
@@ -152,6 +158,14 @@ Commit `675ade8` deployed through Amplify job `326`. Production health/smoke
 passed on the first attempt and the full production-safe browser suite passed
 9/9, including the six-command rapid-input recovery canary. Treat this as the
 accepted application baseline for the next Phase 0 slice.
+
+Local verification for the third slice: 151 unit suites / 496 tests passed;
+typecheck passed; focused metric unit coverage passed 11/11; focused Chromium
+coverage passed 2/2; and the full local Playwright suite passed 52 with the
+debug-only case skipped. The production build compiled after replacing an
+initial explicit-`any` response type caught by the lint gate. Its smoke wrapper
+then stopped only at the known missing local auth-bridge secret (`503` rather
+than the configured environment's unauthenticated `401`).
 
 The newly added anchored Lock-0 and `Death by Luck` wildcard items remain
 research spikes; production tile rules have not changed. The V2 backlog also

@@ -8,35 +8,78 @@ type ResumeSnapshotEnvelope = {
   exported: GameExport | SessionRecoverySnapshot;
 };
 
+type Clock = () => number;
+
+export type ResumeSnapshotSaveMetrics = {
+  checkpointDurationMs: number;
+  localStorageDurationMs: number;
+};
+
+export type ResumeSnapshotLoadResult = {
+  snapshot: GameExport | SessionRecoverySnapshot | null;
+  localStorageDurationMs: number;
+};
+
+function defaultClock() {
+  return typeof performance !== "undefined" && typeof performance.now === "function"
+    ? performance.now()
+    : Date.now();
+}
+
 export function saveResumeSnapshot(
   storage: Pick<Storage, "setItem">,
   gameId: string,
-  exported: GameExport | SessionRecoverySnapshot
-) {
+  exported: GameExport | SessionRecoverySnapshot,
+  now: Clock = defaultClock
+): ResumeSnapshotSaveMetrics {
+  const checkpointStartedAt = now();
   const payload: ResumeSnapshotEnvelope = {
     gameId,
     savedAtISO: new Date().toISOString(),
     exported
   };
-  storage.setItem(RESUME_SNAPSHOT_STORAGE_KEY, JSON.stringify(payload));
+  const serialized = JSON.stringify(payload);
+  const storageStartedAt = now();
+  storage.setItem(RESUME_SNAPSHOT_STORAGE_KEY, serialized);
+  const storageFinishedAt = now();
+  return {
+    checkpointDurationMs: Math.max(0, storageFinishedAt - checkpointStartedAt),
+    localStorageDurationMs: Math.max(0, storageFinishedAt - storageStartedAt)
+  };
+}
+
+export function loadResumeSnapshotWithMetrics(
+  storage: Pick<Storage, "getItem">,
+  gameId?: string,
+  now: Clock = defaultClock
+): ResumeSnapshotLoadResult {
+  const storageStartedAt = now();
+  const raw = storage.getItem(RESUME_SNAPSHOT_STORAGE_KEY);
+  const storageFinishedAt = now();
+  const localStorageDurationMs = Math.max(0, storageFinishedAt - storageStartedAt);
+  if (!raw) return { snapshot: null, localStorageDurationMs };
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<ResumeSnapshotEnvelope>;
+    if (!parsed || typeof parsed !== "object") return { snapshot: null, localStorageDurationMs };
+    if (gameId && parsed.gameId !== gameId) return { snapshot: null, localStorageDurationMs };
+    if (!parsed.exported || typeof parsed.exported !== "object") {
+      return { snapshot: null, localStorageDurationMs };
+    }
+    return {
+      snapshot: parsed.exported as GameExport | SessionRecoverySnapshot,
+      localStorageDurationMs
+    };
+  } catch {
+    return { snapshot: null, localStorageDurationMs };
+  }
 }
 
 export function loadResumeSnapshot(
   storage: Pick<Storage, "getItem">,
   gameId?: string
 ): GameExport | SessionRecoverySnapshot | null {
-  const raw = storage.getItem(RESUME_SNAPSHOT_STORAGE_KEY);
-  if (!raw) return null;
-
-  try {
-    const parsed = JSON.parse(raw) as Partial<ResumeSnapshotEnvelope>;
-    if (!parsed || typeof parsed !== "object") return null;
-    if (gameId && parsed.gameId !== gameId) return null;
-    if (!parsed.exported || typeof parsed.exported !== "object") return null;
-    return parsed.exported as GameExport | SessionRecoverySnapshot;
-  } catch {
-    return null;
-  }
+  return loadResumeSnapshotWithMetrics(storage, gameId).snapshot;
 }
 
 export function clearResumeSnapshot(storage: Pick<Storage, "removeItem">) {

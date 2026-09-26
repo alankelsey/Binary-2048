@@ -54,6 +54,8 @@ test("records accepted and queued moves through the next painted frame", async (
     grid: initialGrid
   };
   const completedMoves: Dir[] = [];
+  const requestBodies: string[] = [];
+  const responseBodies: string[] = [];
 
   await page.addInitScript(() => {
     window.localStorage.removeItem("binary2048.currentGameId");
@@ -86,27 +88,30 @@ test("records accepted and queued moves through the next painted frame", async (
   });
   await page.route("**/api/games/*/move", async (route) => {
     const body = route.request().postDataJSON() as { dir: Dir };
+    requestBodies.push(route.request().postData() ?? "");
     await new Promise((resolve) => setTimeout(resolve, 150));
     completedMoves.push(body.dir);
     current = { ...current, turn: completedMoves.length, score: completedMoves.length };
+    const responseBody = JSON.stringify({
+      id: current.id,
+      current,
+      lastStep: { moved: true, events: [] },
+      recoverySnapshot: {
+        recoveryVersion: 1,
+        rulesetId: "binary2048-v1",
+        sessionId: current.id,
+        config: current.config,
+        initialGrid,
+        moves: completedMoves
+      },
+      undo: { limit: 2, used: 0, remaining: 2 },
+      integrity: { sessionClass: "unranked", source: "created" }
+    });
+    responseBodies.push(responseBody);
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({
-        id: current.id,
-        current,
-        lastStep: { moved: true, events: [] },
-        recoverySnapshot: {
-          recoveryVersion: 1,
-          rulesetId: "binary2048-v1",
-          sessionId: current.id,
-          config: current.config,
-          initialGrid,
-          moves: completedMoves
-        },
-        undo: { limit: 2, used: 0, remaining: 2 },
-        integrity: { sessionClass: "unranked", source: "created" }
-      })
+      body: responseBody
     });
   });
 
@@ -156,6 +161,15 @@ test("records accepted and queued moves through the next painted frame", async (
         localEngineStatus: string;
         outcome: string;
         queueDepthSamples: Array<{ stage: string; depth: number; atMs: number }>;
+        payloadSamples: Array<{
+          attempt: number;
+          requestBytes: number;
+          responseBytes: number;
+          requestRecoveryHistoryLength: number;
+          responseRecoveryHistoryLength: number | null;
+        }>;
+        localStorageSamples: Array<{ operation: string; durationMs: number; attempt: number }>;
+        checkpointSamples: Array<{ durationMs: number; recoveryHistoryLength: number }>;
         phases: Array<{ phase: string; atMs: number; attempt?: number }>;
       }
     )
@@ -207,6 +221,24 @@ test("records accepted and queued moves through the next painted frame", async (
   for (const trace of traces) {
     expect(trace.phases.every((phase, index) => index === 0 || phase.atMs >= trace.phases[index - 1].atMs)).toBe(true);
     expect(trace.phases.find((phase) => phase.phase === "request_start")?.attempt).toBe(1);
+  }
+  expect(traces.map((trace) => trace.payloadSamples[0])).toEqual(
+    requestBodies.map((requestBody, index) => ({
+      attempt: 1,
+      requestBytes: Buffer.byteLength(requestBody, "utf8"),
+      responseBytes: Buffer.byteLength(responseBodies[index], "utf8"),
+      requestRecoveryHistoryLength: index,
+      responseRecoveryHistoryLength: index + 1
+    }))
+  );
+  for (const [index, trace] of traces.entries()) {
+    expect(trace.localStorageSamples).toHaveLength(2);
+    expect(trace.localStorageSamples.map((sample) => sample.operation)).toEqual(["read", "write"]);
+    expect(trace.localStorageSamples.every((sample) => sample.attempt === 1 && sample.durationMs >= 0)).toBe(true);
+    expect(trace.checkpointSamples).toEqual([
+      expect.objectContaining({ recoveryHistoryLength: index + 1 })
+    ]);
+    expect(trace.checkpointSamples[0].durationMs).toBeGreaterThanOrEqual(0);
   }
   expect(
     await page.evaluate(() => performance.getEntriesByName("binary2048:move-input-to-next-frame").length)

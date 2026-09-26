@@ -1,4 +1,10 @@
-import { clearResumeSnapshot, loadResumeSnapshot, RESUME_SNAPSHOT_STORAGE_KEY, saveResumeSnapshot } from "@/lib/binary2048/resume-recovery";
+import {
+  clearResumeSnapshot,
+  loadResumeSnapshot,
+  loadResumeSnapshotWithMetrics,
+  RESUME_SNAPSHOT_STORAGE_KEY,
+  saveResumeSnapshot
+} from "@/lib/binary2048/resume-recovery";
 import { runScenario } from "@/lib/binary2048/engine";
 import type { Cell, GameConfig } from "@/lib/binary2048/types";
 
@@ -59,5 +65,30 @@ describe("resume recovery snapshot", () => {
     };
 
     expect(loadResumeSnapshot(storage)).toBeNull();
+  });
+
+  it("separates synchronous storage time from total checkpoint construction time", () => {
+    const exported = runScenario(config, initialGrid, ["left"]);
+    const values = new Map<string, string>();
+    const storage = {
+      setItem(key: string, value: string) {
+        values.set(key, value);
+      },
+      getItem(key: string) {
+        return values.get(key) ?? null;
+      }
+    };
+    const saveTimes = [10, 12.5, 14];
+    const saveMetrics = saveResumeSnapshot(storage, exported.final.id, exported, () => saveTimes.shift() ?? 14);
+    expect(saveMetrics).toEqual({ checkpointDurationMs: 4, localStorageDurationMs: 1.5 });
+
+    const loadTimes = [20, 20.75];
+    const loaded = loadResumeSnapshotWithMetrics(
+      storage,
+      exported.final.id,
+      () => loadTimes.shift() ?? 20.75
+    );
+    expect(loaded.localStorageDurationMs).toBe(0.75);
+    expect(loaded.snapshot && "meta" in loaded.snapshot ? loaded.snapshot.meta.replay.moves : null).toEqual(["left"]);
   });
 });

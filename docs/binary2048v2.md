@@ -224,8 +224,10 @@ approved.
   UI state rejects. Non-direction keys and sub-threshold gestures are not move
   inputs; accepted request failures remain execution errors rather than input
   drops.
-- [ ] Record request and response byte counts, recovery-history length,
-  local-storage duration, and checkpoint duration.
+- [x] Record UTF-8 request and response body byte counts and request/response
+  recovery-history length for each move attempt. Measure synchronous
+  local-storage reads and writes separately, and measure checkpoint duration
+  across envelope creation, serialization, and storage.
 - [ ] Add `Server-Timing` for rate-limit identity, session lookup, recovery
   verification/import/replay, engine move, snapshot construction/signing,
   persistence scheduling, and total route time.

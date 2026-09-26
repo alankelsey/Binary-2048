@@ -55,6 +55,22 @@ export type MovePerformanceTrace = {
     depth: number;
     atMs: number;
   }>;
+  payloadSamples: Array<{
+    attempt: number;
+    requestBytes: number;
+    responseBytes: number;
+    requestRecoveryHistoryLength: number;
+    responseRecoveryHistoryLength: number | null;
+  }>;
+  localStorageSamples: Array<{
+    operation: "read" | "write";
+    durationMs: number;
+    attempt: number;
+  }>;
+  checkpointSamples: Array<{
+    durationMs: number;
+    recoveryHistoryLength: number;
+  }>;
 };
 
 export const MOVE_PERFORMANCE_COMPLETE_MARK = "binary2048:move-complete";
@@ -109,10 +125,53 @@ export function startMovePerformanceTrace(
     direction,
     source,
     phases: [],
-    queueDepthSamples: []
+    queueDepthSamples: [],
+    payloadSamples: [],
+    localStorageSamples: [],
+    checkpointSamples: []
   };
   markMovePerformancePhase(trace, "input_capture", undefined, target);
   return trace;
+}
+
+export function utf8ByteLength(value: string): number {
+  return new TextEncoder().encode(value).byteLength;
+}
+
+export function recordMovePayloadMetrics(
+  trace: MovePerformanceTrace,
+  sample: MovePerformanceTrace["payloadSamples"][number]
+) {
+  trace.payloadSamples.push({
+    ...sample,
+    requestBytes: Math.max(0, Math.trunc(sample.requestBytes)),
+    responseBytes: Math.max(0, Math.trunc(sample.responseBytes)),
+    requestRecoveryHistoryLength: Math.max(0, Math.trunc(sample.requestRecoveryHistoryLength)),
+    responseRecoveryHistoryLength:
+      sample.responseRecoveryHistoryLength === null
+        ? null
+        : Math.max(0, Math.trunc(sample.responseRecoveryHistoryLength))
+  });
+}
+
+export function recordMoveLocalStorageDuration(
+  trace: MovePerformanceTrace,
+  operation: "read" | "write",
+  durationMs: number,
+  attempt: number
+) {
+  trace.localStorageSamples.push({ operation, durationMs: Math.max(0, durationMs), attempt });
+}
+
+export function recordMoveCheckpointDuration(
+  trace: MovePerformanceTrace,
+  durationMs: number,
+  recoveryHistoryLength: number
+) {
+  trace.checkpointSamples.push({
+    durationMs: Math.max(0, durationMs),
+    recoveryHistoryLength: Math.max(0, Math.trunc(recoveryHistoryLength))
+  });
 }
 
 export function recordMoveQueueDepth(
@@ -205,6 +264,9 @@ export function finishMovePerformanceTrace(
     localEngineStatus: "not_run",
     outcome: "completed",
     queueDepthSamples: trace.queueDepthSamples.map((sample) => ({ ...sample })),
+    payloadSamples: trace.payloadSamples.map((sample) => ({ ...sample })),
+    localStorageSamples: trace.localStorageSamples.map((sample) => ({ ...sample })),
+    checkpointSamples: trace.checkpointSamples.map((sample) => ({ ...sample })),
     phases: trace.phases.map((phase) => ({ ...phase }))
   };
   target.measure(MOVE_PERFORMANCE_MEASURE, { start: first.atMs, end: last.atMs, detail });

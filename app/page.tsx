@@ -55,7 +55,12 @@ import {
   tutorialSuppressCookie,
   type TutorialSession
 } from "@/lib/binary2048/tutorial";
-import { clearResumeSnapshot, loadResumeSnapshot, saveResumeSnapshot } from "@/lib/binary2048/resume-recovery";
+import {
+  clearResumeSnapshot,
+  loadResumeSnapshot,
+  loadResumeSnapshotWithMetrics,
+  saveResumeSnapshot
+} from "@/lib/binary2048/resume-recovery";
 import {
   createInitialRageTapState,
   normalizeAuditControlLabel,
@@ -71,8 +76,12 @@ import {
   dropMovePerformanceTrace,
   finishMovePerformanceTrace,
   markMovePerformancePhase,
+  recordMoveCheckpointDuration,
+  recordMoveLocalStorageDuration,
+  recordMovePayloadMetrics,
   recordMoveQueueDepth,
   startMovePerformanceTrace,
+  utf8ByteLength,
   type MoveInputDropReason,
   type MoveInputSource,
   type MovePerformanceTrace
@@ -571,8 +580,19 @@ export default function Home() {
         async requestMove(sessionId, recoveredSession?: { id: string; recoverySnapshot: GameExport | SessionRecoverySnapshot }) {
           const attempt = recoveredSession ? 2 : 1;
           const authHeaders = await authBridgeRef.current?.authorizationHeader();
+          const loadedRecovery = recoveredSession
+            ? null
+            : loadResumeSnapshotWithMetrics(window.localStorage, sessionId);
+          if (loadedRecovery) {
+            recordMoveLocalStorageDuration(
+              activeTrace,
+              "read",
+              loadedRecovery.localStorageDurationMs,
+              attempt
+            );
+          }
           const recoverySnapshot =
-            recoveredSession?.recoverySnapshot ?? loadResumeSnapshot(window.localStorage, sessionId) ?? undefined;
+            recoveredSession?.recoverySnapshot ?? loadedRecovery?.snapshot ?? undefined;
           addDiagnostic("move_request", {
             dir,
             gameId: sessionId,
@@ -585,15 +605,40 @@ export default function Home() {
             recoveryRetry: Boolean(recoveredSession)
           });
           markMovePerformancePhase(activeTrace, "request_start", attempt);
+          const requestBody = JSON.stringify({ dir, recoverySnapshot });
           const response = await fetch(`/api/games/${sessionId}/move`, {
             method: "POST",
             headers: { "content-type": "application/json", ...authHeaders },
-            body: JSON.stringify({ dir, recoverySnapshot })
+            body: requestBody
           });
           markMovePerformancePhase(activeTrace, "response_headers", attempt);
           markMovePerformancePhase(activeTrace, "response_parse_start", attempt);
-          const payload = await response.json().catch(() => ({}));
+          const responseBody = await response.text().catch(() => "");
+          let payload: {
+            id?: unknown;
+            current?: { turn?: unknown; score?: unknown };
+            recoverySnapshot?: { moves?: unknown };
+            error?: unknown;
+            [key: string]: unknown;
+          } = {};
+          try {
+            payload = responseBody ? JSON.parse(responseBody) : {};
+          } catch {
+            payload = {};
+          }
           markMovePerformancePhase(activeTrace, "response_parse_end", attempt);
+          recordMovePayloadMetrics(activeTrace, {
+            attempt,
+            requestBytes: utf8ByteLength(requestBody),
+            responseBytes: utf8ByteLength(responseBody),
+            requestRecoveryHistoryLength:
+              recoverySnapshot && "recoveryVersion" in recoverySnapshot
+                ? recoverySnapshot.moves.length
+                : recoverySnapshot?.steps.length ?? 0,
+            responseRecoveryHistoryLength: Array.isArray(payload?.recoverySnapshot?.moves)
+              ? payload.recoverySnapshot.moves.length
+              : null
+          });
           addDiagnostic(
             "move_response",
             {
@@ -617,8 +662,16 @@ export default function Home() {
           };
         },
         async recoverSession(staleSessionId) {
-          const recoverySnapshot = loadResumeSnapshot(window.localStorage, staleSessionId);
-          return recoverySnapshot ? { id: staleSessionId, recoverySnapshot } : null;
+          const loadedRecovery = loadResumeSnapshotWithMetrics(window.localStorage, staleSessionId);
+          recordMoveLocalStorageDuration(
+            activeTrace,
+            "read",
+            loadedRecovery.localStorageDurationMs,
+            2
+          );
+          return loadedRecovery.snapshot
+            ? { id: staleSessionId, recoverySnapshot: loadedRecovery.snapshot }
+            : null;
         }
       });
       const { attempt } = moveResult;
@@ -642,7 +695,18 @@ export default function Home() {
       }
       const recoverySnapshot = (json as { recoverySnapshot?: SessionRecoverySnapshot }).recoverySnapshot;
       if (recoverySnapshot) {
-        saveResumeSnapshot(window.localStorage, responseId, recoverySnapshot);
+        const checkpointMetrics = saveResumeSnapshot(window.localStorage, responseId, recoverySnapshot);
+        recordMoveLocalStorageDuration(
+          activeTrace,
+          "write",
+          checkpointMetrics.localStorageDurationMs,
+          moveResult.recoveredSession ? 2 : 1
+        );
+        recordMoveCheckpointDuration(
+          activeTrace,
+          checkpointMetrics.checkpointDurationMs,
+          recoverySnapshot.moves.length
+        );
         addDiagnostic("recovery_snapshot_saved", {
           gameId: responseId,
           moves: recoverySnapshot.moves.length,
