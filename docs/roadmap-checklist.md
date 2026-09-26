@@ -227,7 +227,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
     - [x] Add route regressions for unauthenticated, tampered, expired, and cross-account deletion behavior plus a fail-closed dedicated-account production harness
     - [x] Execute the destructive production acceptance only with explicit approval and a dedicated disposable OAuth account, then verify its export is empty
   - [x] Verify authenticated store, inventory, entitlement, and paid-feature behavior
-  - [ ] Verify sign-out, expired-session handling, and reauthentication recovery
+  - [x] Verify sign-out, expired-session handling, and reauthentication recovery
   - [ ] Repeat the critical sign-in, session-resume, gameplay, and sign-out flow on Android Chrome
 - [x] Notification subscriptions (app updates/player/leaderboard actions)
 - [x] Async PvP same-seed mode
@@ -376,6 +376,11 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add triage labels/project convention for player-reported bugs, gameplay ideas, and balance feedback
 
 ## Binary 2048 V2
+
+Planning only: do not begin or continue V2 implementation until every V1
+acceptance gate is complete. Checked observability entries below record work
+already deployed before this boundary was reaffirmed; they do not change the
+active V1-only scope.
 
 - [ ] Execute the [Binary 2048 V2 delivery plan](./binary2048v2.md)
   - [ ] Complete Phase 0 measurement and input-observability baseline

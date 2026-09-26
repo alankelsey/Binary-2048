@@ -2,7 +2,7 @@
 
 Date: 2026-09-25
 
-Status: V2 Phase 0 in progress after V1 deletion acceptance; move, queue/drop, payload, and checkpoint observability implemented
+Status: V1 desktop auth lifecycle complete; physical mobile gates remain deferred; V2 implementation frozen until V1 is complete
 
 ## Production baseline
 
@@ -95,9 +95,9 @@ iOS Simulator runtime, neither of which is installed. These are supplemental
 checks and cannot prove physical touch, safe areas, browser suspension,
 VoiceOver, latency, or thumb reach.
 
-Continue authenticated V1 acceptance with sign-out, expired-session handling,
-and reauthentication recovery. Save the authenticated Android session-resume
-flow for the final physical-device gate.
+Desktop sign-out, expired-session handling, and reauthentication recovery are
+complete. Save the authenticated Android session-resume flow for the final
+physical-device gate.
 
 The deletion item is complete. Route coverage proves rejection of
 unauthenticated, tampered, and expired credentials and proves deleting account
@@ -117,11 +117,28 @@ refused to start.
 Amplify job `318` deployed the guarded harness/test commit; production health
 and smoke passed on the first attempt.
 
-Next, verify sign-out, expired-session handling, and reauthentication recovery
-on desktop. Keep the authenticated Android session-resume flow deferred to the
-final physical-device gate.
+The remaining authenticated acceptance item is the Android Chrome sign-in,
+session-resume, gameplay, and sign-out flow. Keep it deferred to the final
+physical-device gate.
 
-## V2 work started
+Desktop lifecycle automation verifies against the real production OAuth state
+that sign-out returns protected surfaces to guest messaging and a `401` bridge
+response, and that an expired session fails closed while exposing the provider
+sign-in recovery path. It also completes a real GitHub OAuth round trip from a
+signed-out context using only the ignored local provider session, restores the
+authenticated tier, and mints a fresh bridge token. The focused lifecycle run
+passed 3/3 and the complete non-destructive authenticated production suite
+passed 9/9. No credential, cookie value, token, email address, or account
+identifier was printed or committed. The desktop lifecycle roadmap item is
+complete; the authenticated parent stays open for the final physical Android
+Chrome flow.
+
+## V2 planning boundary
+
+The user reaffirmed on 2026-09-25 that work remains V1-only until every V1 gate
+is complete. Do not start or continue another V2 item. The observability slices
+below were already deployed before that boundary was reaffirmed and are retained
+as historical production evidence only.
 
 The user explicitly authorized starting V2 on 2026-09-25. The first Phase 0
 slice adds bounded, privacy-safe browser performance entries for input capture,

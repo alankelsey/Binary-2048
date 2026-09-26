@@ -92,5 +92,25 @@ build.
 
 - Verify account/key rate-limit attribution during authenticated gameplay.
 - Verify authorized user-data deletion separately from the read-only export test.
-- Verify sign-out, expired-session behavior, and reauthentication.
 - Repeat critical authentication and gameplay flows on Android Chrome.
+
+## Desktop authentication lifecycle follow-up — 2026-09-25
+
+The production lifecycle suite now uses the ignored real OAuth storage state to
+verify three isolated desktop flows without logging cookie or token values:
+
+1. Sign-out clears the application session, restores protected guest messaging,
+   and makes bridge-token creation fail closed with `401`.
+2. Expiring the captured application session cookie returns the UI to guest
+   state, preserves the `401` protected response, and exposes the configured
+   provider sign-in recovery screen.
+3. A signed-out browser completes a real GitHub OAuth round trip using the
+   locally retained provider session, restores the authenticated tier, and can
+   mint a fresh bridge token.
+
+The focused lifecycle run passed 3/3. The complete non-destructive production
+authenticated suite passed 9/9, including session refresh, ranked practice and
+sandbox submission, protected export, account-bound store reads, and fail-closed
+paid mutations. The deployed production head was `88cb5ca`; no credentials,
+cookie values, tokens, email addresses, or account identifiers were printed or
+committed.
