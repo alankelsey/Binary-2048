@@ -1,15 +1,15 @@
 # Binary 2048 V1 Session Handoff
 
-Date: 2026-09-24
+Date: 2026-09-25
 
-Status: Physical-device checks deferred to the final V1 gate; fail-closed server-session handling deployed and verified
+Status: Protected production data-deletion acceptance complete; sign-out/session recovery is next
 
 ## Production baseline
 
 - Production feature commit: `f88b8b9` (`fail closed on session lookup errors`);
   Amplify job `316` succeeded.
-- Current deployed main: `0532743` (`guard production deletion acceptance`);
-  Amplify job `318` succeeded and `/api/health` reported the expected commit.
+- Current deployed main: `b477040` (`record deletion harness deployment`);
+  Amplify job `319` succeeded and `/api/health` reported the expected commit.
 - Post-deployment production smoke verification passed on its first attempt.
 - Production-safe Playwright: 9/9 passed.
 - A targeted production browser check reached Game Over and confirmed the
@@ -94,12 +94,11 @@ iOS Simulator runtime, neither of which is installed. These are supplemental
 checks and cannot prove physical touch, safe areas, browser suspension,
 VoiceOver, latency, or thumb reach.
 
-Continue authenticated V1 acceptance with protected user-data deletion
-authorization, followed by sign-out/expired-session/reauthentication recovery.
-Save the authenticated Android session-resume flow for the final physical-
-device gate.
+Continue authenticated V1 acceptance with sign-out, expired-session handling,
+and reauthentication recovery. Save the authenticated Android session-resume
+flow for the final physical-device gate.
 
-The deletion item is in progress. Route coverage now proves rejection of
+The deletion item is complete. Route coverage proves rejection of
 unauthenticated, tampered, and expired credentials and proves deleting account
 A preserves account B's inventory, ledger, subscriptions, and leaderboard
 entries. A separate `npm run ops:auth:acceptance:delete` harness is fail-closed
@@ -107,11 +106,19 @@ unless all of the following are supplied deliberately: the exact destructive
 confirmation phrase, the production URL, the dedicated deletion-test storage
 state path, and the SHA-256 of the disposable account identity. The config
 rechecks every guard and validates the active session identity before issuing
-`DELETE`, then requires an empty protected export. The harness has not been run
-and no production data has been deleted. Full unit verification is 150 suites /
-487 tests; typecheck passed; the unguarded command correctly refused to start.
+`DELETE`, then requires an empty protected export. On 2026-09-25 the harness
+was run with explicit approval against a dedicated disposable OAuth account;
+its identity hash matched, deletion succeeded, and the subsequent protected
+export was empty (1/1 Playwright acceptance passed). No account identity,
+cookie, token, or storage state was committed or logged. Full unit verification
+is 150 suites / 487 tests; typecheck passed; the unguarded command correctly
+refused to start.
 Amplify job `318` deployed the guarded harness/test commit; production health
 and smoke passed on the first attempt.
+
+Next, verify sign-out, expired-session handling, and reauthentication recovery
+on desktop. Keep the authenticated Android session-resume flow deferred to the
+final physical-device gate.
 
 ## V2 evidence preserved
 
