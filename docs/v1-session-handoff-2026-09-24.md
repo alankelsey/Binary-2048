@@ -2,7 +2,7 @@
 
 Date: 2026-09-26
 
-Status: V1 shared leaderboard persistence implemented locally and awaiting production Mongo acceptance; physical mobile gates remain deferred; V2 implementation frozen until V1 is complete
+Status: V1 shared leaderboard persistence code deployed behind the safe memory selector; production Mongo activation is blocked by Amplify-to-Atlas connectivity; physical mobile gates remain deferred; V2 implementation frozen until V1 is complete
 
 ## Production baseline
 
@@ -10,8 +10,9 @@ Status: V1 shared leaderboard persistence implemented locally and awaiting produ
   (`record Stripe webhook deployment`); docs-only Amplify job `333` succeeded
   and production verification reported the expected commit. Later handoff-only
   commits do not change the application baseline below.
-- Current application-change baseline: `3abefa4` (`verify Stripe store
-  webhooks`); Amplify job `332` succeeded before the docs-only deployment.
+- Current application-change baseline: `2dde345` (`bound leaderboard Mongo
+  connection failures`); recovery job `340` serves this commit with the safe
+  memory selector after the failed Mongo acceptance.
 - Post-deployment production smoke verification passed on its first attempt.
 - Production-safe Playwright: 9/9 passed.
 - A targeted production browser check reached Game Over and confirmed the
@@ -53,16 +54,32 @@ their stable ID as the final sort tie-breaker. The server-rendered leaderboard
 shows an unavailable state instead of misreporting a storage outage as an empty
 leaderboard.
 
-Local verification so far: focused persistence/API/privacy/UI coverage passed
+Local verification: focused persistence/API/privacy/UI coverage passed
 35/35; the full unit suite passed 151 suites / 505 tests; typecheck passed; and
 default Playwright passed 52 with the debug-only case skipped. The production
 build compiled; its smoke wrapper stopped only at the known missing local
 auth-bridge secret (`503` rather than the configured environment's
 unauthenticated `401`).
 
-Do not close the shared-persistence roadmap checkbox until Mongo mode is
-enabled in production and the protected write/read/delete round trip, health
-verification, production browser suite, and required indexes are proven.
+Commits `a139ac0` and `2dde345` deployed the adapter and bounded Mongo failure
+handling. Job `336` deployed the first Mongo activation, where the public
+leaderboard read timed out as a CloudFront `504`. Job `337` restored memory
+mode and the endpoint recovered to `200`. Job `338` deployed a five-second
+Mongo server-selection bound; job `339` retried Mongo mode and returned the
+intended sanitized `503`, confirming persistent connectivity failure rather
+than a usable shared store. Job `340` restored memory mode. Production smoke
+then passed on its first attempt, `/api/leaderboard` returned `200`, and health
+reported commit `2dde345`. The production browser suite passed all nine tests,
+with one auth-page navigation requiring its configured retry during the first
+rollout.
+
+The protected write/read/delete acceptance did not run: it correctly refused
+to start because no production admin token is configured, and provisioning a
+new privileged token requires explicit approval. Do not close the shared-
+persistence roadmap parent until Amplify-to-Atlas connectivity is resolved,
+Mongo mode is enabled, required indexes are observed, and write/read/delete
+plus cross-instance or cold-start visibility are proven. The safe production
+selector is currently `BINARY2048_LEADERBOARD_STORE=memory`.
 
 ## Completed V1 items
 
@@ -134,9 +151,9 @@ endpoint secret or payment acceptance was enabled.
 
 ## Next V1 task
 
-Use `docs/roadmap-checklist.md` as the completion source of truth. It currently
-reports 292/332 checked (88%). No additional checkbox is closed yet for the
-in-progress leaderboard item.
+Use `docs/roadmap-checklist.md` as the completion source of truth. The
+leaderboard implementation/deployment child is complete, but its production
+activation/acceptance child and parent remain open.
 
 The first remaining roadmap entries are the tutorial/mobile acceptance parents;
 they stay open until their physical-device children pass. The user asked to
