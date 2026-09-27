@@ -65,4 +65,4 @@ PROD_BASE="${PROD_BASE}" BINARY2048_ADMIN_TOKEN="${ADMIN_TOKEN}" npm run -s ops:
 
 echo
 echo "Admin token synced."
-echo "BINARY2048_ADMIN_TOKEN=${ADMIN_TOKEN}"
+echo "The token is stored in Amplify and was intentionally not printed."

@@ -109,11 +109,16 @@ class MemoryLeaderboardStore implements LeaderboardStore {
 
 class MongoLeaderboardStore implements LeaderboardStore {
   private collectionPromise: Promise<Collection<LeaderboardEntry>> | null = null;
-  constructor(private readonly uri: string, private readonly dbName: string, private readonly collectionName: string) {}
+  constructor(
+    private readonly uri: string,
+    private readonly dbName: string,
+    private readonly collectionName: string,
+    private readonly timeoutMs: number
+  ) {}
   private async collection() {
     if (!this.collectionPromise) {
       this.collectionPromise = (async () => {
-        const client = new MongoClient(this.uri);
+        const client = new MongoClient(this.uri, { serverSelectionTimeoutMS: this.timeoutMs });
         await client.connect();
         const collection = client.db(this.dbName).collection<LeaderboardEntry>(this.collectionName);
         await collection.createIndexes(LEADERBOARD_INDEX_SPECS);
@@ -149,7 +154,14 @@ function createLeaderboardStore(): LeaderboardStore {
   if (mode === "mongo") {
     const uri = process.env.BINARY2048_MONGO_URI;
     if (!uri) throw new Error("BINARY2048_MONGO_URI is required when BINARY2048_LEADERBOARD_STORE=mongo");
-    return new MongoLeaderboardStore(uri, process.env.BINARY2048_MONGO_DB ?? "binary2048", process.env.BINARY2048_MONGO_LEADERBOARD_COLLECTION ?? "leaderboard_entries");
+    const configuredTimeout = Number(process.env.BINARY2048_MONGO_LEADERBOARD_TIMEOUT_MS ?? "5000");
+    const timeoutMs = Number.isFinite(configuredTimeout) && configuredTimeout > 0 ? Math.floor(configuredTimeout) : 5000;
+    return new MongoLeaderboardStore(
+      uri,
+      process.env.BINARY2048_MONGO_DB ?? "binary2048",
+      process.env.BINARY2048_MONGO_LEADERBOARD_COLLECTION ?? "leaderboard_entries",
+      timeoutMs
+    );
   }
   throw new Error(`Unsupported BINARY2048_LEADERBOARD_STORE: ${mode}`);
 }
