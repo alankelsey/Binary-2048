@@ -525,3 +525,40 @@ The first milestone should include only measurement and input correctness:
 
 Do not begin the larger synchronization rewrite until this milestone makes the
 current behavior and failure modes observable.
+
+## Deferred end-of-v2 work
+
+These items were moved out of the V1 completion scope on 2026-09-27. They are
+deliberately placed at the end of V2 and must not be treated as prerequisites
+for starting or completing the earlier V2 delivery phases.
+
+### Final mobile acceptance gate
+
+- Add a supplemental Playwright WebKit iPhone compatibility lane for the
+  critical mobile flow.
+- Complete the existing physical Android Chrome and iPhone Safari tutorial and
+  New Game checklist.
+- Verify touch ergonomics, swipe separation, the action dock and `More`
+  disclosure, safe-area layout, background/resume, and game continuity.
+- Repeat authenticated sign-in, session resume, gameplay, and sign-out on
+  physical Android Chrome.
+
+Automation and emulation may supplement this gate but must not be recorded as
+proof of physical-device behavior.
+
+### Fixed egress and Atlas network restriction
+
+When the documented traffic, persistence, multi-device, or security trigger is
+met, migrate Mongo-touching workloads to an approved fixed-egress runtime and
+replace the temporary broad Atlas allowlist with stable approved egress. This
+work carries a recurring infrastructure cost and remains governed by the
+existing decision memo and migration runbook.
+
+### Merch and swag offering
+
+- Evaluate print-on-demand providers, margins, fulfillment risk, and brand
+  quality thresholds.
+- Design a simple swag landing/view concept and decide whether it belongs
+  in-app, on GitHub Pages, or on an external storefront.
+- Explore the `F-cubed` / `FBBB` visual identity and its relationship to the
+  primary Binary-2048 brand.

@@ -117,13 +117,24 @@ class MongoLeaderboardStore implements LeaderboardStore {
   ) {}
   private async collection() {
     if (!this.collectionPromise) {
-      this.collectionPromise = (async () => {
+      const pending = (async () => {
         const client = new MongoClient(this.uri, { serverSelectionTimeoutMS: this.timeoutMs });
         await client.connect();
         const collection = client.db(this.dbName).collection<LeaderboardEntry>(this.collectionName);
         await collection.createIndexes(LEADERBOARD_INDEX_SPECS);
         return collection;
       })();
+      const guarded = pending.catch((error: unknown) => {
+        if (this.collectionPromise === guarded) this.collectionPromise = null;
+        const failure = error as { name?: unknown; code?: unknown };
+        console.error("Mongo leaderboard store initialization failed", {
+          event: "leaderboard_mongo_initialization_failed",
+          errorName: typeof failure?.name === "string" ? failure.name : "UnknownError",
+          errorCode: typeof failure?.code === "string" || typeof failure?.code === "number" ? failure.code : "unknown"
+        });
+        throw error;
+      });
+      this.collectionPromise = guarded;
     }
     return this.collectionPromise;
   }

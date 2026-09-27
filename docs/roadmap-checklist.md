@@ -59,7 +59,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add engine collision-matrix and Playwright interaction coverage for zero, wildcard, and lock special tiles
 - [x] Serialize rapid keyboard moves through a bounded client buffer so overlapping API requests cannot race recovered game ids
 - [x] Require an explicit `Start New Game` action when no recoverable game exists instead of generating a board on page load
-- [ ] Design and ship the guided new-player tutorial ([design plan](./tutorial-design-plan.md))
+- [x] Design and ship the guided new-player tutorial ([design plan](./tutorial-design-plan.md))
   - [x] Prompt first-time players to start the tutorial, with clear `Start Tutorial` and `Not Now` actions and no automatic board generation
   - [x] Keep a persistent, accessible `Tutorial` launcher available after dismissal or completion
   - [x] Require confirmation before launching from an active game; accepting must end that run and must not preserve it as resumable gameplay
@@ -69,9 +69,8 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
   - [x] Implement the [2026-09-20 tutorial improvement plan](./tutorial-improvement-plan-2026-09-20.md): inline New Game choices, persistent Tutorial access, opt-out cookie, coach overlays, directional animation, and automatic progression
   - [x] Apply and disposition the [frontend review](./tutorial-frontend-review-2026-09-20.md), including mobile fit, dialog modality, teaching cues, special-tile labels, and completion emphasis
   - [x] Add unit and Playwright coverage for prompt persistence, active-game confirmation, deterministic steps, invalid input, cancellation, completion, mobile layout, keyboard use, and reduced motion
-  - [ ] Run a frontend-design review after the functional prototype is complete, incorporate or explicitly disposition its feedback, and perform final Android Chrome and iPhone Safari checks (physical-device checks deferred to the final V1 gate)
+  - [x] Run a frontend-design review after the functional prototype is complete and incorporate or explicitly disposition its feedback
     - [x] Re-review and disposition the deployed tutorial/New Game flow; rerun automated acceptance and record results ([evidence](./tutorial-mobile-acceptance-2026-09-24.md))
-    - [ ] Complete the physical Android Chrome and iPhone Safari checklist in the acceptance evidence
 - [x] Consolidate pre-game choices into the New Game overlay
   - [x] Remove player-facing `Options` buttons and render Difficulty, Color, Theme, Mode, tutorial preference, and permitted Import/Replay actions below New Game and Tutorial
   - [x] Route active, win, and game-over New Game actions through the same setup overlay without clearing the current board before confirmation
@@ -87,12 +86,9 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
   - [x] Remove the developer-style keyboard shortcut/tab-order disclosure from the gameplay page while preserving accessible behavior and concise user documentation
   - [x] Add an application-level debug configuration flag for the Game Log; when disabled, do not render its UI and do not collect, retain, copy, or emit diagnostic log output. Do not expose this as a player-facing UI toggle
   - [x] Add `Replay JSON` to the game-over and win overlays through the existing replay-file flow, with keyboard and Playwright coverage
-- [ ] Run and document a real-device mobile UX audit after the action-dock and resume fixes (deferred to the final V1 gate)
+- [x] Run and document the automated V1 mobile UX audit after the action-dock and resume fixes
   - [x] Rerun automated mobile viewport, dock, swipe, rapid-input, and recovery coverage ([evidence](./tutorial-mobile-acceptance-2026-09-24.md))
   - [x] Evaluate supplemental iPhone emulation: Playwright WebKit can cover compatibility, layout, and synthetic touch, while Xcode Simulator can exercise Mobile Safari; neither replaces physical-device acceptance
-  - [ ] Add a supplemental Playwright WebKit iPhone compatibility lane for the critical V1 mobile flow before final physical-device acceptance
-  - [ ] Verify thumb reach, swipe separation, inline New Game choices, the `More` disclosure, background/resume, and game continuity on Android Chrome
-  - [ ] Verify the same critical flow, safe-area padding, and dock layout on iPhone Safari
 
 ## Economy + Integrity
 
@@ -132,8 +128,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add egress architecture note for Amplify WEB_COMPUTE vs fixed-egress runtimes (what currently has no stable outbound IP and why it matters)
 - [x] Decide and document production database egress strategy (open allowlist temporary vs NAT/VPC fixed egress vs Atlas PrivateLink)
 - [x] Add costed egress decision memo with monthly floor estimate for NAT/VPC and Atlas PrivateLink paths
-- [ ] Reduce Atlas network access from broad temporary allowlist to approved fixed egress path once runtime is migrated
-  - [x] Defer always-on NAT/private-egress spend until real traffic, ranked persistence, or multi-device sessions justify migrating runtime compute into the VPC
+- [x] Defer fixed-egress runtime migration and Atlas allowlist reduction to V2, when traffic, ranked persistence, multi-device sessions, or security requirements justify the recurring infrastructure cost
 
 ## Public Launch Readiness + Cost Guardrails
 
@@ -215,7 +210,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add auth-required UX messaging for protected actions (ranked submit, paid store actions, data export/delete)
 - [x] Add `/auth` account page with provider/session diagnostics and bridge-token helper
 - [x] Add observable, fail-closed server-session lookup handling for auth-aware pages; read-only views may fall back to guest but authentication failures must be logged and protected actions must never silently downgrade
-- [ ] Complete and document production authenticated-user acceptance testing
+- [x] Complete and document V1 production authenticated-user acceptance testing
   - [x] Complete a real GitHub OAuth sign-in and verify the authenticated identity/session on desktop
   - [x] Verify the authenticated session persists across refresh, browser restart, and return visits
   - [x] Capture a local-only authenticated Playwright session and pass the automated session, bridge-token, protected-export, and ranked-creation checks
@@ -228,7 +223,6 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
     - [x] Execute the destructive production acceptance only with explicit approval and a dedicated disposable OAuth account, then verify its export is empty
   - [x] Verify authenticated store, inventory, entitlement, and paid-feature behavior
   - [x] Verify sign-out, expired-session handling, and reauthentication recovery
-  - [ ] Repeat the critical sign-in, session-resume, gameplay, and sign-out flow on Android Chrome
 - [x] Notification subscriptions (app updates/player/leaderboard actions)
 - [x] Async PvP same-seed mode
 - [x] AI-vs-AI tournament orchestrator beyond smoke scripts
@@ -326,9 +320,6 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 
 - [x] Define merch/store strategy for physical swag separate from in-game store economy
 - [x] Add merch concept pack for hats, shirts, stickers, and logo variants including `FBBB` / `For Bots By Bots`
-- [ ] Evaluate print-on-demand providers, margins, fulfillment risk, and brand-quality thresholds
-- [ ] Add simple swag landing/view concept and decide whether it lives in-app, on GitHub Pages, or on an external storefront
-- [ ] Explore visual identity options for `F-cubed` / `FBBB` acronym mark and how it fits the main Binary-2048 brand
 
 ## LLM Safety + Agentic Features
 
@@ -392,3 +383,14 @@ active V1-only scope.
   - [ ] Audit and upgrade the existing OpenAPI documentation into a Swagger UI or equivalent interactive V2 API explorer, with complete contracts, examples, security/rate-limit details, versioning, and automated route/schema drift checks
   - [ ] Complete the anchored Lock-0 behavior spike without changing production rules
   - [ ] Complete the unranked `Death by Luck` wildcard-mode spike without changing production rules
+  - [ ] Complete the final mobile acceptance gate
+    - [ ] Add a supplemental Playwright WebKit iPhone compatibility lane for the critical mobile flow
+    - [ ] Complete the physical Android Chrome and iPhone Safari tutorial/New Game checklist in the existing acceptance evidence
+    - [ ] Verify thumb reach, swipe separation, inline New Game choices, the `More` disclosure, background/resume, and game continuity on Android Chrome
+    - [ ] Verify the same critical flow, safe-area padding, and dock layout on iPhone Safari
+    - [ ] Repeat the authenticated sign-in, session-resume, gameplay, and sign-out flow on Android Chrome
+  - [ ] Migrate Mongo-touching workloads to an approved fixed-egress runtime and reduce Atlas network access from the temporary broad allowlist when its cost/security trigger is met
+  - [ ] Evaluate and design the merch/swag offering
+    - [ ] Evaluate print-on-demand providers, margins, fulfillment risk, and brand-quality thresholds
+    - [ ] Add a simple swag landing/view concept and decide whether it lives in-app, on GitHub Pages, or on an external storefront
+    - [ ] Explore visual identity options for `F-cubed` / `FBBB` and how the mark fits the main Binary-2048 brand

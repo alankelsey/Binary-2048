@@ -1,8 +1,8 @@
 # Binary 2048 V1 Session Handoff
 
-Date: 2026-09-26
+Date: 2026-09-27
 
-Status: V1 shared leaderboard persistence code deployed behind the safe memory selector; production Mongo activation is blocked by Amplify-to-Atlas connectivity; physical mobile gates remain deferred; V2 implementation frozen until V1 is complete
+Status: V1 shared leaderboard persistence code deployed behind the safe memory selector; production Mongo activation is blocked by Amplify-to-Atlas connectivity; mobile acceptance, fixed egress, and remaining merch work moved to the end of V2; V2 implementation otherwise frozen until V1 is complete
 
 ## Production baseline
 
@@ -149,30 +149,39 @@ unsigned production webhook probe returned `503` with `Store webhook is not
 configured`, confirming that the handler fails closed and no production Stripe
 endpoint secret or payment acceptance was enabled.
 
+## V1 scope update — 2026-09-27
+
+At the user's direction, the remaining mobile acceptance gate, fixed-egress
+migration/Atlas allowlist reduction, and merch/swag evaluation and design were
+moved to the end of V2. This is a scope transfer, not acceptance evidence:
+physical Android Chrome and iPhone Safari behavior remains unverified, and no
+fixed-egress infrastructure or additional recurring cost was provisioned.
+
+The completed tutorial implementation, deployed frontend-design disposition,
+automated mobile audit, and desktop/authenticated production acceptance now
+close their V1 parents under the revised scope. Their historical evidence is
+preserved in this handoff and in
+[`tutorial-mobile-acceptance-2026-09-24.md`](./tutorial-mobile-acceptance-2026-09-24.md).
+
 ## Next V1 task
 
 Use `docs/roadmap-checklist.md` as the completion source of truth. The
 leaderboard implementation/deployment child is complete, but its production
 activation/acceptance child and parent remain open.
 
-The first remaining roadmap entries are the tutorial/mobile acceptance parents;
-they stay open until their physical-device children pass. The user asked to
-save physical mobile work for the final gate. The next non-mobile entry in file
-order is the fixed-egress Atlas allowlist reduction, but it is dependency-gated:
-its own acceptance condition says to perform it only after the runtime is
-migrated, and the checked child records the decision to defer that spend until
-traffic or persistence needs justify it. Do not execute that infrastructure
-change merely because it is the next unchecked line, and do not treat Amplify
-WEB_COMPUTE as having stable outbound IP addresses. Before beginning another
-unchecked non-mobile item, confirm that its stated prerequisite is satisfied.
+The tutorial/mobile parents and authenticated acceptance parent are complete
+for the revised V1 scope. The physical-device checks and fixed-egress work are
+now end-of-V2 items. Do not treat Amplify `WEB_COMPUTE` as having stable
+outbound IP addresses, and do not provision fixed-egress infrastructure while
+finishing V1.
 
 The deployed re-review, disposition log, automated evidence, and exact remaining
 device checklist are in
 [`tutorial-mobile-acceptance-2026-09-24.md`](./tutorial-mobile-acceptance-2026-09-24.md).
 
-Physical Android Chrome and iPhone Safari acceptance is intentionally deferred
-to the final V1 gate. The exact checklist remains in the acceptance evidence;
-do not close either physical-device parent from emulation results.
+Physical Android Chrome and iPhone Safari acceptance is now deferred to the end
+of V2. The exact checklist remains in the acceptance evidence; do not represent
+emulation results as physical-device proof.
 
 The iPhone-emulation audit found that the current Playwright mobile coverage is
 Chromium-only. A supplemental Playwright WebKit/iPhone lane can cover WebKit
@@ -204,9 +213,8 @@ refused to start.
 Amplify job `318` deployed the guarded harness/test commit; production health
 and smoke passed on the first attempt.
 
-The remaining authenticated acceptance item is the Android Chrome sign-in,
-session-resume, gameplay, and sign-out flow. Keep it deferred to the final
-physical-device gate.
+The Android Chrome sign-in, session-resume, gameplay, and sign-out flow is now
+part of the end-of-V2 physical-device gate.
 
 Desktop lifecycle automation verifies against the real production OAuth state
 that sign-out returns protected surfaces to guest messaging and a `401` bridge
