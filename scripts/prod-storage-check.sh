@@ -37,6 +37,20 @@ if [[ "${HAS_REPLAY}" != "true" ]]; then
   exit 1
 fi
 
+LEADERBOARD_STORE="$(echo "${RESP}" | jq -r '.env.leaderboardStore // "memory"')"
+if [[ "${LEADERBOARD_STORE}" != "mongo" ]]; then
+  echo "prod storage check failed: leaderboard store is not mongo"
+  echo "${RESP}"
+  exit 1
+fi
+
+LEADERBOARD_ROUND_TRIP="$(echo "${RESP}" | jq -r '.persisted.leaderboardRoundTrip // false')"
+LEADERBOARD_REMOVED="$(echo "${RESP}" | jq -r '.persisted.leaderboardRemoved // 0')"
+if [[ "${LEADERBOARD_ROUND_TRIP}" != "true" || "${LEADERBOARD_REMOVED}" -lt 1 ]]; then
+  echo "prod storage check failed: leaderboard write/read/delete round trip did not complete"
+  echo "${RESP}"
+  exit 1
+fi
+
 echo "Production storage check passed."
 echo "${RESP}" | jq .
-

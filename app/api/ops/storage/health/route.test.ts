@@ -1,24 +1,29 @@
 import { GET } from "@/app/api/ops/storage/health/route";
 import { resetRunStoreForTests } from "@/lib/binary2048/run-store";
 import { resetSessionStoreForTests } from "@/lib/binary2048/session-store";
+import { resetLeaderboard } from "@/lib/binary2048/leaderboard";
 
 describe("GET /api/ops/storage/health", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     process.env.BINARY2048_ADMIN_TOKEN = "ops-admin-token";
     process.env.BINARY2048_RUN_STORE = "memory";
     process.env.BINARY2048_SESSION_STORE = "memory";
+    process.env.BINARY2048_LEADERBOARD_STORE = "memory";
     process.env.BINARY2048_REPLAY_ARTIFACT_STORE = "inline";
     resetRunStoreForTests();
     resetSessionStoreForTests();
+    await resetLeaderboard();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     delete process.env.BINARY2048_ADMIN_TOKEN;
     delete process.env.BINARY2048_RUN_STORE;
     delete process.env.BINARY2048_SESSION_STORE;
+    delete process.env.BINARY2048_LEADERBOARD_STORE;
     delete process.env.BINARY2048_REPLAY_ARTIFACT_STORE;
     resetRunStoreForTests();
     resetSessionStoreForTests();
+    await resetLeaderboard();
   });
 
   it("rejects when admin token is missing", async () => {
@@ -36,6 +41,8 @@ describe("GET /api/ops/storage/health", () => {
     expect(json.ok).toBe(true);
     expect(json.persisted.replayStorage).toBe("inline");
     expect(json.persisted.hasReplayPayload).toBe(true);
+    expect(json.persisted.leaderboardRoundTrip).toBe(true);
+    expect(json.persisted.leaderboardRemoved).toBe(1);
+    expect(json.env.leaderboardStore).toBe("memory");
   });
 });
-

@@ -63,29 +63,34 @@ export async function POST(req: Request) {
     return createReplaySignature(exportToCompactReplay(exported), signingSecret);
   })();
 
-  const submitted = submitLeaderboardEntry({
-    namespace: submitMode.namespace,
-    isSandbox: submitMode.isSandbox,
-    isPractice: submitMode.isPractice,
-    seasonMode: submitMode.seasonMode,
-    replaySignature,
-    playerId: claims.sub,
-    userTier: claims.tier,
-    gameId: activeGameId,
-    session
-  });
+  let submitted;
+  try {
+    if (exported) {
+      const runRecord = buildCanonicalRunRecord({
+        id: `run_${activeGameId}`,
+        playerId: claims.sub,
+        userTier: claims.tier,
+        gameId: activeGameId,
+        exported,
+        integrity: session.integrity,
+        replaySignature
+      });
+      await getRunStore().upsertRun(runRecord);
+    }
 
-  if (exported) {
-    const runRecord = buildCanonicalRunRecord({
-      id: `run_${activeGameId}`,
+    submitted = await submitLeaderboardEntry({
+      namespace: submitMode.namespace,
+      isSandbox: submitMode.isSandbox,
+      isPractice: submitMode.isPractice,
+      seasonMode: submitMode.seasonMode,
+      replaySignature,
       playerId: claims.sub,
       userTier: claims.tier,
       gameId: activeGameId,
-      exported,
-      integrity: session.integrity,
-      replaySignature
+      session
     });
-    await getRunStore().upsertRun(runRecord);
+  } catch {
+    return NextResponse.json({ error: "Leaderboard submission is temporarily unavailable" }, { status: 503 });
   }
 
   return NextResponse.json(

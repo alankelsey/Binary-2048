@@ -4,6 +4,7 @@ import { buildAuthUiState } from "@/lib/binary2048/auth-ui";
 import { getAuthUxMessages } from "@/lib/binary2048/auth-ux";
 import { getDailyChallenge, listDailyChallengeEntries } from "@/lib/binary2048/daily-challenge";
 import { listLeaderboardEntries } from "@/lib/binary2048/leaderboard";
+import type { LeaderboardEntry } from "@/lib/binary2048/leaderboard";
 import { DailyTable, RankedTable } from "@/app/leaderboard-view";
 import { formatSubmittedAt } from "@/lib/binary2048/leaderboard-view";
 import { getOptionalServerSession } from "@/lib/binary2048/server-session";
@@ -27,12 +28,18 @@ export default async function LeaderboardPage({ searchParams }: LeaderboardPageP
   const namespace = params.namespace === "sandbox" ? "sandbox" : "production";
   const seasonMode = params.seasonMode === "preview" ? "preview" : "live";
   const limit = parseLimit(params.limit);
-  const ranked = listLeaderboardEntries(limit, {
-    namespace,
-    includePractice: true,
-    includeSandbox: namespace === "sandbox",
-    seasonMode
-  });
+  let ranked: LeaderboardEntry[] = [];
+  let rankedUnavailable = false;
+  try {
+    ranked = await listLeaderboardEntries(limit, {
+      namespace,
+      includePractice: true,
+      includeSandbox: namespace === "sandbox",
+      seasonMode
+    });
+  } catch {
+    rankedUnavailable = true;
+  }
   const dailyChallenge = getDailyChallenge();
   const daily = listDailyChallengeEntries(dailyChallenge.challengeId, limit);
   const isPreview = namespace === "sandbox" || seasonMode === "preview";
@@ -81,7 +88,11 @@ export default async function LeaderboardPage({ searchParams }: LeaderboardPageP
         {tab === "ranked" ? (
           <section aria-label="Ranked standings">
             <h2>Ranked</h2>
-            <RankedTable entries={ranked} />
+            {rankedUnavailable ? (
+              <p role="alert" className="leaderboard-empty">Ranked standings are temporarily unavailable.</p>
+            ) : (
+              <RankedTable entries={ranked} />
+            )}
           </section>
         ) : (
           <section aria-label="Bitstorm Daily standings">

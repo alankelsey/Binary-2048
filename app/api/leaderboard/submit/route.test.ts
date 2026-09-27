@@ -46,8 +46,8 @@ describe("POST /api/leaderboard/submit", () => {
     process.env.BINARY2048_AUTH_BRIDGE_SECRET = "leaderboard-submit-secret";
   });
 
-  afterEach(() => {
-    resetLeaderboard();
+  afterEach(async () => {
+    await resetLeaderboard();
     resetRunStoreForTests();
     resetSandboxRateLimitForTests();
     delete process.env.BINARY2048_AUTH_BRIDGE_SECRET;
@@ -56,6 +56,8 @@ describe("POST /api/leaderboard/submit", () => {
     delete process.env.BINARY2048_SANDBOX_RATE_LIMIT_PER_5M;
     delete process.env.BINARY2048_LEAGUE_SHADOW_WRITE;
     delete process.env.BINARY2048_RECOVERY_SECRET;
+    delete process.env.BINARY2048_LEADERBOARD_STORE;
+    delete process.env.BINARY2048_MONGO_URI;
   });
 
   it("rejects unauthenticated submissions", async () => {
@@ -93,6 +95,23 @@ describe("POST /api/leaderboard/submit", () => {
     expect(stored?.gameId).toBe(gameId);
     expect(stored?.playerId).toBe("u_submitter");
     expect(Array.isArray(stored?.replay?.moves)).toBe(true);
+  });
+
+  it("does not claim success when shared leaderboard persistence is unavailable", async () => {
+    process.env.BINARY2048_LEADERBOARD_STORE = "mongo";
+    delete process.env.BINARY2048_MONGO_URI;
+    const gameId = createFinishedRankedGame();
+
+    const res = await POST(
+      new Request("http://localhost/api/leaderboard/submit", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...authHeader() },
+        body: JSON.stringify({ gameId })
+      })
+    );
+
+    expect(res.status).toBe(503);
+    await expect(res.json()).resolves.toEqual({ error: "Leaderboard submission is temporarily unavailable" });
   });
 
   it("submits a signed ranked recovery after instance-local session loss", async () => {

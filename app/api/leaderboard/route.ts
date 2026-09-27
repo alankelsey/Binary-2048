@@ -16,14 +16,19 @@ export async function GET(req: Request) {
   const includePractice = url.searchParams.get("practice") === "1";
   const seasonParam = url.searchParams.get("seasonMode");
   const seasonMode = seasonParam === "preview" ? "preview" : seasonParam === "live" ? "live" : undefined;
-  return NextResponse.json({
-    limit,
-    namespace: namespace ?? "production",
-    entries: listLeaderboardEntries(limit, {
+  try {
+    const entries = await listLeaderboardEntries(limit, {
       namespace,
       includeSandbox,
       includePractice,
       seasonMode
-    })
-  });
+    });
+    return NextResponse.json({
+      limit,
+      namespace: namespace ?? "production",
+      entries
+    });
+  } catch {
+    return NextResponse.json({ error: "Leaderboard is temporarily unavailable" }, { status: 503 });
+  }
 }

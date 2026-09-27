@@ -24,10 +24,10 @@ function authHeader(
 }
 
 describe("DELETE /api/user/data", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     process.env.BINARY2048_AUTH_BRIDGE_SECRET = "privacy-delete-secret";
     resetInventoryStore();
-    resetLeaderboard();
+    await resetLeaderboard();
   });
 
   afterEach(() => {
@@ -85,14 +85,14 @@ describe("DELETE /api/user/data", () => {
       [null, null, null, null]
     ];
     const session = createSession({ seed: 911, winTile: 2 }, grid, { sessionClass: "ranked" });
-    submitLeaderboardEntry({
+    await submitLeaderboardEntry({
       playerId: subscriberId,
       userTier: "authed",
       gameId: session.current.id,
       session
     });
     const otherSession = createSession({ seed: 912, winTile: 2 }, grid, { sessionClass: "ranked" });
-    submitLeaderboardEntry({
+    await submitLeaderboardEntry({
       playerId: otherSubscriberId,
       userTier: "authed",
       gameId: otherSession.current.id,

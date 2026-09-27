@@ -172,14 +172,17 @@ Run persistence backing store:
 # default
 export BINARY2048_RUN_STORE=memory
 export BINARY2048_SESSION_STORE=memory
+export BINARY2048_LEADERBOARD_STORE=memory
 
 # optional mongo backing
 export BINARY2048_RUN_STORE=mongo
 export BINARY2048_SESSION_STORE=mongo
+export BINARY2048_LEADERBOARD_STORE=mongo
 export BINARY2048_MONGO_URI="mongodb://..."
 export BINARY2048_MONGO_DB="binary2048"
 export BINARY2048_MONGO_RUN_COLLECTION="runs"
 export BINARY2048_MONGO_SESSION_COLLECTION="sessions"
+export BINARY2048_MONGO_LEADERBOARD_COLLECTION="leaderboard_entries"
 
 # optional replay artifact offload (keeps Mongo pointer)
 export BINARY2048_REPLAY_ARTIFACT_STORE=s3

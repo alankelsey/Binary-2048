@@ -4,8 +4,9 @@ import { createSession, moveSession } from "@/lib/binary2048/sessions";
 import type { Cell } from "@/lib/binary2048/types";
 
 describe("GET /api/leaderboard", () => {
-  afterEach(() => {
-    resetLeaderboard();
+  afterEach(async () => {
+    await resetLeaderboard();
+    delete process.env.BINARY2048_LEADERBOARD_STORE;
   });
 
   it("returns sorted leaderboard entries and applies limit", async () => {
@@ -26,8 +27,8 @@ describe("GET /api/leaderboard", () => {
     const high = createSession({ seed: 502, spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] } }, highGrid, { sessionClass: "ranked" });
     moveSession(high.current.id, "left");
 
-    submitLeaderboardEntry({ playerId: "u_low", userTier: "authed", gameId: low.current.id, session: low });
-    submitLeaderboardEntry({ playerId: "u_high", userTier: "paid", gameId: high.current.id, session: high });
+    await submitLeaderboardEntry({ playerId: "u_low", userTier: "authed", gameId: low.current.id, session: low });
+    await submitLeaderboardEntry({ playerId: "u_high", userTier: "paid", gameId: high.current.id, session: high });
 
     const req = new Request("http://localhost/api/leaderboard?limit=1");
     const res = await GET(req);
@@ -48,11 +49,11 @@ describe("GET /api/leaderboard", () => {
     ];
     const prod = createSession({ seed: 511, spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] } }, grid, { sessionClass: "ranked" });
     moveSession(prod.current.id, "left");
-    submitLeaderboardEntry({ playerId: "u_prod", userTier: "authed", gameId: prod.current.id, session: prod });
+    await submitLeaderboardEntry({ playerId: "u_prod", userTier: "authed", gameId: prod.current.id, session: prod });
 
     const sandbox = createSession({ seed: 512, spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] } }, grid, { sessionClass: "ranked" });
     moveSession(sandbox.current.id, "left");
-    submitLeaderboardEntry({
+    await submitLeaderboardEntry({
       namespace: "sandbox",
       isSandbox: true,
       seasonMode: "preview",
@@ -69,5 +70,15 @@ describe("GET /api/leaderboard", () => {
     expect(sandboxJson.namespace).toBe("sandbox");
     expect(sandboxJson.entries).toHaveLength(1);
     expect(sandboxJson.entries[0]?.playerId).toBe("u_sandbox");
+  });
+
+  it("fails closed with a sanitized response when shared storage is unavailable", async () => {
+    process.env.BINARY2048_LEADERBOARD_STORE = "unsupported";
+
+    const res = await GET(new Request("http://localhost/api/leaderboard"));
+    const json = await res.json();
+
+    expect(res.status).toBe(503);
+    expect(json).toEqual({ error: "Leaderboard is temporarily unavailable" });
   });
 });

@@ -2,7 +2,7 @@
 
 Date: 2026-09-26
 
-Status: V1 Stripe-native webhook verification deployed; physical mobile gates remain deferred; V2 implementation frozen until V1 is complete
+Status: V1 shared leaderboard persistence implemented locally and awaiting production Mongo acceptance; physical mobile gates remain deferred; V2 implementation frozen until V1 is complete
 
 ## Production baseline
 
@@ -36,6 +36,33 @@ Status: V1 Stripe-native webhook verification deployed; physical mobile gates re
   remains in the User Guide.
 - The Game Log is opt-in and entirely absent in the default production
   configuration.
+
+## Current V1 item — shared leaderboard persistence
+
+Ranked leaderboard storage now has explicit asynchronous memory and Mongo
+backends. Mongo mode uses deterministic upserts, preserves the original
+submission timestamp on retries, creates unique/filter-sort/player indexes,
+and fails closed rather than silently falling back to per-instance memory.
+Leaderboard reads, submissions, account export, and protected deletion await
+the shared store. The protected storage-health route performs a temporary
+leaderboard write/read/delete round trip for production acceptance.
+
+Two confirmed defects were fixed: ranks beyond the prior top-20 lookup window
+are now calculated against the complete matching board, and equal entries use
+their stable ID as the final sort tie-breaker. The server-rendered leaderboard
+shows an unavailable state instead of misreporting a storage outage as an empty
+leaderboard.
+
+Local verification so far: focused persistence/API/privacy/UI coverage passed
+35/35; the full unit suite passed 151 suites / 505 tests; typecheck passed; and
+default Playwright passed 52 with the debug-only case skipped. The production
+build compiled; its smoke wrapper stopped only at the known missing local
+auth-bridge secret (`503` rather than the configured environment's
+unauthenticated `401`).
+
+Do not close the shared-persistence roadmap checkbox until Mongo mode is
+enabled in production and the protected write/read/delete round trip, health
+verification, production browser suite, and required indexes are proven.
 
 ## Completed V1 items
 
@@ -108,8 +135,8 @@ endpoint secret or payment acceptance was enabled.
 ## Next V1 task
 
 Use `docs/roadmap-checklist.md` as the completion source of truth. It currently
-reports 292/332 checked (88%). No additional checkbox was closed by the
-docs-only deployment.
+reports 292/332 checked (88%). No additional checkbox is closed yet for the
+in-progress leaderboard item.
 
 The first remaining roadmap entries are the tutorial/mobile acceptance parents;
 they stay open until their physical-device children pass. The user asked to

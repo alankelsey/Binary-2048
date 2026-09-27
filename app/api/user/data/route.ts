@@ -10,8 +10,13 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: "Authenticated user required" }, { status: 401 });
   }
   const subscriberId = claims.sub;
+  let removedLeaderboardEntries: number;
+  try {
+    removedLeaderboardEntries = await removeLeaderboardEntriesByPlayer(subscriberId);
+  } catch {
+    return NextResponse.json({ error: "User data deletion is temporarily unavailable" }, { status: 503 });
+  }
   const removedSubscriptions = removeSubscriptionsBySubscriber(subscriberId);
-  const removedLeaderboardEntries = removeLeaderboardEntriesByPlayer(subscriberId);
   const inventoryResult = removeInventoryBySubscriber(subscriberId);
 
   return NextResponse.json(
@@ -28,4 +33,3 @@ export async function DELETE(req: Request) {
     { status: 200 }
   );
 }
-

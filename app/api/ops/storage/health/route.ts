@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { buildCanonicalRunRecord } from "@/lib/binary2048/run-record";
 import { getRunStore } from "@/lib/binary2048/run-store";
+import {
+  listLeaderboardEntriesByPlayer,
+  removeLeaderboardEntriesByPlayer,
+  submitLeaderboardEntry
+} from "@/lib/binary2048/leaderboard";
 import { createSession, exportSession, moveSession } from "@/lib/binary2048/sessions";
 import type { Cell } from "@/lib/binary2048/types";
 
@@ -52,6 +57,21 @@ export async function GET(req: Request) {
     await store.upsertRun(runRecord);
     const stored = await store.getRun(runId);
     const replay = await store.getRunReplay(runId);
+    const leaderboardPlayerId = `ops-smoke-${Date.now()}`;
+    let leaderboardRoundTrip = false;
+    let leaderboardRemoved = 0;
+    try {
+      const submitted = await submitLeaderboardEntry({
+        playerId: leaderboardPlayerId,
+        userTier: "authed",
+        gameId: session.current.id,
+        session
+      });
+      const entries = await listLeaderboardEntriesByPlayer(leaderboardPlayerId, 10);
+      leaderboardRoundTrip = entries.some((entry) => entry.id === submitted.entry.id);
+    } finally {
+      leaderboardRemoved = await removeLeaderboardEntriesByPlayer(leaderboardPlayerId);
+    }
 
     return NextResponse.json(
       {
@@ -60,6 +80,7 @@ export async function GET(req: Request) {
         env: {
           runStore: process.env.BINARY2048_RUN_STORE ?? "memory",
           sessionStore: process.env.BINARY2048_SESSION_STORE ?? process.env.BINARY2048_RUN_STORE ?? "memory",
+          leaderboardStore: process.env.BINARY2048_LEADERBOARD_STORE ?? "memory",
           replayArtifactStore: process.env.BINARY2048_REPLAY_ARTIFACT_STORE ?? "inline",
           mongoUriPresent: Boolean(process.env.BINARY2048_MONGO_URI),
           s3BucketPresent: Boolean(process.env.BINARY2048_REPLAY_S3_BUCKET)
@@ -67,7 +88,9 @@ export async function GET(req: Request) {
         persisted: {
           replayStorage: stored?.replayRef ? "s3" : "inline",
           hasReplayPayload: Boolean(replay?.moves?.length),
-          rulesetId: stored?.rulesetId ?? null
+          rulesetId: stored?.rulesetId ?? null,
+          leaderboardRoundTrip,
+          leaderboardRemoved
         }
       },
       { status: 200 }
@@ -82,4 +105,3 @@ export async function GET(req: Request) {
     );
   }
 }
-

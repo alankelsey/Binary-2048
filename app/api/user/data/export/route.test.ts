@@ -20,10 +20,10 @@ function authHeader(sub = "u_privacy_export") {
 }
 
 describe("GET /api/user/data/export", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     process.env.BINARY2048_AUTH_BRIDGE_SECRET = "privacy-export-secret";
     resetInventoryStore();
-    resetLeaderboard();
+    await resetLeaderboard();
   });
 
   afterEach(() => {
@@ -52,7 +52,7 @@ describe("GET /api/user/data/export", () => {
       [null, null, null, null]
     ];
     const session = createSession({ seed: 910, winTile: 2 }, grid, { sessionClass: "ranked" });
-    submitLeaderboardEntry({
+    await submitLeaderboardEntry({
       playerId: subscriberId,
       userTier: "authed",
       gameId: session.current.id,

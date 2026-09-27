@@ -13,6 +13,12 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const limitRaw = url.searchParams.get("limit");
   const limit = limitRaw ? Number(limitRaw) : 100;
+  let leaderboard;
+  try {
+    leaderboard = await listLeaderboardEntriesByPlayer(subscriberId, Number.isFinite(limit) ? limit : 100);
+  } catch {
+    return NextResponse.json({ error: "User data export is temporarily unavailable" }, { status: 503 });
+  }
   return NextResponse.json(
     {
       subscriberId,
@@ -20,9 +26,8 @@ export async function GET(req: Request) {
       inventory: getExistingInventory(subscriberId),
       ledger: listInventoryLedger(subscriberId, Number.isFinite(limit) ? limit : 100),
       subscriptions: listSubscriptions(subscriberId),
-      leaderboard: listLeaderboardEntriesByPlayer(subscriberId, Number.isFinite(limit) ? limit : 100)
+      leaderboard
     },
     { status: 200 }
   );
 }
-
