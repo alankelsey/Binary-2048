@@ -265,9 +265,9 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 ## Persistence + ML Backlog (Post-100 Expansion)
 
 - [x] Add MongoDB persistence layer for sessions/runs (replace in-memory store behind interface)
-- [ ] Move leaderboard entries from per-instance memory to a shared persistent store before public ranked launch
+- [x] Move leaderboard entries from per-instance memory to a shared persistent store before public ranked launch
   - [x] Implement and deploy the async memory/Mongo adapter, deterministic indexes/order, idempotent upserts, full-board rank calculation, fail-closed APIs, and protected storage acceptance probe
-  - [ ] Resolve Amplify-to-Atlas leaderboard connectivity, enable Mongo mode, and prove production write/read/delete plus cross-instance or cold-start visibility before closing the parent
+  - [x] Resolve Amplify-to-Atlas leaderboard connectivity, enable Mongo mode, and prove production write/read/delete plus cross-instance or cold-start visibility before closing the parent
 - [ ] Move inventory balances, purchase idempotency, and ledger entries from per-instance memory to a shared transactional store before enabling paid features
 - [ ] Convert Mongo session reads to awaited asynchronous hydration, then enable `BINARY2048_SESSION_STORE=mongo` when ranked/multi-device traffic justifies the additional Atlas operations
 - [x] Persist canonical run records (`seed`, `moves`, `score`, `maxTile`, `engineVersion`, `rulesetId`, `integrity`, `createdAt`)

@@ -2,18 +2,16 @@
 
 Date: 2026-09-27
 
-Status: V1 shared leaderboard persistence code deployed behind the safe memory selector; production Mongo activation is blocked by Amplify-to-Atlas connectivity; mobile acceptance, fixed egress, and remaining merch work moved to the end of V2; V2 implementation otherwise frozen until V1 is complete
+Status: V1 shared leaderboard persistence is active and production-accepted on Mongo; mobile acceptance, fixed egress, and remaining merch work moved to the end of V2; V2 implementation otherwise frozen until V1 is complete
 
 ## Production baseline
 
-- Last verified deployment recorded before this handoff-only audit: `c4e7874`
-  (`record Stripe webhook deployment`); docs-only Amplify job `333` succeeded
-  and production verification reported the expected commit. Later handoff-only
-  commits do not change the application baseline below.
-- Current application-change baseline: `2dde345` (`bound leaderboard Mongo
-  connection failures`); recovery job `340` serves this commit with the safe
-  memory selector after the failed Mongo acceptance.
-- Post-deployment production smoke verification passed on its first attempt.
+- Current application baseline: `1172b19` (`add cold-start leaderboard
+  acceptance probe`); Amplify job `346` deployed the commit and job `347`
+  forced the accepted post-write cold start.
+- Production uses `BINARY2048_LEADERBOARD_STORE=mongo` with the rotated Atlas
+  application credential and the approved protected-acceptance admin token.
+- Post-cold-start production smoke verification passed.
 - Production-safe Playwright: 9/9 passed.
 - A targeted production browser check reached Game Over and confirmed the
   deployed `Replay JSON` action is visible. Earlier targeted production
@@ -38,7 +36,7 @@ Status: V1 shared leaderboard persistence code deployed behind the safe memory s
 - The Game Log is opt-in and entirely absent in the default production
   configuration.
 
-## Current V1 item — shared leaderboard persistence
+## Completed V1 item — shared leaderboard persistence
 
 Ranked leaderboard storage now has explicit asynchronous memory and Mongo
 backends. Mongo mode uses deterministic upserts, preserves the original
@@ -73,13 +71,30 @@ reported commit `2dde345`. The production browser suite passed all nine tests,
 with one auth-page navigation requiring its configured retry during the first
 rollout.
 
-The protected write/read/delete acceptance did not run: it correctly refused
-to start because no production admin token is configured, and provisioning a
-new privileged token requires explicit approval. Do not close the shared-
-persistence roadmap parent until Amplify-to-Atlas connectivity is resolved,
-Mongo mode is enabled, required indexes are observed, and write/read/delete
-plus cross-instance or cold-start visibility are proven. The safe production
-selector is currently `BINARY2048_LEADERBOARD_STORE=memory`.
+Commit `f7e7e9d` added PII-free Mongo initialization classification, cleared a
+failed cached initialization so a warm instance can retry, and stopped the
+storage rollout script from printing its admin token. Unit coverage proves a
+transient initialization failure logs only error name/code and reconnects on
+the next request. Amplify job `342` deployed this safely in memory mode.
+
+The Atlas application credential was rotated, the new URI was stored directly
+in Amplify without exposing it, and job `343` loaded it. Atlas network access
+was expanded to the documented temporary broad rule required by Amplify
+`WEB_COMPUTE`; fixed egress and allowlist restriction remain end-of-V2 work.
+Job `344` enabled `BINARY2048_LEADERBOARD_STORE=mongo`. The public leaderboard
+returned `200`, initialized its indexes, and emitted no classified Mongo
+failure. Production smoke passed.
+
+With explicit approval, job `345` provisioned the protected-acceptance admin
+token without printing it. The guarded storage check proved Mongo leaderboard
+write/read/delete and removed exactly one temporary entry. Commit `1172b19`
+added a strict admin-only phased practice probe. Focused tests passed 12/12,
+the full unit suite passed 152 suites / 509 tests, and typecheck passed.
+Job `346` deployed the probe. A pre-deploy runtime wrote one isolated practice
+entry, job `347` forced a cold start, the replacement runtime read the same
+entry from Mongo, and cleanup deleted it. Final production smoke passed and
+production-safe Playwright passed 9/9. The shared-persistence parent and both
+children are therefore complete.
 
 ## Completed V1 items
 
@@ -166,8 +181,13 @@ preserved in this handoff and in
 ## Next V1 task
 
 Use `docs/roadmap-checklist.md` as the completion source of truth. The
-leaderboard implementation/deployment child is complete, but its production
-activation/acceptance child and parent remain open.
+shared leaderboard implementation, production activation, protected round
+trip, and post-cold-start visibility acceptance are complete.
+
+The next unchecked non-mobile V1 workstream in roadmap order is production bot
+key/shared quota acceptance: validate that simultaneous requests routed to
+separate production compute instances consume the same Mongo counter before
+closing its parent. Do not begin V2 work.
 
 The tutorial/mobile parents and authenticated acceptance parent are complete
 for the revised V1 scope. The physical-device checks and fixed-egress work are
