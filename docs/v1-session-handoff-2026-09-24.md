@@ -6,9 +6,9 @@ Status: V1 shared leaderboard persistence and shared production bot quotas are a
 
 ## Production baseline
 
-- Current application baseline: `222169b` (`validate dense board challenge
-  objectives`); GitHub CI and Amplify Deploy Watch passed, and Amplify job
-  `355` deployed the commit.
+- Current application baseline: `9bbce51` (`add ranked leaderboard
+  pagination`); GitHub CI and Amplify Deploy Watch passed, and Amplify job
+  `357` deployed the commit.
 - Production uses `BINARY2048_LEADERBOARD_STORE=mongo` with the rotated Atlas
   application credential and the approved protected-acceptance admin token.
 - Post-cold-start production smoke verification passed.
@@ -280,6 +280,12 @@ scrolling, tabs, preview state, and keyboard focus passed. The remaining
 empty-ranked assertion reached the correct fail-closed unavailable state
 because the pre-existing local dev server was configured for an unreachable
 Mongo store, so no empty-memory claim is made from that run.
+Commit `9bbce51` passed GitHub CI and deployed through Amplify job `357`.
+Post-deploy production verification, service-role SSM access, and release
+auth/session verification passed. A read-only production request with
+`limit=1&page=2` returned the new pagination contract and correctly clamped the
+empty board to page 1. The standard production-safe Playwright suite passed
+9/9 after deployment.
 
 The next non-cost V1 item is the production operations console, beginning with
 an explicit server-verified admin role/claim or allowlist that cannot be granted
