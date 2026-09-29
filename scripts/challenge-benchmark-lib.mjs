@@ -1,4 +1,21 @@
 export function evaluateChallengeTrace(scenario, trace) {
+  if (scenario.objective?.type === "exhaustive-horizon") {
+    const decisions = (trace?.decisions ?? []).slice(0, scenario.objective.horizon);
+    const selectedActions = decisions.map((step) => step?.decision?.action).filter(Boolean);
+    const fallback = decisions.some((step) => step?.decision?.fallback === true);
+    const expectedActionSequences = scenario.objective.optimalActionSequences;
+    return {
+      passed: !fallback
+        && selectedActions.length === scenario.objective.horizon
+        && expectedActionSequences.some((actions) => actions.join("") === selectedActions.join("")),
+      selectedAction: selectedActions[0] ?? null,
+      selectedActions,
+      expectedActions: [...new Set(expectedActionSequences.map((actions) => actions[0]))],
+      expectedActionSequences,
+      fallback,
+      criterion: "non-fallback action sequence matches an exhaustively optimal horizon sequence"
+    };
+  }
   const expectedActions = scenario.expectedInvariants.probes.map((probe) => probe.action);
   const firstDecision = trace?.decisions?.[0]?.decision;
   const selectedAction = firstDecision?.action ?? null;
@@ -10,6 +27,22 @@ export function evaluateChallengeTrace(scenario, trace) {
     fallback,
     criterion: "non-fallback first action matches a validated scenario probe"
   };
+}
+
+export function correctChallengeObjectives(records, corpus) {
+  const scenarios = new Map(corpus.scenarios.map((scenario) => [scenario.scenarioId, scenario]));
+  let corrected = 0;
+  for (const record of records) {
+    const scenario = scenarios.get(record.scenario?.scenarioId);
+    if (!scenario) continue;
+    const objective = evaluateChallengeTrace(scenario, record.trace);
+    if (JSON.stringify(record.objective) === JSON.stringify(objective)
+      && record.scenario.scenarioVersion === scenario.scenarioVersion) continue;
+    record.objective = objective;
+    record.scenario.scenarioVersion = scenario.scenarioVersion;
+    corrected += 1;
+  }
+  return corrected;
 }
 
 export function correctFallbackObjectives(records) {
@@ -98,7 +131,9 @@ export function renderChallengeReport(corpus, records) {
   }
   lines.push("", "## Scenario results", "", "| Scenario | Model | Selected | Expected | Pass | Score | Max tile | Moves |", "|---|---|---|---|---:|---:|---:|---:|");
   for (const record of records) {
-    lines.push(`| ${record.scenario.scenarioId} v${record.scenario.scenarioVersion} | ${record.model.id} | ${record.objective.selectedAction ?? "none"} | ${record.objective.expectedActions.join(", ")} | ${record.objective.passed ? "yes" : "no"} | ${record.metrics.score} | ${record.metrics.maxTile} | ${record.metrics.moves} |`);
+    const selected = record.objective.selectedActions?.join("") ?? record.objective.selectedAction ?? "none";
+    const expected = record.objective.expectedActionSequences?.map((actions) => actions.join("")).join(" / ") ?? record.objective.expectedActions.join(", ");
+    lines.push(`| ${record.scenario.scenarioId} v${record.scenario.scenarioVersion} | ${record.model.id} | ${selected} | ${expected} | ${record.objective.passed ? "yes" : "no"} | ${record.metrics.score} | ${record.metrics.maxTile} | ${record.metrics.moves} |`);
   }
   lines.push("", "## Skill results", "", "| Model | Type | Max output | Skill | Passed | Pass rate |", "|---|---|---:|---|---:|---:|");
   for (const row of summarizeSkillResults(records)) {

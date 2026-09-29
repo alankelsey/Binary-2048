@@ -21,25 +21,25 @@ This fixed-board track is reported separately from deterministic seeded games.
 | wildcard-multiplier v1 | rollout | R | L, R | yes | 32 | 32 | 1 |
 | lock-cooldown-block v1 | rollout | R | R | yes | 1 | 1 | 2 |
 | immediate-target-merge v1 | rollout | L | L | yes | 2048 | 2048 | 1 |
-| asymmetric-edge-choice v1 | rollout | D | R | no | 148 | 128 | 4 |
+| asymmetric-edge-choice v2 | rollout | DURD | DLRU / RUDL | no | 148 | 128 | 4 |
 | number-double-merge v1 | qwen3:8b | L | L, R | yes | 6 | 4 | 1 |
 | zero-wildcard-annihilation v1 | qwen3:8b | U | L | no | 2 | 2 | 1 |
 | wildcard-multiplier v1 | qwen3:8b | L | L, R | yes | 32 | 32 | 1 |
 | lock-cooldown-block v1 | qwen3:8b | D | R | no | 2 | 2 | 2 |
 | immediate-target-merge v1 | qwen3:8b | L | L | yes | 2048 | 2048 | 1 |
-| asymmetric-edge-choice v1 | qwen3:8b | U | R | no | 110 | 128 | 4 |
+| asymmetric-edge-choice v2 | qwen3:8b | ULLU | DLRU / RUDL | no | 110 | 128 | 4 |
 | number-double-merge v1 | Qwen/Qwen3.5-397B-A17B:deepinfra | L | L, R | yes | 6 | 4 | 1 |
 | zero-wildcard-annihilation v1 | Qwen/Qwen3.5-397B-A17B:deepinfra | U | L | no | 2 | 2 | 1 |
 | wildcard-multiplier v1 | Qwen/Qwen3.5-397B-A17B:deepinfra | L | L, R | yes | 32 | 32 | 1 |
 | lock-cooldown-block v1 | Qwen/Qwen3.5-397B-A17B:deepinfra | D | R | no | 2 | 2 | 2 |
 | immediate-target-merge v1 | Qwen/Qwen3.5-397B-A17B:deepinfra | L | L | yes | 2048 | 2048 | 1 |
-| asymmetric-edge-choice v1 | Qwen/Qwen3.5-397B-A17B:deepinfra | U | R | no | 110 | 128 | 4 |
+| asymmetric-edge-choice v2 | Qwen/Qwen3.5-397B-A17B:deepinfra | ULLU | DLRU / RUDL | no | 110 | 128 | 4 |
 | number-double-merge v1 | Qwen/Qwen3.5-397B-A17B:deepinfra | L | L, R | no | 6 | 4 | 1 |
 | zero-wildcard-annihilation v1 | Qwen/Qwen3.5-397B-A17B:deepinfra | U | L | no | 2 | 2 | 1 |
 | wildcard-multiplier v1 | Qwen/Qwen3.5-397B-A17B:deepinfra | L | L, R | no | 32 | 32 | 1 |
 | lock-cooldown-block v1 | Qwen/Qwen3.5-397B-A17B:deepinfra | R | R | no | 2 | 2 | 2 |
 | immediate-target-merge v1 | Qwen/Qwen3.5-397B-A17B:deepinfra | L | L | no | 2048 | 2048 | 1 |
-| asymmetric-edge-choice v1 | Qwen/Qwen3.5-397B-A17B:deepinfra | U | R | no | 110 | 128 | 4 |
+| asymmetric-edge-choice v2 | Qwen/Qwen3.5-397B-A17B:deepinfra | ULLU | DLRU / RUDL | no | 110 | 128 | 4 |
 | number-double-merge v1 | Qwen/Qwen3.5-397B-A17B:deepinfra | L | L, R | no | 6 | 4 | 1 |
 
 ## Skill results

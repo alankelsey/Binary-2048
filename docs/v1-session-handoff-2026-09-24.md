@@ -1,6 +1,6 @@
 # Binary 2048 V1 Session Handoff
 
-Date: 2026-09-28
+Date: 2026-09-29
 
 Status: V1 shared leaderboard persistence and shared production bot quotas are active and production-accepted on Mongo; mobile acceptance, fixed egress, and remaining merch work moved to the end of V2; V2 implementation otherwise frozen until V1 is complete
 
@@ -233,11 +233,32 @@ Use `docs/roadmap-checklist.md` as the completion source of truth. The
 shared leaderboard implementation, production activation, protected round
 trip, and post-cold-start visibility acceptance are complete.
 
-The next unchecked non-mobile V1 item in roadmap order is moving synchronous
-tournament/training generation to a dedicated worker runtime for hard CPU
-isolation from gameplay. This may introduce new infrastructure cost and must be
-scoped against the existing cost guardrails before provisioning anything. Do
-not begin V2 work.
+On 2026-09-29 the user directed that any remaining work with infrastructure or
+usage cost be completed last. A read-only AWS audit found only the production
+`main` Amplify branch and its production WAF ACL; `docs/dev-environment.md` is a
+blueprint, not a deployed environment. The roadmap was corrected and the dev/
+WAF test infrastructure, dedicated worker runtime, transactional inventory
+persistence, and Mongo session activation were moved to the final cost-gated
+V1 section. Do not provision any of them without explicit cost approval.
+
+The multi-step dense-board research gate is complete locally. The
+`asymmetric-edge-choice` scenario is now version 2 and uses an exhaustive
+four-move objective: every legal deterministic sequence is ranked by completed
+moves, preservation of the top-left 128 anchor, empty cells, then score. The
+tied optima are `DLRU` and `RUDL`; benchmark credit now requires a complete
+non-fallback match instead of checking only the first action. Corpus validation
+recomputes and locks those optima, regression coverage rejects a truncated
+contract, and the no-cost report regeneration re-scored all 24 stored traces.
+No aggregate pass counts changed; the dense-board rows now display complete
+selected and expected sequences. Focused corpus tests (5/5), benchmark-library
+tests (7/7), the full unit suite (153 suites / 516 tests), and typecheck passed.
+The production build compiled; its smoke wrapper stopped only at the known
+missing local auth-bridge secret (`503` rather than the configured
+environment's unauthenticated `401`).
+
+The next non-cost V1 item is leaderboard pagination plus current-player rank
+and highlighting now that shared leaderboard persistence and authenticated
+identity are available. Do not begin V2 work.
 
 The tutorial/mobile parents and authenticated acceptance parent are complete
 for the revised V1 scope. The physical-device checks and fixed-egress work are

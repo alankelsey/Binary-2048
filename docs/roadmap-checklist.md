@@ -125,7 +125,6 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Tournament job-queue/concurrency limit strategy for CPU cost control
 - [x] Replay/tournament telemetry + anomaly alarms (latency/cost/WAF spike visibility)
 - [x] Validate Mongo Atlas SCRAM connectivity with write/read/delete smoke against the `binary2048.runs` collection
-- [x] Stand up dedicated `dev` environment (separate Amplify branch/domain + secrets + optional test data) for rapid iteration without impacting `main`/prod
 - [x] Add egress architecture note for Amplify WEB_COMPUTE vs fixed-egress runtimes (what currently has no stable outbound IP and why it matters)
 - [x] Decide and document production database egress strategy (open allowlist temporary vs NAT/VPC fixed egress vs Atlas PrivateLink)
 - [x] Add costed egress decision memo with monthly floor estimate for NAT/VPC and Atlas PrivateLink paths
@@ -154,11 +153,6 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Publish rate-limit response headers and retry semantics (`429`, `Retry-After`, limit, remaining, and reset) in API responses, OpenAPI, and bot documentation
 - [x] Add a dedicated high-throughput gameplay-move quota that is separate from and higher than simulation, tournament, and training quotas
 - [x] Put tournament and training workloads in separate bounded queues/concurrency pools with explicit saturation responses
-- [ ] Move synchronous tournament/training generation to a dedicated worker runtime for hard CPU isolation from gameplay
-- [ ] Verify and capture the deployed WAF association, rule thresholds, scope-down paths, and sampled-request behavior against the application quota matrix before public bot access
-  - [x] Captured the live association, managed rules, sampled-request behavior, logging state, and quota comparison on 2026-08-15 ([evidence](./waf-live-verification-2026-08-15.md))
-  - [x] Deployed and re-queried bot-friendly API/global rate backstops on 2026-08-16, enabled 30-day retained logging, and removed CAPTCHA/Challenge conflicts from the bot API policy
-  - [ ] Run a controlled threshold/block test against the rate rules in non-production and capture the resulting sampled request and retained log event
 
 ## Monetization Decision Track (Cost-Coverage First)
 
@@ -195,7 +189,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Generate trace-complete rollout baselines for seeds 100-104 and publish them in the rollout JSONL/Parquet split
 - [x] Expand bot evaluation into two separately reported tracks: reproducible seeded games and versioned curated fixed-board/Bitstorm challenge scenarios
 - [x] Define the curated challenge corpus with explicit initial grids, rules/config, scenario IDs, intended skill tags, expected invariants, and replay-compatible versions
-- [ ] Validate multi-step dense-board objectives with exhaustive search or a stronger reference policy before publishing pass/fail research claims
+- [x] Validate multi-step dense-board objectives with exhaustive search or a stronger reference policy before publishing pass/fail research claims
 - [x] Lock RNG draw contract for wildcard multiplier selection and add strict replay-compat tests
 - [x] Define Mongo/session-store migration trigger thresholds (active sessions, memory, replay volume) and execution plan
 - [x] Add daily seeded challenge mode (`Bitstorm Daily`) with per-day leaderboard window
@@ -269,8 +263,6 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Move leaderboard entries from per-instance memory to a shared persistent store before public ranked launch
   - [x] Implement and deploy the async memory/Mongo adapter, deterministic indexes/order, idempotent upserts, full-board rank calculation, fail-closed APIs, and protected storage acceptance probe
   - [x] Resolve Amplify-to-Atlas leaderboard connectivity, enable Mongo mode, and prove production write/read/delete plus cross-instance or cold-start visibility before closing the parent
-- [ ] Move inventory balances, purchase idempotency, and ledger entries from per-instance memory to a shared transactional store before enabling paid features
-- [ ] Convert Mongo session reads to awaited asynchronous hydration, then enable `BINARY2048_SESSION_STORE=mongo` when ranked/multi-device traffic justifies the additional Atlas operations
 - [x] Persist canonical run records (`seed`, `moves`, `score`, `maxTile`, `engineVersion`, `rulesetId`, `integrity`, `createdAt`)
 - [x] Store top/contest replay artifacts in S3 (compressed payload + checksum + metadata) and keep Mongo pointer
 - [x] Add replay retention policy (TTL tiers: hot in Mongo, warm in S3, purge policy for guest data)
@@ -368,6 +360,20 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add public issue-reporting path to GitHub (header/footer links, issue templates, bug vs idea categories)
 - [x] Add in-app “Report issue” flow with prefilled GitHub issue link carrying page/build/version context
 - [x] Add triage labels/project convention for player-reported bugs, gameplay ideas, and balance feedback
+
+## Cost-Gated V1 Work — Complete Last
+
+Do not provision or enable these items until the remaining non-cost V1 work is
+complete and the user explicitly approves the recurring or usage-based cost.
+
+- [ ] Stand up a real dedicated `dev` environment (separate Amplify branch/domain, secrets, isolated test data, and WAF); the existing document is a blueprint, and the 2026-09-29 AWS audit found only the production `main` branch and production ACL
+- [ ] Move synchronous tournament/training generation to a dedicated worker runtime for hard CPU isolation from gameplay
+- [ ] Complete the remaining WAF acceptance against non-production infrastructure
+  - [x] Captured the production association, managed rules, sampled-request behavior, logging state, and quota comparison on 2026-08-15 ([evidence](./waf-live-verification-2026-08-15.md))
+  - [x] Deployed and re-queried production bot-friendly API/global rate backstops on 2026-08-16, enabled 30-day retained logging, and removed CAPTCHA/Challenge conflicts from the bot API policy
+  - [ ] Run a controlled threshold/block test against the rate rules in non-production and capture the resulting sampled request and retained log event
+- [ ] Move inventory balances, purchase idempotency, and ledger entries from per-instance memory to a shared transactional store before enabling paid features
+- [ ] Convert Mongo session reads to awaited asynchronous hydration, then enable `BINARY2048_SESSION_STORE=mongo` when ranked/multi-device traffic justifies the additional Atlas operations
 
 ## Binary 2048 V2
 

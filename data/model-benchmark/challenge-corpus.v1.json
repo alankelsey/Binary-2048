@@ -103,7 +103,7 @@
     },
     {
       "scenarioId": "asymmetric-edge-choice",
-      "scenarioVersion": 1,
+      "scenarioVersion": 2,
       "title": "Preserve an asymmetric high-value edge",
       "description": "Exercise spatial planning on a dense board with special tiles and a single open corner.",
       "skillTags": ["spatial-planning", "edge-preservation", "dense-board", "bitstorm"],
@@ -119,6 +119,13 @@
         "initialOccupiedCells": 15,
         "legalActionsContaining": ["R", "D"],
         "probes": [{ "action": "R", "moved": true, "eventTypesContaining": ["spawn"], "resultingMaxNumberTile": 128 }]
+      },
+      "objective": {
+        "type": "exhaustive-horizon",
+        "horizon": 4,
+        "anchor": { "row": 0, "column": 0, "tile": { "t": "n", "v": 128 } },
+        "ranking": ["completed-moves", "anchor-preserved", "empty-cells", "score"],
+        "optimalActionSequences": [["D", "L", "R", "U"], ["R", "U", "D", "L"]]
       }
     }
   ]

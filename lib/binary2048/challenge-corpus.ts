@@ -4,6 +4,7 @@ import { legalActionCodes } from "@/lib/binary2048/ai";
 import { applyMove, createGame } from "@/lib/binary2048/engine";
 import { validateReplayHeader } from "@/lib/binary2048/replay-format";
 import type { Cell, GameConfig, GameEvent } from "@/lib/binary2048/types";
+import { exhaustiveOptimalActionSequences, type ExhaustiveHorizonObjective } from "@/lib/binary2048/challenge-objective";
 
 type TileCountKey = "number" | "zero" | "wildcard" | "lock";
 
@@ -32,6 +33,7 @@ export type CuratedChallengeScenario = {
     legalActionsContaining: ActionCode[];
     probes: ChallengeProbe[];
   };
+  objective?: ExhaustiveHorizonObjective;
 };
 
 export type CuratedChallengeCorpus = {
@@ -111,6 +113,20 @@ export function validateChallengeCorpus(value: unknown): CuratedChallengeCorpus 
         if (counts[key as TileCountKey] !== expected) throw new Error(`${scenario.scenarioId}/${probe.action}: ${key} count invariant failed`);
       }
       if (probe.won !== undefined && result.state.won !== probe.won) throw new Error(`${scenario.scenarioId}/${probe.action}: win invariant failed`);
+    }
+
+    if (scenario.objective) {
+      if (scenario.objective.type !== "exhaustive-horizon") throw new Error(`${scenario.scenarioId}: unsupported objective type`);
+      if (scenario.objective.horizon !== scenario.maxMoves) throw new Error(`${scenario.scenarioId}: objective horizon must equal maxMoves`);
+      if (scenario.objective.ranking.join(",") !== "completed-moves,anchor-preserved,empty-cells,score") {
+        throw new Error(`${scenario.scenarioId}: unsupported exhaustive objective ranking`);
+      }
+      const actual = exhaustiveOptimalActionSequences(scenario.config, scenario.initialGrid, scenario.objective);
+      if (JSON.stringify(actual) !== JSON.stringify(scenario.objective.optimalActionSequences)) {
+        throw new Error(`${scenario.scenarioId}: exhaustive optimal sequences do not match the corpus contract: ${JSON.stringify(actual)}`);
+      }
+    } else if (scenario.skillTags.includes("dense-board") && scenario.maxMoves > 1) {
+      throw new Error(`${scenario.scenarioId}: multi-step dense-board scenarios require an exhaustive objective`);
     }
   }
   return corpus;

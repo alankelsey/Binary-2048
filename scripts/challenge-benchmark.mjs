@@ -3,7 +3,7 @@
 import { performance } from "node:perf_hooks";
 import { readFile, writeFile } from "node:fs/promises";
 import { readFileSync } from "node:fs";
-import { correctFallbackObjectives, evaluateChallengeTrace, renderChallengeReport, summarizeChallengeRecords } from "./challenge-benchmark-lib.mjs";
+import { correctChallengeObjectives, evaluateChallengeTrace, renderChallengeReport, summarizeChallengeRecords } from "./challenge-benchmark-lib.mjs";
 import { modelProvider, upsertBenchmarkRecord } from "./hf-benchmark-ledger.mjs";
 import { buildMovePrompt, parseOllamaAction } from "./ollama-bot-lib.mjs";
 
@@ -188,10 +188,10 @@ async function main() {
 
   const ledger = JSON.parse(await readFile(LEDGER_PATH, "utf8"));
   const corpusRecords = ledger.filter((record) => record.track === "curated-fixed-board" && record.corpus?.id === corpus.corpusId && record.corpus?.version === corpus.corpusVersion);
-  const correctedFallbackObjectives = correctFallbackObjectives(corpusRecords);
-  if (correctedFallbackObjectives > 0) await writeFile(LEDGER_PATH, `${JSON.stringify(ledger, null, 2)}\n`, "utf8");
+  const correctedObjectives = correctChallengeObjectives(corpusRecords, corpus);
+  if (correctedObjectives > 0) await writeFile(LEDGER_PATH, `${JSON.stringify(ledger, null, 2)}\n`, "utf8");
   await writeFile(REPORT_PATH, renderChallengeReport(corpus, corpusRecords), "utf8");
-  console.log(JSON.stringify({ ok: true, adapter: ADAPTER, ledger: LEDGER_PATH, report: REPORT_PATH, newRuns: newRecords.length, correctedFallbackObjectives, summary: summarizeChallengeRecords(corpusRecords) }, null, 2));
+  console.log(JSON.stringify({ ok: true, adapter: ADAPTER, ledger: LEDGER_PATH, report: REPORT_PATH, newRuns: newRecords.length, correctedObjectives, summary: summarizeChallengeRecords(corpusRecords) }, null, 2));
 }
 
 main().catch((error) => {

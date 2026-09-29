@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { correctFallbackObjectives, evaluateChallengeTrace, renderChallengeReport, summarizeChallengeRecords, summarizeSkillResults } from "./challenge-benchmark-lib.mjs";
+import { correctChallengeObjectives, correctFallbackObjectives, evaluateChallengeTrace, renderChallengeReport, summarizeChallengeRecords, summarizeSkillResults } from "./challenge-benchmark-lib.mjs";
 
 const scenario = { expectedInvariants: { probes: [{ action: "L" }, { action: "R" }] } };
 
@@ -9,6 +9,30 @@ test("scores a trace by its validated first-action objective", () => {
   assert.equal(evaluateChallengeTrace(scenario, { decisions: [{ decision: { action: "L", fallback: true } }] }).passed, false);
   assert.equal(evaluateChallengeTrace(scenario, { decisions: [{ decision: { action: "U" } }] }).passed, false);
   assert.equal(evaluateChallengeTrace(scenario, { decisions: [] }).passed, false);
+});
+
+test("requires a complete exhaustively optimal sequence for multi-step objectives", () => {
+  const dense = {
+    objective: {
+      type: "exhaustive-horizon",
+      horizon: 4,
+      optimalActionSequences: [["D", "L", "R", "U"], ["R", "U", "D", "L"]]
+    }
+  };
+  const trace = (actions, fallbackAt = -1) => ({ decisions: actions.map((action, index) => ({ decision: { action, fallback: index === fallbackAt } })) });
+  assert.equal(evaluateChallengeTrace(dense, trace(["D", "L", "R", "U"])).passed, true);
+  assert.equal(evaluateChallengeTrace(dense, trace(["D", "L", "R"])).passed, false);
+  assert.equal(evaluateChallengeTrace(dense, trace(["D", "U", "R", "D"])).passed, false);
+  assert.equal(evaluateChallengeTrace(dense, trace(["R", "U", "D", "L"], 2)).passed, false);
+});
+
+test("re-scores stored traces against the current scenario objective", () => {
+  const corpus = { scenarios: [{ scenarioId: "dense", scenarioVersion: 2, objective: { type: "exhaustive-horizon", horizon: 2, optimalActionSequences: [["R", "D"]] } }] };
+  const records = [{ scenario: { scenarioId: "dense", scenarioVersion: 1 }, objective: { passed: false }, trace: { decisions: [{ decision: { action: "R" } }, { decision: { action: "D" } }] } }];
+  assert.equal(correctChallengeObjectives(records, corpus), 1);
+  assert.equal(records[0].objective.passed, true);
+  assert.equal(records[0].scenario.scenarioVersion, 2);
+  assert.equal(correctChallengeObjectives(records, corpus), 0);
 });
 
 test("aggregates challenge metrics separately by model and provider", () => {

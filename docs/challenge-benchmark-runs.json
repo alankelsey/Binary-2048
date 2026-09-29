@@ -99,7 +99,8 @@
         "L",
         "R"
       ],
-      "criterion": "first action matches a validated scenario probe"
+      "fallback": false,
+      "criterion": "non-fallback first action matches a validated scenario probe"
     },
     "metrics": {
       "moves": 1,
@@ -726,7 +727,8 @@
       "expectedActions": [
         "L"
       ],
-      "criterion": "first action matches a validated scenario probe"
+      "fallback": false,
+      "criterion": "non-fallback first action matches a validated scenario probe"
     },
     "metrics": {
       "moves": 1,
@@ -1448,7 +1450,8 @@
         "L",
         "R"
       ],
-      "criterion": "first action matches a validated scenario probe"
+      "fallback": false,
+      "criterion": "non-fallback first action matches a validated scenario probe"
     },
     "metrics": {
       "moves": 1,
@@ -2083,7 +2086,8 @@
       "expectedActions": [
         "R"
       ],
-      "criterion": "first action matches a validated scenario probe"
+      "fallback": false,
+      "criterion": "non-fallback first action matches a validated scenario probe"
     },
     "metrics": {
       "moves": 2,
@@ -3235,7 +3239,8 @@
       "expectedActions": [
         "L"
       ],
-      "criterion": "first action matches a validated scenario probe"
+      "fallback": false,
+      "criterion": "non-fallback first action matches a validated scenario probe"
     },
     "metrics": {
       "moves": 1,
@@ -3805,7 +3810,7 @@
     },
     "scenario": {
       "scenarioId": "asymmetric-edge-choice",
-      "scenarioVersion": 1,
+      "scenarioVersion": 2,
       "title": "Preserve an asymmetric high-value edge",
       "skillTags": [
         "spatial-planning",
@@ -3918,10 +3923,32 @@
     "objective": {
       "passed": false,
       "selectedAction": "D",
+      "selectedActions": [
+        "D",
+        "U",
+        "R",
+        "D"
+      ],
       "expectedActions": [
+        "D",
         "R"
       ],
-      "criterion": "first action matches a validated scenario probe"
+      "expectedActionSequences": [
+        [
+          "D",
+          "L",
+          "R",
+          "U"
+        ],
+        [
+          "R",
+          "U",
+          "D",
+          "L"
+        ]
+      ],
+      "fallback": false,
+      "criterion": "non-fallback action sequence matches an exhaustively optimal horizon sequence"
     },
     "metrics": {
       "moves": 4,
@@ -6183,7 +6210,8 @@
         "L",
         "R"
       ],
-      "criterion": "first action matches a validated scenario probe"
+      "fallback": false,
+      "criterion": "non-fallback first action matches a validated scenario probe"
     },
     "metrics": {
       "moves": 1,
@@ -6836,7 +6864,8 @@
       "expectedActions": [
         "L"
       ],
-      "criterion": "first action matches a validated scenario probe"
+      "fallback": false,
+      "criterion": "non-fallback first action matches a validated scenario probe"
     },
     "metrics": {
       "moves": 1,
@@ -7562,7 +7591,8 @@
         "L",
         "R"
       ],
-      "criterion": "first action matches a validated scenario probe"
+      "fallback": false,
+      "criterion": "non-fallback first action matches a validated scenario probe"
     },
     "metrics": {
       "moves": 1,
@@ -8201,7 +8231,8 @@
       "expectedActions": [
         "R"
       ],
-      "criterion": "first action matches a validated scenario probe"
+      "fallback": false,
+      "criterion": "non-fallback first action matches a validated scenario probe"
     },
     "metrics": {
       "moves": 2,
@@ -9344,7 +9375,8 @@
       "expectedActions": [
         "L"
       ],
-      "criterion": "first action matches a validated scenario probe"
+      "fallback": false,
+      "criterion": "non-fallback first action matches a validated scenario probe"
     },
     "metrics": {
       "moves": 1,
@@ -9917,7 +9949,7 @@
     },
     "scenario": {
       "scenarioId": "asymmetric-edge-choice",
-      "scenarioVersion": 1,
+      "scenarioVersion": 2,
       "title": "Preserve an asymmetric high-value edge",
       "skillTags": [
         "spatial-planning",
@@ -10031,10 +10063,32 @@
     "objective": {
       "passed": false,
       "selectedAction": "U",
+      "selectedActions": [
+        "U",
+        "L",
+        "L",
+        "U"
+      ],
       "expectedActions": [
+        "D",
         "R"
       ],
-      "criterion": "first action matches a validated scenario probe"
+      "expectedActionSequences": [
+        [
+          "D",
+          "L",
+          "R",
+          "U"
+        ],
+        [
+          "R",
+          "U",
+          "D",
+          "L"
+        ]
+      ],
+      "fallback": false,
+      "criterion": "non-fallback action sequence matches an exhaustively optimal horizon sequence"
     },
     "metrics": {
       "moves": 4,
@@ -12330,7 +12384,8 @@
         "L",
         "R"
       ],
-      "criterion": "first action matches a validated scenario probe"
+      "fallback": false,
+      "criterion": "non-fallback first action matches a validated scenario probe"
     },
     "metrics": {
       "moves": 1,
@@ -12983,7 +13038,8 @@
       "expectedActions": [
         "L"
       ],
-      "criterion": "first action matches a validated scenario probe"
+      "fallback": false,
+      "criterion": "non-fallback first action matches a validated scenario probe"
     },
     "metrics": {
       "moves": 1,
@@ -13709,7 +13765,8 @@
         "L",
         "R"
       ],
-      "criterion": "first action matches a validated scenario probe"
+      "fallback": false,
+      "criterion": "non-fallback first action matches a validated scenario probe"
     },
     "metrics": {
       "moves": 1,
@@ -14348,7 +14405,8 @@
       "expectedActions": [
         "R"
       ],
-      "criterion": "first action matches a validated scenario probe"
+      "fallback": false,
+      "criterion": "non-fallback first action matches a validated scenario probe"
     },
     "metrics": {
       "moves": 2,
@@ -15491,7 +15549,8 @@
       "expectedActions": [
         "L"
       ],
-      "criterion": "first action matches a validated scenario probe"
+      "fallback": false,
+      "criterion": "non-fallback first action matches a validated scenario probe"
     },
     "metrics": {
       "moves": 1,
@@ -16064,7 +16123,7 @@
     },
     "scenario": {
       "scenarioId": "asymmetric-edge-choice",
-      "scenarioVersion": 1,
+      "scenarioVersion": 2,
       "title": "Preserve an asymmetric high-value edge",
       "skillTags": [
         "spatial-planning",
@@ -16178,10 +16237,32 @@
     "objective": {
       "passed": false,
       "selectedAction": "U",
+      "selectedActions": [
+        "U",
+        "L",
+        "L",
+        "U"
+      ],
       "expectedActions": [
+        "D",
         "R"
       ],
-      "criterion": "first action matches a validated scenario probe"
+      "expectedActionSequences": [
+        [
+          "D",
+          "L",
+          "R",
+          "U"
+        ],
+        [
+          "R",
+          "U",
+          "D",
+          "L"
+        ]
+      ],
+      "fallback": false,
+      "criterion": "non-fallback action sequence matches an exhaustively optimal horizon sequence"
     },
     "metrics": {
       "moves": 4,
@@ -18477,8 +18558,8 @@
         "L",
         "R"
       ],
-      "criterion": "non-fallback first action matches a validated scenario probe",
-      "fallback": true
+      "fallback": true,
+      "criterion": "non-fallback first action matches a validated scenario probe"
     },
     "metrics": {
       "moves": 1,
@@ -19131,7 +19212,8 @@
       "expectedActions": [
         "L"
       ],
-      "criterion": "first action matches a validated scenario probe"
+      "fallback": true,
+      "criterion": "non-fallback first action matches a validated scenario probe"
     },
     "metrics": {
       "moves": 1,
@@ -19857,8 +19939,8 @@
         "L",
         "R"
       ],
-      "criterion": "non-fallback first action matches a validated scenario probe",
-      "fallback": true
+      "fallback": true,
+      "criterion": "non-fallback first action matches a validated scenario probe"
     },
     "metrics": {
       "moves": 1,
@@ -20497,8 +20579,8 @@
       "expectedActions": [
         "R"
       ],
-      "criterion": "non-fallback first action matches a validated scenario probe",
-      "fallback": true
+      "fallback": true,
+      "criterion": "non-fallback first action matches a validated scenario probe"
     },
     "metrics": {
       "moves": 2,
@@ -21649,8 +21731,8 @@
       "expectedActions": [
         "L"
       ],
-      "criterion": "non-fallback first action matches a validated scenario probe",
-      "fallback": true
+      "fallback": true,
+      "criterion": "non-fallback first action matches a validated scenario probe"
     },
     "metrics": {
       "moves": 1,
@@ -22223,7 +22305,7 @@
     },
     "scenario": {
       "scenarioId": "asymmetric-edge-choice",
-      "scenarioVersion": 1,
+      "scenarioVersion": 2,
       "title": "Preserve an asymmetric high-value edge",
       "skillTags": [
         "spatial-planning",
@@ -22337,10 +22419,32 @@
     "objective": {
       "passed": false,
       "selectedAction": "U",
+      "selectedActions": [
+        "U",
+        "L",
+        "L",
+        "U"
+      ],
       "expectedActions": [
+        "D",
         "R"
       ],
-      "criterion": "first action matches a validated scenario probe"
+      "expectedActionSequences": [
+        [
+          "D",
+          "L",
+          "R",
+          "U"
+        ],
+        [
+          "R",
+          "U",
+          "D",
+          "L"
+        ]
+      ],
+      "fallback": true,
+      "criterion": "non-fallback action sequence matches an exhaustively optimal horizon sequence"
     },
     "metrics": {
       "moves": 4,

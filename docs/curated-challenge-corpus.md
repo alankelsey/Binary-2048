@@ -22,6 +22,15 @@ explicit initial grid, skill tags, maximum move horizon, and expected engine
 invariants. The validation code executes every probe and checks occupied cells,
 legal actions, score changes, merge/event behavior, tile outcomes, and wins.
 
+The four-move `asymmetric-edge-choice` scenario is version 2 because its
+objective is validated over the complete horizon rather than inferred from a
+single opening move. Exhaustive search visits every legal deterministic action
+sequence through move four and ranks terminal states lexicographically by
+completed moves, preservation of the top-left 128 anchor, empty cells, and
+score. The tied optimal sequences are `DLRU` and `RUDL`. Corpus loading fails
+if the declared optimum drifts from the engine-computed result, and benchmark
+credit requires a complete non-fallback match to either sequence.
+
 ## Replay compatibility
 
 Corpus version 1 uses `binary2048-v1` and compact replay version 1. A benchmark
@@ -55,3 +64,5 @@ and are rejected before the first request if the conservative estimate exceeds
 
 Results are upserted into `docs/challenge-benchmark-runs.json`, and the separate
 fixed-board summary is regenerated at `docs/challenge-benchmark-latest.md`.
+Report regeneration re-scores stored traces against the current versioned
+scenario objective; it does not make a hosted-model request.
