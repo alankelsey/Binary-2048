@@ -1,14 +1,14 @@
 # Binary 2048 V1 Session Handoff
 
-Date: 2026-09-27
+Date: 2026-09-28
 
-Status: V1 shared leaderboard persistence is active and production-accepted on Mongo; mobile acceptance, fixed egress, and remaining merch work moved to the end of V2; V2 implementation otherwise frozen until V1 is complete
+Status: V1 shared leaderboard persistence and shared production bot quotas are active and production-accepted on Mongo; mobile acceptance, fixed egress, and remaining merch work moved to the end of V2; V2 implementation otherwise frozen until V1 is complete
 
 ## Production baseline
 
-- Current application baseline: `1172b19` (`add cold-start leaderboard
-  acceptance probe`); Amplify job `346` deployed the commit and job `347`
-  forced the accepted post-write cold start.
+- Current application baseline: `c992717` (`add multi-instance quota acceptance
+  probe`); Amplify job `349` deployed the commit, job `350` loaded an ephemeral
+  acceptance-key hash, and job `351` restored the original key configuration.
 - Production uses `BINARY2048_LEADERBOARD_STORE=mongo` with the rotated Atlas
   application credential and the approved protected-acceptance admin token.
 - Post-cold-start production smoke verification passed.
@@ -95,6 +95,35 @@ entry, job `347` forced a cold start, the replacement runtime read the same
 entry from Mongo, and cleanup deleted it. Final production smoke passed and
 production-safe Playwright passed 9/9. The shared-persistence parent and both
 children are therefore complete.
+
+On 2026-09-28 the user confirmed deletion of the obsolete Atlas application
+user after the rotated credential had passed production acceptance. The active
+least-privilege application user remains in service.
+
+## Completed V1 item — shared production bot quotas
+
+Production already had one bot-key hash, `BINARY2048_RATE_LIMIT_STORE=mongo`,
+the `rate_limits` collection, and its TTL index. No Mongo fallback events were
+present after Atlas connectivity was repaired. Commit `c992717` added an
+admin-and-bot-key-protected acceptance probe with a run-specific short-lived
+counter bucket and opaque per-runtime IDs. It exposes no API key, internal
+counter key, IP address, hostname, or infrastructure identifier.
+
+Focused probe/rate-limit coverage passed 14/14, the full unit suite passed 153
+suites / 514 tests, typecheck passed, and the production build compiled. Its
+local wrapper stopped only at the known missing local auth-bridge secret.
+Amplify job `349` deployed the probe.
+
+For production acceptance, a raw ephemeral bot key existed only inside the
+guarded shell process; only its hash was temporarily appended in Amplify. Job
+`350` loaded it. Twenty-four simultaneous protected requests were served by 24
+distinct runtime IDs; all 24 reported the Mongo backend and validated API-key
+scope, and all returned unique consecutive counter values with a span of 23.
+This proves separate production compute instances atomically consumed one
+shared Mongo counter. Job `351` restored the original key configuration; a
+sanitized check confirmed exactly one production bot-key hash remained.
+Production smoke passed and production-safe Playwright passed 9/9. The parent
+and final multi-instance child are complete.
 
 ## Completed V1 items
 
@@ -184,10 +213,11 @@ Use `docs/roadmap-checklist.md` as the completion source of truth. The
 shared leaderboard implementation, production activation, protected round
 trip, and post-cold-start visibility acceptance are complete.
 
-The next unchecked non-mobile V1 workstream in roadmap order is production bot
-key/shared quota acceptance: validate that simultaneous requests routed to
-separate production compute instances consume the same Mongo counter before
-closing its parent. Do not begin V2 work.
+The next unchecked non-mobile V1 item in roadmap order is moving synchronous
+tournament/training generation to a dedicated worker runtime for hard CPU
+isolation from gameplay. This may introduce new infrastructure cost and must be
+scoped against the existing cost guardrails before provisioning anything. Do
+not begin V2 work.
 
 The tutorial/mobile parents and authenticated acceptance parent are complete
 for the revised V1 scope. The physical-device checks and fixed-egress work are

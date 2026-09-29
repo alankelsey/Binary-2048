@@ -145,11 +145,11 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Validate billing tripwire by forced threshold test in non-prod and capture evidence
 - [x] Define bot-abuse incident playbook (detect, throttle, block, recover, postmortem)
 - [x] Validate server-issued bot API keys and prevent arbitrary key rotation by falling back invalid/missing keys to the caller IP
-- [ ] Provision production bot keys and migrate quota counters from process memory to a shared Mongo-backed store for multi-instance enforcement
+- [x] Provision production bot keys and migrate quota counters from process memory to a shared Mongo-backed store for multi-instance enforcement
   - [x] Implement atomic Mongo fixed-window counters with TTL cleanup and per-instance outage fallback
   - [x] Validate Atlas authentication and an end-to-end application counter increment (`59` to `58`) against the `rate_limits` collection
   - [x] Configure `BINARY2048_RATE_LIMIT_STORE=mongo` and the first production key hash in Amplify; verify a production count-2 per-key document and TTL index in Atlas
-  - [ ] Validate simultaneous requests across separate production compute instances use the same Mongo counter
+  - [x] Validate simultaneous requests across separate production compute instances use the same Mongo counter
 - [x] Publish rate-limit response headers and retry semantics (`429`, `Retry-After`, limit, remaining, and reset) in API responses, OpenAPI, and bot documentation
 - [x] Add a dedicated high-throughput gameplay-move quota that is separate from and higher than simulation, tournament, and training quotas
 - [x] Put tournament and training workloads in separate bounded queues/concurrency pools with explicit saturation responses
