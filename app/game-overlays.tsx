@@ -6,6 +6,8 @@ type GameOverOverlayProps = {
   highScore: number;
   onNewGame: () => void;
   onTutorial: () => void;
+  onExport?: () => void;
+  exportDisabled?: boolean;
   onReplay?: () => void;
 };
 
@@ -18,6 +20,8 @@ type WinOverlayProps = {
   onContinue: () => void;
   onNewGame: () => void;
   onTutorial: () => void;
+  onExport?: () => void;
+  exportDisabled?: boolean;
   onReplay?: () => void;
 };
 
@@ -55,7 +59,7 @@ export function NewGameOverlay({
   );
 }
 
-export function GameOverOverlay({ visible, score, highScore, onNewGame, onTutorial, onReplay }: GameOverOverlayProps) {
+export function GameOverOverlay({ visible, score, highScore, onNewGame, onTutorial, onExport, exportDisabled, onReplay }: GameOverOverlayProps) {
   if (!visible) return null;
   return (
     <div className="gameover-overlay" role="dialog" aria-modal="true" aria-labelledby="gameover-title">
@@ -64,6 +68,7 @@ export function GameOverOverlay({ visible, score, highScore, onNewGame, onTutori
       <div className="gameover-actions">
         <button type="button" className="primary-action" onClick={onNewGame}>New Game</button>
         <button type="button" onClick={onTutorial}>Tutorial</button>
+        {onExport ? <button type="button" disabled={exportDisabled} onClick={onExport}>Export JSON</button> : null}
         {onReplay ? <button type="button" onClick={onReplay}>Replay JSON</button> : null}
       </div>
     </div>
@@ -79,6 +84,8 @@ export function WinOverlay({
   onContinue,
   onNewGame,
   onTutorial,
+  onExport,
+  exportDisabled,
   onReplay
 }: WinOverlayProps) {
   if (!visible) return null;
@@ -99,6 +106,7 @@ export function WinOverlay({
         )}
         <button type="button" className="primary-action" onClick={onNewGame}>New Game</button>
         <button type="button" onClick={onTutorial}>Tutorial</button>
+        {onExport ? <button type="button" disabled={exportDisabled} onClick={onExport}>Export JSON</button> : null}
         {onReplay ? <button type="button" onClick={onReplay}>Replay JSON</button> : null}
       </div>
     </div>

@@ -28,6 +28,9 @@ Status: V1 shared leaderboard persistence and shared production bot quotas are a
 - Game-over and win overlays offer `Replay JSON` whenever replay import is
   permitted by the effective UI policy. The action uses the existing replay
   file picker and accepts keyboard activation.
+- Game-over and win overlays offer `Export JSON` whenever game export is
+  permitted by the effective UI policy. The action uses the existing
+  recovery-aware download flow and remains keyboard accessible.
 - Guests receive a cookie-backed tutorial offer after choosing New Game unless
   they opt out. The tutorial success message remains visible for 1700 ms.
 - The unavailable store-product legend and developer-style accessibility map
@@ -126,6 +129,19 @@ Production smoke passed and production-safe Playwright passed 9/9. The parent
 and final multi-instance child are complete.
 
 ## Completed V1 items
+
+- Game-over and win overlays expose a distinct `Export JSON` action through
+  the existing recovery-aware game export endpoint. It is policy-controlled,
+  remains visible but disabled while another game action is busy, and does not
+  replace the separate `Replay JSON` import action.
+- Static overlay coverage proves both terminal states render the action.
+  Focused Playwright passed 2/2 and proves keyboard activation, recovery
+  snapshot submission, server-provided filenames, successful downloads, and
+  preservation of the terminal flows for both Game Over and You Win. Full unit
+  verification passed 153 suites / 514 tests; typecheck passed. Full local
+  Playwright passed the new tests and 49 other active cases, with one unrelated
+  move-performance timing assertion passing immediately on focused rerun; the
+  debug-only Game Log case remained intentionally skipped.
 
 - `NEXT_PUBLIC_GAME_LOG_ENABLED=1` now opts into the debugging Game Log. The
   default/unset value disables the feature.

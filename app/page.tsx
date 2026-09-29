@@ -1947,6 +1947,8 @@ export default function Home() {
             highScore={Math.max(highScore, viewState?.score ?? 0)}
             onNewGame={openNewGameSetup}
             onTutorial={requestTutorial}
+            onExport={effectiveUiPolicy.controls.export && gameId ? () => void exportGameJson() : undefined}
+            exportDisabled={busy}
             onReplay={effectiveUiPolicy.controls.import ? () => replayInputRef.current?.click() : undefined}
           />
           <NewGameOverlay
@@ -2031,6 +2033,8 @@ export default function Home() {
             }}
             onNewGame={openNewGameSetup}
             onTutorial={requestTutorial}
+            onExport={effectiveUiPolicy.controls.export && gameId ? () => void exportGameJson() : undefined}
+            exportDisabled={busy}
             onReplay={effectiveUiPolicy.controls.import ? () => replayInputRef.current?.click() : undefined}
           />
           {newGameTutorialChoiceOpen ? (
