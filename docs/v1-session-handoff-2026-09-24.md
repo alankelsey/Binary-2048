@@ -6,9 +6,9 @@ Status: V1 shared leaderboard persistence and shared production bot quotas are a
 
 ## Production baseline
 
-- Current application baseline: `c992717` (`add multi-instance quota acceptance
-  probe`); Amplify job `349` deployed the commit, job `350` loaded an ephemeral
-  acceptance-key hash, and job `351` restored the original key configuration.
+- Current application baseline: `f02671e` (`add terminal game export actions`);
+  GitHub CI and Amplify Deploy Watch passed, and Amplify job `353` deployed the
+  commit.
 - Production uses `BINARY2048_LEADERBOARD_STORE=mongo` with the rotated Atlas
   application credential and the approved protected-acceptance admin token.
 - Post-cold-start production smoke verification passed.
@@ -142,6 +142,10 @@ and final multi-instance child are complete.
   Playwright passed the new tests and 49 other active cases, with one unrelated
   move-performance timing assertion passing immediately on focused rerun; the
   debug-only Game Log case remained intentionally skipped.
+- GitHub CI passed typecheck, the full unit suite, and its production build
+  smoke. Amplify job `353` succeeded, the GitHub deploy-watch verification gate
+  passed, production smoke passed, and production-safe Playwright passed 9/9,
+  including the deployed Game Over `Export JSON` visibility assertion.
 
 - `NEXT_PUBLIC_GAME_LOG_ENABLED=1` now opts into the debugging Game Log. The
   default/unset value disables the feature.
