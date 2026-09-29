@@ -229,7 +229,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Ship the semantic, responsive leaderboard presentation that replaces raw JSON
   - [x] Add browser coverage for ranked/daily rows, empty states, active tabs, sandbox labeling, keyboard focus, and narrow-screen horizontal scrolling
   - [x] Verify the presentation against both populated and empty data without treating the current per-instance leaderboard as durable
-- [ ] Add leaderboard pagination plus a current-player rank/highlight after shared leaderboard persistence and authenticated player identity are available
+- [x] Add leaderboard pagination plus a current-player rank/highlight after shared leaderboard persistence and authenticated player identity are available
 - [ ] Build a production operations console only after its authority and data prerequisites exist
   - [ ] Define an explicit server-verified admin role/claim or allowlist; account tier (`guest`, `authed`, or `paid`) must not grant admin access
   - [ ] Expose authorized, read-only shared ops APIs for telemetry, storage status, league configuration, leaderboard operations, and model registry data

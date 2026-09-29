@@ -106,7 +106,10 @@ export const OPENAPI_SPEC = {
     "/api/leaderboard": {
       get: {
         summary: "List ranked leaderboard entries",
-        parameters: [{ name: "limit", in: "query", required: false, schema: { type: "integer" } }],
+        parameters: [
+          { name: "limit", in: "query", required: false, schema: { type: "integer", minimum: 1, maximum: 100 } },
+          { name: "page", in: "query", required: false, schema: { type: "integer", minimum: 1 } }
+        ],
         responses: {
           "200": { description: "Leaderboard entries" }
         }

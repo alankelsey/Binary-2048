@@ -1027,6 +1027,38 @@ select:focus-visible {
   color: #eaf4ff;
 }
 
+.leaderboard-table tbody tr.leaderboard-current-player {
+  background: color-mix(in srgb, var(--accent) 16%, var(--panel));
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.leaderboard-you {
+  border-radius: 999px;
+  padding: 0.1rem 0.35rem;
+  background: var(--accent);
+  color: #07111f;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.leaderboard-current-summary {
+  margin: 0.75rem 0 0;
+  color: var(--text);
+}
+
+.leaderboard-pagination {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.leaderboard-pagination > :last-child {
+  justify-self: end;
+}
+
 .leaderboard-preview-banner {
   margin: 0.75rem 0;
   padding: 0.5rem 0.75rem;

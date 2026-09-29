@@ -38,6 +38,13 @@ describe("GET /api/leaderboard", () => {
     expect(Array.isArray(json.entries)).toBe(true);
     expect(json.entries).toHaveLength(1);
     expect(json.entries[0]?.playerId).toBe("u_high");
+    expect(json).toMatchObject({ page: 1, total: 2, totalPages: 2, currentPlayer: null });
+
+    const pageTwo = await GET(new Request("http://localhost/api/leaderboard?limit=1&page=2"));
+    const pageTwoJson = await pageTwo.json();
+    expect(pageTwoJson.entries).toHaveLength(1);
+    expect(pageTwoJson.entries[0]?.playerId).toBe("u_low");
+    expect(pageTwoJson).toMatchObject({ limit: 1, page: 2, total: 2, totalPages: 2 });
   });
 
   it("filters sandbox namespace explicitly", async () => {

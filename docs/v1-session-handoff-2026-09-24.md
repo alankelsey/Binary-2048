@@ -259,9 +259,31 @@ Commit `222169b` passed GitHub CI and deployed through Amplify job `355`.
 Post-deploy production verification, service-role SSM access, and release
 auth/session verification all passed.
 
-The next non-cost V1 item is leaderboard pagination plus current-player rank
-and highlighting now that shared leaderboard persistence and authenticated
-identity are available. Do not begin V2 work.
+Leaderboard pagination plus current-player rank/highlighting is complete
+locally. Ranked reads now return bounded page entries, total entries, total
+pages, and a clamped page number. Mongo uses filtered `skip`/`limit` reads and
+computes the signed-in player's best rank with the same score, max-tile, moves,
+submission-time, and ID tie-breakers as the displayed board. Later pages keep
+absolute ranks; the signed-in row is highlighted and labeled `You`, while a
+summary reports when the player's best entry is outside the current page. The
+OpenAPI query contract now includes `page` and the existing 1-100 `limit`
+bound.
+
+Focused leaderboard/API/render/OpenAPI coverage passed 22/22 before the Mongo
+paging regression was added; the full unit suite then passed 153 suites / 519
+tests, including the bounded Mongo page and current-player rank query. Typecheck
+passed. The production build compiled; its local smoke wrapper stopped only at
+the known missing auth-bridge secret. A sandboxed focused Playwright attempt
+could not launch Chromium because macOS denied its IPC registration. The
+required unsandboxed rerun passed 7/8; populated ranked/daily layout, narrow
+scrolling, tabs, preview state, and keyboard focus passed. The remaining
+empty-ranked assertion reached the correct fail-closed unavailable state
+because the pre-existing local dev server was configured for an unreachable
+Mongo store, so no empty-memory claim is made from that run.
+
+The next non-cost V1 item is the production operations console, beginning with
+an explicit server-verified admin role/claim or allowlist that cannot be granted
+by normal account tier. Do not begin V2 work.
 
 The tutorial/mobile parents and authenticated acceptance parent are complete
 for the revised V1 scope. The physical-device checks and fixed-egress work are

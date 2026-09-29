@@ -3,20 +3,26 @@ import { authOptions } from "@/auth";
 import { buildAuthUiState } from "@/lib/binary2048/auth-ui";
 import { getAuthUxMessages } from "@/lib/binary2048/auth-ux";
 import { getDailyChallenge, listDailyChallengeEntries } from "@/lib/binary2048/daily-challenge";
-import { listLeaderboardEntries } from "@/lib/binary2048/leaderboard";
-import type { LeaderboardEntry } from "@/lib/binary2048/leaderboard";
+import { getLeaderboardPage } from "@/lib/binary2048/leaderboard";
+import type { LeaderboardPage } from "@/lib/binary2048/leaderboard";
 import { DailyTable, RankedTable } from "@/app/leaderboard-view";
 import { formatSubmittedAt } from "@/lib/binary2048/leaderboard-view";
 import { getOptionalServerSession } from "@/lib/binary2048/server-session";
 
 type LeaderboardPageProps = {
-  searchParams?: Promise<{ tab?: string; limit?: string; namespace?: string; seasonMode?: string }>;
+  searchParams?: Promise<{ tab?: string; limit?: string; page?: string; namespace?: string; seasonMode?: string }>;
 };
 
 function parseLimit(raw: string | undefined) {
   const parsed = Number(raw);
   if (!Number.isFinite(parsed) || parsed <= 0) return 20;
   return Math.min(100, Math.floor(parsed));
+}
+
+function parsePage(raw: string | undefined) {
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed <= 0) return 1;
+  return Math.floor(parsed);
 }
 
 export default async function LeaderboardPage({ searchParams }: LeaderboardPageProps) {
@@ -28,15 +34,17 @@ export default async function LeaderboardPage({ searchParams }: LeaderboardPageP
   const namespace = params.namespace === "sandbox" ? "sandbox" : "production";
   const seasonMode = params.seasonMode === "preview" ? "preview" : "live";
   const limit = parseLimit(params.limit);
-  let ranked: LeaderboardEntry[] = [];
+  const page = parsePage(params.page);
+  const currentPlayerId = authState.authenticated ? authState.email ?? authState.displayName : undefined;
+  let ranked: LeaderboardPage = { entries: [], limit, page, total: 0, totalPages: 1, currentPlayer: null };
   let rankedUnavailable = false;
   try {
-    ranked = await listLeaderboardEntries(limit, {
+    ranked = await getLeaderboardPage(limit, page, {
       namespace,
       includePractice: true,
       includeSandbox: namespace === "sandbox",
       seasonMode
-    });
+    }, currentPlayerId);
   } catch {
     rankedUnavailable = true;
   }
@@ -49,34 +57,34 @@ export default async function LeaderboardPage({ searchParams }: LeaderboardPageP
       <header className="brand">
         <div>
           <h1>Leaderboard</h1>
-          <p className="brand-subtitle">Ranked and Bitstorm Daily standings, top {limit} of each.</p>
+          <p className="brand-subtitle">Ranked and Bitstorm Daily standings, {limit} entries at a time.</p>
         </div>
       </header>
       <div className="card">
         <p className="meta-text">{authUx.rankedSubmit}</p>
         <nav className="row" aria-label="Leaderboard views">
           <Link
-            href={`/leaderboard?tab=ranked&limit=${limit}&namespace=production&seasonMode=live`}
+            href={`/leaderboard?tab=ranked&limit=${limit}&page=1&namespace=production&seasonMode=live`}
             className="button"
             aria-current={tab === "ranked" && !isPreview ? "page" : undefined}
           >
             Ranked
           </Link>
           <Link
-            href={`/leaderboard?tab=daily&limit=${limit}&namespace=production&seasonMode=live`}
+            href={`/leaderboard?tab=daily&limit=${limit}&page=1&namespace=production&seasonMode=live`}
             className="button"
             aria-current={tab === "daily" && !isPreview ? "page" : undefined}
           >
             Bitstorm Daily
           </Link>
           <Link
-            href={`/leaderboard?tab=ranked&limit=${limit}&namespace=sandbox&seasonMode=preview`}
+            href={`/leaderboard?tab=ranked&limit=${limit}&page=1&namespace=sandbox&seasonMode=preview`}
             className="button"
             aria-current={isPreview ? "page" : undefined}
           >
             Preview Season
           </Link>
-          <span className="meta-text">Showing top {limit}</span>
+          <span className="meta-text">Showing up to {limit} entries</span>
         </nav>
 
         {isPreview ? (
@@ -91,7 +99,24 @@ export default async function LeaderboardPage({ searchParams }: LeaderboardPageP
             {rankedUnavailable ? (
               <p role="alert" className="leaderboard-empty">Ranked standings are temporarily unavailable.</p>
             ) : (
-              <RankedTable entries={ranked} />
+              <>
+                {ranked.currentPlayer ? (
+                  <p className="leaderboard-current-summary" aria-live="polite">
+                    Your best rank: <strong>#{ranked.currentPlayer.rank}</strong>
+                    {ranked.entries.some((entry) => entry.id === ranked.currentPlayer?.entry.id) ? " (highlighted below)" : " (outside this page)"}
+                  </p>
+                ) : currentPlayerId ? (
+                  <p className="meta-text">You do not have a ranked entry in these standings yet.</p>
+                ) : null}
+                <RankedTable entries={ranked.entries} rankOffset={(ranked.page - 1) * ranked.limit} currentPlayerId={currentPlayerId} />
+                {ranked.totalPages > 1 ? (
+                  <nav className="leaderboard-pagination" aria-label="Ranked leaderboard pages">
+                    {ranked.page > 1 ? <Link className="button" href={`/leaderboard?tab=ranked&limit=${limit}&page=${ranked.page - 1}&namespace=${namespace}&seasonMode=${seasonMode}`}>Previous</Link> : <span />}
+                    <span className="meta-text">Page {ranked.page} of {ranked.totalPages} · {ranked.total} entries</span>
+                    {ranked.page < ranked.totalPages ? <Link className="button" href={`/leaderboard?tab=ranked&limit=${limit}&page=${ranked.page + 1}&namespace=${namespace}&seasonMode=${seasonMode}`}>Next</Link> : <span />}
+                  </nav>
+                ) : null}
+              </>
             )}
           </section>
         ) : (

@@ -98,6 +98,20 @@ describe("RankedTable", () => {
     expect(html).toContain(">player_alpha<");
     expect(html).toContain("player…g_id");
   });
+
+  it("uses absolute page ranks and highlights the authenticated player's row", () => {
+    const html = renderToStaticMarkup(
+      <RankedTable
+        entries={[rankedEntry({ id: "e21", playerId: "current@example.com" })]}
+        rankOffset={20}
+        currentPlayerId="current@example.com"
+      />
+    );
+    expect(html).toContain('class="leaderboard-current-player"');
+    expect(html).toContain('aria-current="true"');
+    expect(html).toContain(">#21<");
+    expect(html).toContain(">You<");
+  });
 });
 
 describe("DailyTable", () => {

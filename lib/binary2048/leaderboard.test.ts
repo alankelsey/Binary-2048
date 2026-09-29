@@ -1,6 +1,7 @@
 import { createSession, moveSession } from "@/lib/binary2048/sessions";
 import {
   LEADERBOARD_INDEX_SPECS,
+  getLeaderboardPage,
   listLeaderboardEntries,
   listLeaderboardEntriesByPlayer,
   removeLeaderboardEntriesByPlayer,
@@ -143,6 +144,51 @@ describe("leaderboard", () => {
     }
     expect(last).toMatchObject({ rank: 25, total: 25 });
     expect(await listLeaderboardEntries()).toHaveLength(20);
+  });
+
+  it("paginates with absolute ranks and returns the current player's best entry", async () => {
+    jest.useFakeTimers().setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+    for (let index = 0; index < 5; index += 1) {
+      const session = createSession({ seed: 550 + index });
+      session.current.score = 500 - index * 100;
+      await submitLeaderboardEntry({ playerId: index === 3 ? "current@example.com" : `u_${index}`, userTier: "authed", gameId: `page_${index}`, session });
+    }
+
+    const result = await getLeaderboardPage(2, 2, {}, "current@example.com");
+    expect(result).toMatchObject({ limit: 2, page: 2, total: 5, totalPages: 3 });
+    expect(result.entries.map((entry) => entry.score)).toEqual([300, 200]);
+    expect(result.currentPlayer).toMatchObject({ rank: 4, entry: { playerId: "current@example.com" } });
+  });
+
+  it("uses bounded Mongo paging and computes current-player rank with the canonical tie-breakers", async () => {
+    process.env.BINARY2048_LEADERBOARD_STORE = "mongo";
+    process.env.BINARY2048_MONGO_URI = "mongodb://example.invalid";
+    const currentEntry = {
+      id: "lb_current", namespace: "production" as const, isSandbox: false, isPractice: false, seasonMode: "live" as const,
+      playerId: "current@example.com", userTier: "authed" as const, gameId: "game_current", score: 200, moves: 20,
+      maxTile: 128, stateHash: "hash", rulesetId: "binary2048-v1", submittedAtISO: "2026-01-01T00:00:00.000Z"
+    };
+    const pageCursor = {
+      sort: jest.fn().mockReturnThis(), skip: jest.fn().mockReturnThis(), limit: jest.fn().mockReturnThis(),
+      toArray: jest.fn().mockResolvedValue([currentEntry])
+    };
+    const playerCursor = { sort: jest.fn().mockReturnThis(), limit: jest.fn().mockReturnThis(), next: jest.fn().mockResolvedValue(currentEntry) };
+    const collection = {
+      createIndexes: jest.fn().mockResolvedValue([]),
+      find: jest.fn().mockReturnValueOnce(pageCursor).mockReturnValueOnce(playerCursor),
+      countDocuments: jest.fn().mockResolvedValueOnce(5).mockResolvedValueOnce(3),
+      deleteMany: jest.fn().mockResolvedValue({ deletedCount: 0 })
+    };
+    MockMongoClient.mockImplementation(() => ({
+      connect: jest.fn().mockResolvedValue(undefined),
+      db: jest.fn().mockReturnValue({ collection: jest.fn().mockReturnValue(collection) })
+    }));
+
+    const result = await getLeaderboardPage(2, 2, { namespace: "production", seasonMode: "live" }, "current@example.com");
+    expect(pageCursor.skip).toHaveBeenCalledWith(2);
+    expect(pageCursor.limit).toHaveBeenCalledWith(2);
+    expect(collection.countDocuments).toHaveBeenCalledTimes(2);
+    expect(result).toMatchObject({ page: 2, total: 5, totalPages: 3, currentPlayer: { rank: 4 } });
   });
 
   it("filters practice and season entries and supports player deletion", async () => {

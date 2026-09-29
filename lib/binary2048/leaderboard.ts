@@ -39,6 +39,15 @@ export type ListLeaderboardOptions = {
   seasonMode?: "live" | "preview";
 };
 
+export type LeaderboardPage = {
+  entries: LeaderboardEntry[];
+  limit: number;
+  page: number;
+  total: number;
+  totalPages: number;
+  currentPlayer: { entry: LeaderboardEntry; rank: number } | null;
+};
+
 export type LeaderboardIndexSpec = { key: Record<string, 1 | -1>; name: string; unique?: boolean };
 
 export const LEADERBOARD_INDEX_SPECS: LeaderboardIndexSpec[] = [
@@ -50,6 +59,7 @@ export const LEADERBOARD_INDEX_SPECS: LeaderboardIndexSpec[] = [
 type LeaderboardStore = {
   upsert: (entry: LeaderboardEntry) => Promise<LeaderboardEntry>;
   list: (limit: number, options: ListLeaderboardOptions) => Promise<LeaderboardEntry[]>;
+  page: (offset: number, limit: number, options: ListLeaderboardOptions, playerId?: string) => Promise<{ entries: LeaderboardEntry[]; total: number; currentPlayer: { entry: LeaderboardEntry; rank: number } | null }>;
   listByPlayer: (playerId: string, limit: number) => Promise<LeaderboardEntry[]>;
   removeByPlayer: (playerId: string) => Promise<number>;
   reset: () => Promise<void>;
@@ -91,6 +101,15 @@ class MemoryLeaderboardStore implements LeaderboardStore {
   async list(limit: number, options: ListLeaderboardOptions) {
     const entries = Array.from(this.entries.values()).filter((entry) => matchesOptions(entry, options)).sort(entrySort);
     return limit === 0 ? entries : entries.slice(0, limit);
+  }
+  async page(offset: number, limit: number, options: ListLeaderboardOptions, playerId?: string) {
+    const entries = Array.from(this.entries.values()).filter((entry) => matchesOptions(entry, options)).sort(entrySort);
+    const currentEntry = playerId ? entries.find((entry) => entry.playerId === playerId) : undefined;
+    return {
+      entries: entries.slice(offset, offset + limit),
+      total: entries.length,
+      currentPlayer: currentEntry ? { entry: currentEntry, rank: entries.indexOf(currentEntry) + 1 } : null
+    };
   }
   async listByPlayer(playerId: string, limit: number) {
     return Array.from(this.entries.values()).filter((entry) => entry.playerId === playerId).sort(entrySort).slice(0, limit);
@@ -149,6 +168,29 @@ class MongoLeaderboardStore implements LeaderboardStore {
   async list(limit: number, options: ListLeaderboardOptions) {
     const cursor = (await this.collection()).find(mongoFilter(options)).sort({ score: -1, maxTile: -1, moves: 1, submittedAtISO: 1, id: 1 });
     return (limit === 0 ? cursor : cursor.limit(limit)).toArray();
+  }
+  async page(offset: number, limit: number, options: ListLeaderboardOptions, playerId?: string) {
+    const collection = await this.collection();
+    const filter = mongoFilter(options);
+    const [entries, total, currentEntry] = await Promise.all([
+      collection.find(filter).sort({ score: -1, maxTile: -1, moves: 1, submittedAtISO: 1, id: 1 }).skip(offset).limit(limit).toArray(),
+      collection.countDocuments(filter),
+      playerId
+        ? collection.find({ ...filter, playerId }).sort({ score: -1, maxTile: -1, moves: 1, submittedAtISO: 1, id: 1 }).limit(1).next()
+        : Promise.resolve(null)
+    ]);
+    if (!currentEntry) return { entries, total, currentPlayer: null };
+    const ahead: Filter<LeaderboardEntry> = {
+      $or: [
+        { score: { $gt: currentEntry.score } },
+        { score: currentEntry.score, maxTile: { $gt: currentEntry.maxTile } },
+        { score: currentEntry.score, maxTile: currentEntry.maxTile, moves: { $lt: currentEntry.moves } },
+        { score: currentEntry.score, maxTile: currentEntry.maxTile, moves: currentEntry.moves, submittedAtISO: { $lt: currentEntry.submittedAtISO } },
+        { score: currentEntry.score, maxTile: currentEntry.maxTile, moves: currentEntry.moves, submittedAtISO: currentEntry.submittedAtISO, id: { $lt: currentEntry.id } }
+      ]
+    };
+    const aheadCount = await collection.countDocuments({ $and: [filter, ahead] });
+    return { entries, total, currentPlayer: { entry: currentEntry, rank: aheadCount + 1 } };
   }
   async listByPlayer(playerId: string, limit: number) {
     return (await this.collection()).find({ playerId }).sort({ score: -1, maxTile: -1, moves: 1, submittedAtISO: 1, id: 1 }).limit(limit).toArray();
@@ -212,6 +254,17 @@ export async function submitLeaderboardEntry(params: SubmitLeaderboardParams) {
 }
 
 export async function listLeaderboardEntries(limit = 20, options: ListLeaderboardOptions = {}) { return getLeaderboardStore().list(safeLimit(limit, 20), options); }
+export async function getLeaderboardPage(limit = 20, page = 1, options: ListLeaderboardOptions = {}, playerId?: string): Promise<LeaderboardPage> {
+  const safePageSize = Math.min(100, safeLimit(limit, 20));
+  const requestedPage = safeLimit(page, 1);
+  let result = await getLeaderboardStore().page((requestedPage - 1) * safePageSize, safePageSize, options, playerId);
+  const totalPages = Math.max(1, Math.ceil(result.total / safePageSize));
+  const resolvedPage = Math.min(requestedPage, totalPages);
+  if (resolvedPage !== requestedPage) {
+    result = await getLeaderboardStore().page((resolvedPage - 1) * safePageSize, safePageSize, options, playerId);
+  }
+  return { ...result, limit: safePageSize, page: resolvedPage, totalPages };
+}
 export async function listLeaderboardEntriesByPlayer(playerId: string, limit = 100) { return getLeaderboardStore().listByPlayer(playerId, safeLimit(limit, 100)); }
 export async function removeLeaderboardEntriesByPlayer(playerId: string) { return getLeaderboardStore().removeByPlayer(playerId); }
 export async function resetLeaderboard() {

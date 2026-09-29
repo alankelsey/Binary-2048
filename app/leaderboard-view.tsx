@@ -11,7 +11,7 @@ import { formatSubmittedAt, rankClass, shortPlayerId, TIER_LABEL } from "@/lib/b
 // lib/binary2048/leaderboard-view.ts (plain .ts, unit-testable under this
 // repo's Jest setup, which can't parse JSX).
 
-export function RankedTable({ entries }: { entries: LeaderboardEntry[] }) {
+export function RankedTable({ entries, rankOffset = 0, currentPlayerId }: { entries: LeaderboardEntry[]; rankOffset?: number; currentPlayerId?: string }) {
   if (entries.length === 0) {
     return (
       <div className="leaderboard-empty">
@@ -42,9 +42,10 @@ export function RankedTable({ entries }: { entries: LeaderboardEntry[] }) {
         </thead>
         <tbody>
           {entries.map((entry, index) => {
-            const rank = index + 1;
+            const rank = rankOffset + index + 1;
+            const isCurrentPlayer = entry.playerId === currentPlayerId;
             return (
-              <tr key={entry.id}>
+              <tr key={entry.id} className={isCurrentPlayer ? "leaderboard-current-player" : undefined} aria-current={isCurrentPlayer ? "true" : undefined}>
                 <td className={rankClass(rank)}>#{rank}</td>
                 <td>
                   <span className="leaderboard-player">
@@ -52,6 +53,7 @@ export function RankedTable({ entries }: { entries: LeaderboardEntry[] }) {
                       {TIER_LABEL[entry.userTier]}
                     </span>
                     <span className="leaderboard-player-id">{shortPlayerId(entry.playerId)}</span>
+                    {isCurrentPlayer ? <span className="leaderboard-you">You</span> : null}
                   </span>
                 </td>
                 <td className="num leaderboard-score">{entry.score.toLocaleString("en-US")}</td>
