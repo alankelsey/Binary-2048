@@ -6,9 +6,9 @@ Status: V1 shared leaderboard persistence and shared production bot quotas are a
 
 ## Production baseline
 
-- Current application baseline: `f02671e` (`add terminal game export actions`);
-  GitHub CI and Amplify Deploy Watch passed, and Amplify job `353` deployed the
-  commit.
+- Current application baseline: `222169b` (`validate dense board challenge
+  objectives`); GitHub CI and Amplify Deploy Watch passed, and Amplify job
+  `355` deployed the commit.
 - Production uses `BINARY2048_LEADERBOARD_STORE=mongo` with the rotated Atlas
   application credential and the approved protected-acceptance admin token.
 - Post-cold-start production smoke verification passed.
@@ -255,6 +255,9 @@ tests (7/7), the full unit suite (153 suites / 516 tests), and typecheck passed.
 The production build compiled; its smoke wrapper stopped only at the known
 missing local auth-bridge secret (`503` rather than the configured
 environment's unauthenticated `401`).
+Commit `222169b` passed GitHub CI and deployed through Amplify job `355`.
+Post-deploy production verification, service-role SSM access, and release
+auth/session verification all passed.
 
 The next non-cost V1 item is leaderboard pagination plus current-player rank
 and highlighting now that shared leaderboard persistence and authenticated
