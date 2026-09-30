@@ -272,14 +272,13 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add run index strategy (playerId/date, score desc, rulesetId, contestId) and query latency SLO
 - [x] Add `/api/runs/:id` + `/api/runs/:id/replay` backed by persistent storage
 - [x] Add deterministic training dataset export job (Parquet/JSONL) for ML with PII-safe schema
-- [ ] Keep `botvsbot/binary2048` private until a public research-release audit is approved
-  - [ ] Restore or confirm authenticated access to the intended `botvsbot/binary2048` repository; the 2026-09-29 read-only audit could not resolve it and therefore could not verify its visibility, history, or contents ([audit](./research-release-audit-2026-09-29.md))
+- [ ] Complete the V1 research-release audit in the existing public `alankelsey/Binary-2048` repository; the checked-in dataset files are already public, so this is an exposure review and immutable-release gate rather than a repository-visibility gate ([audit](./research-release-audit-2026-09-29.md))
 - [ ] Before public release, verify every published row is synthetic bot-generated data with no player identifiers, Mongo records, secrets, environment values, operational logs, or internal handoff notes
 - [ ] Publish research-safe files only (`README.md`/dataset card and Parquet data); exclude the executable/non-portable pickle replay buffer unless a documented need and security review justify it
 - [ ] Complete public dataset documentation: provenance, dataset/engine/ruleset versions, seed range and RNG semantics, bot policy/version, exact generation command, limitations, intended uses, and citation
 - [ ] Confirm Binary-2048 owns the data and Apache-2.0 is appropriate for every published artifact
-- [ ] Add checksums, explicit train/validation/test split guidance, and immutable tagged dataset releases before changing visibility
-- [ ] After the release audit passes, make the synthetic dataset public; use gated access instead for any future human-derived or consent-sensitive dataset
+- [ ] Add checksums, explicit train/validation/test split guidance, and immutable tagged dataset releases before publishing the formal dataset release
+- [ ] After the release audit passes, publish an immutable tagged synthetic-dataset release from the existing repository; use gated access instead for any future human-derived or consent-sensitive dataset
 - [x] Add feature extractor job for model inputs (encoded state/action mask + outcome labels)
 - [x] Add baseline offline ML pipeline (train/eval/report) using persisted runs
 - [x] Add a local Ollama zero-shot bot baseline with structured legal-action output, deterministic fallback, latency reporting, and no Binary-2048 training-data dependency
@@ -402,6 +401,7 @@ active V1-only scope.
     - [ ] Repeat the authenticated sign-in, session-resume, gameplay, and sign-out flow on Android Chrome
   - [ ] Migrate Mongo-touching workloads to an approved fixed-egress runtime and reduce Atlas network access from the temporary broad allowlist when its cost/security trigger is met
   - [ ] Reassess hosting after collecting 30 consecutive days of itemized production billing; separate Amplify, WAF, Atlas/MongoDB, transfer, and ancillary charges, confirm whether MongoDB is the primary cost driver, and compare the measured total cost of ownership with AWS Lightsail and a comparable managed/unmanaged VPS before proposing a migration
+  - [ ] Revisit whether research datasets should remain in `alankelsey/Binary-2048` or move to a dedicated dataset-only repository; V1 will use the existing public repository
   - [ ] Evaluate and design the merch/swag offering
     - [ ] Evaluate print-on-demand providers, margins, fulfillment risk, and brand-quality thresholds
     - [ ] Add a simple swag landing/view concept and decide whether it lives in-app, on GitHub Pages, or on an external storefront

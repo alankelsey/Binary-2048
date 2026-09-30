@@ -64,6 +64,15 @@ Retaining Atlas while moving only the web runtime must be evaluated as a
 separate option. Produce a recommendation and migration trigger; do not
 provision or migrate infrastructure as part of the review.
 
+### Research repository decision
+
+V1 keeps the research dataset in the existing public
+`alankelsey/Binary-2048` repository and completes its audit and immutable
+release there. In V2, reassess whether a dedicated dataset-only repository
+would materially improve discoverability, versioning, citation, download size,
+or separation from application history. Do not create or migrate to another
+repository without that decision and an explicit transfer plan.
+
 ## Shared findings from both reports
 
 ### 1. The visible board is gated by a server round trip

@@ -1,14 +1,16 @@
 # Binary-2048 Research Release Audit
 
-Status: in progress; release remains blocked  
+Status: in progress
 Audit started: 2026-09-29  
-Target named in the roadmap: `botvsbot/binary2048`
+V1 target: existing public `alankelsey/Binary-2048` repository
 
 ## Release boundary
 
-This audit does not authorize changing repository visibility. The target must
-remain private until every roadmap gate is proven, the exact release contents
-are reviewed, and the owner explicitly approves publication.
+The application repository and checked-in dataset files are already public.
+This audit therefore reviews existing exposure and gates an intentional,
+immutable dataset release; it is not a repository-visibility change. V1 will
+use the existing repository. Whether to create a dataset-only repository will
+be reconsidered in V2.
 
 The intended release bundle is limited to research documentation, a dataset
 card/README, checksum manifest, license, and reviewed Parquet datasets. It must
@@ -18,10 +20,12 @@ internal handoff notes, or deployment configuration.
 
 ## Evidence collected
 
-- `gh repo view botvsbot/binary2048` could not resolve the repository for the
-  currently authenticated GitHub identity. A read-only organization listing
-  also did not return that repository. Its current visibility, history,
-  collaborators, branches, and files are therefore unverified.
+- The original roadmap named `botvsbot/binary2048`, but Git history shows that
+  name first appeared as an unsupported planning assumption in commit
+  `73c2a6b`. It is not a configured remote or required release target.
+- GitHub confirms `alankelsey/Binary-2048` is public with `main` as its default
+  branch. The tracked files under `data/model-benchmark/` must therefore be
+  treated as already published, including their Git history.
 - The local canonical model-benchmark export contains four JSONL sources and
   four derived Parquet files under `data/model-benchmark/`.
 - The recorded SHA-256 values for all eight generated files match
@@ -45,27 +49,25 @@ internal handoff notes, or deployment configuration.
 
 ## Blocking follow-ups
 
-1. Confirm the correct target repository name/owner and grant the auditing
-   identity read access without changing visibility.
-2. Inventory its complete Git history, branches, tags, releases, Actions
+1. Inventory the existing repository's complete Git history, branches, tags, releases, Actions
    artifacts, LFS objects, issues, and current collaborators for secrets and
    non-release material. Scanning only the working tree is insufficient.
-3. Build a clean release bundle from an allowlist; do not copy the current
-   repository or its history wholesale.
-4. Expand the dataset card with provenance, engine/dataset/ruleset versions,
+2. Build a clean release bundle from an allowlist within the existing
+   repository; do not treat unrelated application files as dataset artifacts.
+3. Expand the dataset card with provenance, engine/dataset/ruleset versions,
    exact generation command, RNG semantics, model policy versions,
    limitations, intended uses, citation, and split guidance.
-5. Verify every Parquet column and row from decoded data, then rerun secret,
+4. Verify every Parquet column and row from decoded data, then rerun secret,
    identifier, and operational-metadata scans against the exact release
    bundle.
-6. Record Binary-2048 ownership and the Apache-2.0/third-party attribution
+5. Record Binary-2048 ownership and the Apache-2.0/third-party attribution
    decision.
-7. Create immutable checksums and a proposed version tag, review the staged
-   artifact set, and obtain explicit approval before changing visibility.
+6. Create immutable checksums and a proposed version tag, review the staged
+   artifact set, and obtain explicit approval before publishing the release.
 
 ## Current decision
 
-Declined for release at this checkpoint because the named target repository is
-not accessible for audit. No repository visibility or external state was
-changed. The local evidence is useful preparation but does not satisfy the
-public-release gate.
+Not yet approved as an intentional dataset release. Existing public exposure
+is acknowledged, but history review, decoded Parquet review, documentation,
+ownership/licensing confirmation, and an immutable release tag remain open.
+No repository visibility or external state was changed by this audit.
