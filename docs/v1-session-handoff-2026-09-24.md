@@ -6,9 +6,9 @@ Status: V1 shared leaderboard persistence and shared production bot quotas are a
 
 ## Production baseline
 
-- Current application baseline: `9bbce51` (`add ranked leaderboard
-  pagination`); GitHub CI and Amplify Deploy Watch passed, and Amplify job
-  `357` deployed the commit.
+- Current application baseline: `b8ca42a` (`centralize server admin
+  authority`); GitHub CI and Amplify Deploy Watch passed, and Amplify job
+  `359` deployed the commit.
 - Production uses `BINARY2048_LEADERBOARD_STORE=mongo` with the rotated Atlas
   application credential and the approved protected-acceptance admin token.
 - Post-cold-start production smoke verification passed.
@@ -287,7 +287,7 @@ auth/session verification passed. A read-only production request with
 empty board to page 1. The standard production-safe Playwright suite passed
 9/9 after deployment.
 
-The production-operations authority prerequisite is complete locally. All
+The production-operations authority prerequisite is complete and deployed. All
 existing admin routes now delegate to one fail-closed server module. Automation
 retains the existing high-entropy `BINARY2048_ADMIN_TOKEN`, compared through
 fixed-length digests with a timing-safe primitive. Named operators must present
@@ -305,6 +305,13 @@ missing local auth-bridge secret (`503` rather than the configured
 environment's unauthenticated `401`). Production does not need an operator
 subject configured to preserve the existing service-automation path; no
 allowlist value has been added or inferred.
+
+Commit `b8ca42a` passed GitHub CI and deployed through Amplify job `359`.
+Post-deploy production verification, service-role SSM access, and release
+auth/session verification passed. Production-safe Playwright passed 9/9. A
+direct unauthenticated request to `/api/ops/league/config` returned the
+expected generic `401 Admin authorization required`, while the deploy gate's
+existing service-token checks continued to pass.
 
 The next non-cost V1 item is exposing authorized, read-only shared operations
 APIs for telemetry, passive storage status, league configuration, leaderboard
