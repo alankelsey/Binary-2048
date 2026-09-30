@@ -273,11 +273,13 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add `/api/runs/:id` + `/api/runs/:id/replay` backed by persistent storage
 - [x] Add deterministic training dataset export job (Parquet/JSONL) for ML with PII-safe schema
 - [ ] Complete the V1 research-release audit in the existing public `alankelsey/Binary-2048` repository; the checked-in dataset files are already public, so this is an exposure review and immutable-release gate rather than a repository-visibility gate ([audit](./research-release-audit-2026-09-29.md))
-- [ ] Before public release, verify every published row is synthetic bot-generated data with no player identifiers, Mongo records, secrets, environment values, operational logs, or internal handoff notes
-- [ ] Publish research-safe files only (`README.md`/dataset card and Parquet data); exclude the executable/non-portable pickle replay buffer unless a documented need and security review justify it
-- [ ] Complete public dataset documentation: provenance, dataset/engine/ruleset versions, seed range and RNG semantics, bot policy/version, exact generation command, limitations, intended uses, and citation
+- [x] Before the formal release, verify every published row is synthetic bot-generated data with no player identifiers, Mongo records, secrets, environment values, operational logs, or internal handoff notes
+- [x] Define an allowlisted research-safe release payload (`README.md`/dataset card, release manifest, license, and reviewed Parquet data); exclude JSONL working exports, the executable/non-portable pickle replay buffer, source ledgers, and internal/operational material
+- [x] Complete public dataset documentation: provenance, recorded and missing engine/model versions, seed range and RNG semantics, bot policies, reconstructed reproduction recipe, limitations, intended uses, split guidance, and proposed citation
 - [ ] Confirm Binary-2048 owns the data and Apache-2.0 is appropriate for every published artifact
 - [ ] Add checksums, explicit train/validation/test split guidance, and immutable tagged dataset releases before publishing the formal dataset release
+  - [x] Add a release-specific checksum manifest and grouped seed/run split guidance
+  - [ ] Obtain owner approval for version `1.0.0` and proposed tag `model-benchmark-v1.0.0`, then create and verify the immutable GitHub release
 - [ ] After the release audit passes, publish an immutable tagged synthetic-dataset release from the existing repository; use gated access instead for any future human-derived or consent-sensitive dataset
 - [x] Add feature extractor job for model inputs (encoded state/action mask + outcome labels)
 - [x] Add baseline offline ML pipeline (train/eval/report) using persisted runs

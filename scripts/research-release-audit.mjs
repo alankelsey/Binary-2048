@@ -3,11 +3,13 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { asyncBufferFromFile, parquetReadObjects } from "hyparquet";
 
 const datasetDirectory = path.resolve(
   process.env.RESEARCH_DATASET_DIR ?? "data/model-benchmark",
 );
 const manifestPath = path.join(datasetDirectory, "manifest.json");
+const releaseManifestPath = path.join(datasetDirectory, "release-manifest.json");
 const forbiddenKeys = new Set([
   "authorization",
   "cookie",
@@ -59,6 +61,7 @@ async function sha256(filePath) {
 
 async function main() {
   const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+  const releaseManifest = JSON.parse(await readFile(releaseManifestPath, "utf8"));
   const expectedFiles = Object.values(manifest.files ?? {}).flatMap(Object.values);
   const checksums = manifest.sha256 ?? {};
 
@@ -74,6 +77,7 @@ async function main() {
     if (actualChecksum !== expectedChecksum) fail(`checksum mismatch for ${filename}`);
   }
 
+  const canonicalRows = {};
   for (const [split, filename] of Object.entries(manifest.files?.jsonl ?? {})) {
     const content = await readFile(path.join(datasetDirectory, filename), "utf8");
     const lines = content.trim().split("\n").filter(Boolean);
@@ -81,7 +85,7 @@ async function main() {
     if (lines.length !== expectedRows) {
       fail(`${filename} has ${lines.length} rows; manifest records ${expectedRows}`);
     }
-    lines.forEach((line, index) => {
+    canonicalRows[split] = lines.map((line, index) => {
       let row;
       try {
         row = JSON.parse(line);
@@ -89,14 +93,58 @@ async function main() {
         fail(`${filename}:${index + 1} is not valid JSON`);
       }
       inspectValue(row, `${filename}:${index + 1}`);
+      return row;
     });
+  }
+
+  for (const [split, filename] of Object.entries(manifest.files?.parquet ?? {})) {
+    if (!filename) continue;
+    const rows = await parquetReadObjects({
+      file: await asyncBufferFromFile(path.join(datasetDirectory, filename)),
+    });
+    const expectedRows = canonicalRows[split];
+    if (!expectedRows || rows.length !== expectedRows.length) {
+      fail(`${filename} has ${rows.length} rows; canonical split has ${expectedRows?.length ?? 0}`);
+    }
+    const embeddedColumn = split === "metrics" ? "record_json" : "step_json";
+    rows.forEach((row, index) => {
+      inspectValue(row, `${filename}:${index + 1}`);
+      let embedded;
+      try {
+        embedded = JSON.parse(row[embeddedColumn]);
+      } catch {
+        fail(`${filename}:${index + 1}.${embeddedColumn} is not valid JSON`);
+      }
+      if (JSON.stringify(embedded) !== JSON.stringify(expectedRows[index])) {
+        fail(`${filename}:${index + 1} does not match its canonical JSONL row`);
+      }
+    });
+  }
+
+  const expectedReleaseFiles = Object.entries(manifest.files?.parquet ?? {})
+    .filter(([, filename]) => Boolean(filename))
+    .map(([split, filename]) => [filename, manifest.rows?.[split]])
+    .sort(([left], [right]) => left.localeCompare(right));
+  const actualReleaseFiles = Object.entries(releaseManifest.files ?? {})
+    .map(([filename, metadata]) => [filename, metadata?.rows])
+    .sort(([left], [right]) => left.localeCompare(right));
+  if (JSON.stringify(actualReleaseFiles) !== JSON.stringify(expectedReleaseFiles)) {
+    fail("release manifest must allowlist exactly the generated Parquet files and row counts");
+  }
+  for (const [filename] of expectedReleaseFiles) {
+    if (releaseManifest.files[filename].sha256 !== manifest.sha256?.[filename]) {
+      fail(`release checksum does not match canonical manifest for ${filename}`);
+    }
+  }
+  for (const document of releaseManifest.documents ?? []) {
+    await readFile(path.resolve(datasetDirectory, document));
   }
 
   console.log(
     `Research dataset audit passed: ${expectedFiles.length} files, ` +
       `${Object.values(manifest.rows).reduce((sum, count) => sum + count, 0)} canonical rows.`,
   );
-  console.log("Repository-history, ownership, licensing, and decoded Parquet review remain manual gates.");
+  console.log("Repository-history, ownership, and licensing review remain manual gates.");
 }
 
 main().catch((error) => {

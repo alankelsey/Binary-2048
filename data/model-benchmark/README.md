@@ -5,6 +5,11 @@ Every step includes the encoded board, legal-action mask, all engine-evaluated
 candidate boards, selected action, outcome, tokens, fallback status, and model
 latency. See `manifest.json` for row counts and SHA-256 checksums.
 
+The formal V1 release candidate is documented in
+[`DATASET_CARD.md`](./DATASET_CARD.md). `release-manifest.json` allowlists only
+the four reviewed Parquet payloads and their release checksums; JSONL remains
+the canonical working representation in this application repository.
+
 ## Trace regeneration cohort
 
 - Experiment: `trace-regeneration-2026-09`

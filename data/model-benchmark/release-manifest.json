@@ -1,0 +1,42 @@
+{
+  "releaseSchemaVersion": 1,
+  "status": "candidate",
+  "dataset": "Binary-2048 Model Decision Traces",
+  "version": "1.0.0",
+  "proposedTag": "model-benchmark-v1.0.0",
+  "generatedAtISO": "2026-09-05T21:50:45.486Z",
+  "rulesetId": "binary2048-v1",
+  "exportSchemaVersion": 1,
+  "documents": [
+    "DATASET_CARD.md",
+    "release-manifest.json",
+    "../../LICENSE"
+  ],
+  "files": {
+    "hosted_model_steps.parquet": {
+      "rows": 250,
+      "sha256": "4a0e0e3eda5c301a861e8c1e468671c6b1d5b50294670b32754a535882620500"
+    },
+    "ollama_model_steps.parquet": {
+      "rows": 125,
+      "sha256": "cf3ec5e3a01fbe8d9dd474f3f7d864e240d215e89fc5aff6d7917a7e0298e64a"
+    },
+    "rollout_steps.parquet": {
+      "rows": 112,
+      "sha256": "8521d3431384b792ddb402dd443007df23da0a3c7b19b13d2e8b788f4643a3e9"
+    },
+    "run_metrics.parquet": {
+      "rows": 40,
+      "sha256": "65cb91d4510448b44b69d52f56d481c3e98ad5faceb6c06011fcd16dedda388b"
+    }
+  },
+  "excluded": [
+    "*.jsonl",
+    "docs/hf-benchmark-runs.json",
+    "artifacts/**",
+    "*.pkl",
+    "operational logs",
+    "environment files",
+    "internal handoff documents"
+  ]
+}

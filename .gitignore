@@ -28,5 +28,6 @@ labels.csv
 replays.parquet
 labels.parquet
 dataset_card.md
+!data/model-benchmark/DATASET_CARD.md
 next-env.d.ts
 *.tsbuildinfo

@@ -391,6 +391,18 @@ working hypothesis that Atlas/MongoDB is the primary cost driver and compare
 measured total cost of ownership—not web-hosting sticker price alone—before
 any Amplify-to-VPS or Lightsail migration is proposed.
 
+The research audit has since decoded all four Parquet files and proved all 527
+embedded records match canonical JSONL. The decoded and canonical scans found
+no player/account identifiers, MongoDB data, credentials, environment values,
+internal hosts, URLs, email/IP/path data, or token patterns. Reachable-history
+and GitHub metadata review confirms the dataset has already been public since
+commit `b47ffa3`; no dataset tag or GitHub release exists. A complete candidate
+dataset card and release-specific manifest now propose version `1.0.0` and tag
+`model-benchmark-v1.0.0`, allowlisting only documentation, the repository
+license, and four Parquet files. Do not publish them yet. Remaining approval
+gates are owner/licensing/third-party attribution and explicit authorization
+of the version/tag, followed by checksum verification of the published assets.
+
 The tutorial/mobile parents and authenticated acceptance parent are complete
 for the revised V1 scope. The physical-device checks and fixed-egress work are
 now end-of-V2 items. Do not treat Amplify `WEB_COMPUTE` as having stable
