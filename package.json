@@ -37,6 +37,7 @@
     "test:model-dataset-export": "node --test ./scripts/model-benchmark-export-lib.test.mjs",
     "test:challenge-benchmark": "node --test ./scripts/challenge-benchmark-lib.test.mjs",
     "models:export:dataset": "node ./scripts/export-model-benchmark-dataset.mjs",
+    "research:release:audit": "node ./scripts/research-release-audit.mjs",
     "bot:key:generate": "node ./scripts/generate-bot-api-key.mjs",
     "league:sandbox:sim": "node ./scripts/league-sandbox-sim.mjs",
     "bot:tourney:dev": "bash ./scripts/bot-tournament-dev.sh",

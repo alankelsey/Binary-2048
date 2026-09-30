@@ -273,6 +273,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add `/api/runs/:id` + `/api/runs/:id/replay` backed by persistent storage
 - [x] Add deterministic training dataset export job (Parquet/JSONL) for ML with PII-safe schema
 - [ ] Keep `botvsbot/binary2048` private until a public research-release audit is approved
+  - [ ] Restore or confirm authenticated access to the intended `botvsbot/binary2048` repository; the 2026-09-29 read-only audit could not resolve it and therefore could not verify its visibility, history, or contents ([audit](./research-release-audit-2026-09-29.md))
 - [ ] Before public release, verify every published row is synthetic bot-generated data with no player identifiers, Mongo records, secrets, environment values, operational logs, or internal handoff notes
 - [ ] Publish research-safe files only (`README.md`/dataset card and Parquet data); exclude the executable/non-portable pickle replay buffer unless a documented need and security review justify it
 - [ ] Complete public dataset documentation: provenance, dataset/engine/ruleset versions, seed range and RNG semantics, bot policy/version, exact generation command, limitations, intended uses, and citation
@@ -400,6 +401,7 @@ active V1-only scope.
     - [ ] Verify the same critical flow, safe-area padding, and dock layout on iPhone Safari
     - [ ] Repeat the authenticated sign-in, session-resume, gameplay, and sign-out flow on Android Chrome
   - [ ] Migrate Mongo-touching workloads to an approved fixed-egress runtime and reduce Atlas network access from the temporary broad allowlist when its cost/security trigger is met
+  - [ ] Reassess hosting after collecting 30 consecutive days of itemized production billing; separate Amplify, WAF, Atlas/MongoDB, transfer, and ancillary charges, confirm whether MongoDB is the primary cost driver, and compare the measured total cost of ownership with AWS Lightsail and a comparable managed/unmanaged VPS before proposing a migration
   - [ ] Evaluate and design the merch/swag offering
     - [ ] Evaluate print-on-demand providers, margins, fulfillment risk, and brand-quality thresholds
     - [ ] Add a simple swag landing/view concept and decide whether it lives in-app, on GitHub Pages, or on an external storefront

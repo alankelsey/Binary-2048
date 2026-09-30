@@ -48,6 +48,22 @@ newer server value, and sign-out should fall back to the guest cookie. This
 preference must remain outside ranked records, game sessions, and training
 data; a storage outage must not block starting a game or tutorial.
 
+### Hosting cost reassessment
+
+Do not migrate hosting from estimates alone. After 30 consecutive days of
+representative production billing are available, itemize Amplify, WAF,
+Atlas/MongoDB, data transfer, and ancillary charges. The current working
+hypothesis is that MongoDB accounts for most of the recurring cost; the review
+must confirm or reject that with billing evidence rather than folding database
+cost into the web-hosting comparison.
+
+Compare the measured baseline with AWS Lightsail and a comparable VPS using
+total cost of ownership: compute, storage, backups, TLS/reverse proxy,
+monitoring, patching, deployment/rollback, availability, and operator time.
+Retaining Atlas while moving only the web runtime must be evaluated as a
+separate option. Produce a recommendation and migration trigger; do not
+provision or migrate infrastructure as part of the review.
+
 ## Shared findings from both reports
 
 ### 1. The visible board is gated by a server round trip

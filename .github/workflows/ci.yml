@@ -38,5 +38,8 @@ jobs:
       - name: Unit tests
         run: npm run test:unit
 
+      - name: Research dataset release guard
+        run: npm run research:release:audit
+
       - name: Production build smoke
         run: npm run build

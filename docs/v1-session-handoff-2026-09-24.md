@@ -370,6 +370,24 @@ After this slice is deployed, the next non-cost V1 workstream is the private
 `botvsbot/binary2048` public research-release audit and dataset documentation.
 Do not change that repository's visibility until every release gate passes.
 
+That audit started on 2026-09-29. The currently authenticated GitHub identity
+cannot resolve `botvsbot/binary2048`, and a read-only organization listing did
+not expose it, so its visibility, history, and contents remain unverified. The
+local canonical model export was inventoried: its eight JSONL/Parquet hashes
+match the checked-in manifest, and a targeted scan of the JSONL sources found
+no obvious credential or player-identity fields. This is preliminary evidence,
+not release approval. `npm run research:release:audit` now locks the manifest
+hashes and row counts and scans every canonical JSONL row in CI. The ignored
+archive contains an ineligible pickle replay buffer and internal handoff.
+Continue from
+[`research-release-audit-2026-09-29.md`](./research-release-audit-2026-09-29.md),
+restore or confirm read access to the exact target, and keep it private.
+
+V2 now includes a 30-day itemized hosting-cost reassessment. It must test the
+working hypothesis that Atlas/MongoDB is the primary cost driver and compare
+measured total cost of ownership—not web-hosting sticker price alone—before
+any Amplify-to-VPS or Lightsail migration is proposed.
+
 The tutorial/mobile parents and authenticated acceptance parent are complete
 for the revised V1 scope. The physical-device checks and fixed-egress work are
 now end-of-V2 items. Do not treat Amplify `WEB_COMPUTE` as having stable
