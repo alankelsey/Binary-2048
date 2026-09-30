@@ -6,9 +6,9 @@ Status: V1 shared leaderboard persistence and shared production bot quotas are a
 
 ## Production baseline
 
-- Current application baseline: `b8ca42a` (`centralize server admin
-  authority`); GitHub CI and Amplify Deploy Watch passed, and Amplify job
-  `359` deployed the commit.
+- Current application baseline: `82c46c5` (`restore Amplify admin authority
+  environment`); GitHub CI and Amplify Deploy Watch passed, and Amplify job
+  `363` deployed the commit.
 - Production uses `BINARY2048_LEADERBOARD_STORE=mongo` with the rotated Atlas
   application credential and the approved protected-acceptance admin token.
 - Post-cold-start production smoke verification passed.
@@ -357,8 +357,14 @@ the generic `process.env` object. The fix uses direct property references for
 both `BINARY2048_ADMIN_TOKEN` and `BINARY2048_ADMIN_SUBJECTS` and adds the
 allowlist to `next.config.mjs` beside the token. Focused authority/ops/inventory
 coverage passes 10 suites / 30 tests and typecheck passes. Production acceptance
-must prove both authorized reads and anonymous `no-store` failures after this
-second correction deploys.
+proved all five passive/read endpoints return 200 with the existing service
+token. An anonymous storage-status request returned 401 with
+`Cache-Control: no-store`, and an immediate authorized request to the same URL
+returned 200, closing the cache-poisoning regression. GitHub CI and the Amplify
+deploy watch passed for commits `e6cf452`, `8781be9`, and `82c46c5`; the final
+correction deployed through Amplify job `363`. Production-safe Playwright
+passed 9/9. No active production storage write probe was run for this read-only
+acceptance.
 
 After this slice is deployed, the next non-cost V1 workstream is the private
 `botvsbot/binary2048` public research-release audit and dataset documentation.
