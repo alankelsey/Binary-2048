@@ -349,6 +349,17 @@ storage status/smoke, league, leaderboard, models, quota/leaderboard probes,
 and inventory grants. Re-run production acceptance after the corrective
 deployment and record only the observed result.
 
+The cache-control correction alone did not restore authorized production
+reads: an uncached invalid inventory-grant `POST` also returned 401 with the
+stored service token. The confirmed deployment cause is that Amplify does not
+forward build variables to the SSR runtime, while the new authority helper read
+the generic `process.env` object. The fix uses direct property references for
+both `BINARY2048_ADMIN_TOKEN` and `BINARY2048_ADMIN_SUBJECTS` and adds the
+allowlist to `next.config.mjs` beside the token. Focused authority/ops/inventory
+coverage passes 10 suites / 30 tests and typecheck passes. Production acceptance
+must prove both authorized reads and anonymous `no-store` failures after this
+second correction deploys.
+
 After this slice is deployed, the next non-cost V1 workstream is the private
 `botvsbot/binary2048` public research-release audit and dataset documentation.
 Do not change that repository's visibility until every release gate passes.

@@ -1,5 +1,7 @@
 import { createAuthBridgeToken } from "@/lib/binary2048/auth-bridge";
 import { getAdminAuthority, isAdminRequest, isAdminSubject } from "@/lib/binary2048/admin-auth";
+import fs from "node:fs";
+import path from "node:path";
 
 function bearer(subject: string, tier: "guest" | "authed" | "paid" = "authed", expOffsetSeconds = 60) {
   const token = createAuthBridgeToken(
@@ -10,6 +12,12 @@ function bearer(subject: string, tier: "guest" | "authed" | "paid" = "authed", e
 }
 
 describe("server-verified admin authority", () => {
+  it("bakes both admin variables for Amplify SSR", () => {
+    const config = fs.readFileSync(path.join(process.cwd(), "next.config.mjs"), "utf8");
+    expect(config).toContain("BINARY2048_ADMIN_TOKEN: process.env.BINARY2048_ADMIN_TOKEN");
+    expect(config).toContain("BINARY2048_ADMIN_SUBJECTS: process.env.BINARY2048_ADMIN_SUBJECTS");
+  });
+
   beforeEach(() => {
     process.env.BINARY2048_AUTH_BRIDGE_SECRET = "admin-auth-bridge-secret";
     process.env.BINARY2048_ADMIN_TOKEN = "admin-service-token";

@@ -10,6 +10,13 @@ type AdminEnvironment = {
   BINARY2048_ADMIN_SUBJECTS?: string;
 };
 
+function deployedAdminEnvironment(): AdminEnvironment {
+  return {
+    BINARY2048_ADMIN_TOKEN: process.env.BINARY2048_ADMIN_TOKEN,
+    BINARY2048_ADMIN_SUBJECTS: process.env.BINARY2048_ADMIN_SUBJECTS
+  };
+}
+
 function constantTimeEqual(left: string, right: string): boolean {
   if (!left || !right) return false;
   const leftDigest = createHash("sha256").update(left, "utf8").digest();
@@ -26,11 +33,11 @@ function configuredAdminSubjects(raw: string | undefined): Set<string> {
   );
 }
 
-export function isAdminSubject(subject: string | null | undefined, env: AdminEnvironment = process.env as AdminEnvironment): boolean {
+export function isAdminSubject(subject: string | null | undefined, env: AdminEnvironment = deployedAdminEnvironment()): boolean {
   return Boolean(subject) && configuredAdminSubjects(env.BINARY2048_ADMIN_SUBJECTS).has(subject!);
 }
 
-export function getAdminAuthority(req: Request, env: AdminEnvironment = process.env as AdminEnvironment): AdminAuthority | null {
+export function getAdminAuthority(req: Request, env: AdminEnvironment = deployedAdminEnvironment()): AdminAuthority | null {
   const configuredToken = env.BINARY2048_ADMIN_TOKEN ?? "";
   const providedToken = req.headers.get("x-admin-token") ?? "";
   if (constantTimeEqual(configuredToken, providedToken)) return { kind: "service-token" };
@@ -42,6 +49,6 @@ export function getAdminAuthority(req: Request, env: AdminEnvironment = process.
   return null;
 }
 
-export function isAdminRequest(req: Request, env: AdminEnvironment = process.env as AdminEnvironment): boolean {
+export function isAdminRequest(req: Request, env: AdminEnvironment = deployedAdminEnvironment()): boolean {
   return getAdminAuthority(req, env) !== null;
 }

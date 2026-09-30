@@ -23,6 +23,13 @@ Both environment variables are server-only. Never prefix them with
 log them. A user being paid or authenticated is insufficient unless the
 verified subject is separately allowlisted.
 
+Amplify `WEB_COMPUTE` does not forward these build variables to the SSR Lambda
+runtime. `next.config.mjs` therefore includes both values in the server build,
+and the authority helper references each `process.env` property directly so
+Next.js can replace it. Keep both entries together when changing deployment
+configuration; a generic runtime `process.env` object read is not equivalent on
+this host.
+
 ## Failure behavior
 
 - Missing configuration fails closed.
