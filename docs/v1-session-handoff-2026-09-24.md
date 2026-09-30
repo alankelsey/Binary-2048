@@ -341,6 +341,14 @@ such. Making them fleet-consistent would add Mongo writes or metered monitoring
 queries, so that final aggregation is now in the cost-gated V1 tail per the
 user's direction. The leaderboard source is already shared in production.
 
+The first deployment of this slice exposed a cache-safety defect during
+acceptance: after anonymous 401 checks, authenticated reads received the same
+CloudFront error response. Every centralized-admin route now marks its generic
+401 as `Cache-Control: no-store`; focused coverage asserts this for telemetry,
+storage status/smoke, league, leaderboard, models, quota/leaderboard probes,
+and inventory grants. Re-run production acceptance after the corrective
+deployment and record only the observed result.
+
 After this slice is deployed, the next non-cost V1 workstream is the private
 `botvsbot/binary2048` public research-release audit and dataset documentation.
 Do not change that repository's visibility until every release gate passes.

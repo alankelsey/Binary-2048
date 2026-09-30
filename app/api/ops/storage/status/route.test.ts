@@ -16,7 +16,9 @@ describe("GET /api/ops/storage/status", () => {
   });
 
   it("rejects unauthenticated access", async () => {
-    expect((await GET(new Request("http://localhost/api/ops/storage/status"))).status).toBe(401);
+    const res = await GET(new Request("http://localhost/api/ops/storage/status"));
+    expect(res.status).toBe(401);
+    expect(res.headers.get("cache-control")).toBe("no-store");
   });
 
   it("reports configuration without running a connectivity probe", async () => {

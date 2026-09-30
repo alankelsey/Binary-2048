@@ -32,7 +32,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   if (!hasStoreAdminAuthority(req)) {
-    return NextResponse.json({ error: "Admin authorization required" }, { status: 401 });
+    return NextResponse.json({ error: "Admin authorization required" }, { status: 401, headers: { "cache-control": "no-store" } });
   }
   try {
     const body = await req.json().catch(() => ({}));

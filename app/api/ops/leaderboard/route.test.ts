@@ -15,7 +15,9 @@ describe("GET /api/ops/leaderboard", () => {
   });
 
   it("rejects unauthenticated access", async () => {
-    expect((await GET(new Request("http://localhost/api/ops/leaderboard"))).status).toBe(401);
+    const res = await GET(new Request("http://localhost/api/ops/leaderboard"));
+    expect(res.status).toBe(401);
+    expect(res.headers.get("cache-control")).toBe("no-store");
   });
 
   it("returns bounded read-only operations data and explicit source scope", async () => {

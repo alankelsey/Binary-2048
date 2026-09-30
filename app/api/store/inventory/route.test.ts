@@ -67,5 +67,6 @@ describe("api store inventory", () => {
       })
     );
     expect(res.status).toBe(401);
+    expect(res.headers.get("cache-control")).toBe("no-store");
   });
 });

@@ -32,6 +32,8 @@ verified subject is separately allowlisted.
 - A wrong service token does not fall through to any account-tier check.
 - Routes return the same generic `401 Admin authorization required` response;
   they do not reveal which authority path or configuration was absent.
+- Admin authorization failures return `Cache-Control: no-store` so an anonymous
+  denial cannot be reused for a later authorized request by an intermediary.
 
 ## Operations
 

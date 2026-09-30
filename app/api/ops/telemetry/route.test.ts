@@ -14,6 +14,7 @@ describe("GET /api/ops/telemetry", () => {
   it("rejects unauthenticated access", async () => {
     const res = await GET(new Request("http://localhost/api/ops/telemetry"));
     expect(res.status).toBe(401);
+    expect(res.headers.get("cache-control")).toBe("no-store");
   });
 
   it("returns aggregated telemetry snapshot", async () => {

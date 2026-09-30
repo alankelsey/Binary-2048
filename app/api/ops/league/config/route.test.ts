@@ -20,6 +20,7 @@ describe("league config ops route", () => {
   it("rejects unauthenticated access", async () => {
     const res = await GET(new Request("http://localhost/api/ops/league/config"));
     expect(res.status).toBe(401);
+    expect(res.headers.get("cache-control")).toBe("no-store");
   });
 
   it("allows an explicitly listed verified subject but not an unlisted paid account", async () => {

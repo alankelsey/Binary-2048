@@ -25,7 +25,9 @@ describe("POST /api/ops/storage/leaderboard-probe", () => {
   });
 
   it("rejects missing or incorrect authorization", async () => {
-    await expect(POST(request("read", "wrong"))).resolves.toEqual(expect.objectContaining({ status: 401 }));
+    const res = await POST(request("read", "wrong"));
+    expect(res.status).toBe(401);
+    expect(res.headers.get("cache-control")).toBe("no-store");
   });
 
   it("rejects malformed probe identifiers", async () => {

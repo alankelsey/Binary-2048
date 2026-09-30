@@ -12,7 +12,7 @@ import type { Cell } from "@/lib/binary2048/types";
 
 export async function POST(req: Request) {
   if (!isAdminRequest(req)) {
-    return NextResponse.json({ error: "Admin authorization required" }, { status: 401 });
+    return NextResponse.json({ error: "Admin authorization required" }, { status: 401, headers: { "cache-control": "no-store" } });
   }
 
   try {

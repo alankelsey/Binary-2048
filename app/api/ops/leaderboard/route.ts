@@ -10,7 +10,7 @@ function positiveInt(value: string | null, fallback: number, maximum?: number): 
 
 export async function GET(req: Request) {
   if (!isAdminRequest(req)) {
-    return NextResponse.json({ error: "Admin authorization required" }, { status: 401 });
+    return NextResponse.json({ error: "Admin authorization required" }, { status: 401, headers: { "cache-control": "no-store" } });
   }
 
   const url = new URL(req.url);
@@ -32,6 +32,9 @@ export async function GET(req: Request) {
       { headers: { "cache-control": "no-store" } }
     );
   } catch {
-    return NextResponse.json({ error: "Leaderboard operations data is temporarily unavailable" }, { status: 503 });
+    return NextResponse.json(
+      { error: "Leaderboard operations data is temporarily unavailable" },
+      { status: 503, headers: { "cache-control": "no-store" } }
+    );
   }
 }

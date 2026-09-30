@@ -29,6 +29,7 @@ describe("POST /api/ops/storage/smoke", () => {
   it("rejects when admin token is missing", async () => {
     const res = await POST(new Request("http://localhost/api/ops/storage/smoke", { method: "POST" }));
     expect(res.status).toBe(401);
+    expect(res.headers.get("cache-control")).toBe("no-store");
   });
 
   it("writes and loads a smoke run", async () => {

@@ -28,6 +28,7 @@ describe("POST /api/ops/rate-limit/probe", () => {
   it("rejects incorrect admin authorization before consuming quota", async () => {
     const res = await POST(request("wrong"));
     expect(res.status).toBe(401);
+    expect(res.headers.get("cache-control")).toBe("no-store");
     expect(mockCheckRateLimit).not.toHaveBeenCalled();
   });
 

@@ -12,7 +12,7 @@ type LeagueConfigActionBody = {
 
 export async function GET(req: Request) {
   if (!isAdminRequest(req)) {
-    return NextResponse.json({ error: "Admin authorization required" }, { status: 401 });
+    return NextResponse.json({ error: "Admin authorization required" }, { status: 401, headers: { "cache-control": "no-store" } });
   }
   return NextResponse.json(
     {
@@ -26,7 +26,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   if (!isAdminRequest(req)) {
-    return NextResponse.json({ error: "Admin authorization required" }, { status: 401 });
+    return NextResponse.json({ error: "Admin authorization required" }, { status: 401, headers: { "cache-control": "no-store" } });
   }
   const body = ((await req.json().catch(() => ({}))) as LeagueConfigActionBody);
   if (body.action === "mirror") {
