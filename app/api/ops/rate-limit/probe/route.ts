@@ -1,5 +1,6 @@
 import { randomBytes } from "crypto";
 import { NextResponse } from "next/server";
+import { isAdminRequest } from "@/lib/binary2048/admin-auth";
 import { checkRateLimit } from "@/lib/binary2048/rate-limit";
 
 const PROBE_ID_PATTERN = /^[a-f0-9]{32}$/;
@@ -17,19 +18,14 @@ function runtimeId() {
   return globalProbe.__binary2048_rate_limit_probe_runtime_id;
 }
 
-function isAdmin(req: Request) {
-  const expected = process.env.BINARY2048_ADMIN_TOKEN ?? "";
-  return Boolean(expected) && req.headers.get("x-admin-token") === expected;
-}
-
 function holdMs() {
   const configured = Number(process.env.BINARY2048_RATE_LIMIT_PROBE_HOLD_MS ?? "500");
   return Number.isFinite(configured) ? Math.max(0, Math.min(2_000, Math.floor(configured))) : 500;
 }
 
 export async function POST(req: Request) {
-  if (!isAdmin(req)) {
-    return NextResponse.json({ error: "Admin token required" }, { status: 401 });
+  if (!isAdminRequest(req)) {
+    return NextResponse.json({ error: "Admin authorization required" }, { status: 401 });
   }
 
   const probeId = new URL(req.url).searchParams.get("probeId") ?? "";

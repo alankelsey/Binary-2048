@@ -287,9 +287,29 @@ auth/session verification passed. A read-only production request with
 empty board to page 1. The standard production-safe Playwright suite passed
 9/9 after deployment.
 
-The next non-cost V1 item is the production operations console, beginning with
-an explicit server-verified admin role/claim or allowlist that cannot be granted
-by normal account tier. Do not begin V2 work.
+The production-operations authority prerequisite is complete locally. All
+existing admin routes now delegate to one fail-closed server module. Automation
+retains the existing high-entropy `BINARY2048_ADMIN_TOKEN`, compared through
+fixed-length digests with a timing-safe primitive. Named operators must present
+a valid, unexpired auth-bridge bearer token whose exact subject is separately
+listed in the server-only `BINARY2048_ADMIN_SUBJECTS` allowlist. Guest,
+authenticated, and paid tiers, entitlements, spoofed subject headers, and
+`NEXT_PUBLIC_UI_ADMIN_MODE` grant no authority. Missing configuration fails
+closed. The contract and rotation/revocation rules are documented in
+`docs/admin-authority.md`.
+
+Focused centralized-authority and migrated-route coverage passed 23/23;
+typecheck passed; and the full unit suite passed 154 suites / 524 tests. The
+production build compiled, with its smoke wrapper stopping only at the known
+missing local auth-bridge secret (`503` rather than the configured
+environment's unauthenticated `401`). Production does not need an operator
+subject configured to preserve the existing service-automation path; no
+allowlist value has been added or inferred.
+
+The next non-cost V1 item is exposing authorized, read-only shared operations
+APIs for telemetry, passive storage status, league configuration, leaderboard
+operations, and model-registry data. Keep active storage smoke writes separate
+from passive reads. Do not begin V2 work.
 
 The tutorial/mobile parents and authenticated acceptance parent are complete
 for the revised V1 scope. The physical-device checks and fixed-egress work are

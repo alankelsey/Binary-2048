@@ -1,4 +1,5 @@
 import { createHash } from "crypto";
+import { isAdminRequest } from "@/lib/binary2048/admin-auth";
 import { getVerifiedAuthClaims } from "@/lib/binary2048/auth-context";
 import type { UserTier } from "@/lib/binary2048/security-policy";
 
@@ -20,8 +21,6 @@ export function getStorePrincipal(req: Request): {
   };
 }
 
-export function hasStoreAdminToken(req: Request): boolean {
-  const expected = process.env.BINARY2048_ADMIN_TOKEN ?? "";
-  const provided = req.headers.get("x-admin-token") ?? "";
-  return Boolean(expected && provided && provided === expected);
+export function hasStoreAdminAuthority(req: Request): boolean {
+  return isAdminRequest(req);
 }

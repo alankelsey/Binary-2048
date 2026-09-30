@@ -101,6 +101,7 @@ Before migration:
 - `BINARY2048_REPLAY_S3_REGION`
 - `BINARY2048_REPLAY_S3_PREFIX`
 - `BINARY2048_ADMIN_TOKEN`
+- `BINARY2048_ADMIN_SUBJECTS` (when named operator access is configured)
 - auth-related secrets used by migrated routes
 
 ## Migration Phases

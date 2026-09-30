@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getInventory, grantInventory, listInventoryLedger } from "@/lib/binary2048/inventory";
-import { getStorePrincipal, hasStoreAdminToken } from "@/lib/binary2048/store-auth";
+import { getStorePrincipal, hasStoreAdminAuthority } from "@/lib/binary2048/store-auth";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -31,8 +31,8 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  if (!hasStoreAdminToken(req)) {
-    return NextResponse.json({ error: "Admin token required" }, { status: 401 });
+  if (!hasStoreAdminAuthority(req)) {
+    return NextResponse.json({ error: "Admin authorization required" }, { status: 401 });
   }
   try {
     const body = await req.json().catch(() => ({}));

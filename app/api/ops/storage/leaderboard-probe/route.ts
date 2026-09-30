@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isAdminRequest } from "@/lib/binary2048/admin-auth";
 import {
   listLeaderboardEntriesByPlayer,
   removeLeaderboardEntriesByPlayer,
@@ -14,18 +15,13 @@ type ProbeBody = {
 
 const PROBE_ID_PATTERN = /^[a-f0-9]{32}$/;
 
-function isAdmin(req: Request) {
-  const expected = process.env.BINARY2048_ADMIN_TOKEN ?? "";
-  return Boolean(expected) && req.headers.get("x-admin-token") === expected;
-}
-
 function playerIdFor(probeId: string) {
   return `ops-leaderboard-probe-${probeId}`;
 }
 
 export async function POST(req: Request) {
-  if (!isAdmin(req)) {
-    return NextResponse.json({ error: "Admin token required" }, { status: 401 });
+  if (!isAdminRequest(req)) {
+    return NextResponse.json({ error: "Admin authorization required" }, { status: 401 });
   }
 
   const body = (await req.json().catch(() => ({}))) as ProbeBody;

@@ -260,7 +260,7 @@ export const OPENAPI_SPEC = {
         responses: {
           "200": { description: "Inventory granted" },
           "400": { description: "Invalid payload" },
-          "401": { description: "Admin token required" }
+          "401": { description: "Server-verified admin authority required" }
         }
       }
     },

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isAdminRequest } from "@/lib/binary2048/admin-auth";
 import { buildCanonicalRunRecord } from "@/lib/binary2048/run-record";
 import { getRunStore } from "@/lib/binary2048/run-store";
 import {
@@ -9,16 +10,9 @@ import {
 import { createSession, exportSession, moveSession } from "@/lib/binary2048/sessions";
 import type { Cell } from "@/lib/binary2048/types";
 
-function isAdmin(req: Request) {
-  const expected = process.env.BINARY2048_ADMIN_TOKEN ?? "";
-  if (!expected) return false;
-  const provided = req.headers.get("x-admin-token") ?? "";
-  return provided === expected;
-}
-
 export async function GET(req: Request) {
-  if (!isAdmin(req)) {
-    return NextResponse.json({ error: "Admin token required" }, { status: 401 });
+  if (!isAdminRequest(req)) {
+    return NextResponse.json({ error: "Admin authorization required" }, { status: 401 });
   }
 
   try {

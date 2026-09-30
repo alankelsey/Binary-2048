@@ -195,10 +195,16 @@ export BINARY2048_REPLAY_S3_CONTEST_ONLY=false
 
 # optional sandbox/league rehearsal controls
 export BINARY2048_ADMIN_TOKEN="replace-me"
+export BINARY2048_ADMIN_SUBJECTS="operator@example.com"
 export BINARY2048_LEAGUE_SHADOW_WRITE=false
 export BINARY2048_SANDBOX_API_KEYS="sandbox-key-1,sandbox-key-2"
 export BINARY2048_SANDBOX_RATE_LIMIT_PER_5M=120
 ```
+
+`BINARY2048_ADMIN_SUBJECTS` is an optional, server-only comma/newline-separated
+allowlist of exact verified OAuth bridge subjects. Paid tier and the public UI
+admin-mode flag do not grant authority. See
+[`docs/admin-authority.md`](docs/admin-authority.md) for the complete contract.
 
 Production storage verification (Mongo+S3 path smoke):
 

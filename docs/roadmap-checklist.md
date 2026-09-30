@@ -231,7 +231,7 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
   - [x] Verify the presentation against both populated and empty data without treating the current per-instance leaderboard as durable
 - [x] Add leaderboard pagination plus a current-player rank/highlight after shared leaderboard persistence and authenticated player identity are available
 - [ ] Build a production operations console only after its authority and data prerequisites exist
-  - [ ] Define an explicit server-verified admin role/claim or allowlist; account tier (`guest`, `authed`, or `paid`) must not grant admin access
+  - [x] Define an explicit server-verified admin role/claim or allowlist; account tier (`guest`, `authed`, or `paid`) must not grant admin access
   - [ ] Expose authorized, read-only shared ops APIs for telemetry, storage status, league configuration, leaderboard operations, and model registry data
   - [ ] Keep active storage smoke writes separate from passive health/status reads
   - [ ] Build and accessibility-test the responsive ops UI after those backend prerequisites are complete
