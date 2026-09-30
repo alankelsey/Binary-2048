@@ -10,6 +10,10 @@ describe("GET /api/openapi", () => {
     expect(json?.paths?.["/api/games"]).toBeTruthy();
     expect(json?.paths?.["/api/openapi"]).toBeTruthy();
     expect(json?.paths?.["/api/ops/telemetry"]).toBeTruthy();
+    expect(json?.paths?.["/api/ops/storage/status"]).toBeTruthy();
+    expect(json?.paths?.["/api/ops/storage/smoke"]).toBeTruthy();
+    expect(json?.paths?.["/api/ops/leaderboard"]).toBeTruthy();
+    expect(json?.paths?.["/api/ops/models"]).toBeTruthy();
     expect(json?.paths?.["/api/user/data/export"]).toBeTruthy();
     expect(json?.paths?.["/api/user/data"]).toBeTruthy();
     expect(json?.paths?.["/api/matches/same-seed"]).toBeTruthy();

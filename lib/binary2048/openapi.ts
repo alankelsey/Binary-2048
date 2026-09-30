@@ -79,9 +79,64 @@ export const OPENAPI_SPEC = {
     },
     "/api/ops/telemetry": {
       get: {
-        summary: "Get lightweight route telemetry and anomaly flags",
+        summary: "Get authorized runtime-scoped route telemetry and anomaly flags",
         responses: {
-          "200": { description: "Telemetry snapshot" }
+          "200": { description: "Read-only telemetry snapshot" },
+          "401": { description: "Server-verified admin authority required" }
+        }
+      }
+    },
+    "/api/ops/storage/status": {
+      get: {
+        summary: "Get authorized passive storage configuration status",
+        responses: {
+          "200": { description: "Passive status; performs no connectivity checks or writes" },
+          "401": { description: "Server-verified admin authority required" }
+        }
+      }
+    },
+    "/api/ops/storage/smoke": {
+      post: {
+        summary: "Run authorized active storage write/read/delete smoke verification",
+        responses: {
+          "200": { description: "Active storage probe result" },
+          "401": { description: "Server-verified admin authority required" },
+          "500": { description: "Storage probe failed" }
+        }
+      }
+    },
+    "/api/ops/league/config": {
+      get: {
+        summary: "Get authorized read-only runtime league configuration",
+        responses: {
+          "200": { description: "Production and sandbox league configuration" },
+          "401": { description: "Server-verified admin authority required" }
+        }
+      }
+    },
+    "/api/ops/leaderboard": {
+      get: {
+        summary: "Get authorized read-only leaderboard operations data",
+        parameters: [
+          { name: "namespace", in: "query", required: false, schema: { type: "string", enum: ["production", "sandbox"] } },
+          { name: "seasonMode", in: "query", required: false, schema: { type: "string", enum: ["live", "preview"] } },
+          { name: "practice", in: "query", required: false, schema: { type: "string", enum: ["0", "1"] } },
+          { name: "limit", in: "query", required: false, schema: { type: "integer", minimum: 1, maximum: 100 } },
+          { name: "page", in: "query", required: false, schema: { type: "integer", minimum: 1 } }
+        ],
+        responses: {
+          "200": { description: "Leaderboard page with explicit backend and scope" },
+          "401": { description: "Server-verified admin authority required" },
+          "503": { description: "Leaderboard operations data unavailable" }
+        }
+      }
+    },
+    "/api/ops/models": {
+      get: {
+        summary: "Get authorized read-only runtime model registry data",
+        responses: {
+          "200": { description: "Registered model records with explicit runtime scope" },
+          "401": { description: "Server-verified admin authority required" }
         }
       }
     },

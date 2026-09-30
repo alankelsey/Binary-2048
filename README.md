@@ -549,8 +549,21 @@ BASE_URL=http://localhost:3000 npm run load:stage:abuse
 - `GET /api/marketing/events?limit=50`
   - Lists recent tracked marketing events (newest first)
 - `GET /api/ops/telemetry`
-  - Returns in-memory telemetry snapshot for replay/tournament route latency/error/cost visibility
+  - Requires server-verified admin authority
+  - Returns a runtime-scoped telemetry snapshot for replay/tournament route latency/error/cost visibility
   - Includes anomaly flags (`latency_spike`, `error_rate_spike`, `cost_spike`) per route
+- `GET /api/ops/storage/status`
+  - Requires server-verified admin authority
+  - Returns passive store-mode/scope status without network checks or writes
+- `POST /api/ops/storage/smoke`
+  - Requires server-verified admin authority
+  - Runs the explicit active storage write/read/delete acceptance probe
+- `GET /api/ops/league/config`
+  - Returns authorized read-only production/sandbox configuration with runtime scope
+- `GET /api/ops/leaderboard`
+  - Returns authorized, bounded leaderboard operations data; production identifies Mongo data as shared
+- `GET /api/ops/models`
+  - Returns authorized read-only registered model data with runtime scope
 - `GET /api/user/data/export`
   - Authenticated user data export bundle (inventory, ledger, subscriptions, leaderboard entries)
 - `DELETE /api/user/data`

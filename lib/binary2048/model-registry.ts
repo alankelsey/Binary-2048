@@ -46,6 +46,12 @@ export function enforceModelPin(modelId: string, expectedVersion: string) {
   return found;
 }
 
+export function listRegisteredModels(): ModelRecord[] {
+  return Array.from(registry.values())
+    .map((record) => ({ ...record, metadata: record.metadata ? { ...record.metadata } : undefined }))
+    .sort((a, b) => a.modelId.localeCompare(b.modelId) || b.createdAtISO.localeCompare(a.createdAtISO) || b.version.localeCompare(a.version));
+}
+
 export function resetModelRegistry() {
   registry.clear();
 }

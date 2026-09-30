@@ -44,9 +44,10 @@ verified subject is separately allowlisted.
   providers change.
 - The future operations console must use this module on every server route;
   hiding navigation or checking client state is never authorization.
-- Passive read-only status endpoints and active smoke/write probes remain
-  separate roadmap work. This authority definition does not reclassify an
-  active probe as a passive read.
+- `GET /api/ops/storage/status` is passive and performs no connectivity test or
+  write. `POST /api/ops/storage/smoke` is the separately named active
+  write/read/delete probe and must not be placed on a normal console refresh
+  loop.
 
 The implementation lives in `lib/binary2048/admin-auth.ts`. Existing league,
 storage, quota-probe, and inventory-grant routes all delegate to it.

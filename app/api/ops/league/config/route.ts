@@ -16,10 +16,11 @@ export async function GET(req: Request) {
   }
   return NextResponse.json(
     {
+      source: { scope: "runtime", readOnly: true },
       production: getLeagueConfig("production"),
       sandbox: getLeagueConfig("sandbox")
     },
-    { status: 200 }
+    { status: 200, headers: { "cache-control": "no-store" } }
   );
 }
 

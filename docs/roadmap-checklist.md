@@ -233,7 +233,9 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [ ] Build a production operations console only after its authority and data prerequisites exist
   - [x] Define an explicit server-verified admin role/claim or allowlist; account tier (`guest`, `authed`, or `paid`) must not grant admin access
   - [ ] Expose authorized, read-only shared ops APIs for telemetry, storage status, league configuration, leaderboard operations, and model registry data
-  - [ ] Keep active storage smoke writes separate from passive health/status reads
+    - [x] Ship the authorized no-cost API surface with `no-store` responses and explicit `shared` versus `runtime` source scope; secure the previously public telemetry snapshot
+    - [ ] Replace runtime-scoped telemetry, league configuration, and model-registry sources with fleet-consistent data before calling the API set shared; complete this with the cost-gated work below
+  - [x] Keep active storage smoke writes separate from passive health/status reads
   - [ ] Build and accessibility-test the responsive ops UI after those backend prerequisites are complete
 - [x] Marketing rollout hooks (social share CTAs, referral tracking)
 - [x] Privacy/compliance essentials: privacy page + user data export/delete endpoints
@@ -374,6 +376,7 @@ complete and the user explicitly approves the recurring or usage-based cost.
   - [ ] Run a controlled threshold/block test against the rate rules in non-production and capture the resulting sampled request and retained log event
 - [ ] Move inventory balances, purchase idempotency, and ledger entries from per-instance memory to a shared transactional store before enabling paid features
 - [ ] Convert Mongo session reads to awaited asynchronous hydration, then enable `BINARY2048_SESSION_STORE=mongo` when ranked/multi-device traffic justifies the additional Atlas operations
+- [ ] Add fleet-wide ops persistence/aggregation for telemetry, league configuration, and model-registry data; do not add per-request Mongo writes or metered monitoring queries until their operating cost is approved
 
 ## Binary 2048 V2
 

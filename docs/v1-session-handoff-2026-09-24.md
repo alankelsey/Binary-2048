@@ -313,10 +313,37 @@ direct unauthenticated request to `/api/ops/league/config` returned the
 expected generic `401 Admin authorization required`, while the deploy gate's
 existing service-token checks continued to pass.
 
-The next non-cost V1 item is exposing authorized, read-only shared operations
-APIs for telemetry, passive storage status, league configuration, leaderboard
-operations, and model-registry data. Keep active storage smoke writes separate
-from passive reads. Do not begin V2 work.
+The authorized, read-only operations API work covers telemetry, passive storage
+status, league configuration, leaderboard operations, and model-registry data.
+Active storage smoke writes must remain separate from passive reads. Do not
+begin V2 work.
+
+That read-only API work is now partially complete locally. The previously
+public telemetry snapshot requires centralized admin authority and identifies
+itself as runtime-scoped. New authorized `no-store` reads cover passive storage
+configuration status, bounded leaderboard operations data, and sanitized model
+registry data; the existing league read now also declares its runtime scope.
+Production leaderboard reads identify Mongo as shared. Arbitrary model metadata
+is not returned.
+
+The former mutating `GET /api/ops/storage/health` was renamed to the explicit
+`POST /api/ops/storage/smoke`, and the production verification script follows
+the new route. `GET /api/ops/storage/status` performs no connection attempt or
+write. Focused ops/OpenAPI/docs coverage passed 13 suites / 36 tests. The full
+unit suite passed 157 suites / 532 tests, typecheck passed, and the production
+build compiled. Its local smoke wrapper stopped only at the known missing local
+auth-bridge secret (`503` rather than the configured environment's
+unauthenticated `401`).
+
+Do not mark the shared-ops-API parent complete yet. Telemetry, league
+configuration, and the model registry remain process-local and are labeled as
+such. Making them fleet-consistent would add Mongo writes or metered monitoring
+queries, so that final aggregation is now in the cost-gated V1 tail per the
+user's direction. The leaderboard source is already shared in production.
+
+After this slice is deployed, the next non-cost V1 workstream is the private
+`botvsbot/binary2048` public research-release audit and dataset documentation.
+Do not change that repository's visibility until every release gate passes.
 
 The tutorial/mobile parents and authenticated acceptance parent are complete
 for the revised V1 scope. The physical-device checks and fixed-egress work are

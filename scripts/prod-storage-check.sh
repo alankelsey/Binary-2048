@@ -14,8 +14,9 @@ echo "Running production storage check against: ${BASE}"
 
 RESP="$(
   curl -sS "${CURL_OPTS[@]}" \
+    -X POST \
     -H "x-admin-token: ${ADMIN_TOKEN}" \
-    "${BASE}/api/ops/storage/health"
+    "${BASE}/api/ops/storage/smoke"
 )"
 
 if ! command -v jq >/dev/null 2>&1; then

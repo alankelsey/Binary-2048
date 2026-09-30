@@ -1,9 +1,9 @@
-import { GET } from "@/app/api/ops/storage/health/route";
+import { POST } from "@/app/api/ops/storage/smoke/route";
 import { resetRunStoreForTests } from "@/lib/binary2048/run-store";
 import { resetSessionStoreForTests } from "@/lib/binary2048/session-store";
 import { resetLeaderboard } from "@/lib/binary2048/leaderboard";
 
-describe("GET /api/ops/storage/health", () => {
+describe("POST /api/ops/storage/smoke", () => {
   beforeEach(async () => {
     process.env.BINARY2048_ADMIN_TOKEN = "ops-admin-token";
     process.env.BINARY2048_RUN_STORE = "memory";
@@ -27,15 +27,16 @@ describe("GET /api/ops/storage/health", () => {
   });
 
   it("rejects when admin token is missing", async () => {
-    const res = await GET(new Request("http://localhost/api/ops/storage/health"));
+    const res = await POST(new Request("http://localhost/api/ops/storage/smoke", { method: "POST" }));
     expect(res.status).toBe(401);
   });
 
   it("writes and loads a smoke run", async () => {
-    const req = new Request("http://localhost/api/ops/storage/health", {
+    const req = new Request("http://localhost/api/ops/storage/smoke", {
+      method: "POST",
       headers: { "x-admin-token": "ops-admin-token" }
     });
-    const res = await GET(req);
+    const res = await POST(req);
     const json = await res.json();
     expect(res.status).toBe(200);
     expect(json.ok).toBe(true);

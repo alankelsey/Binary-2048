@@ -6,6 +6,12 @@ This app now records lightweight route telemetry for high-cost replay/tournament
 
 - `GET /api/ops/telemetry`
 
+The endpoint requires server-verified admin authority and returns
+`Cache-Control: no-store`. Its `source.scope` is `runtime`: the counters belong
+to the serving process and are not a fleet-wide aggregate. Shared aggregation
+is intentionally deferred because writing every route observation to Mongo
+would add database traffic and request-path latency.
+
 ## Current Instrumented Routes
 
 - `/api/bots/tournament`
@@ -34,7 +40,6 @@ Threshold env vars:
 
 ## Operational Use
 
-1. Poll `/api/ops/telemetry` on a schedule.
+1. Poll `/api/ops/telemetry` with approved service-token automation.
 2. Alert when any route has non-empty `anomalies`.
 3. Correlate spikes with WAF logs and rate-limit events.
-

@@ -10,7 +10,7 @@ import {
 import { createSession, exportSession, moveSession } from "@/lib/binary2048/sessions";
 import type { Cell } from "@/lib/binary2048/types";
 
-export async function GET(req: Request) {
+export async function POST(req: Request) {
   if (!isAdminRequest(req)) {
     return NextResponse.json({ error: "Admin authorization required" }, { status: 401 });
   }
@@ -87,15 +87,15 @@ export async function GET(req: Request) {
           leaderboardRemoved
         }
       },
-      { status: 200 }
+      { status: 200, headers: { "cache-control": "no-store" } }
     );
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       {
         ok: false,
-        error: error instanceof Error ? error.message : "Storage health failed"
+        error: "Storage smoke verification failed"
       },
-      { status: 500 }
+      { status: 500, headers: { "cache-control": "no-store" } }
     );
   }
 }
