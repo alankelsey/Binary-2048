@@ -409,6 +409,18 @@ itself prove that the tag or GitHub release exists; create the release from the
 validated allowlist and verify the remote tag and downloaded asset checksums
 before closing the remaining roadmap gates.
 
+The immutable research release is now complete. Tag
+`model-benchmark-v1.0.0` dereferences to approved commit `5b03d5f`; the public
+GitHub release is non-draft and non-prerelease. Read-back found exactly the
+seven allowlisted assets, and freshly downloaded Parquet checksums match the
+release manifest. The remaining documentation/license/manifest digests match
+GitHub's asset digests. No JSONL, source ledger, pickle, environment, log, or
+handoff asset was published. The research-release parent and all of its V1
+children are complete. No non-cost V1 item remains open. The production ops
+console is blocked on its fleet-consistent cost-gated data prerequisite, and
+all other open V1 work is in the final cost-gated section. Do not begin that
+section without explicit approval.
+
 The tutorial/mobile parents and authenticated acceptance parent are complete
 for the revised V1 scope. The physical-device checks and fixed-egress work are
 now end-of-V2 items. Do not treat Amplify `WEB_COMPUTE` as having stable

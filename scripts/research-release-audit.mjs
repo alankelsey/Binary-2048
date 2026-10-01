@@ -144,7 +144,7 @@ async function main() {
     `Research dataset audit passed: ${expectedFiles.length} files, ` +
       `${Object.values(manifest.rows).reduce((sum, count) => sum + count, 0)} canonical rows.`,
   );
-  console.log("Repository-history and release publishing remain manual gates.");
+  console.log("Repository history and remote-release state require separate verification evidence.");
 }
 
 main().catch((error) => {

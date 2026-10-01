@@ -1,6 +1,6 @@
 # Binary-2048 Research Release Audit
 
-Status: in progress
+Status: complete
 Audit started: 2026-09-29  
 V1 target: existing public `alankelsey/Binary-2048` repository
 
@@ -86,16 +86,20 @@ internal handoff notes, or deployment configuration.
 
 ## Blocking follow-ups
 
-1. Publish the approved allowlisted version `1.0.0` release using tag
-   `model-benchmark-v1.0.0`.
-2. After publication, verify the tag target, release asset names, sizes, and
-   SHA-256 checksums against `release-manifest.json`.
+None for the V1 release. Any future human-derived or consent-sensitive dataset
+requires a new gated review rather than inheriting this approval.
 
 ## Current decision
 
-Approved as an intentional dataset release, but not yet published. Existing
-public exposure is acknowledged. History and decoded-content reviews, the dataset card, and
-the allowlisted candidate manifest, and ownership/licensing approval are
-complete. The immutable release and post-publication verification remain open.
-No repository visibility, tag, release, or other external state was changed by
-this audit at this checkpoint.
+Approved and published as an intentional dataset release. The annotated tag
+`model-benchmark-v1.0.0` dereferences to approved commit
+`5b03d5f4b387ade9850818b23d3dda57695edd1c`. The GitHub release is public,
+non-draft, and non-prerelease at
+<https://github.com/alankelsey/Binary-2048/releases/tag/model-benchmark-v1.0.0>.
+
+Post-publication read-back found exactly seven allowlisted assets: dataset
+card, release manifest, Apache-2.0 license, and four Parquet files. Freshly
+downloaded Parquet SHA-256 values match `release-manifest.json`; the remaining
+three file digests match GitHub's asset digests. The release contains no JSONL,
+source ledger, pickle, environment, log, or handoff asset. The V1 audit and
+immutable-release gate are complete.
