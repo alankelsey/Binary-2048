@@ -144,7 +144,7 @@ async function main() {
     `Research dataset audit passed: ${expectedFiles.length} files, ` +
       `${Object.values(manifest.rows).reduce((sum, count) => sum + count, 0)} canonical rows.`,
   );
-  console.log("Repository-history, ownership, and licensing review remain manual gates.");
+  console.log("Repository-history and release publishing remain manual gates.");
 }
 
 main().catch((error) => {

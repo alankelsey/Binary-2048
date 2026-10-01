@@ -1,9 +1,11 @@
 {
   "releaseSchemaVersion": 1,
-  "status": "candidate",
+  "status": "owner-approved",
   "dataset": "Binary-2048 Model Decision Traces",
   "version": "1.0.0",
   "proposedTag": "model-benchmark-v1.0.0",
+  "ownerApprovalDate": "2026-09-30",
+  "license": "Apache-2.0",
   "generatedAtISO": "2026-09-05T21:50:45.486Z",
   "rulesetId": "binary2048-v1",
   "exportSchemaVersion": 1,

@@ -80,20 +80,22 @@ internal handoff notes, or deployment configuration.
   `model-benchmark-v1.0.0`. It allowlists the dataset card, checksum manifest,
   repository license, and four Parquet files. JSONL, source ledgers, artifacts,
   pickle files, environment files, logs, and handoffs are excluded.
+- On 2026-09-30, the owner confirmed that Binary-2048 owns the synthetic
+  dataset, authorized the allowlisted artifacts under Apache-2.0, and approved
+  version `1.0.0` with tag `model-benchmark-v1.0.0`.
 
 ## Blocking follow-ups
 
-1. Record Binary-2048 ownership and the Apache-2.0/third-party attribution
-   decision.
-2. Review the allowlisted candidate and obtain explicit approval for version
-   `1.0.0` and tag `model-benchmark-v1.0.0` before publishing the release.
-3. After publication, verify the tag target, release asset names, sizes, and
+1. Publish the approved allowlisted version `1.0.0` release using tag
+   `model-benchmark-v1.0.0`.
+2. After publication, verify the tag target, release asset names, sizes, and
    SHA-256 checksums against `release-manifest.json`.
 
 ## Current decision
 
-Not yet approved as an intentional dataset release. Existing public exposure
-is acknowledged. History and decoded-content reviews, the dataset card, and
-the allowlisted candidate manifest are complete. Ownership/licensing approval
-and the immutable release remain open. No repository visibility, tag, release,
-or other external state was changed by this audit.
+Approved as an intentional dataset release, but not yet published. Existing
+public exposure is acknowledged. History and decoded-content reviews, the dataset card, and
+the allowlisted candidate manifest, and ownership/licensing approval are
+complete. The immutable release and post-publication verification remain open.
+No repository visibility, tag, release, or other external state was changed by
+this audit at this checkpoint.

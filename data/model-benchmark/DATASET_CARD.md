@@ -1,7 +1,7 @@
 # Binary-2048 Model Decision Traces
 
-Release status: V1 candidate; not yet tagged  
-Dataset version candidate: `1.0.0`  
+Release status: owner-approved; immutable tag pending
+Dataset version: `1.0.0`
 Ruleset: `binary2048-v1`  
 Export schema: `1`  
 Generated: 2026-09-05T21:50:45.486Z
@@ -181,12 +181,12 @@ without independent evaluation.
 
 ## License, attribution, and citation
 
-The repository declares Apache-2.0. Formal dataset licensing and third-party
-model/provider attribution remain subject to the owner approval recorded in
-the V1 release audit. No model weights or provider outputs other than selected
-game actions and associated usage/latency metadata are included.
+The Binary-2048 owner confirmed on 2026-09-30 that the synthetic dataset is
+owned by Binary-2048 and authorized for release under Apache-2.0. The release
+includes no model weights or raw provider responses: it records selected game
+actions, engine states/candidates, and associated usage/latency metadata.
 
-Proposed citation, pending owner approval and creation of the immutable tag:
+Citation for the approved version, effective when the immutable tag is created:
 
 ```bibtex
 @dataset{binary2048_model_decision_traces_2026,

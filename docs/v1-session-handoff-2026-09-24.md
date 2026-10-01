@@ -399,9 +399,15 @@ and GitHub metadata review confirms the dataset has already been public since
 commit `b47ffa3`; no dataset tag or GitHub release exists. A complete candidate
 dataset card and release-specific manifest now propose version `1.0.0` and tag
 `model-benchmark-v1.0.0`, allowlisting only documentation, the repository
-license, and four Parquet files. Do not publish them yet. Remaining approval
-gates are owner/licensing/third-party attribution and explicit authorization
-of the version/tag, followed by checksum verification of the published assets.
+license, and four Parquet files. Do not publish them without explicit approval;
+after approval, verify the tag and checksums of the published assets.
+
+On 2026-09-30 the owner confirmed that Binary-2048 owns the synthetic dataset,
+authorized the allowlisted artifacts for Apache-2.0 release, and approved
+version `1.0.0` with tag `model-benchmark-v1.0.0`. This approval does not by
+itself prove that the tag or GitHub release exists; create the release from the
+validated allowlist and verify the remote tag and downloaded asset checksums
+before closing the remaining roadmap gates.
 
 The tutorial/mobile parents and authenticated acceptance parent are complete
 for the revised V1 scope. The physical-device checks and fixed-egress work are
