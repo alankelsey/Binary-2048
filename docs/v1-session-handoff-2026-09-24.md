@@ -1,6 +1,6 @@
 # Binary 2048 V1 Session Handoff
 
-Date: 2026-10-01
+Date: 2026-10-02
 
 Status: V1 shared leaderboard persistence and shared production bot quotas are active and production-accepted on Mongo; mobile acceptance, fixed egress, and remaining merch work moved to the end of V2; V2 implementation otherwise frozen until V1 is complete
 
@@ -14,7 +14,19 @@ paid analytics. Earlier cost-approval-pending notes below are historical.
 
 ## Production baseline
 
-- Current application baseline: `82c46c5` (`restore Amplify admin authority
+- Current application baseline: `330620c` (`complete approved v1 shared
+  infrastructure`); GitHub CI, Amplify Deploy Watch, and Amplify job `370`
+  passed.
+- Production sessions, inventory, ops state, leaderboards, and rate-limit
+  counters use the existing Atlas deployment. Tournament and training requests
+  use the accepted on-demand SQS/Lambda workers.
+- The shared-infrastructure acceptance evidence is recorded in
+  [`v1-shared-infrastructure-acceptance-2026-10-02.md`](./v1-shared-infrastructure-acceptance-2026-10-02.md).
+- The remaining V1 gate is named-operator configuration and production browser
+  acceptance for `/ops`. The page and shared APIs are deployed and fail closed
+  because `BINARY2048_ADMIN_SUBJECTS` is currently empty.
+
+- Previous application baseline: `82c46c5` (`restore Amplify admin authority
   environment`); GitHub CI and Amplify Deploy Watch passed, and Amplify job
   `363` deployed the commit.
 - Production uses `BINARY2048_LEADERBOARD_STORE=mongo` with the rotated Atlas

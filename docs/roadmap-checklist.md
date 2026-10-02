@@ -232,9 +232,9 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add leaderboard pagination plus a current-player rank/highlight after shared leaderboard persistence and authenticated player identity are available
 - [ ] Build a production operations console only after its authority and data prerequisites exist
   - [x] Define an explicit server-verified admin role/claim or allowlist; account tier (`guest`, `authed`, or `paid`) must not grant admin access
-  - [ ] Expose authorized, read-only shared ops APIs for telemetry, storage status, league configuration, leaderboard operations, and model registry data
+  - [x] Expose authorized, read-only shared ops APIs for telemetry, storage status, league configuration, leaderboard operations, and model registry data
     - [x] Ship the authorized no-cost API surface with `no-store` responses and explicit `shared` versus `runtime` source scope; secure the previously public telemetry snapshot
-    - [ ] Replace runtime-scoped telemetry, league configuration, and model-registry sources with fleet-consistent data before calling the API set shared; complete this with the cost-gated work below
+    - [x] Replace runtime-scoped telemetry, league configuration, and model-registry sources with fleet-consistent data before calling the API set shared; complete this with the cost-gated work below
   - [x] Keep active storage smoke writes separate from passive health/status reads
   - [ ] Build and accessibility-test the responsive ops UI after those backend prerequisites are complete
 - [x] Marketing rollout hooks (social share CTAs, referral tracking)
@@ -373,10 +373,10 @@ Atlas deployment and logging. Do not add NAT, always-on workers, another paid
 database, or paid analytics. Dev environment and isolated WAF testing moved to
 the end of V2. See [costed scope](./v1-costed-scope-2026-10-01.md).
 
-- [ ] Move synchronous tournament/training generation to a dedicated worker runtime for hard CPU isolation from gameplay
-- [ ] Move inventory balances, purchase idempotency, and ledger entries from per-instance memory to a shared transactional store before enabling paid features
-- [ ] Convert Mongo session reads to awaited asynchronous hydration, then enable `BINARY2048_SESSION_STORE=mongo` when ranked/multi-device traffic justifies the additional Atlas operations
-- [ ] Add fleet-wide ops persistence/aggregation for telemetry, league configuration, and model-registry data; keep aggregation and monitoring usage within the approved small-workload allowance
+- [x] Move synchronous tournament/training generation to a dedicated worker runtime for hard CPU isolation from gameplay ([acceptance](./v1-shared-infrastructure-acceptance-2026-10-02.md))
+- [x] Move inventory balances, purchase idempotency, and ledger entries from per-instance memory to a shared transactional store before enabling paid features ([acceptance](./v1-shared-infrastructure-acceptance-2026-10-02.md))
+- [x] Convert Mongo session reads to awaited asynchronous hydration, then enable `BINARY2048_SESSION_STORE=mongo` when ranked/multi-device traffic justifies the additional Atlas operations ([acceptance](./v1-shared-infrastructure-acceptance-2026-10-02.md))
+- [x] Add fleet-wide ops persistence/aggregation for telemetry, league configuration, and model-registry data; keep aggregation and monitoring usage within the approved small-workload allowance ([acceptance](./v1-shared-infrastructure-acceptance-2026-10-02.md))
 
 ## Binary 2048 V2
 
