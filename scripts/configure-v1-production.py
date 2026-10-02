@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Activate approved V1 shared stores and on-demand workers in Amplify.
 
-Existing branch variables are preserved and no values are printed. This script
-does not configure an operator subject; that identity must be supplied by the
-owner and is managed separately.
+Existing branch variables are preserved and no values are printed. A confirmed
+operator subject can be supplied through BINARY2048_OPERATOR_SUBJECT.
 """
 import json
+import os
 import subprocess
 
 APP_ID = "dzxvs1esr22z9"
@@ -43,6 +43,15 @@ def main():
             "BINARY2048_TRAINING_QUEUE_URL": outputs["TrainingQueueUrl"],
         }
     )
+    operator_subject = os.environ.get("BINARY2048_OPERATOR_SUBJECT", "").strip()
+    if operator_subject:
+        existing_subjects = {
+            subject.strip()
+            for subject in environment.get("BINARY2048_ADMIN_SUBJECTS", "").replace("\n", ",").split(",")
+            if subject.strip()
+        }
+        existing_subjects.add(operator_subject)
+        environment["BINARY2048_ADMIN_SUBJECTS"] = ",".join(sorted(existing_subjects))
     aws(
         "amplify",
         "update-branch",
@@ -61,7 +70,7 @@ def main():
                 "sessions": "mongo",
                 "ops": "mongo",
                 "workers": "sqs",
-                "operatorSubjectChanged": False,
+                "operatorSubjectChanged": bool(operator_subject),
             }
         )
     )

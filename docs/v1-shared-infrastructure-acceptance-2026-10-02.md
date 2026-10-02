@@ -65,9 +65,10 @@ read-only. It shows storage scope, data age, incomplete/stale states, fleet
 activity, league configuration, model registry, and leaderboard status. Unit
 rendering verifies ordinary signed-in users are denied before data loads and
 the accessible headings/table/status states render for an operator. A named
-operator subject has not yet been configured, so production browser access to
-the console correctly remains fail-closed. This is the sole remaining V1 ops
-console acceptance item.
+operator subject was added to the production allowlist and deployed in Amplify
+job `372`. The protected storage-status API returned `401` anonymously and
+`200` with the named operator's signed bridge token, confirming the deployed
+allowlist while preserving fail-closed access.
 
 ## Verification
 
