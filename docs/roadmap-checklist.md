@@ -238,6 +238,11 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
   - [x] Keep active storage smoke writes separate from passive health/status reads
   - [ ] Build and accessibility-test the responsive ops UI after those backend prerequisites are complete
 - [x] Marketing rollout hooks (social share CTAs, referral tracking)
+- [ ] Marketing and launch campaign planning (see `docs/marketing-launch-plan.md`; planning only)
+  - [ ] Market research brief: competitors, search demand, communities, portal rules, timing
+  - [ ] Owner decisions: lead audience, waitlist, portal builds, two social platforms, Hugging Face account, launch window, paid cap
+  - [ ] Press kit and positioning variants
+  - [ ] Phase gates agreed: soft launch after V1 session persistence; hard launch after V1 acceptance and load test
 - [x] Privacy/compliance essentials: privacy page + user data export/delete endpoints
 - [x] GitHub Pages presence (repo landing page and playable-host strategy decision: iframe vs static mirror)
 - [x] GitHub Pages animated intro page with non-playable board demo + production deep-link CTA
