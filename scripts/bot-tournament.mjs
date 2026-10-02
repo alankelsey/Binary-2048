@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { resolveWorkerJob } from "./worker-job-client.mjs";
 
 const BASE = process.env.BASE ?? "http://localhost:3000";
 const SEEDS = Number(process.env.SEEDS ?? "3");
@@ -18,7 +19,7 @@ async function requestJson(path, init = {}) {
     const message = typeof json?.error === "string" ? json.error : `HTTP ${res.status}`;
     throw new Error(`${path} failed: ${message}`);
   }
-  return json;
+  return resolveWorkerJob(BASE, json, init.headers);
 }
 
 async function main() {

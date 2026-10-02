@@ -1,3 +1,5 @@
+import { sharedOpsEnabled, readOpsValue } from "@/lib/binary2048/ops-shared";
+import type { FleetTelemetry } from "../../workers/telemetry";
 type RouteMetric = {
   route: string;
   calls: number;
@@ -69,6 +71,7 @@ export function recordRouteTelemetry(input: {
   durationMs: number;
   costUnits?: number;
 }) {
+  if (sharedOpsEnabled()) console.info(JSON.stringify({ event: "binary2048_route_metric", route: input.route, status: input.status, durationMs: Math.max(0, input.durationMs), costUnits: Math.max(0, input.costUnits ?? 1) }));
   const metric = routeMetric(input.route);
   const durationMs = Math.max(0, Number(input.durationMs) || 0);
   const costUnits = Math.max(0, Number(input.costUnits) || 0);
@@ -132,3 +135,10 @@ export function resetOpsTelemetry() {
   telemetry.startedAtISO = new Date().toISOString();
 }
 
+
+export async function getFleetTelemetry() {
+  if (!sharedOpsEnabled()) return { ...getOpsTelemetrySnapshot(), complete: false, stale: false, available: true };
+  const value = await readOpsValue<FleetTelemetry>("telemetry");
+  if (!value) return { available: false, complete: false, stale: true, generatedAtISO: null, routes: [] };
+  return { ...value, available: true, stale: Date.now() - Date.parse(value.generatedAtISO) > 30 * 60000 };
+}

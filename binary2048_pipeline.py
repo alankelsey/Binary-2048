@@ -114,17 +114,33 @@ class GameClient:
         self.timeout = timeout
         self._session = requests.Session()
 
+    def _resolve_worker_job(self, payload):
+        if not isinstance(payload, dict) or payload.get("status") != "queued" or not payload.get("jobId") or not payload.get("statusUrl"):
+            return payload
+        job_id = payload["jobId"]
+        if len(job_id) != 64 or any(c not in "0123456789abcdef" for c in job_id):
+            raise ValueError("Invalid worker job identifier")
+        deadline = time.monotonic() + 720
+        while time.monotonic() < deadline:
+            time.sleep(2)
+            state = self._get(f"/api/jobs/{job_id}")
+            if state.get("status") == "complete":
+                return state["result"]
+            if state.get("status") == "failed":
+                raise RuntimeError(state.get("error", "Worker execution failed"))
+        raise TimeoutError("Worker job polling deadline exceeded")
+
     def _get(self, path: str, **params: Any) -> Dict:
         url = f"{self.base_url}{path}"
         resp = self._session.get(url, params=params, timeout=self.timeout)
         resp.raise_for_status()
-        return resp.json()
+        return self._resolve_worker_job(resp.json())
 
     def _post(self, path: str, body: Dict) -> Dict:
         url = f"{self.base_url}{path}"
         resp = self._session.post(url, json=body, timeout=self.timeout)
         resp.raise_for_status()
-        return resp.json()
+        return self._resolve_worker_job(resp.json())
 
     # ------------------------------------------------------------------
     # Game lifecycle

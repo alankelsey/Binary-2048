@@ -23,6 +23,13 @@ export const OPENAPI_SPEC = {
   },
   servers: [{ url: "/" }],
   paths: {
+    "/api/jobs/{id}": {
+      get: {
+        summary: "Read an opaque research job capability; results expire after 24 hours",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", pattern: "^[a-f0-9]{64}$" } }],
+        responses: { "200": { description: "Job status and result when complete; Retry-After: 2" }, "404": { description: "Unknown or expired job" }, "429": { description: "Polling quota exhausted" }, "503": { description: "Status unavailable" } }
+      }
+    },
     "/api/auth/dev-token": {
       post: {
         summary: "Dev-only auth bridge token minting helper (env-gated)",
@@ -196,6 +203,7 @@ export const OPENAPI_SPEC = {
           content: { "application/json": { schema: { type: "object" } } }
         },
         responses: {
+          "202": { description: "Queued on isolated compute; poll statusUrl until complete or failed", content: { "application/json": { schema: { type: "object", required: ["jobId", "status", "statusUrl"], properties: { jobId: { type: "string" }, status: { const: "queued" }, statusUrl: { type: "string" } } } } } },
           "200": { description: "Tournament result with ranking and run summaries", headers: RATE_LIMIT_HEADERS },
           "400": { description: "Invalid tournament payload" },
           "429": { description: "Rate limit exceeded", headers: { ...RATE_LIMIT_HEADERS, "Retry-After": { description: "Seconds until retry is allowed", schema: { type: "integer" } } } }
@@ -511,6 +519,7 @@ export const OPENAPI_SPEC = {
         summary: "Generate deterministic bot replay summaries for training",
         parameters: RATE_LIMITED_PARAMETERS,
         responses: {
+          "202": { description: "Queued on isolated compute; poll statusUrl until complete or failed", content: { "application/json": { schema: { type: "object", required: ["jobId", "status", "statusUrl"], properties: { jobId: { type: "string" }, status: { const: "queued" }, statusUrl: { type: "string" } } } } } },
           "200": { description: "Paginated replay summaries", headers: RATE_LIMIT_HEADERS },
           "429": { description: "Shared training rate limit exceeded", headers: { ...RATE_LIMIT_HEADERS, "Retry-After": { description: "Seconds until retry is allowed", schema: { type: "integer" } } } },
           "503": { description: "Training queue full or wait timeout", headers: { "Retry-After": { description: "Seconds before retrying capacity", schema: { type: "integer" } } } }
@@ -522,6 +531,7 @@ export const OPENAPI_SPEC = {
         summary: "Generate labeled board states for training",
         parameters: RATE_LIMITED_PARAMETERS,
         responses: {
+          "202": { description: "Queued on isolated compute; poll statusUrl until complete or failed", content: { "application/json": { schema: { type: "object", required: ["jobId", "status", "statusUrl"], properties: { jobId: { type: "string" }, status: { const: "queued" }, statusUrl: { type: "string" } } } } } },
           "200": { description: "Paginated labeled board states", headers: RATE_LIMIT_HEADERS },
           "429": { description: "Shared training rate limit exceeded", headers: { ...RATE_LIMIT_HEADERS, "Retry-After": { description: "Seconds until retry is allowed", schema: { type: "integer" } } } },
           "503": { description: "Training queue full or wait timeout", headers: { "Retry-After": { description: "Seconds before retrying capacity", schema: { type: "integer" } } } }

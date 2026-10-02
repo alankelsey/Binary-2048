@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { resolveWorkerJob } from "./worker-job-client.mjs";
 
 import { performance } from "node:perf_hooks";
 import { readFile, writeFile } from "node:fs/promises";
@@ -44,7 +45,7 @@ async function requestJson(url, init = {}) {
     throw new Error(`Invalid JSON from ${url}: ${text.slice(0, 240)}`);
   }
   if (!response.ok) throw new Error(`${url} failed: ${payload?.error?.message ?? payload?.error ?? `HTTP ${response.status}`}`);
-  return payload;
+  return resolveWorkerJob(url, payload, init.headers);
 }
 
 function latencyMetrics(trace) {

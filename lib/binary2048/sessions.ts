@@ -1,7 +1,7 @@
 import { applyMove, buildExport, createGame, runScenario } from "@/lib/binary2048/engine";
 import { canContinueAfterWin } from "@/lib/binary2048/continue-policy";
 import { createRecoverySignature, verifyRecoverySignature } from "@/lib/binary2048/recovery-signature";
-import { getSessionStore } from "@/lib/binary2048/session-store";
+import { getSessionStore, inheritSessionRevision } from "@/lib/binary2048/session-store";
 import type { Cell, Dir, GameConfig, GameExport, GameSession, SessionRecoverySnapshot } from "@/lib/binary2048/types";
 
 const UNDO_MODES = {
@@ -34,7 +34,7 @@ type CreateSessionOptions = {
   sessionClass?: "ranked" | "unranked";
 };
 
-export function createSession(config?: Partial<GameConfig>, initialGrid?: Cell[][], options?: CreateSessionOptions) {
+export async function createSession(config?: Partial<GameConfig>, initialGrid?: Cell[][], options?: CreateSessionOptions) {
   const created = createGame(config, initialGrid);
   const session: GameSession = {
     initialState: created.state,
@@ -45,12 +45,12 @@ export function createSession(config?: Partial<GameConfig>, initialGrid?: Cell[]
     undoEvents: [],
     integrity: { sessionClass: options?.sessionClass ?? "unranked", source: "created" }
   };
-  getSessionStore().set(created.state.id, session);
+  (await getSessionStore().set(created.state.id, session));
   return session;
 }
 
-export function getSession(id: string) {
-  return getSessionStore().get(id) ?? null;
+export async function getSession(id: string) {
+  return (await getSessionStore().get(id)) ?? null;
 }
 
 function isRecoverySnapshot(
@@ -64,13 +64,14 @@ function directionsMatch(session: GameSession, snapshot: SessionRecoverySnapshot
   return session.steps.every((step, index) => step.dir === snapshot.moves[index]);
 }
 
-export function resolveSessionWithRecovery(
+export async function resolveSessionWithRecovery(
   id: string,
   recoveryPayload?: GameExport | SessionRecoverySnapshot
 ) {
-  const existing = getSession(id);
+  const existing = (await getSession(id));
   if (!recoveryPayload) return existing;
-  if (!existing) return importRecoveryPayload(recoveryPayload);
+  if (existing && process.env.BINARY2048_SESSION_STORE === "mongo") return existing;
+  if (!existing) return (await importRecoveryPayload(recoveryPayload));
   if (!isRecoverySnapshot(recoveryPayload)) return existing;
 
   const secret = process.env.BINARY2048_RECOVERY_SECRET ?? "";
@@ -82,12 +83,12 @@ export function resolveSessionWithRecovery(
   const sameLengthButDifferentHistory =
     recoveryPayload.moves.length === existing.steps.length && !directionsMatch(existing, recoveryPayload);
   return browserIsNewer || sameLengthButDifferentHistory
-    ? importRecoverySnapshot(recoveryPayload)
+    ? (await importRecoverySnapshot(recoveryPayload))
     : existing;
 }
 
-export function moveSession(id: string, dir: Dir) {
-  const session = getSessionStore().get(id);
+export async function moveSession(id: string, dir: Dir, expected?: GameSession) {
+  const session = expected ?? (await getSessionStore().get(id));
   if (!session) return null;
 
   const before = session.current;
@@ -103,12 +104,12 @@ export function moveSession(id: string, dir: Dir) {
 
   session.steps.push(step);
   session.current = move.state;
-  getSessionStore().set(id, session);
+  (await getSessionStore().set(id, session));
   return session;
 }
 
-export function undoSession(id: string) {
-  const session = getSessionStore().get(id);
+export async function undoSession(id: string, expected?: GameSession) {
+  const session = expected ?? (await getSessionStore().get(id));
   if (!session) return { session: null, error: "NOT_FOUND" as const };
   if (session.steps.length === 0) return { session, error: null };
   if (session.undoUsed >= session.undoLimit) return { session, error: "LIMIT_REACHED" as const };
@@ -122,12 +123,12 @@ export function undoSession(id: string) {
     undoneTurn: step.turn,
     usedAfter: session.undoUsed
   });
-  getSessionStore().set(id, session);
+  (await getSessionStore().set(id, session));
   return { session, error: null };
 }
 
-export function exportSession(id: string) {
-  const session = getSessionStore().get(id);
+export async function exportSession(id: string) {
+  const session = (await getSessionStore().get(id));
   if (!session) return null;
   return buildExport(
     session.current.config,
@@ -144,8 +145,8 @@ export function exportSession(id: string) {
   );
 }
 
-export function exportRecoverySnapshot(id: string): SessionRecoverySnapshot | null {
-  const session = getSessionStore().get(id);
+export async function exportRecoverySnapshot(id: string, currentSession?: GameSession): Promise<SessionRecoverySnapshot | null> {
+  const session = currentSession ?? (await getSessionStore().get(id));
   if (!session) return null;
   const snapshot: SessionRecoverySnapshot = {
     recoveryVersion: 1,
@@ -165,8 +166,8 @@ export function exportRecoverySnapshot(id: string): SessionRecoverySnapshot | nu
   return secret ? { ...snapshot, signature: createRecoverySignature(snapshot, secret) } : snapshot;
 }
 
-export function listSessionState(id: string) {
-  const session = getSessionStore().get(id);
+export async function listSessionState(id: string) {
+  const session = (await getSessionStore().get(id));
   if (!session) return null;
   return {
     id,
@@ -180,7 +181,7 @@ export function listSessionState(id: string) {
   };
 }
 
-export function importSession(exported: GameExport) {
+export async function importSession(exported: GameExport) {
   if (!exported || typeof exported !== "object") throw new Error("Invalid export payload");
   if (!exported.config || !exported.initial?.grid || !Array.isArray(exported.steps)) {
     throw new Error("Export is missing required fields");
@@ -222,11 +223,11 @@ export function importSession(exported: GameExport) {
       importedFromRulesetId: exported.meta?.rulesetId
     }
   };
-  getSessionStore().set(current.id, session);
+  (await getSessionStore().set(current.id, session));
   return session;
 }
 
-export function importRecoverySnapshot(snapshot: SessionRecoverySnapshot) {
+export async function importRecoverySnapshot(snapshot: SessionRecoverySnapshot) {
   if (snapshot?.recoveryVersion !== 1 || snapshot.rulesetId !== "binary2048-v1") {
     throw new Error("Unsupported recovery snapshot");
   }
@@ -234,28 +235,30 @@ export function importRecoverySnapshot(snapshot: SessionRecoverySnapshot) {
     throw new Error("Recovery snapshot is missing required fields");
   }
   const exported = runScenario(snapshot.config, snapshot.initialGrid, snapshot.moves);
-  const recovered = importSession(exported);
+  const recovered = (await importSession(exported));
   const trusted = verifyRecoverySignature(snapshot, process.env.BINARY2048_RECOVERY_SECRET ?? "");
   if (trusted && snapshot.integrity && snapshot.undo) {
     if (snapshot.sessionId) {
       const generatedId = recovered.current.id;
+      const existing = await getSession(snapshot.sessionId);
+      inheritSessionRevision(recovered, existing);
       recovered.initialState.id = snapshot.sessionId;
       recovered.current.id = snapshot.sessionId;
       for (const step of recovered.steps) {
         step.before.id = snapshot.sessionId;
         step.after.id = snapshot.sessionId;
       }
-      getSessionStore().delete(generatedId);
+      (await getSessionStore().delete(generatedId));
     }
     recovered.integrity = { ...snapshot.integrity };
     recovered.undoLimit = snapshot.undo.limit;
     recovered.undoUsed = snapshot.undo.used;
     recovered.undoEvents = snapshot.undo.events.map((event) => ({ ...event }));
-    getSessionStore().set(recovered.current.id, recovered);
+    (await getSessionStore().set(recovered.current.id, recovered));
   }
   return recovered;
 }
 
-export function importRecoveryPayload(snapshot: GameExport | SessionRecoverySnapshot) {
-  return "recoveryVersion" in snapshot ? importRecoverySnapshot(snapshot) : importSession(snapshot);
+export async function importRecoveryPayload(snapshot: GameExport | SessionRecoverySnapshot) {
+  return "recoveryVersion" in snapshot ? (await importRecoverySnapshot(snapshot)) : (await importSession(snapshot));
 }

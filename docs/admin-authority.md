@@ -51,7 +51,8 @@ this host.
   to revoke access.
 - Keep the allowlist minimal and review it whenever OAuth identities or
   providers change.
-- The future operations console must use this module on every server route;
+- The `/ops` operations console requires a server-authenticated subject in the
+  allowlist; its read APIs use this module on every server route;
   hiding navigation or checking client state is never authorization.
 - `GET /api/ops/storage/status` is passive and performs no connectivity test or
   write. `POST /api/ops/storage/smoke` is the separately named active

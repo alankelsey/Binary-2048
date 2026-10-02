@@ -1,3 +1,4 @@
+import { workerJobsEnabled, enqueueWorkerTask, WorkerBudgetError } from "@/lib/binary2048/worker-jobs";
 import { NextResponse } from "next/server";
 import { runBotTournament, type BotId } from "@/lib/binary2048/bot-orchestrator";
 import { evaluateChallenge } from "@/lib/binary2048/challenge-policy";
@@ -102,7 +103,7 @@ export async function POST(req: Request) {
         { status: 429, headers: rateLimitHeaders(quota) }
       );
     }
-    slot = await acquireTournamentSlot(resolveTournamentQueueOptions());
+    if (!workerJobsEnabled()) slot = await acquireTournamentSlot(resolveTournamentQueueOptions());
     const body = ((await req.json().catch(() => ({}))) as TournamentBody);
     const seeds = parseSeedList(body);
     if (seeds.length === 0) {
@@ -116,6 +117,11 @@ export async function POST(req: Request) {
     const requestedTraceDecisions = seeds.length * bots.length * maxMoves;
     if (body.includeTraces === true && requestedTraceDecisions > MAX_TRACE_DECISIONS) {
       throw new EndpointCostCapError("traceDecisions", MAX_TRACE_DECISIONS, requestedTraceDecisions);
+    }
+    if (workerJobsEnabled()) {
+      const job = await enqueueWorkerTask({ kind: "tournament", args: [{ seeds, maxMoves, bots, config: body.config, initialGrid: body.initialGrid, includeTraces: body.includeTraces === true }] });
+      statusCode = 202;
+      return NextResponse.json(job, { status: 202, headers: { ...rateLimitHeaders(quota), "retry-after": "2", "cache-control": "no-store" } });
     }
     const result = runBotTournament({
       seeds,
@@ -134,6 +140,7 @@ export async function POST(req: Request) {
     );
   } catch (error) {
     const headers = quota ? rateLimitHeaders(quota) : undefined;
+    if (error instanceof WorkerBudgetError) { statusCode = 429; return NextResponse.json({ error: error.message, code: "worker_budget_exhausted" }, { status: 429, headers }); }
     if (error instanceof EndpointCostCapError) {
       statusCode = 400;
       return NextResponse.json(

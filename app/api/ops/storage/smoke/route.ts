@@ -22,16 +22,16 @@ export async function POST(req: Request) {
       [null, null, null, null],
       [null, null, null, null]
     ];
-    const session = createSession(
+    const session = (await createSession(
       {
         seed: Date.now(),
         spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] }
       },
       initialGrid,
       { sessionClass: "ranked" }
-    );
-    moveSession(session.current.id, "left");
-    const exported = exportSession(session.current.id);
+    ));
+    (await moveSession(session.current.id, "left", session));
+    const exported = (await exportSession(session.current.id));
     if (!exported) {
       throw new Error("Failed to export smoke session");
     }

@@ -9,12 +9,12 @@ type ExportBody = {
   recoverySnapshot?: GameExport | SessionRecoverySnapshot;
 };
 
-function resolveExport(id: string, recoverySnapshot?: GameExport | SessionRecoverySnapshot) {
-  const session = resolveSessionWithRecovery(id, recoverySnapshot);
-  return session ? exportSession(session.current.id) : null;
+async function resolveExport(id: string, recoverySnapshot?: GameExport | SessionRecoverySnapshot) {
+  const session = (await resolveSessionWithRecovery(id, recoverySnapshot));
+  return session ? (await exportSession(session.current.id)) : null;
 }
 
-function exportResponse(req: Request, id: string, exported: NonNullable<ReturnType<typeof exportSession>>) {
+function exportResponse(req: Request, id: string, exported: NonNullable<Awaited<ReturnType<typeof exportSession>>>) {
   const url = new URL(req.url);
   const compact = url.searchParams.get("compact");
   const wantsCompact = compact === "1" || compact === "true";
@@ -53,7 +53,7 @@ function exportResponse(req: Request, id: string, exported: NonNullable<ReturnTy
 
 export async function GET(req: Request, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
-  const exported = exportSession(id);
+  const exported = (await exportSession(id));
   if (!exported) return NextResponse.json({ error: "Game not found" }, { status: 404 });
   return exportResponse(req, id, exported);
 }
@@ -62,7 +62,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
   const { id } = await context.params;
   try {
     const body = (await req.json().catch(() => ({}))) as ExportBody;
-    const exported = resolveExport(id, body.recoverySnapshot);
+    const exported = (await resolveExport(id, body.recoverySnapshot));
     if (!exported) return NextResponse.json({ error: "Game not found" }, { status: 404 });
     return exportResponse(req, exported.final.id, exported);
   } catch (error) {

@@ -37,7 +37,7 @@ describe("GET /api/user/data/export", () => {
 
   it("exports user-linked inventory/subscription/leaderboard data", async () => {
     const subscriberId = "u_privacy_export";
-    grantInventory({ subscriberId, sku: "undo_charge", quantity: 2, reason: "grant" });
+    (await grantInventory({ subscriberId, sku: "undo_charge", quantity: 2, reason: "grant" }));
     upsertSubscription({
       subscriberId,
       transport: "inapp",
@@ -51,7 +51,7 @@ describe("GET /api/user/data/export", () => {
       [null, null, null, null],
       [null, null, null, null]
     ];
-    const session = createSession({ seed: 910, winTile: 2 }, grid, { sessionClass: "ranked" });
+    const session = (await createSession({ seed: 910, winTile: 2 }, grid, { sessionClass: "ranked" }));
     await submitLeaderboardEntry({
       playerId: subscriberId,
       userTier: "authed",

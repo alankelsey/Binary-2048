@@ -7,7 +7,7 @@ describe("store-webhook processor", () => {
     resetInventoryStore();
   });
 
-  it("grants packet purchase only once for duplicate webhook events", () => {
+  it("grants packet purchase only once for duplicate webhook events", async () => {
     const event = {
       id: "evt_1",
       type: "checkout.session.completed",
@@ -24,16 +24,16 @@ describe("store-webhook processor", () => {
       }
     };
 
-    const first = processStoreWebhookEvent(event);
-    const second = processStoreWebhookEvent(event);
-    const inventory = getInventory("webhook-user");
+    const first = (await processStoreWebhookEvent(event));
+    const second = (await processStoreWebhookEvent(event));
+    const inventory = (await getInventory("webhook-user"));
 
     expect(first.idempotent).toBe(false);
     expect(second.idempotent).toBe(true);
     expect(inventory.balances.undo_charge).toBe(6);
   });
 
-  it("prevents double-grant across different event ids with same payment ref", () => {
+  it("prevents double-grant across different event ids with same payment ref", async () => {
     const base = {
       type: "payment_intent.succeeded",
       data: {
@@ -49,9 +49,9 @@ describe("store-webhook processor", () => {
       }
     };
 
-    const first = processStoreWebhookEvent({ id: "evt_2", ...base });
-    const second = processStoreWebhookEvent({ id: "evt_3", ...base });
-    const inventory = getInventory("webhook-user-2");
+    const first = (await processStoreWebhookEvent({ id: "evt_2", ...base }));
+    const second = (await processStoreWebhookEvent({ id: "evt_3", ...base }));
+    const inventory = (await getInventory("webhook-user-2"));
 
     expect(first.idempotent).toBe(false);
     expect(second.idempotent).toBe(true);

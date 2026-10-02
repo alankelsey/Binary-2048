@@ -101,11 +101,11 @@ export async function POST(req: Request) {
       config = applyLockEconomyPolicy({ ...merged, seed: effectiveSeed }, economyContext);
     }
 
-    const session = createSession(config, initialGrid, { sessionClass });
+    const session = (await createSession(config, initialGrid, { sessionClass }));
     return NextResponse.json({
       id: session.current.id,
       current: session.current,
-      recoverySnapshot: exportRecoverySnapshot(session.current.id),
+      recoverySnapshot: (await exportRecoverySnapshot(session.current.id, session)),
       steps: session.steps,
       undo: getUndoMeta(session),
       integrity: session.integrity,

@@ -1,8 +1,16 @@
 # Binary 2048 V1 Session Handoff
 
-Date: 2026-09-29
+Date: 2026-10-01
 
 Status: V1 shared leaderboard persistence and shared production bot quotas are active and production-accepted on Mongo; mobile acceptance, fixed egress, and remaining merch work moved to the end of V2; V2 implementation otherwise frozen until V1 is complete
+
+## Active scope — 2026-10-01
+
+The user moved the dev environment and isolated WAF testing to the end of V2,
+and approved V1 costs for on-demand tournament/training workers, inventory and
+session persistence, and shared ops data/console. Reuse the existing Atlas
+deployment and logging. No NAT, always-on workers, second paid database, or
+paid analytics. Earlier cost-approval-pending notes below are historical.
 
 ## Production baseline
 

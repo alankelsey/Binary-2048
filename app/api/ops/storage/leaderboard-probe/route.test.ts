@@ -31,7 +31,7 @@ describe("POST /api/ops/storage/leaderboard-probe", () => {
   });
 
   it("rejects malformed probe identifiers", async () => {
-    await expect(POST(request("read", "ops-admin-token", "../unsafe"))).resolves.toEqual(expect.objectContaining({ status: 400 }));
+    expect((await POST(request("read", "ops-admin-token", "../unsafe")))).toEqual(expect.objectContaining({ status: 400 }));
   });
 
   it("writes, reads, and deletes an isolated practice entry in separate requests", async () => {

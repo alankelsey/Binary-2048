@@ -1,3 +1,4 @@
+import { usesSharedInventory, readSharedInventory, readSharedLedger, changeSharedInventory, deleteSharedInventory, type InventoryChange } from "@/lib/binary2048/inventory-mongo";
 export type StoreSku = "undo_charge" | "wild_boost_pack" | "lock_breaker";
 
 export type InventoryBalances = Record<StoreSku, number>;
@@ -76,7 +77,7 @@ function appendLedgerEntry(entry: Omit<InventoryLedgerEntry, "id" | "createdAtIS
   return created;
 }
 
-export function getInventory(subscriberIdRaw: unknown): InventoryRecord {
+function memoryGetInventory(subscriberIdRaw: unknown): InventoryRecord {
   const subscriberId = parseSubscriberId(subscriberIdRaw);
   const existing = inventories.get(subscriberId);
   if (existing) return existing;
@@ -89,18 +90,18 @@ export function getInventory(subscriberIdRaw: unknown): InventoryRecord {
   return created;
 }
 
-export function getExistingInventory(subscriberIdRaw: unknown): InventoryRecord | null {
+function memoryGetExistingInventory(subscriberIdRaw: unknown): InventoryRecord | null {
   const subscriberId = parseSubscriberId(subscriberIdRaw);
   return inventories.get(subscriberId) ?? null;
 }
 
-export function listInventoryLedger(subscriberIdRaw: unknown, limitRaw?: unknown): InventoryLedgerEntry[] {
+function memoryListInventoryLedger(subscriberIdRaw: unknown, limitRaw?: unknown): InventoryLedgerEntry[] {
   const subscriberId = parseSubscriberId(subscriberIdRaw);
   const limit = typeof limitRaw === "number" && Number.isInteger(limitRaw) && limitRaw > 0 ? limitRaw : 50;
   return ledger.filter((entry) => entry.subscriberId === subscriberId).slice(0, limit);
 }
 
-export function grantInventory(input: {
+function memoryGrantInventory(input: {
   subscriberId: unknown;
   sku: unknown;
   quantity: unknown;
@@ -111,7 +112,7 @@ export function grantInventory(input: {
   const quantity = parsePositiveQuantity(input.quantity);
   const reason = input.reason ?? "grant";
 
-  const current = getInventory(subscriberId);
+  const current = memoryGetInventory(subscriberId);
   const next: InventoryRecord = {
     ...current,
     balances: {
@@ -125,7 +126,7 @@ export function grantInventory(input: {
   return { inventory: next, ledgerEntry };
 }
 
-export function consumeInventory(input: {
+function memoryConsumeInventory(input: {
   subscriberId: unknown;
   sku: unknown;
   quantity: unknown;
@@ -135,7 +136,7 @@ export function consumeInventory(input: {
   const sku = parseSku(input.sku);
   const quantity = parsePositiveQuantity(input.quantity);
   const reason = input.reason ?? "consume";
-  const current = getInventory(subscriberId);
+  const current = memoryGetInventory(subscriberId);
 
   if (current.balances[sku] < quantity) {
     throw new Error(`insufficient inventory for ${sku}`);
@@ -155,12 +156,13 @@ export function consumeInventory(input: {
 }
 
 export function resetInventoryStore() {
+  memoryReceipts.clear();
   inventories.clear();
   ledger.length = 0;
   ledgerIdCounter = 1;
 }
 
-export function removeInventoryBySubscriber(subscriberIdRaw: unknown): {
+function memoryRemoveInventoryBySubscriber(subscriberIdRaw: unknown): {
   removedInventory: boolean;
   removedLedgerEntries: number;
 } {
@@ -173,4 +175,51 @@ export function removeInventoryBySubscriber(subscriberIdRaw: unknown): {
     removedLedgerEntries += 1;
   }
   return { removedInventory, removedLedgerEntries };
+}
+
+export async function getInventory(subscriberIdRaw: unknown): Promise<InventoryRecord> {
+  const subscriberId = parseSubscriberId(subscriberIdRaw);
+  if (!usesSharedInventory()) return memoryGetInventory(subscriberId);
+  return await readSharedInventory(subscriberId) ?? { subscriberId, balances: emptyBalances(), updatedAtISO: nowISO() };
+}
+export async function getExistingInventory(subscriberIdRaw: unknown): Promise<InventoryRecord | null> {
+  const subscriberId = parseSubscriberId(subscriberIdRaw);
+  return usesSharedInventory() ? readSharedInventory(subscriberId) : memoryGetExistingInventory(subscriberId);
+}
+export async function listInventoryLedger(subscriberIdRaw: unknown, limitRaw?: unknown): Promise<InventoryLedgerEntry[]> {
+  const subscriberId = parseSubscriberId(subscriberIdRaw);
+  const limit = typeof limitRaw === "number" && Number.isInteger(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, 1000) : 50;
+  return usesSharedInventory() ? readSharedLedger(subscriberId, limit) : memoryListInventoryLedger(subscriberId, limit);
+}
+export async function grantInventory(input: { subscriberId: unknown; sku: unknown; quantity: unknown; reason?: LedgerReason }) {
+  const subscriberId = parseSubscriberId(input.subscriberId);
+  const sku = parseSku(input.sku);
+  const quantity = parsePositiveQuantity(input.quantity);
+  if (!usesSharedInventory()) return memoryGrantInventory(input);
+  const result = await changeSharedInventory(subscriberId, [{ sku, delta: quantity, reason: input.reason ?? "grant" }]);
+  return { inventory: result.inventory, ledgerEntry: result.entries[0] };
+}
+export async function consumeInventory(input: { subscriberId: unknown; sku: unknown; quantity: unknown; reason?: LedgerReason }) {
+  const subscriberId = parseSubscriberId(input.subscriberId);
+  const sku = parseSku(input.sku);
+  const quantity = parsePositiveQuantity(input.quantity);
+  if (!usesSharedInventory()) return memoryConsumeInventory(input);
+  const result = await changeSharedInventory(subscriberId, [{ sku, delta: -quantity, reason: input.reason ?? "consume" }]);
+  return { inventory: result.inventory, ledgerEntry: result.entries[0] };
+}
+export async function removeInventoryBySubscriber(subscriberIdRaw: unknown) {
+  const subscriberId = parseSubscriberId(subscriberIdRaw);
+  return usesSharedInventory() ? (await deleteSharedInventory(subscriberId))! : memoryRemoveInventoryBySubscriber(subscriberId);
+}
+const memoryReceipts = new Map<string, Awaited<ReturnType<typeof changeSharedInventory>>>();
+export async function grantInventoryPacket(subscriberIdRaw: unknown, changes: InventoryChange[], paymentRef?: string) {
+  const subscriberId = parseSubscriberId(subscriberIdRaw);
+  for (const change of changes) { parseSku(change.sku); parsePositiveQuantity(change.delta); }
+  if (usesSharedInventory()) return changeSharedInventory(subscriberId, changes, paymentRef);
+  const existing = paymentRef ? memoryReceipts.get(paymentRef) : undefined;
+  if (existing) return { ...existing, alreadyProcessed: true };
+  const results = changes.map(change => memoryGrantInventory({ subscriberId, sku: change.sku, quantity: change.delta, reason: change.reason }));
+  const result = { inventory: memoryGetInventory(subscriberId), entries: results.map(item => item.ledgerEntry), alreadyProcessed: false };
+  if (paymentRef) memoryReceipts.set(paymentRef, result);
+  return result;
 }

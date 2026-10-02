@@ -1,4 +1,4 @@
-import { createSession, moveSession } from "@/lib/binary2048/sessions";
+import { getSession, createSession, moveSession } from "@/lib/binary2048/sessions";
 import {
   LEADERBOARD_INDEX_SPECS,
   getLeaderboardPage,
@@ -32,8 +32,8 @@ describe("leaderboard", () => {
       [null, null, null, null],
       [null, null, null, null]
     ];
-    const sessionA = createSession({ seed: 401, winTile: 8, spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] } }, initialA, { sessionClass: "ranked" });
-    moveSession(sessionA.current.id, "left");
+    const sessionA = (await createSession({ seed: 401, winTile: 8, spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] } }, initialA, { sessionClass: "ranked" }));
+    (await moveSession(sessionA.current.id, "left"));
 
     const initialB: Cell[][] = [
       [{ t: "n", v: 4 }, { t: "n", v: 4 }, null, null],
@@ -41,20 +41,20 @@ describe("leaderboard", () => {
       [null, null, null, null],
       [null, null, null, null]
     ];
-    const sessionB = createSession({ seed: 402, winTile: 16, spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] } }, initialB, { sessionClass: "ranked" });
-    moveSession(sessionB.current.id, "left");
+    const sessionB = (await createSession({ seed: 402, winTile: 16, spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] } }, initialB, { sessionClass: "ranked" }));
+    (await moveSession(sessionB.current.id, "left"));
 
     const low = await submitLeaderboardEntry({
       playerId: "u_low",
       userTier: "authed",
       gameId: sessionA.current.id,
-      session: sessionA
+      session: (await getSession(sessionA.current.id))!
     });
     const high = await submitLeaderboardEntry({
       playerId: "u_high",
       userTier: "paid",
       gameId: sessionB.current.id,
-      session: sessionB
+      session: (await getSession(sessionB.current.id))!
     });
 
     expect(low.entry.score).toBeLessThan(high.entry.score);
@@ -71,14 +71,14 @@ describe("leaderboard", () => {
       [null, null, null, null],
       [null, null, null, null]
     ];
-    const session = createSession({ seed: 403 }, initial, { sessionClass: "ranked" });
-    moveSession(session.current.id, "left");
-    moveSession(session.current.id, "right");
+    const session = (await createSession({ seed: 403 }, initial, { sessionClass: "ranked" }));
+    (await moveSession(session.current.id, "left"));
+    (await moveSession(session.current.id, "right"));
     const submitted = await submitLeaderboardEntry({
       playerId: "u_moves",
       userTier: "authed",
       gameId: session.current.id,
-      session
+      session: (await getSession(session.current.id))!
     });
     expect(submitted.entry.moves).toBe(1);
   });
@@ -90,17 +90,17 @@ describe("leaderboard", () => {
       [null, null, null, null],
       [null, null, null, null]
     ];
-    const prod = createSession({ seed: 404, spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] } }, initial, { sessionClass: "ranked" });
-    moveSession(prod.current.id, "left");
+    const prod = (await createSession({ seed: 404, spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] } }, initial, { sessionClass: "ranked" }));
+    (await moveSession(prod.current.id, "left"));
     await submitLeaderboardEntry({
       playerId: "u_prod",
       userTier: "authed",
       gameId: prod.current.id,
-      session: prod
+      session: (await getSession(prod.current.id))!
     });
 
-    const sandbox = createSession({ seed: 405, spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] } }, initial, { sessionClass: "ranked" });
-    moveSession(sandbox.current.id, "left");
+    const sandbox = (await createSession({ seed: 405, spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] } }, initial, { sessionClass: "ranked" }));
+    (await moveSession(sandbox.current.id, "left"));
     await submitLeaderboardEntry({
       namespace: "sandbox",
       isSandbox: true,
@@ -108,7 +108,7 @@ describe("leaderboard", () => {
       playerId: "u_sandbox",
       userTier: "authed",
       gameId: sandbox.current.id,
-      session: sandbox
+      session: (await getSession(sandbox.current.id))!
     });
 
     expect(await listLeaderboardEntries()).toHaveLength(1);
@@ -117,7 +117,7 @@ describe("leaderboard", () => {
   });
 
   it("preserves the original submission time on an idempotent upsert", async () => {
-    const session = createSession({ seed: 406 });
+    const session = (await createSession({ seed: 406 }));
     jest.useFakeTimers().setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
     const first = await submitLeaderboardEntry({ playerId: "u_same", userTier: "authed", gameId: "same", session });
     jest.setSystemTime(new Date("2026-01-02T00:00:00.000Z"));
@@ -138,7 +138,7 @@ describe("leaderboard", () => {
       [null, null, null, null]
     ];
     for (let index = 0; index < 25; index += 1) {
-      const session = createSession({ seed: 500 + index }, tiedGrid);
+      const session = (await createSession({ seed: 500 + index }, tiedGrid));
       session.current.score = 100;
       last = await submitLeaderboardEntry({ playerId: `u_${index}`, userTier: "authed", gameId: `game_${String(index).padStart(2, "0")}`, session });
     }
@@ -149,7 +149,7 @@ describe("leaderboard", () => {
   it("paginates with absolute ranks and returns the current player's best entry", async () => {
     jest.useFakeTimers().setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
     for (let index = 0; index < 5; index += 1) {
-      const session = createSession({ seed: 550 + index });
+      const session = (await createSession({ seed: 550 + index }));
       session.current.score = 500 - index * 100;
       await submitLeaderboardEntry({ playerId: index === 3 ? "current@example.com" : `u_${index}`, userTier: "authed", gameId: `page_${index}`, session });
     }
@@ -192,8 +192,8 @@ describe("leaderboard", () => {
   });
 
   it("filters practice and season entries and supports player deletion", async () => {
-    const live = createSession({ seed: 601 });
-    const practice = createSession({ seed: 602 });
+    const live = (await createSession({ seed: 601 }));
+    const practice = (await createSession({ seed: 602 }));
     await submitLeaderboardEntry({ playerId: "u_filter", userTier: "authed", gameId: "live", session: live });
     await submitLeaderboardEntry({ playerId: "u_filter", userTier: "authed", gameId: "practice", session: practice, isPractice: true, seasonMode: "preview" });
     expect(await listLeaderboardEntries()).toHaveLength(1);

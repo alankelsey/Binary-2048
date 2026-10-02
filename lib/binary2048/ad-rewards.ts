@@ -84,7 +84,7 @@ export function verifyAdRewardSignature(rawPayload: string, signature: string, s
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-export function grantVerifiedAdReward(input: GrantInput) {
+export async function grantVerifiedAdReward(input: GrantInput) {
   const nowMs = input.nowMs ?? Date.now();
   const env = input.env ?? process.env;
   const maxSkewSec = parsePositiveInt(env.BINARY2048_AD_REWARD_MAX_SKEW_SEC, 300);
@@ -126,12 +126,12 @@ export function grantVerifiedAdReward(input: GrantInput) {
   record.seenNonces.add(input.nonce);
   records.set(input.subscriberId, record);
 
-  const granted = grantInventory({
+  const granted = (await grantInventory({
     subscriberId: input.subscriberId,
     sku: input.sku,
     quantity: input.quantity,
     reason: "ad_reward"
-  });
+  }));
 
   return {
     ...granted,

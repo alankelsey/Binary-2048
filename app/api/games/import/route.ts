@@ -12,11 +12,11 @@ export async function POST(req: Request) {
       req,
       MAX_GAME_IMPORT_BODY_BYTES
     );
-    const session = importRecoveryPayload(payload);
+    const session = (await importRecoveryPayload(payload));
     return NextResponse.json({
       id: session.current.id,
       current: session.current,
-      recoverySnapshot: exportRecoverySnapshot(session.current.id),
+      recoverySnapshot: (await exportRecoverySnapshot(session.current.id)),
       steps: session.steps,
       undo: getUndoMeta(session),
       integrity: session.integrity,

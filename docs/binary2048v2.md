@@ -587,3 +587,17 @@ existing decision memo and migration runbook.
   in-app, on GitHub Pages, or on an external storefront.
 - Explore the `F-cubed` / `FBBB` visual identity and its relationship to the
   primary Binary-2048 brand.
+
+## Final V2 infrastructure acceptance — 2026-10-01 scope change
+
+At the user’s direction, complete these at the end of V2:
+
+- Provision the dedicated dev environment with separate branch/domain, secrets,
+  isolated test data, and WAF protection.
+- Perform isolated non-production WAF threshold/block acceptance, retaining
+  sampled-request and log evidence.
+
+These are deferred V1 gates, not completed acceptance. Current V1 work remains
+on-demand workers, inventory/session persistence, and shared ops data/console,
+using the existing database and logging without NAT, always-on workers, another
+paid database, or paid analytics.

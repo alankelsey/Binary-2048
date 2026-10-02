@@ -1,0 +1,10 @@
+.ops { max-width: 70rem; margin: 0 auto; padding: 1rem; }
+.ops section { margin: 1.5rem 0; padding: 1rem; border: 1px solid currentColor; border-radius: .5rem; }
+.ops-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: 1rem; }
+.ops dt { font-weight: 600; }
+.ops dd { margin: .25rem 0 .75rem; overflow-wrap: anywhere; }
+.ops-scroll { overflow-x: auto; max-width: 100%; }
+.ops table { width: 100%; border-collapse: collapse; text-align: left; }
+.ops th, .ops td { padding: .75rem; border-bottom: 1px solid currentColor; }
+.ops a { display: inline-block; padding: .75rem .25rem; }
+.ops :focus-visible { outline: 3px solid currentColor; outline-offset: 3px; }

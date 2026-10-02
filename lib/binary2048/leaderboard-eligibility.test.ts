@@ -1,9 +1,9 @@
 import { getLeaderboardEligibility } from "@/lib/binary2048/leaderboard";
-import { createSession, moveSession, undoSession } from "@/lib/binary2048/sessions";
+import { getSession, createSession, moveSession, undoSession } from "@/lib/binary2048/sessions";
 import type { Cell } from "@/lib/binary2048/types";
 
 describe("leaderboard eligibility", () => {
-  function finishRankedSession(seed: number, overrides?: {
+  async function finishRankedSession(seed: number, overrides?: {
     spawn?: { pZero?: number; pOne?: number; pWildcard?: number; pLock?: number; wildcardMultipliers?: number[] };
     initialGrid?: Cell[][];
   }) {
@@ -13,7 +13,7 @@ describe("leaderboard eligibility", () => {
       [null, null, null, null],
       [null, null, null, null]
     ];
-    const session = createSession(
+    const session = (await createSession(
       {
         seed,
         winTile: 2,
@@ -27,36 +27,36 @@ describe("leaderboard eligibility", () => {
       },
       overrides?.initialGrid ?? defaultGrid,
       { sessionClass: "ranked" }
-    );
-    moveSession(session.current.id, "left");
+    ));
+    (await moveSession(session.current.id, "left"));
     return session;
   }
 
-  it("marks default ranked runs as pure and eligible", () => {
-    const session = finishRankedSession(7001);
-    const result = getLeaderboardEligibility(session);
+  it("marks default ranked runs as pure and eligible", async () => {
+    const session = (await finishRankedSession(7001));
+    const result = getLeaderboardEligibility((await getSession(session.current.id))!);
     expect(result.eligible).toBe(true);
     expect(result.bracket).toBe("ranked_pure");
   });
 
-  it("marks seeded-start grids as boosted", () => {
+  it("marks seeded-start grids as boosted", async () => {
     const seededGrid: Cell[][] = [
       [{ t: "n", v: 1 }, { t: "n", v: 1 }, { t: "n", v: 2 }, null],
       [null, null, null, null],
       [null, null, null, null],
       [null, null, null, null]
     ];
-    const session = finishRankedSession(7003, { initialGrid: seededGrid });
-    const result = getLeaderboardEligibility(session);
+    const session = (await finishRankedSession(7003, { initialGrid: seededGrid }));
+    const result = getLeaderboardEligibility((await getSession(session.current.id))!);
     expect(result.eligible).toBe(false);
     expect(result.reason).toContain("Seeded starts");
   });
 
   it("marks undo-assisted ranked runs as boosted", async () => {
-    const session = finishRankedSession(7004);
-    undoSession(session.current.id);
-    moveSession(session.current.id, "left");
-    const latest = getLeaderboardEligibility(session);
+    const session = (await finishRankedSession(7004));
+    (await undoSession(session.current.id));
+    (await moveSession(session.current.id, "left"));
+    const latest = getLeaderboardEligibility((await getSession(session.current.id))!);
     expect(latest.eligible).toBe(false);
     expect(latest.reason).toContain("Undo-assisted");
   });

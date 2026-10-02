@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { resolveWorkerJob } from "./worker-job-client.mjs";
 
 import { performance } from "node:perf_hooks";
 import { buildMovePrompt, parseOllamaAction } from "./ollama-bot-lib.mjs";
@@ -27,7 +28,7 @@ async function requestJson(base, path, init = {}) {
   if (!response.ok) {
     throw new Error(`${path} failed: ${payload?.error ?? `HTTP ${response.status}`}`);
   }
-  return payload;
+  return resolveWorkerJob(base, payload, init.headers);
 }
 
 async function pickAction(encoded) {

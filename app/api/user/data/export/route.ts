@@ -23,8 +23,8 @@ export async function GET(req: Request) {
     {
       subscriberId,
       exportedAtISO: new Date().toISOString(),
-      inventory: getExistingInventory(subscriberId),
-      ledger: listInventoryLedger(subscriberId, Number.isFinite(limit) ? limit : 100),
+      inventory: (await getExistingInventory(subscriberId)),
+      ledger: (await listInventoryLedger(subscriberId, Number.isFinite(limit) ? limit : 100)),
       subscriptions: listSubscriptions(subscriberId),
       leaderboard
     },

@@ -17,12 +17,12 @@ export async function POST(req: Request) {
   }
   try {
     const body = ((await req.json().catch(() => ({}))) as PurchaseBody);
-    const purchased = executePacketPurchase({
+    const purchased = (await executePacketPurchase({
       subscriberId: principal.subscriberId,
       packetSku: body.packetSku ?? "",
       quantity: body.quantity,
       grantReason: "grant"
-    });
+    }));
     return NextResponse.json(purchased, { status: 200 });
   } catch (error) {
     return NextResponse.json(

@@ -1,3 +1,4 @@
+import { SessionConflictError } from "@/lib/binary2048/session-store";
 import { NextResponse } from "next/server";
 import { parseAction, toActionCode } from "@/lib/binary2048/action";
 import { stateHash } from "@/lib/binary2048/ai";
@@ -39,7 +40,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
   let activeId = id;
   let activeSession;
   try {
-    activeSession = resolveSessionWithRecovery(activeId, body.recoverySnapshot);
+    activeSession = (await resolveSessionWithRecovery(activeId, body.recoverySnapshot));
     if (activeSession) activeId = activeSession.current.id;
   } catch {
     return respond({ error: "Invalid recovery snapshot" }, 400);
@@ -58,7 +59,9 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
       );
     }
   }
-  const session = moveSession(activeId, dir);
+  let session;
+  try { session = await moveSession(activeId, dir, activeSession ?? undefined); }
+  catch (error) { return respond({ error: error instanceof SessionConflictError ? error.message : "Session storage unavailable" }, error instanceof SessionConflictError ? 409 : 503); }
   if (!session) return respond({ error: "Game not found" }, 404);
   const lastStep = session.steps[session.steps.length - 1];
   const changed = lastStep?.moved ?? false;
@@ -67,7 +70,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
   return respond({
     id: activeId,
     current: session.current,
-    recoverySnapshot: exportRecoverySnapshot(activeId),
+    recoverySnapshot: (await exportRecoverySnapshot(activeId, session)),
     stepCount: session.steps.length,
     lastStep,
     action: toActionCode(dir),

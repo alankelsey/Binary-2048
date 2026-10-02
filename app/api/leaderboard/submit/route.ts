@@ -36,10 +36,10 @@ export async function POST(req: Request) {
   const submitMode = resolveSandboxSubmissionMode(body);
 
   let activeGameId = body.gameId;
-  let session = body.recoverySnapshot ? null : getSession(activeGameId);
+  let session = body.recoverySnapshot ? null : (await getSession(activeGameId));
   if (body.recoverySnapshot) {
     try {
-      session = importRecoveryPayload(body.recoverySnapshot);
+      session = (await importRecoveryPayload(body.recoverySnapshot));
       activeGameId = session.current.id;
     } catch {
       return NextResponse.json({ error: "Invalid recovery snapshot" }, { status: 400 });
@@ -56,7 +56,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: eligibility.reason, bracket: eligibility.bracket }, { status: 403 });
   }
 
-  const exported = exportSession(activeGameId);
+  const exported = (await exportSession(activeGameId));
   const replaySignature = (() => {
     const signingSecret = process.env.BINARY2048_REPLAY_CODE_SECRET ?? "";
     if (!signingSecret || !exported) return undefined;

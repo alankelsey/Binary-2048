@@ -41,9 +41,9 @@ describe("POST /api/games/:id/move hash guard", () => {
   ];
 
   it("returns 409 and does not mutate session when expectStateHash is stale", async () => {
-    const session = createSession(config, initialGrid);
+    const session = (await createSession(config, initialGrid));
     const id = session.current.id;
-    const before = getSession(id);
+    const before = (await getSession(id));
     expect(before?.steps.length).toBe(0);
 
     const req = new Request("http://localhost/api/games/x/move", {
@@ -57,11 +57,11 @@ describe("POST /api/games/:id/move hash guard", () => {
     expect(res.status).toBe(409);
     expect(json.error).toBe("State hash mismatch");
     expect(typeof json.actual).toBe("string");
-    expect(getSession(id)?.steps.length).toBe(0);
+    expect((await getSession(id))?.steps.length).toBe(0);
   });
 
   it("accepts move when expectStateHash matches current state", async () => {
-    const session = createSession(config, initialGrid);
+    const session = (await createSession(config, initialGrid));
     const id = session.current.id;
     const expected = stateHash(session.current);
 
@@ -80,7 +80,7 @@ describe("POST /api/games/:id/move hash guard", () => {
     expect(typeof json.stateHash).toBe("string");
     expect(json.integrity?.sessionClass).toBe("unranked");
     expect(json.economy?.canContinueAfterWin).toBe(true);
-    expect(getSession(id)?.steps.length).toBe(1);
+    expect((await getSession(id))?.steps.length).toBe(1);
     expect(res.headers.get("ratelimit-limit")).toBe("600");
     expect(res.headers.get("ratelimit-remaining")).toBe("599");
     expect(res.headers.get("ratelimit-reset")).toMatch(/^\d+$/);
@@ -89,7 +89,7 @@ describe("POST /api/games/:id/move hash guard", () => {
   });
 
   it("returns 400 when neither dir nor action is provided", async () => {
-    const session = createSession(config, initialGrid);
+    const session = (await createSession(config, initialGrid));
     const id = session.current.id;
 
     const req = new Request("http://localhost/api/games/x/move", {
@@ -118,8 +118,8 @@ describe("POST /api/games/:id/move hash guard", () => {
   });
 
   it("atomically recovers a missing instance-local session and applies the move", async () => {
-    const original = createSession(config, initialGrid);
-    const recoverySnapshot = exportRecoverySnapshot(original.current.id);
+    const original = (await createSession(config, initialGrid));
+    const recoverySnapshot = (await exportRecoverySnapshot(original.current.id));
     const req = new Request("http://localhost/api/games/missing_game/move", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -133,12 +133,12 @@ describe("POST /api/games/:id/move hash guard", () => {
     expect(json.current.turn).toBe(1);
     expect(json.current.score).toBe(2);
     expect(json.recoverySnapshot).toMatchObject({ recoveryVersion: 1, moves: ["left"] });
-    expect(getSession(json.id)?.steps).toHaveLength(1);
+    expect((await getSession(json.id))?.steps).toHaveLength(1);
   });
 
   it("accepts the legacy full browser snapshot during rollout", async () => {
-    const original = createSession(config, initialGrid);
-    const recoverySnapshot = exportSession(original.current.id);
+    const original = (await createSession(config, initialGrid));
+    const recoverySnapshot = (await exportSession(original.current.id));
     const req = new Request("http://localhost/api/games/missing_game/move", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -154,9 +154,9 @@ describe("POST /api/games/:id/move hash guard", () => {
 
   it("prefers a newer signed browser snapshot over a stale instance-local session", async () => {
     process.env.BINARY2048_RECOVERY_SECRET = "move-recovery-secret";
-    const original = createSession(config, initialGrid);
+    const original = (await createSession(config, initialGrid));
     const id = original.current.id;
-    const initialSnapshot = exportRecoverySnapshot(id);
+    const initialSnapshot = (await exportRecoverySnapshot(id));
     const firstMove = await POST(
       new Request("http://localhost/api/games/x/move", {
         method: "POST",
@@ -169,8 +169,8 @@ describe("POST /api/games/:id/move hash guard", () => {
     expect(firstJson.recoverySnapshot.moves).toEqual(["left"]);
 
     resetSessionStoreForTests();
-    importRecoveryPayload(initialSnapshot!);
-    expect(getSession(id)?.steps).toHaveLength(0);
+    (await importRecoveryPayload(initialSnapshot!));
+    expect((await getSession(id))?.steps).toHaveLength(0);
 
     const resumed = await POST(
       new Request("http://localhost/api/games/x/move", {
@@ -185,13 +185,13 @@ describe("POST /api/games/:id/move hash guard", () => {
     expect(resumed.status).toBe(200);
     expect(resumedJson.id).toBe(id);
     expect(resumedJson.recoverySnapshot.moves).toEqual(["left", "down"]);
-    expect(getSession(id)?.steps.map((step) => step.dir)).toEqual(["left", "down"]);
+    expect((await getSession(id))?.steps.map((step) => step.dir)).toEqual(["left", "down"]);
   });
 
   it("returns 429 without mutating the game when the move quota is exhausted", async () => {
     process.env.BINARY2048_RATE_LIMIT_MOVE_MAX = "1";
     process.env.BINARY2048_RATE_LIMIT_WINDOW_MS = "60000";
-    const session = createSession(config, initialGrid);
+    const session = (await createSession(config, initialGrid));
     const id = session.current.id;
     const makeRequest = () =>
       new Request("http://localhost/api/games/x/move", {
@@ -210,6 +210,6 @@ describe("POST /api/games/:id/move hash guard", () => {
     expect(second.headers.get("ratelimit-limit")).toBe("1");
     expect(second.headers.get("ratelimit-remaining")).toBe("0");
     expect(second.headers.get("retry-after")).toMatch(/^\d+$/);
-    expect(getSession(id)?.steps.length).toBe(1);
+    expect((await getSession(id))?.steps.length).toBe(1);
   });
 });

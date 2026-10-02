@@ -26,16 +26,16 @@ describe("signed session recovery", () => {
     resetSessionStoreForTests();
   });
 
-  it("preserves ranked integrity, session id, and undo audit", () => {
-    const session = createSession({ seed: 7101 }, initialGrid, { sessionClass: "ranked" });
-    moveSession(session.current.id, "left");
-    undoSession(session.current.id);
-    moveSession(session.current.id, "left");
-    const snapshot = exportRecoverySnapshot(session.current.id)!;
+  it("preserves ranked integrity, session id, and undo audit", async () => {
+    const session = (await createSession({ seed: 7101 }, initialGrid, { sessionClass: "ranked" }));
+    (await moveSession(session.current.id, "left"));
+    (await undoSession(session.current.id));
+    (await moveSession(session.current.id, "left"));
+    const snapshot = (await exportRecoverySnapshot(session.current.id))!;
     expect(snapshot.signature).toEqual(expect.any(String));
 
     resetSessionStoreForTests();
-    const recovered = importRecoverySnapshot(JSON.parse(JSON.stringify(snapshot)));
+    const recovered = (await importRecoverySnapshot(JSON.parse(JSON.stringify(snapshot))));
 
     expect(recovered.current.id).toBe(session.current.id);
     expect(recovered.integrity).toEqual({ sessionClass: "ranked", source: "created" });
@@ -43,13 +43,13 @@ describe("signed session recovery", () => {
     expect(recovered.undoEvents).toHaveLength(1);
   });
 
-  it("downgrades a modified signed snapshot to unranked imported", () => {
-    const session = createSession({ seed: 7102 }, initialGrid, { sessionClass: "ranked" });
-    const snapshot = exportRecoverySnapshot(session.current.id)!;
+  it("downgrades a modified signed snapshot to unranked imported", async () => {
+    const session = (await createSession({ seed: 7102 }, initialGrid, { sessionClass: "ranked" }));
+    const snapshot = (await exportRecoverySnapshot(session.current.id))!;
     snapshot.moves.push("left");
 
     resetSessionStoreForTests();
-    const recovered = importRecoverySnapshot(snapshot);
+    const recovered = (await importRecoverySnapshot(snapshot));
 
     expect(recovered.integrity.sessionClass).toBe("unranked");
     expect(recovered.integrity.source).toBe("imported");

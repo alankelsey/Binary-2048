@@ -21,14 +21,14 @@ function authHeader(sub = "u_ranked", tier: "guest" | "authed" | "paid" = "authe
   return { authorization: `Bearer ${token}` };
 }
 
-function createFinishedRankedGame() {
+async function createFinishedRankedGame() {
   const grid: Cell[][] = [
     [{ t: "n", v: 1 }, { t: "n", v: 1 }, null, null],
     [null, null, null, null],
     [null, null, null, null],
     [null, null, null, null]
   ];
-  const session = createSession(
+  const session = (await createSession(
     {
       seed: 601,
       winTile: 2,
@@ -36,8 +36,8 @@ function createFinishedRankedGame() {
     },
     grid,
     { sessionClass: "ranked" }
-  );
-  moveSession(session.current.id, "left");
+  ));
+  (await moveSession(session.current.id, "left"));
   return session.current.id;
 }
 
@@ -72,7 +72,7 @@ describe("POST /api/leaderboard/submit", () => {
   });
 
   it("submits completed ranked game using server-derived score", async () => {
-    const gameId = createFinishedRankedGame();
+    const gameId = (await createFinishedRankedGame());
 
     const req = new Request("http://localhost/api/leaderboard/submit", {
       method: "POST",
@@ -100,7 +100,7 @@ describe("POST /api/leaderboard/submit", () => {
   it("does not claim success when shared leaderboard persistence is unavailable", async () => {
     process.env.BINARY2048_LEADERBOARD_STORE = "mongo";
     delete process.env.BINARY2048_MONGO_URI;
-    const gameId = createFinishedRankedGame();
+    const gameId = (await createFinishedRankedGame());
 
     const res = await POST(
       new Request("http://localhost/api/leaderboard/submit", {
@@ -116,8 +116,8 @@ describe("POST /api/leaderboard/submit", () => {
 
   it("submits a signed ranked recovery after instance-local session loss", async () => {
     process.env.BINARY2048_RECOVERY_SECRET = "leaderboard-recovery-secret";
-    const gameId = createFinishedRankedGame();
-    const recoverySnapshot = exportRecoverySnapshot(gameId);
+    const gameId = (await createFinishedRankedGame());
+    const recoverySnapshot = (await exportRecoverySnapshot(gameId));
     resetSessionStoreForTests();
 
     const req = new Request("http://localhost/api/leaderboard/submit", {
@@ -149,7 +149,7 @@ describe("POST /api/leaderboard/submit", () => {
       [null, null, null, null],
       [null, null, null, null]
     ];
-    const session = createSession(
+    const session = (await createSession(
       {
         seed: 605,
         winTile: 2,
@@ -157,12 +157,12 @@ describe("POST /api/leaderboard/submit", () => {
       },
       grid,
       { sessionClass: "ranked" }
-    );
-    const staleSnapshot = exportRecoverySnapshot(session.current.id)!;
-    moveSession(session.current.id, "left");
-    const terminalSnapshot = exportRecoverySnapshot(session.current.id)!;
+    ));
+    const staleSnapshot = (await exportRecoverySnapshot(session.current.id))!;
+    (await moveSession(session.current.id, "left"));
+    const terminalSnapshot = (await exportRecoverySnapshot(session.current.id))!;
     resetSessionStoreForTests();
-    const stale = importRecoverySnapshot(staleSnapshot);
+    const stale = (await importRecoverySnapshot(staleSnapshot));
     expect(stale.current.won).toBe(false);
 
     const req = new Request("http://localhost/api/leaderboard/submit", {
@@ -187,7 +187,7 @@ describe("POST /api/leaderboard/submit", () => {
 
   it("stores replay signature when replay signing secret is configured", async () => {
     process.env.BINARY2048_REPLAY_CODE_SECRET = "leaderboard-replay-sign";
-    const gameId = createFinishedRankedGame();
+    const gameId = (await createFinishedRankedGame());
     const req = new Request("http://localhost/api/leaderboard/submit", {
       method: "POST",
       headers: {
@@ -209,15 +209,15 @@ describe("POST /api/leaderboard/submit", () => {
       [null, null, null, null],
       [null, null, null, null]
     ];
-    const unranked = createSession(
+    const unranked = (await createSession(
       {
         seed: 602,
         winTile: 2,
         spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] }
       },
       grid
-    );
-    moveSession(unranked.current.id, "left");
+    ));
+    (await moveSession(unranked.current.id, "left"));
 
     const req = new Request("http://localhost/api/leaderboard/submit", {
       method: "POST",
@@ -239,7 +239,7 @@ describe("POST /api/leaderboard/submit", () => {
       [null, null, null, null],
       [null, null, null, null]
     ];
-    const boosted = createSession(
+    const boosted = (await createSession(
       {
         seed: 604,
         winTile: 2,
@@ -247,8 +247,8 @@ describe("POST /api/leaderboard/submit", () => {
       },
       grid,
       { sessionClass: "ranked" }
-    );
-    moveSession(boosted.current.id, "left");
+    ));
+    (await moveSession(boosted.current.id, "left"));
 
     const req = new Request("http://localhost/api/leaderboard/submit", {
       method: "POST",
@@ -267,9 +267,9 @@ describe("POST /api/leaderboard/submit", () => {
   });
 
   it("rejects undo-assisted ranked runs", async () => {
-    const gameId = createFinishedRankedGame();
-    undoSession(gameId);
-    moveSession(gameId, "left");
+    const gameId = (await createFinishedRankedGame());
+    (await undoSession(gameId));
+    (await moveSession(gameId, "left"));
 
     const req = new Request("http://localhost/api/leaderboard/submit", {
       method: "POST",
@@ -294,7 +294,7 @@ describe("POST /api/leaderboard/submit", () => {
       [null, null, null, null],
       [null, null, null, null]
     ];
-    const ranked = createSession({ seed: 603 }, grid, { sessionClass: "ranked" });
+    const ranked = (await createSession({ seed: 603 }, grid, { sessionClass: "ranked" }));
 
     const req = new Request("http://localhost/api/leaderboard/submit", {
       method: "POST",
@@ -311,7 +311,7 @@ describe("POST /api/leaderboard/submit", () => {
 
   it("requires sandbox API key when submitting sandbox runs", async () => {
     process.env.BINARY2048_SANDBOX_API_KEYS = "sandbox-key-1";
-    const gameId = createFinishedRankedGame();
+    const gameId = (await createFinishedRankedGame());
 
     const deniedReq = new Request("http://localhost/api/leaderboard/submit", {
       method: "POST",
@@ -341,7 +341,7 @@ describe("POST /api/leaderboard/submit", () => {
 
   it("supports shadow-write toggle to route entries into sandbox", async () => {
     process.env.BINARY2048_LEAGUE_SHADOW_WRITE = "true";
-    const gameId = createFinishedRankedGame();
+    const gameId = (await createFinishedRankedGame());
     const req = new Request("http://localhost/api/leaderboard/submit", {
       method: "POST",
       headers: {
@@ -358,7 +358,7 @@ describe("POST /api/leaderboard/submit", () => {
   });
 
   it("validates replay payloads loaded from sandbox preview submissions", async () => {
-    const gameId = createFinishedRankedGame();
+    const gameId = (await createFinishedRankedGame());
     const submitReq = new Request("http://localhost/api/leaderboard/submit", {
       method: "POST",
       headers: {

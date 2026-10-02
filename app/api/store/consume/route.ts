@@ -9,12 +9,12 @@ export async function POST(req: Request) {
   }
   try {
     const body = await req.json().catch(() => ({}));
-    const result = consumeInventory({
+    const result = (await consumeInventory({
       subscriberId: principal.subscriberId,
       sku: body?.sku,
       quantity: body?.quantity,
       reason: body?.reason
-    });
+    }));
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     return NextResponse.json(

@@ -48,7 +48,7 @@ describe("league config ops route", () => {
     const json = await res.json();
     expect(res.status).toBe(200);
     expect(json.action).toBe("mirror");
-    expect(getLeagueConfig("sandbox").seedPoolId).toBe(getLeagueConfig("production").seedPoolId);
+    expect((await getLeagueConfig("sandbox")).seedPoolId).toBe((await getLeagueConfig("production")).seedPoolId);
   });
 
   it("promotes sandbox config into production", async () => {
@@ -73,6 +73,6 @@ describe("league config ops route", () => {
     const json = await res.json();
     expect(res.status).toBe(200);
     expect(json.action).toBe("promote");
-    expect(getLeagueConfig("production").seedPoolId).toBe(getLeagueConfig("sandbox").seedPoolId);
+    expect((await getLeagueConfig("production")).seedPoolId).toBe((await getLeagueConfig("sandbox")).seedPoolId);
   });
 });

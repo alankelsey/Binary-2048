@@ -134,7 +134,7 @@ describe("POST /api/ads/reward", () => {
     expect(okSecond.status).toBe(200);
     expect(capRes.status).toBe(429);
     expect(capJson.code).toBe("daily_cap_reached");
-    expect(getInventory("ad-user-3").balances.undo_charge).toBe(2);
+    expect((await getInventory("ad-user-3")).balances.undo_charge).toBe(2);
   });
 
   it("blocks paid tier from receiving ad rewards", async () => {

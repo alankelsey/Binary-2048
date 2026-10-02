@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { resolveWorkerJob } from "./worker-job-client.mjs";
 
 import { performance } from "node:perf_hooks";
 import { readFileSync } from "node:fs";
@@ -53,7 +54,7 @@ async function requestJson(url, init = {}) {
     const message = payload?.error?.message ?? payload?.error ?? `HTTP ${response.status}`;
     throw new Error(`${url} failed: ${message}`);
   }
-  return payload;
+  return resolveWorkerJob(url, payload, init.headers);
 }
 
 async function pickAction(encoded) {

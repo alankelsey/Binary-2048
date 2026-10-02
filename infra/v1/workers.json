@@ -1,0 +1,406 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Binary2048 V1 on-demand workers and bounded telemetry; no VPC or provisioned concurrency.",
+  "Parameters": {
+    "MongoUri": {
+      "Type": "String",
+      "NoEcho": true
+    },
+    "ArtifactBucket": {
+      "Type": "String",
+      "Default": "binary2048"
+    },
+    "ArtifactKey": {
+      "Type": "String"
+    }
+  },
+  "Resources": {
+    "WorkerRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "WorkerQueuesAndLogs",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "sqs:ReceiveMessage",
+                    "sqs:DeleteMessage",
+                    "sqs:GetQueueAttributes"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::GetAtt": [
+                        "TournamentQueue",
+                        "Arn"
+                      ]
+                    },
+                    {
+                      "Fn::GetAtt": [
+                        "TrainingQueue",
+                        "Arn"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/binary2048-v1-*:log-stream:*"
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:FilterLogEvents"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/amplify/dzxvs1esr22z9:*"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "TournamentDLQ": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "QueueName": "binary2048-v1-tournament-dlq",
+        "MessageRetentionPeriod": 1209600,
+        "SqsManagedSseEnabled": true
+      }
+    },
+    "TournamentQueue": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "QueueName": "binary2048-v1-tournament",
+        "VisibilityTimeout": 360,
+        "MessageRetentionPeriod": 86400,
+        "ReceiveMessageWaitTimeSeconds": 20,
+        "SqsManagedSseEnabled": true,
+        "RedrivePolicy": {
+          "deadLetterTargetArn": {
+            "Fn::GetAtt": [
+              "TournamentDLQ",
+              "Arn"
+            ]
+          },
+          "maxReceiveCount": 3
+        }
+      }
+    },
+    "TournamentLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/binary2048-v1-tournament",
+        "RetentionInDays": 14
+      }
+    },
+    "TournamentFunction": {
+      "Type": "AWS::Lambda::Function",
+      "DependsOn": [
+        "TournamentLogGroup"
+      ],
+      "Properties": {
+        "FunctionName": "binary2048-v1-tournament",
+        "Runtime": "nodejs22.x",
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "WorkerRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ArtifactBucket"
+          },
+          "S3Key": {
+            "Ref": "ArtifactKey"
+          }
+        },
+        "MemorySize": 2048,
+        "Timeout": 60,
+        "Environment": {
+          "Variables": {
+            "BINARY2048_MONGO_URI": {
+              "Ref": "MongoUri"
+            },
+            "BINARY2048_MONGO_DB": "binary2048",
+            "BINARY2048_WORKER_REGION": {
+              "Ref": "AWS::Region"
+            },
+            "BINARY2048_OPS_STORE": "mongo",
+            "BINARY2048_TELEMETRY_LOG_GROUP": "/aws/amplify/dzxvs1esr22z9"
+          }
+        }
+      }
+    },
+    "TournamentMapping": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "EventSourceArn": {
+          "Fn::GetAtt": [
+            "TournamentQueue",
+            "Arn"
+          ]
+        },
+        "FunctionName": {
+          "Ref": "TournamentFunction"
+        },
+        "BatchSize": 1,
+        "FunctionResponseTypes": [
+          "ReportBatchItemFailures"
+        ],
+        "ScalingConfig": {
+          "MaximumConcurrency": 2
+        }
+      }
+    },
+    "TrainingDLQ": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "QueueName": "binary2048-v1-training-dlq",
+        "MessageRetentionPeriod": 1209600,
+        "SqsManagedSseEnabled": true
+      }
+    },
+    "TrainingQueue": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "QueueName": "binary2048-v1-training",
+        "VisibilityTimeout": 360,
+        "MessageRetentionPeriod": 86400,
+        "ReceiveMessageWaitTimeSeconds": 20,
+        "SqsManagedSseEnabled": true,
+        "RedrivePolicy": {
+          "deadLetterTargetArn": {
+            "Fn::GetAtt": [
+              "TrainingDLQ",
+              "Arn"
+            ]
+          },
+          "maxReceiveCount": 3
+        }
+      }
+    },
+    "TrainingLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/binary2048-v1-training",
+        "RetentionInDays": 14
+      }
+    },
+    "TrainingFunction": {
+      "Type": "AWS::Lambda::Function",
+      "DependsOn": [
+        "TrainingLogGroup"
+      ],
+      "Properties": {
+        "FunctionName": "binary2048-v1-training",
+        "Runtime": "nodejs22.x",
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "WorkerRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ArtifactBucket"
+          },
+          "S3Key": {
+            "Ref": "ArtifactKey"
+          }
+        },
+        "MemorySize": 2048,
+        "Timeout": 60,
+        "Environment": {
+          "Variables": {
+            "BINARY2048_MONGO_URI": {
+              "Ref": "MongoUri"
+            },
+            "BINARY2048_MONGO_DB": "binary2048",
+            "BINARY2048_WORKER_REGION": {
+              "Ref": "AWS::Region"
+            },
+            "BINARY2048_OPS_STORE": "mongo",
+            "BINARY2048_TELEMETRY_LOG_GROUP": "/aws/amplify/dzxvs1esr22z9"
+          }
+        }
+      }
+    },
+    "TrainingMapping": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "EventSourceArn": {
+          "Fn::GetAtt": [
+            "TrainingQueue",
+            "Arn"
+          ]
+        },
+        "FunctionName": {
+          "Ref": "TrainingFunction"
+        },
+        "BatchSize": 1,
+        "FunctionResponseTypes": [
+          "ReportBatchItemFailures"
+        ],
+        "ScalingConfig": {
+          "MaximumConcurrency": 2
+        }
+      }
+    },
+    "AmplifyQueuePolicy": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "Binary2048V1WorkerDispatch",
+        "Roles": [
+          "Binary2048AmplifyComputeRole"
+        ],
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": "sqs:SendMessage",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "TournamentQueue",
+                    "Arn"
+                  ]
+                },
+                {
+                  "Fn::GetAtt": [
+                    "TrainingQueue",
+                    "Arn"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "TelemetryLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/binary2048-v1-telemetry",
+        "RetentionInDays": 14
+      }
+    },
+    "TelemetryFunction": {
+      "Type": "AWS::Lambda::Function",
+      "DependsOn": [
+        "TelemetryLogGroup"
+      ],
+      "Properties": {
+        "FunctionName": "binary2048-v1-telemetry",
+        "Runtime": "nodejs22.x",
+        "Handler": "telemetry.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "WorkerRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ArtifactBucket"
+          },
+          "S3Key": {
+            "Ref": "ArtifactKey"
+          }
+        },
+        "MemorySize": 256,
+        "Timeout": 30,
+        "Environment": {
+          "Variables": {
+            "BINARY2048_MONGO_URI": {
+              "Ref": "MongoUri"
+            },
+            "BINARY2048_MONGO_DB": "binary2048",
+            "BINARY2048_WORKER_REGION": {
+              "Ref": "AWS::Region"
+            },
+            "BINARY2048_OPS_STORE": "mongo",
+            "BINARY2048_TELEMETRY_LOG_GROUP": "/aws/amplify/dzxvs1esr22z9"
+          }
+        }
+      }
+    },
+    "TelemetrySchedule": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "ScheduleExpression": "rate(15 minutes)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": {
+              "Fn::GetAtt": [
+                "TelemetryFunction",
+                "Arn"
+              ]
+            },
+            "Id": "Aggregate",
+            "RetryPolicy": {
+              "MaximumRetryAttempts": 1,
+              "MaximumEventAgeInSeconds": 900
+            }
+          }
+        ]
+      }
+    },
+    "TelemetryPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Ref": "TelemetryFunction"
+        },
+        "Principal": "events.amazonaws.com",
+        "SourceArn": {
+          "Fn::GetAtt": [
+            "TelemetrySchedule",
+            "Arn"
+          ]
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "TournamentQueueUrl": {
+      "Value": {
+        "Ref": "TournamentQueue"
+      }
+    },
+    "TrainingQueueUrl": {
+      "Value": {
+        "Ref": "TrainingQueue"
+      }
+    }
+  }
+}

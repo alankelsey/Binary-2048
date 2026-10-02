@@ -17,7 +17,7 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: "User data deletion is temporarily unavailable" }, { status: 503 });
   }
   const removedSubscriptions = removeSubscriptionsBySubscriber(subscriberId);
-  const inventoryResult = removeInventoryBySubscriber(subscriberId);
+  const inventoryResult = (await removeInventoryBySubscriber(subscriberId));
 
   return NextResponse.json(
     {

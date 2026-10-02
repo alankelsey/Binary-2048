@@ -62,7 +62,7 @@ describe("api store webhook", () => {
     const dupJson = await duplicate.json();
     expect(duplicate.status).toBe(200);
     expect(dupJson.idempotent).toBe(true);
-    expect(getInventory("api-webhook-user").balances.undo_charge).toBe(3);
+    expect((await getInventory("api-webhook-user")).balances.undo_charge).toBe(3);
   });
 
   it("rejects a signature if the raw body is changed", async () => {
@@ -76,7 +76,7 @@ describe("api store webhook", () => {
     const res = await POST(signedRequest(tampered, { signature }));
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ error: "Invalid Stripe webhook signature" });
-    expect(getInventory("api-webhook-user").balances.undo_charge).toBe(0);
+    expect((await getInventory("api-webhook-user")).balances.undo_charge).toBe(0);
   });
 
   it("rejects missing and stale Stripe signatures", async () => {

@@ -62,8 +62,8 @@ describe("DELETE /api/user/data", () => {
   it("deletes only the authenticated user's linked data", async () => {
     const subscriberId = "u_privacy_delete";
     const otherSubscriberId = "u_privacy_delete_other";
-    grantInventory({ subscriberId, sku: "undo_charge", quantity: 3, reason: "grant" });
-    grantInventory({ subscriberId: otherSubscriberId, sku: "undo_charge", quantity: 2, reason: "grant" });
+    (await grantInventory({ subscriberId, sku: "undo_charge", quantity: 3, reason: "grant" }));
+    (await grantInventory({ subscriberId: otherSubscriberId, sku: "undo_charge", quantity: 2, reason: "grant" }));
     upsertSubscription({
       subscriberId,
       transport: "inapp",
@@ -84,14 +84,14 @@ describe("DELETE /api/user/data", () => {
       [null, null, null, null],
       [null, null, null, null]
     ];
-    const session = createSession({ seed: 911, winTile: 2 }, grid, { sessionClass: "ranked" });
+    const session = (await createSession({ seed: 911, winTile: 2 }, grid, { sessionClass: "ranked" }));
     await submitLeaderboardEntry({
       playerId: subscriberId,
       userTier: "authed",
       gameId: session.current.id,
       session
     });
-    const otherSession = createSession({ seed: 912, winTile: 2 }, grid, { sessionClass: "ranked" });
+    const otherSession = (await createSession({ seed: 912, winTile: 2 }, grid, { sessionClass: "ranked" }));
     await submitLeaderboardEntry({
       playerId: otherSubscriberId,
       userTier: "authed",

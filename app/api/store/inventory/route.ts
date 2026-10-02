@@ -15,10 +15,10 @@ export async function GET(req: Request) {
   const limitRaw = url.searchParams.get("limit");
   const limit = limitRaw ? Number(limitRaw) : undefined;
   try {
-    const inventory = getInventory(principal.subscriberId);
+    const inventory = (await getInventory(principal.subscriberId));
     return NextResponse.json({
       inventory,
-      ledger: listInventoryLedger(principal.subscriberId, limit),
+      ledger: (await listInventoryLedger(principal.subscriberId, limit)),
       userTier: principal.tier,
       entitlements: principal.entitlements
     });
@@ -36,12 +36,12 @@ export async function POST(req: Request) {
   }
   try {
     const body = await req.json().catch(() => ({}));
-    const result = grantInventory({
+    const result = (await grantInventory({
       subscriberId: body?.subscriberId,
       sku: body?.sku,
       quantity: body?.quantity,
       reason: body?.reason
-    });
+    }));
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     return NextResponse.json(

@@ -16,7 +16,7 @@ const ENGINE_VERSION = process.env.NEXT_PUBLIC_APP_COMMIT ?? "dev";
 
 export async function GET(_: Request, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
-  const session = getSession(id);
+  const session = (await getSession(id));
   if (!session) return NextResponse.json({ error: "Game not found" }, { status: 404 });
 
   const state = session.current;

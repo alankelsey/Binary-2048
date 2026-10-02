@@ -78,3 +78,18 @@ while True:
 
 print("final score:", moved.get("current", {}).get("score"))
 ```
+
+## Queued research endpoints (V1)
+
+Production tournament and training requests return HTTP `202` with `jobId`,
+`statusUrl`, and `retryAfterSeconds`. Poll `GET /api/jobs/{jobId}` no faster than
+once every two seconds, retaining the same `x-api-key`. Stop on `complete` and
+read `result`, or on `failed` and report `error`. Results expire after 24 hours.
+The opaque job URL is a read capability; do not publish it for private input.
+
+The combined worker allowance is 250 admitted jobs per UTC month. Each job has
+at most two 60-second, 2-GB execution attempts. Requests beyond the shared
+allowance return `429` with `code: worker_budget_exhausted`; this is distinct
+from a client's ordinary rate limit. Large research batches need a separate
+budget decision. The included JavaScript bot tools and Python pipeline accept
+both queued results and immediate local-development results.

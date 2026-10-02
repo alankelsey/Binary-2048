@@ -1,3 +1,4 @@
+import { sharedOpsEnabled, readOpsValue, writeOpsValue } from "@/lib/binary2048/ops-shared";
 export type LeagueConfig = {
   rulesetId: string;
   seedPoolId: string;
@@ -36,24 +37,24 @@ const store: LeagueConfigStore = globalStore.__binary2048_league_config ?? {
 };
 globalStore.__binary2048_league_config = store;
 
-export function getLeagueConfig(namespace: "production" | "sandbox") {
-  return store[namespace];
+export async function getLeagueConfig(namespace: "production" | "sandbox") {
+  return sharedOpsEnabled() ? (await readOpsValue<LeagueConfig>(`league:${namespace}`)) ?? { ...store[namespace], updatedAtISO: "1970-01-01T00:00:00.000Z" } : store[namespace];
 }
 
-export function mirrorProductionConfigIntoSandbox() {
+export async function mirrorProductionConfigIntoSandbox() {
   store.sandbox = {
-    ...store.production,
+    ...(await getLeagueConfig("production")),
     updatedAtISO: nowISO()
   };
-  return store.sandbox;
+  return sharedOpsEnabled() ? writeOpsValue("league:sandbox", store.sandbox) : store.sandbox;
 }
 
-export function promoteSandboxConfigToProduction() {
+export async function promoteSandboxConfigToProduction() {
   store.production = {
-    ...store.sandbox,
+    ...(await getLeagueConfig("sandbox")),
     updatedAtISO: nowISO()
   };
-  return store.production;
+  return sharedOpsEnabled() ? writeOpsValue("league:production", store.production) : store.production;
 }
 
 export function resetLeagueConfigForTests() {

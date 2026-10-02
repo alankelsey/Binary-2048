@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { resolveWorkerJob } from "./worker-job-client.mjs";
 
 import { upsertBenchmarkRecord } from "./hf-benchmark-ledger.mjs";
 
@@ -17,7 +18,7 @@ async function requestJson(url, init = {}) {
   const text = await response.text();
   const payload = text ? JSON.parse(text) : {};
   if (!response.ok) throw new Error(`${url} failed: ${payload?.error ?? `HTTP ${response.status}`}`);
-  return payload;
+  return resolveWorkerJob(url, payload, init.headers);
 }
 
 function percentile95(values) {

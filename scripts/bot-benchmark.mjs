@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { resolveWorkerJob } from "./worker-job-client.mjs";
 
 const BASE = process.env.BASE ?? "http://localhost:3000";
 const SEEDS = (process.env.BENCH_SEEDS ?? "100,101,102,103,104")
@@ -20,7 +21,7 @@ async function requestJson(path, init = {}) {
     const message = typeof json?.error === "string" ? json.error : `HTTP ${res.status}`;
     throw new Error(`${path} failed: ${message}`);
   }
-  return json;
+  return resolveWorkerJob(BASE, json, init.headers);
 }
 
 function toMarkdown(result) {

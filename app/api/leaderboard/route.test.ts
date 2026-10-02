@@ -22,10 +22,10 @@ describe("GET /api/leaderboard", () => {
       [null, null, null, null],
       [null, null, null, null]
     ];
-    const low = createSession({ seed: 501, spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] } }, lowGrid, { sessionClass: "ranked" });
-    moveSession(low.current.id, "left");
-    const high = createSession({ seed: 502, spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] } }, highGrid, { sessionClass: "ranked" });
-    moveSession(high.current.id, "left");
+    const low = (await createSession({ seed: 501, spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] } }, lowGrid, { sessionClass: "ranked" }));
+    (await moveSession(low.current.id, "left"));
+    const high = (await createSession({ seed: 502, spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] } }, highGrid, { sessionClass: "ranked" }));
+    (await moveSession(high.current.id, "left"));
 
     await submitLeaderboardEntry({ playerId: "u_low", userTier: "authed", gameId: low.current.id, session: low });
     await submitLeaderboardEntry({ playerId: "u_high", userTier: "paid", gameId: high.current.id, session: high });
@@ -54,12 +54,12 @@ describe("GET /api/leaderboard", () => {
       [null, null, null, null],
       [null, null, null, null]
     ];
-    const prod = createSession({ seed: 511, spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] } }, grid, { sessionClass: "ranked" });
-    moveSession(prod.current.id, "left");
+    const prod = (await createSession({ seed: 511, spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] } }, grid, { sessionClass: "ranked" }));
+    (await moveSession(prod.current.id, "left"));
     await submitLeaderboardEntry({ playerId: "u_prod", userTier: "authed", gameId: prod.current.id, session: prod });
 
-    const sandbox = createSession({ seed: 512, spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] } }, grid, { sessionClass: "ranked" });
-    moveSession(sandbox.current.id, "left");
+    const sandbox = (await createSession({ seed: 512, spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] } }, grid, { sessionClass: "ranked" }));
+    (await moveSession(sandbox.current.id, "left"));
     await submitLeaderboardEntry({
       namespace: "sandbox",
       isSandbox: true,

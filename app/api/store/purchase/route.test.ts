@@ -38,7 +38,7 @@ describe("api store purchase", () => {
       })
     );
     expect(res.status).toBe(503);
-    expect(getInventory(storeSubscriberIdForSubject(subject)).balances.undo_charge).toBe(0);
+    expect((await getInventory(storeSubscriberIdForSubject(subject))).balances.undo_charge).toBe(0);
   });
 
   it("uses the authenticated account when explicitly enabled for development", async () => {
@@ -57,6 +57,6 @@ describe("api store purchase", () => {
     const json = await res.json();
     expect(res.status).toBe(200);
     expect(json.inventory?.subscriberId).toBe(storeSubscriberIdForSubject(subject));
-    expect(getInventory("attacker-selected-account").balances.undo_charge).toBe(0);
+    expect((await getInventory("attacker-selected-account")).balances.undo_charge).toBe(0);
   });
 });

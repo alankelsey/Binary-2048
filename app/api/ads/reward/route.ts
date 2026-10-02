@@ -59,14 +59,14 @@ export async function POST(req: Request) {
     const timestampSec = Number(body.timestampSec);
     const nonce = String(body.nonce ?? "");
 
-    const granted = grantVerifiedAdReward({
+    const granted = (await grantVerifiedAdReward({
       subscriberId,
       tier,
       sku,
       quantity,
       nonce,
       timestampSec
-    });
+    }));
 
     return NextResponse.json(granted, { status: 200 });
   } catch (error) {

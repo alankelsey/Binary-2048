@@ -16,18 +16,6 @@ type WebhookEvent = {
   };
 };
 
-type ProcessedGrantResult = ReturnType<typeof executePacketPurchase>;
-
-const globalStore = globalThis as typeof globalThis & {
-  __binary2048_processed_webhook_events?: Set<string>;
-  __binary2048_processed_webhook_payments?: Map<string, ProcessedGrantResult>;
-};
-
-const processedEvents = globalStore.__binary2048_processed_webhook_events ?? new Set<string>();
-const processedPayments = globalStore.__binary2048_processed_webhook_payments ?? new Map<string, ProcessedGrantResult>();
-globalStore.__binary2048_processed_webhook_events = processedEvents;
-globalStore.__binary2048_processed_webhook_payments = processedPayments;
-
 function parseEvent(payload: unknown): WebhookEvent {
   if (!payload || typeof payload !== "object") {
     throw new Error("Invalid webhook event payload");
@@ -47,62 +35,30 @@ function parsePositiveInt(value: unknown): number {
   return 1;
 }
 
-export function processStoreWebhookEvent(payload: unknown) {
+export async function processStoreWebhookEvent(payload: unknown) {
   const event = parseEvent(payload);
   const object = event.data?.object;
   const paymentRef = object?.payment_intent || object?.id || event.id;
 
-  if (processedEvents.has(event.id)) {
-    return {
-      acknowledged: true as const,
-      idempotent: true as const,
-      alreadyProcessed: true as const,
-      eventId: event.id,
-      paymentRef
-    };
-  }
-
   const grantsOnTypes = new Set(["checkout.session.completed", "payment_intent.succeeded"]);
-  if (!grantsOnTypes.has(event.type)) {
-    processedEvents.add(event.id);
-    return {
-      acknowledged: true as const,
-      idempotent: true as const,
-      skipped: true as const,
-      eventId: event.id,
-      paymentRef
-    };
-  }
-
-  const existing = processedPayments.get(paymentRef);
-  if (existing) {
-    processedEvents.add(event.id);
-    return {
-      acknowledged: true as const,
-      idempotent: true as const,
-      alreadyProcessed: true as const,
-      eventId: event.id,
-      paymentRef,
-      purchase: existing
-    };
-  }
+  if (!grantsOnTypes.has(event.type)) return { acknowledged: true, idempotent: true, skipped: true, eventId: event.id, paymentRef };
 
   const metadata = object?.metadata;
   if (!metadata?.subscriberId) throw new Error("Webhook metadata.subscriberId is required");
   if (!metadata?.packetSku) throw new Error("Webhook metadata.packetSku is required");
 
-  const purchase = executePacketPurchase({
+  const purchase = (await executePacketPurchase({
     subscriberId: metadata.subscriberId,
     packetSku: metadata.packetSku,
     quantity: parsePositiveInt(metadata.quantity),
-    grantReason: "grant"
-  });
-  processedEvents.add(event.id);
-  processedPayments.set(paymentRef, purchase);
+    grantReason: "grant",
+    paymentRef
+  }));
 
   return {
     acknowledged: true as const,
-    idempotent: false as const,
+    idempotent: purchase.alreadyProcessed,
+    alreadyProcessed: purchase.alreadyProcessed,
     eventId: event.id,
     paymentRef,
     purchase
@@ -110,7 +66,6 @@ export function processStoreWebhookEvent(payload: unknown) {
 }
 
 export function resetStoreWebhookState() {
-  processedEvents.clear();
-  processedPayments.clear();
+  // Receipt state belongs to the inventory store and resets with that store.
 }
 

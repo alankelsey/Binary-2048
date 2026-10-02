@@ -13,8 +13,8 @@ export default async function StorePage() {
   const subject = authState.email ?? (authState.authenticated ? authState.displayName : null);
   const subscriberId = subject ? storeSubscriberIdForSubject(subject) : null;
   const packets = listStorePackets();
-  const inventory = subscriberId ? getInventory(subscriberId) : null;
-  const ledger = subscriberId ? listInventoryLedger(subscriberId, 20) : [];
+  const inventory = subscriberId ? (await getInventory(subscriberId)) : null;
+  const ledger = subscriberId ? (await listInventoryLedger(subscriberId, 20)) : [];
 
   return (
     <main>

@@ -1,3 +1,4 @@
+import { workerJobsEnabled, enqueueWorkerTask, WorkerBudgetError } from "@/lib/binary2048/worker-jobs";
 /**
  * GET /api/training/labels
  *
@@ -69,7 +70,7 @@ export async function GET(req: Request) {
       );
     }
 
-    slot = await acquireTrainingSlot(resolveTrainingQueueOptions());
+    if (!workerJobsEnabled()) slot = await acquireTrainingSlot(resolveTrainingQueueOptions());
     const { searchParams } = new URL(req.url);
 
     const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
@@ -81,6 +82,11 @@ export async function GET(req: Request) {
       ? (rawStrategy as LabelStrategy)
       : "score_delta";
 
+    if (workerJobsEnabled()) {
+      const job = await enqueueWorkerTask({ kind: "training-labels", args: [page, limit, strategy, minTile] });
+      statusCode = 202;
+      return NextResponse.json(job, { status: 202, headers: { ...rateLimitHeaders(quota), "retry-after": "2", "cache-control": "no-store" } });
+    }
     const result = generateTrainingLabels(page, limit, strategy, minTile);
     return NextResponse.json(
       { ...result, queue: getTrainingQueueStats() },
@@ -88,6 +94,7 @@ export async function GET(req: Request) {
     );
   } catch (error) {
     const headers = quota ? rateLimitHeaders(quota) : undefined;
+    if (error instanceof WorkerBudgetError) { statusCode = 429; return NextResponse.json({ error: error.message, code: "worker_budget_exhausted" }, { status: 429, headers }); }
     if (error instanceof TrainingQueueFullError || error instanceof TrainingQueueTimeoutError) {
       statusCode = 503;
       return NextResponse.json(
@@ -101,7 +108,7 @@ export async function GET(req: Request) {
     }
     statusCode = 500;
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to generate label data" },
+      { error: "Failed to generate label data" },
       { status: 500, headers }
     );
   } finally {

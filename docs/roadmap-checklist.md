@@ -365,20 +365,18 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
 - [x] Add in-app “Report issue” flow with prefilled GitHub issue link carrying page/build/version context
 - [x] Add triage labels/project convention for player-reported bugs, gameplay ideas, and balance feedback
 
-## Cost-Gated V1 Work — Complete Last
+## Approved V1 Infrastructure Work — 2026-10-01
 
-Do not provision or enable these items until the remaining non-cost V1 work is
-complete and the user explicitly approves the recurring or usage-based cost.
+The user approved on-demand tournament/training workers, inventory and session
+persistence, and shared ops data/console costs on 2026-10-01. Reuse the existing
+Atlas deployment and logging. Do not add NAT, always-on workers, another paid
+database, or paid analytics. Dev environment and isolated WAF testing moved to
+the end of V2. See [costed scope](./v1-costed-scope-2026-10-01.md).
 
-- [ ] Stand up a real dedicated `dev` environment (separate Amplify branch/domain, secrets, isolated test data, and WAF); the existing document is a blueprint, and the 2026-09-29 AWS audit found only the production `main` branch and production ACL
 - [ ] Move synchronous tournament/training generation to a dedicated worker runtime for hard CPU isolation from gameplay
-- [ ] Complete the remaining WAF acceptance against non-production infrastructure
-  - [x] Captured the production association, managed rules, sampled-request behavior, logging state, and quota comparison on 2026-08-15 ([evidence](./waf-live-verification-2026-08-15.md))
-  - [x] Deployed and re-queried production bot-friendly API/global rate backstops on 2026-08-16, enabled 30-day retained logging, and removed CAPTCHA/Challenge conflicts from the bot API policy
-  - [ ] Run a controlled threshold/block test against the rate rules in non-production and capture the resulting sampled request and retained log event
 - [ ] Move inventory balances, purchase idempotency, and ledger entries from per-instance memory to a shared transactional store before enabling paid features
 - [ ] Convert Mongo session reads to awaited asynchronous hydration, then enable `BINARY2048_SESSION_STORE=mongo` when ranked/multi-device traffic justifies the additional Atlas operations
-- [ ] Add fleet-wide ops persistence/aggregation for telemetry, league configuration, and model-registry data; do not add per-request Mongo writes or metered monitoring queries until their operating cost is approved
+- [ ] Add fleet-wide ops persistence/aggregation for telemetry, league configuration, and model-registry data; keep aggregation and monitoring usage within the approved small-workload allowance
 
 ## Binary 2048 V2
 
@@ -408,3 +406,11 @@ active V1-only scope.
     - [ ] Evaluate print-on-demand providers, margins, fulfillment risk, and brand-quality thresholds
     - [ ] Add a simple swag landing/view concept and decide whether it lives in-app, on GitHub Pages, or on an external storefront
     - [ ] Explore visual identity options for `F-cubed` / `FBBB` and how the mark fits the main Binary-2048 brand
+
+### Final V2 infrastructure acceptance — moved 2026-10-01
+
+- [ ] Stand up a real dedicated `dev` environment (separate Amplify branch/domain, secrets, isolated test data, and WAF); the existing document is a blueprint, and the 2026-09-29 AWS audit found only the production `main` branch and production ACL
+- [ ] Complete the remaining WAF acceptance against non-production infrastructure
+  - [x] Captured the production association, managed rules, sampled-request behavior, logging state, and quota comparison on 2026-08-15 ([evidence](./waf-live-verification-2026-08-15.md))
+  - [x] Deployed and re-queried production bot-friendly API/global rate backstops on 2026-08-16, enabled 30-day retained logging, and removed CAPTCHA/Challenge conflicts from the bot API policy
+  - [ ] Run a controlled threshold/block test against the rate rules in non-production and capture the resulting sampled request and retained log event

@@ -30,7 +30,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const processed = processStoreWebhookEvent(event);
+    const processed = (await processStoreWebhookEvent(event));
     return NextResponse.json(processed, { status: 200 });
   } catch (error) {
     return NextResponse.json(

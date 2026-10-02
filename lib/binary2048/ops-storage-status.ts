@@ -23,6 +23,8 @@ export function getPassiveStorageStatus() {
     passive: true,
     performsConnectivityCheck: false,
     stores: {
+      inventory: { mode: normalized(process.env.BINARY2048_INVENTORY_STORE, "memory"), scope: databaseScope(normalized(process.env.BINARY2048_INVENTORY_STORE, "memory")) },
+      ops: { mode: normalized(process.env.BINARY2048_OPS_STORE, "memory"), scope: databaseScope(normalized(process.env.BINARY2048_OPS_STORE, "memory")) },
       runs: { mode: runStore, scope: databaseScope(runStore) },
       sessions: { mode: sessionStore, scope: databaseScope(sessionStore) },
       leaderboard: { mode: leaderboardStore, scope: databaseScope(leaderboardStore) },

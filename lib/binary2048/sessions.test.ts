@@ -34,41 +34,41 @@ describe("session undo", () => {
     delete process.env.BINARY2048_RECOVERY_SECRET;
   });
 
-  it("reverts current state to previous step", () => {
-    const session = createSession(config, initialGrid);
+  it("reverts current state to previous step", async () => {
+    const session = (await createSession(config, initialGrid));
     const id = session.current.id;
-    const beforeMove = getSession(id)?.current;
+    const beforeMove = (await getSession(id))?.current;
     expect(beforeMove).toBeTruthy();
 
-    moveSession(id, "left");
-    const afterMove = getSession(id)?.current;
+    (await moveSession(id, "left"));
+    const afterMove = (await getSession(id))?.current;
     expect(afterMove?.turn).toBe(1);
 
-    const undone = undoSession(id);
+    const undone = (await undoSession(id));
     expect(undone.error).toBeNull();
-    const afterUndo = getSession(id)?.current;
+    const afterUndo = (await getSession(id))?.current;
     expect(afterUndo).toEqual(beforeMove);
   });
 
-  it("is safe when there are no steps to undo", () => {
-    const session = createSession(config, initialGrid);
+  it("is safe when there are no steps to undo", async () => {
+    const session = (await createSession(config, initialGrid));
     const id = session.current.id;
-    const beforeUndo = getSession(id)?.current;
-    const undone = undoSession(id);
+    const beforeUndo = (await getSession(id))?.current;
+    const undone = (await undoSession(id));
     expect(undone.session?.current).toEqual(beforeUndo);
   });
 
-  it("enforces undo limits by difficulty mode", () => {
-    const normalSession = createSession(config, initialGrid);
+  it("enforces undo limits by difficulty mode", async () => {
+    const normalSession = (await createSession(config, initialGrid));
     const normalId = normalSession.current.id;
-    moveSession(normalId, "left");
-    moveSession(normalId, "right");
-    moveSession(normalId, "left");
-    expect(undoSession(normalId).error).toBeNull();
-    expect(undoSession(normalId).error).toBeNull();
-    expect(undoSession(normalId).error).toBe("LIMIT_REACHED");
+    (await moveSession(normalId, "left"));
+    (await moveSession(normalId, "right"));
+    (await moveSession(normalId, "left"));
+    expect((await undoSession(normalId)).error).toBeNull();
+    expect((await undoSession(normalId)).error).toBeNull();
+    expect((await undoSession(normalId)).error).toBe("LIMIT_REACHED");
 
-    const deathSession = createSession(
+    const deathSession = (await createSession(
       {
         ...config,
         spawn: {
@@ -80,54 +80,54 @@ describe("session undo", () => {
         }
       },
       initialGrid
-    );
+    ));
     const deathId = deathSession.current.id;
-    moveSession(deathId, "left");
-    expect(undoSession(deathId).error).toBe("LIMIT_REACHED");
+    (await moveSession(deathId, "left"));
+    expect((await undoSession(deathId)).error).toBe("LIMIT_REACHED");
   });
 
-  it("marks created sessions as unranked created", () => {
-    const session = createSession(config, initialGrid);
+  it("marks created sessions as unranked created", async () => {
+    const session = (await createSession(config, initialGrid));
     expect(session.integrity.sessionClass).toBe("unranked");
     expect(session.integrity.source).toBe("created");
   });
 
-  it("reconstructs the current game from a compact recovery snapshot", () => {
-    const session = createSession(config, initialGrid);
-    moveSession(session.current.id, "left");
-    const snapshot = exportRecoverySnapshot(session.current.id);
+  it("reconstructs the current game from a compact recovery snapshot", async () => {
+    const session = (await createSession(config, initialGrid));
+    (await moveSession(session.current.id, "left"));
+    const snapshot = (await exportRecoverySnapshot(session.current.id));
     expect(snapshot?.moves).toEqual(["left"]);
 
-    const recovered = importRecoverySnapshot(snapshot!);
-    expect(recovered.current.grid).toEqual(getSession(session.current.id)?.current.grid);
-    expect(recovered.current.score).toBe(getSession(session.current.id)?.current.score);
+    const recovered = (await importRecoverySnapshot(snapshot!));
+    expect(recovered.current.grid).toEqual((await getSession(session.current.id))?.current.grid);
+    expect(recovered.current.score).toBe((await getSession(session.current.id))?.current.score);
     expect(recovered.steps).toHaveLength(1);
   });
 
-  it("does not roll current state back to an older signed browser snapshot", () => {
+  it("does not roll current state back to an older signed browser snapshot", async () => {
     process.env.BINARY2048_RECOVERY_SECRET = "session-recovery-secret";
-    const session = createSession(config, initialGrid);
+    const session = (await createSession(config, initialGrid));
     const id = session.current.id;
-    moveSession(id, "left");
-    const olderSnapshot = exportRecoverySnapshot(id)!;
-    moveSession(id, "right");
+    (await moveSession(id, "left"));
+    const olderSnapshot = (await exportRecoverySnapshot(id))!;
+    (await moveSession(id, "right"));
 
-    const resolved = resolveSessionWithRecovery(id, olderSnapshot);
+    const resolved = (await resolveSessionWithRecovery(id, olderSnapshot));
 
     expect(resolved?.steps.map((step) => step.dir)).toEqual(["left", "right"]);
   });
 
-  it("does not replace current state with an unsigned browser snapshot", () => {
+  it("does not replace current state with an unsigned browser snapshot", async () => {
     process.env.BINARY2048_RECOVERY_SECRET = "session-recovery-secret";
-    const session = createSession(config, initialGrid);
+    const session = (await createSession(config, initialGrid));
     const id = session.current.id;
     const unsignedSnapshot = {
-      ...exportRecoverySnapshot(id)!,
+      ...(await exportRecoverySnapshot(id))!,
       signature: undefined,
       moves: ["left" as const, "right" as const]
     };
 
-    const resolved = resolveSessionWithRecovery(id, unsignedSnapshot);
+    const resolved = (await resolveSessionWithRecovery(id, unsignedSnapshot));
 
     expect(resolved?.steps).toHaveLength(0);
   });

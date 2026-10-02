@@ -24,7 +24,7 @@ describe("GET /api/games/:id", () => {
   ];
 
   it("returns session state with undo metadata", async () => {
-    const session = createSession(config, initialGrid);
+    const session = (await createSession(config, initialGrid));
     const id = session.current.id;
 
     const res = await GET(new Request("http://localhost/api/games/x"), {

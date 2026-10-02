@@ -34,9 +34,9 @@ describe("POST /api/games/:id/undo", () => {
   });
 
   it("undoes a move and returns undo metadata", async () => {
-    const session = createSession(baseConfig, initialGrid);
+    const session = (await createSession(baseConfig, initialGrid));
     const id = session.current.id;
-    moveSession(id, "left");
+    (await moveSession(id, "left"));
 
     const req = new Request("http://localhost/api/games/x/undo", { method: "POST" });
     const res = await POST(req, { params: Promise.resolve({ id }) });
@@ -50,11 +50,11 @@ describe("POST /api/games/:id/undo", () => {
   });
 
   it("returns 409 when undo limit is exhausted", async () => {
-    const session = createSession(baseConfig, initialGrid);
+    const session = (await createSession(baseConfig, initialGrid));
     const id = session.current.id;
-    moveSession(id, "left");
-    moveSession(id, "right");
-    moveSession(id, "left");
+    (await moveSession(id, "left"));
+    (await moveSession(id, "right"));
+    (await moveSession(id, "left"));
 
     const req = new Request("http://localhost/api/games/x/undo", { method: "POST" });
     await POST(req, { params: Promise.resolve({ id }) });
@@ -74,10 +74,10 @@ describe("POST /api/games/:id/undo", () => {
   });
 
   it("restores an instance-local session and undoes atomically", async () => {
-    const session = createSession(baseConfig, initialGrid);
+    const session = (await createSession(baseConfig, initialGrid));
     const id = session.current.id;
-    moveSession(id, "left");
-    const recoverySnapshot = exportRecoverySnapshot(id);
+    (await moveSession(id, "left"));
+    const recoverySnapshot = (await exportRecoverySnapshot(id));
 
     const req = new Request("http://localhost/api/games/missing_game/undo", {
       method: "POST",
@@ -95,15 +95,15 @@ describe("POST /api/games/:id/undo", () => {
 
   it("undoes the newer signed browser history instead of stale instance state", async () => {
     process.env.BINARY2048_RECOVERY_SECRET = "undo-recovery-secret";
-    const session = createSession(baseConfig, initialGrid);
+    const session = (await createSession(baseConfig, initialGrid));
     const id = session.current.id;
-    moveSession(id, "left");
-    const staleSnapshot = exportRecoverySnapshot(id)!;
-    moveSession(id, "right");
-    const newerSnapshot = exportRecoverySnapshot(id)!;
+    (await moveSession(id, "left"));
+    const staleSnapshot = (await exportRecoverySnapshot(id))!;
+    (await moveSession(id, "right"));
+    const newerSnapshot = (await exportRecoverySnapshot(id))!;
 
     resetSessionStoreForTests();
-    importRecoveryPayload(staleSnapshot);
+    (await importRecoveryPayload(staleSnapshot));
 
     const res = await POST(
       new Request("http://localhost/api/games/x/undo", {

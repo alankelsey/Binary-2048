@@ -13,11 +13,11 @@ describe("session-store", () => {
     process.env = originalEnv;
   });
 
-  it("uses memory session store by default", () => {
+  it("uses memory session store by default", async () => {
     const store = getSessionStore();
-    const session = createSession({ seed: 777 });
-    store.set(session.current.id, session);
-    expect(store.get(session.current.id)?.current.id).toBe(session.current.id);
+    const session = (await createSession({ seed: 777 }));
+    await store.set(session.current.id, session);
+    expect((await store.get(session.current.id))?.current.id).toBe(session.current.id);
   });
 
   it("throws when mongo mode is selected without mongo uri", () => {

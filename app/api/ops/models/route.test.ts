@@ -19,11 +19,11 @@ describe("GET /api/ops/models", () => {
   });
 
   it("returns registered models as read-only runtime-scoped data", async () => {
-    registerModel({
+    (await registerModel({
       modelId: "bot.alpha", family: "bot_policy", version: "v1",
       rulesetId: "binary2048-v1", active: true,
       metadata: { internalToken: "must-not-leak" }
-    });
+    }));
     const res = await GET(new Request("http://localhost/api/ops/models", {
       headers: { "x-admin-token": "ops-test-token" }
     }));

@@ -32,7 +32,7 @@ describe("GET /api/games/:id/export", () => {
   });
 
   it("returns downloadable export json for existing game", async () => {
-    const session = createSession(config, initialGrid);
+    const session = (await createSession(config, initialGrid));
     const id = session.current.id;
 
     const res = await GET(new Request("http://localhost/api/games/x/export"), {
@@ -67,9 +67,9 @@ describe("GET /api/games/:id/export", () => {
   });
 
   it("recovers an instance-local session from the browser snapshot when exporting", async () => {
-    const session = createSession(config, initialGrid);
+    const session = (await createSession(config, initialGrid));
     const id = session.current.id;
-    const recoverySnapshot = exportRecoverySnapshot(id);
+    const recoverySnapshot = (await exportRecoverySnapshot(id));
     expect(recoverySnapshot).toBeTruthy();
     resetSessionStoreForTests();
 
@@ -90,7 +90,7 @@ describe("GET /api/games/:id/export", () => {
   });
 
   it("returns compact replay payload when compact=1 is requested", async () => {
-    const session = createSession(config, initialGrid);
+    const session = (await createSession(config, initialGrid));
     const id = session.current.id;
 
     const res = await GET(new Request("http://localhost/api/games/x/export?compact=1"), {
@@ -109,9 +109,9 @@ describe("GET /api/games/:id/export", () => {
 
   it("exports the newer signed browser history when the local instance is stale", async () => {
     process.env.BINARY2048_RECOVERY_SECRET = "export-recovery-secret";
-    const original = createSession(config, initialGrid);
+    const original = (await createSession(config, initialGrid));
     const id = original.current.id;
-    const initialSnapshot = exportRecoverySnapshot(id);
+    const initialSnapshot = (await exportRecoverySnapshot(id));
     const moveRes = await moveGame(
       new Request("http://localhost/api/games/move", {
         method: "POST",
@@ -123,7 +123,7 @@ describe("GET /api/games/:id/export", () => {
     const moved = await moveRes.json();
 
     resetSessionStoreForTests();
-    importRecoveryPayload(initialSnapshot!);
+    (await importRecoveryPayload(initialSnapshot!));
 
     const res = await POST(
       new Request(`http://localhost/api/games/${id}/export?compact=1`, {
@@ -142,7 +142,7 @@ describe("GET /api/games/:id/export", () => {
   });
 
   it("adds audit hash chain when audit=1 is requested", async () => {
-    const session = createSession(config, initialGrid);
+    const session = (await createSession(config, initialGrid));
     const id = session.current.id;
 
     await moveGame(
@@ -169,7 +169,7 @@ describe("GET /api/games/:id/export", () => {
 
   it("includes replay signature when signing secret is configured", async () => {
     process.env.BINARY2048_REPLAY_CODE_SECRET = "export-sign-secret";
-    const session = createSession(config, initialGrid);
+    const session = (await createSession(config, initialGrid));
     const id = session.current.id;
 
     const compactRes = await GET(new Request("http://localhost/api/games/x/export?compact=1"), {
@@ -189,7 +189,7 @@ describe("GET /api/games/:id/export", () => {
   });
 
   it("includes undo accounting metadata in export", async () => {
-    const session = createSession(config, initialGrid);
+    const session = (await createSession(config, initialGrid));
     const id = session.current.id;
 
     await moveGame(
