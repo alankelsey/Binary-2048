@@ -239,7 +239,9 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
   - [ ] Build and accessibility-test the responsive ops UI after those backend prerequisites are complete
 - [x] Marketing rollout hooks (social share CTAs, referral tracking)
 - [ ] Marketing and launch campaign planning (see `docs/marketing-launch-plan.md`; planning only)
-  - [ ] Market research brief: competitors, search demand, communities, portal rules, timing
+  - [x] Market research brief, first pass (`docs/marketing-research-brief.md`)
+  - [ ] Finish open research tasks: search demand, remaining community rules, name/trademark check, press list
+  - [ ] Owner decision: client-side unranked build for game portals (Option A in the brief) and a Gymnasium API wrapper
   - [ ] Owner decisions: lead audience, waitlist, portal builds, two social platforms, Hugging Face account, launch window, paid cap
   - [ ] Press kit and positioning variants
   - [ ] Phase gates agreed: soft launch after V1 session persistence; hard launch after V1 acceptance and load test

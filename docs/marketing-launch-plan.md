@@ -3,6 +3,11 @@
 Date: 2026-10-01. Status: planning draft for exploration. No implementation is
 authorized by this document.
 
+Updated 2026-10-01 with findings from `marketing-research-brief.md`: lead with
+the bot and research audience, drop "first" and "only" claims, defer game
+portals pending a client-side build decision, make Product Hunt optional, and
+move the Hugging Face account into Phase 1.
+
 ## Purpose
 
 The roadmap's completed "Marketing rollout hooks" item covers in-product
@@ -190,6 +195,7 @@ Exit: research brief reviewed, channel shortlist approved by the owner.
 - Participate genuinely in target communities without promoting yet
 - Seed the bot audience: post the API quickstart and benchmark tables to one or
   two technical communities
+- Create the Hugging Face account and publish the audited dataset with a dataset card
 
 Exit: a measurable waitlist or follower baseline, plus at least a few external
 bot submissions.
@@ -216,11 +222,11 @@ does not sink all of them:
 
 | Day | Action |
 | --- | --- |
-| Day 1 (Tue–Thu) | Product Hunt launch; tournament results announced; email waitlist |
-| Day 2 | Show HN (bot and determinism angle) |
+| Day 1 (Tue–Thu) | Show HN (bot and determinism angle), 7–10am PT; tournament results announced; email waitlist |
+| Day 2 | Optional Product Hunt launch, only if a maker network exists by then |
 | Day 3 | Reddit posts to the two or three best-fit subreddits, spaced out |
 | Day 4–5 | Social clips, LinkedIn post, press and newsletter follow-ups |
-| Week 2 | Portal submissions, technical blog cross-posts, dataset announcements |
+| Week 2 | Casual-reach wave (r/WebGames, short video clips), technical blog cross-posts |
 
 During launch week the owner, or a session, monitors comments and ops alarms
 daily, and the response playbook for bugs and incidents is ready in advance.
@@ -301,8 +307,8 @@ Paid acquisition before retention is proven mostly buys players who leave.
 
 ## Next exploration steps (no implementation)
 
-1. Write `docs/marketing-research-brief.md` covering the five research questions.
-2. Verify listing-site and subreddit rules and record them in the channel tables.
+1. ~~Write `docs/marketing-research-brief.md`~~ First pass done 2026-10-01; see its open research tasks.
+2. Finish the subreddit and Discord rule checks the brief left open.
 3. Draft the press kit content list and the positioning variants for A/B testing.
 4. Bring the open decisions above to the owner and record their answers here.
 5. Turn approved items into roadmap tasks with their own scope and acceptance.
