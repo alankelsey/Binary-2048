@@ -58,5 +58,8 @@ session/refresh verification passed. All V1 roadmap checkboxes are now complete.
 
 During the first post-deploy rerun, the operator account legitimately authorized
 a grant-denial probe and added one `undo_charge`; the test has been corrected to
-avoid that mutation in operator mode. Restoring that balance requires an explicit
-corrective production action. No payment or data deletion occurred.
+avoid that mutation in operator mode. On 2026-10-05, the ledger confirmed the
+single `+1 grant` was the account's only undo-charge entry and its balance was 1.
+An authenticated `-1 adjust` restored the balance to 0, and a subsequent read
+verified both the adjustment ledger entry and final balance. No payment or data
+deletion occurred.
