@@ -389,10 +389,8 @@ the end of V2. See [costed scope](./v1-costed-scope-2026-10-01.md).
 
 ## Binary 2048 V2
 
-Planning only: do not begin or continue V2 implementation until every V1
-acceptance gate is complete. Checked observability entries below record work
-already deployed before this boundary was reaffirmed; they do not change the
-active V1-only scope.
+V1 completed on 2026-10-05. V2 is now active. Checked observability entries
+below record work already deployed before V2 formally started.
 
 - [ ] Execute the [Binary 2048 V2 delivery plan](./binary2048v2.md)
   - [ ] Complete Phase 0 measurement and input-observability baseline
@@ -410,7 +408,11 @@ active V1-only scope.
     - [ ] Verify the same critical flow, safe-area padding, and dock layout on iPhone Safari
     - [ ] Repeat the authenticated sign-in, session-resume, gameplay, and sign-out flow on Android Chrome
   - [ ] Migrate Mongo-touching workloads to an approved fixed-egress runtime and reduce Atlas network access from the temporary broad allowlist when its cost/security trigger is met
-  - [ ] Reassess hosting after collecting 30 consecutive days of itemized production billing; separate Amplify, WAF, Atlas/MongoDB, transfer, and ancillary charges, confirm whether MongoDB is the primary cost driver, and compare the measured total cost of ownership with AWS Lightsail and a comparable managed/unmanaged VPS before proposing a migration
+  - [ ] Reassess hosting after collecting 30 consecutive days of itemized production billing; treat prior comparisons as hypotheses and compare Amplify, Vercel, Netlify, Cloudflare Workers, AWS Lightsail, and a comparable managed/unmanaged VPS using the [evidence gate in the V2 plan](./binary2048v2.md#hosting-cost-reassessment)
+    - [ ] Verify current first-party pricing, hard limits, overage behavior, and commercial-use eligibility for every candidate
+    - [ ] Audit Next.js, Node, Mongo transactions/networking, Auth.js, AWS service, secret-management, observability, and rollback portability
+    - [ ] Compare moving only the web runtime with moving additional AWS services, retaining all residual AWS and Atlas costs in total cost of ownership
+    - [ ] With explicit cost approval, pass a bounded non-production proof on the leading candidate before recommending migration
   - [ ] Revisit whether research datasets should remain in `alankelsey/Binary-2048` or move to a dedicated dataset-only repository; V1 will use the existing public repository
   - [ ] Evaluate and design the merch/swag offering
     - [ ] Evaluate print-on-demand providers, margins, fulfillment risk, and brand-quality thresholds

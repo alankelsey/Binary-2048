@@ -1,6 +1,6 @@
 # Binary 2048 v2 Plan
 
-Status: initial planning document  
+Status: active delivery plan; V1 completed 2026-10-05
 Created: 2026-09-17  
 Implementation status: Phase 0 started; first client move-timing slice implemented
 
@@ -74,6 +74,67 @@ monitoring, patching, deployment/rollback, availability, and operator time.
 Retaining Atlas while moving only the web runtime must be evaluated as a
 separate option. Produce a recommendation and migration trigger; do not
 provision or migrate infrastructure as part of the review.
+
+Treat hosting comparisons from prior chats or secondary articles as hypotheses,
+not current pricing or compatibility evidence. Re-check official documentation
+at decision time because plan limits, adapters, and pricing change frequently.
+The research must include Amplify, Vercel, Netlify, Cloudflare Workers, AWS
+Lightsail, and one comparable managed or unmanaged VPS.
+
+- [ ] Classify the application's expected use as personal/non-commercial or
+  commercial before treating any free tier as eligible. Vercel documents its
+  free Hobby plan as personal, non-commercial use and pauses Hobby projects that
+  exceed included usage; record the current plan terms and relevant limits from
+  the [official Vercel plan documentation](https://vercel.com/docs/plans/hobby).
+- [ ] Model Netlify from its current credit system rather than legacy bandwidth
+  and build-minute allowances. Record production-deploy, compute, bandwidth,
+  and request consumption, the free plan's hard monthly limit, and paid-plan
+  behavior from the [official pricing page](https://www.netlify.com/pricing/).
+- [ ] Run a Cloudflare compatibility spike instead of assuming ordinary Next.js
+  Node.js deployment. Record the supported adapter and Next.js version, Node.js
+  compatibility gaps, CPU/request limits, middleware behavior, and image/cache
+  differences using the [official Next.js adapter guide](https://developers.cloudflare.com/workers/framework-guides/web-apps/opennext/)
+  and [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/).
+- [ ] Prove MongoDB connectivity separately on every candidate. Do not propose
+  the Atlas Data API as a fallback: [MongoDB states](https://www.mongodb.com/docs/api/doc/atlas-app-services-admin-api-v3/)
+  that the Data API reached end of life on 2025-09-30. For Cloudflare, test the
+  actual driver/TCP/TLS path, transactions, connection reuse, cold starts,
+  regional latency, and Atlas network controls rather than inferring
+  compatibility from generic TCP support.
+- [ ] Audit repository portability: Node `crypto`, the native MongoDB driver and
+  transactions, NextAuth callbacks/cookies, AWS SQS/S3/CloudWatch integrations,
+  scheduled telemetry, runtime duration/body limits, streaming, environment
+  variables, build output, logs, and rollback. Remove the Amplify-specific need
+  to bake secrets through `next.config.mjs` in any migration design; secrets must
+  remain runtime-only and must not enter client or reusable build artifacts.
+- [ ] Prove production failure behavior on the candidate: required Mongo-backed
+  sessions, inventory, leaderboard, run storage, and rate limits must fail closed
+  when configuration or connectivity is missing rather than silently falling
+  back to per-instance memory. Verify the platform's authoritative client-IP
+  header before using forwarded addresses for rate limits.
+- [ ] Design replacements or bridges for host-specific operations: scoped AWS
+  authorization for web-to-SQS and S3 calls, route-log delivery to the existing
+  CloudWatch telemetry aggregator or a new platform-neutral sink, deploy status
+  and rollback automation, WAF/rate-limit policy, alarms, and incident evidence.
+- [ ] Compare two deployment boundaries for every candidate: move only the
+  Next.js web runtime while retaining the accepted AWS worker/SQS/S3/CloudWatch
+  stack, and move additional services. Attribute retained AWS and Atlas costs so
+  a cheaper web tier is not presented as the total application cost.
+- [ ] Use the same measured 30-day workload for every estimate: production
+  deploys, requests, bandwidth, function CPU/memory/duration, scheduled work,
+  logs, WAF/security controls, preview/dev use, database connections and Atlas
+  operations. Include hard-limit outage behavior, overage/spend controls,
+  commercial eligibility, observability, rollback, and operator time.
+- [ ] Before recommending a migration, build a bounded non-production proof on
+  the leading candidate and pass build, OAuth, Mongo transaction/session,
+  gameplay, replay, worker submission, ops authorization, cold/warm performance,
+  regional, rollback, and cost-metering checks. Provisioning this proof requires
+  explicit approval and a cost cap.
+
+Exit criterion: a dated decision record links first-party terms, measured
+production usage, the portability audit, proof-deployment evidence, and a
+three-year total-cost comparison. It recommends stay/migrate plus a trigger and
+rollback plan; a free-tier headline alone is not sufficient evidence.
 
 ### Research repository decision
 
@@ -608,7 +669,7 @@ At the user’s direction, complete these at the end of V2:
 - Perform isolated non-production WAF threshold/block acceptance, retaining
   sampled-request and log evidence.
 
-These are deferred V1 gates, not completed acceptance. Current V1 work remains
-on-demand workers, inventory/session persistence, and shared ops data/console,
-using the existing database and logging without NAT, always-on workers, another
-paid database, or paid analytics.
+V1 completed on 2026-10-05. These are V2 carryover infrastructure obligations;
+the accepted V1 baseline uses on-demand workers, shared inventory/session and
+ops data, and the existing database and logging without NAT, always-on workers,
+another paid database, or paid analytics.
