@@ -380,7 +380,7 @@ the end of V2. See [costed scope](./v1-costed-scope-2026-10-01.md).
 
 ### Final V1 acceptance follow-up — 2026-10-03
 
-- [ ] Resolve the HTTP 409 from terminal recovery-safe practice leaderboard submission and rerun the dependent authenticated store acceptance ([evidence](./v1-ops-console-acceptance-2026-10-03.md))
+- [x] Resolve the HTTP 409 from terminal recovery-safe practice leaderboard submission and rerun the dependent authenticated store acceptance ([evidence](./v1-ops-console-acceptance-2026-10-03.md))
 - [ ] Complete real GitHub provider reauthentication with refreshed provider login state; the current application OAuth session passes but the provider round trip stops at login
 
 ## Binary 2048 V2

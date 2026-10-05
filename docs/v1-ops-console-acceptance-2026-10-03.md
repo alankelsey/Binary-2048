@@ -42,13 +42,18 @@ Result: 9 passed, 2 failed, 1 dependent test did not run.
   leaderboard submission returned HTTP 409 instead of 200. Follow-up traced
   this to the submit route always rebuilding from the supplied recovery snapshot,
   which could replace a finished server session with an older browser snapshot.
-  The local fix now uses the shared recovery resolver so the authoritative server
-  session wins unless a newer trusted snapshot must be restored. Regression tests
-  pass; deployment and production acceptance remain outstanding.
-- The serial authenticated store/inventory test did not run after the practice
-  submission failure.
+  The fix now uses the shared recovery resolver so the authoritative server
+  session wins unless a newer trusted snapshot must be restored. Commit `bba216f`
+  deployed successfully in Amplify job 374 on 2026-10-05. Production smoke passed,
+  and the recovery-safe ranked practice submission then passed in production.
+- The dependent authenticated store/inventory test passed after the submission
+  fix. Because this acceptance uses the allowlisted operator account, the suite
+  now avoids issuing its ordinary-user grant-denial probe in operator mode; route
+  tests retain coverage that ordinary authenticated users cannot grant inventory.
 
-The ops-console roadmap item is complete. V1 release acceptance remains open
-until the submission failure is resolved, provider reauthentication is verified,
-and the dependent store acceptance is rerun successfully. No payments, inventory
-grants, data deletion, or infrastructure changes were performed.
+The ops-console and recovery-safe practice submission gates are complete. V1
+release acceptance remains open until the interactive provider reauthentication
+is verified. During the first post-deploy rerun, the operator account legitimately
+authorized a grant-denial probe and added one `undo_charge`; the test has been
+corrected to avoid that mutation in operator mode. Restoring that balance requires
+an explicit corrective production action. No payment or data deletion occurred.

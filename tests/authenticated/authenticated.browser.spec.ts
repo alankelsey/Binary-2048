@@ -142,11 +142,16 @@ test("authenticated store reads are account-bound and paid mutations fail closed
   );
   expect(crossAccountRead.status()).toBe(403);
 
-  const unauthorizedGrant = await request.post("/api/store/inventory", {
-    headers: { authorization: `Bearer ${bridgeToken}` },
-    data: { subscriberId: inventory.inventory.subscriberId, sku: "undo_charge", quantity: 1 }
-  });
-  expect(unauthorizedGrant.status()).toBe(401);
+  // Operator acceptance uses an explicitly allowlisted subject, so posting to
+  // the grant route would be authorized and mutate production inventory.
+  // Ordinary-user grant denial remains covered by the route authorization tests.
+  if (process.env.AUTH_OPS_ACCEPTANCE !== "1") {
+    const unauthorizedGrant = await request.post("/api/store/inventory", {
+      headers: { authorization: `Bearer ${bridgeToken}` },
+      data: { subscriberId: inventory.inventory.subscriberId, sku: "undo_charge", quantity: 1 }
+    });
+    expect(unauthorizedGrant.status()).toBe(401);
+  }
 
   const directPurchase = await request.post("/api/store/purchase", {
     headers: { authorization: `Bearer ${bridgeToken}` },
