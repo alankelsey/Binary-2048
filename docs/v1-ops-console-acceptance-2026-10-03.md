@@ -51,9 +51,12 @@ Result: 9 passed, 2 failed, 1 dependent test did not run.
   now avoids issuing its ordinary-user grant-denial probe in operator mode; route
   tests retain coverage that ordinary authenticated users cannot grant inventory.
 
-The ops-console and recovery-safe practice submission gates are complete. V1
-release acceptance remains open until the interactive provider reauthentication
-is verified. During the first post-deploy rerun, the operator account legitimately
-authorized a grant-denial probe and added one `undo_charge`; the test has been
-corrected to avoid that mutation in operator mode. Restoring that balance requires
-an explicit corrective production action. No payment or data deletion occurred.
+The ops-console and recovery-safe practice submission gates are complete. On
+2026-10-05, the owner completed the real GitHub provider round trip interactively,
+the refreshed local-only browser state saved successfully, and the production
+session/refresh verification passed. All V1 roadmap checkboxes are now complete.
+
+During the first post-deploy rerun, the operator account legitimately authorized
+a grant-denial probe and added one `undo_charge`; the test has been corrected to
+avoid that mutation in operator mode. Restoring that balance requires an explicit
+corrective production action. No payment or data deletion occurred.
