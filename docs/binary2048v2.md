@@ -38,6 +38,17 @@ the available trace, are listed under **Discrepancies and proof required**.
 8. Tutorial reminder preferences follow authenticated players across devices
    without removing the always-available Tutorial entry points.
 
+### Gravity and phone-tilt mode exploration
+
+Explore an optional mode where all tiles fall under gravity, comparing fixed
+downward gravity with gravity controlled by phone tilt. Define when tiles settle
+and merge, how new tiles spawn, and how special tiles interact with gravity.
+Evaluate motion permission and calibration UX, accidental movement, reduced-motion
+presentation, and equivalent button/keyboard controls. Record discrete gravity
+inputs so replay and recovery remain deterministic. Keep the exploration unranked
+and isolated from production rules; produce a prototype assessment and a decision
+before committing to implementation.
+
 ### Tutorial preference synchronization
 
 V1 keeps the guest `offer tutorial before new games` preference in a

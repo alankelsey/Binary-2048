@@ -185,6 +185,51 @@ describe("POST /api/leaderboard/submit", () => {
     expect(json.entry.namespace).toBe("sandbox");
   });
 
+  it("keeps the finished server session when the supplied recovery snapshot is older", async () => {
+    process.env.BINARY2048_RECOVERY_SECRET = "leaderboard-server-terminal-secret";
+    const grid: Cell[][] = [
+      [{ t: "n", v: 1 }, { t: "n", v: 1 }, null, null],
+      [null, null, null, null],
+      [null, null, null, null],
+      [null, null, null, null]
+    ];
+    const session = await createSession(
+      {
+        seed: 606,
+        winTile: 2,
+        spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] }
+      },
+      grid,
+      { sessionClass: "ranked" }
+    );
+    const olderSnapshot = (await exportRecoverySnapshot(session.current.id))!;
+    await moveSession(session.current.id, "left");
+
+    const res = await POST(
+      new Request("http://localhost/api/leaderboard/submit", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          ...authHeader("u_server_terminal", "authed")
+        },
+        body: JSON.stringify({
+          gameId: session.current.id,
+          recoverySnapshot: olderSnapshot,
+          isPractice: true
+        })
+      })
+    );
+
+    const json = await res.json();
+    expect(res.status).toBe(200);
+    expect(json.entry).toMatchObject({
+      gameId: session.current.id,
+      playerId: "u_server_terminal",
+      namespace: "sandbox",
+      isPractice: true
+    });
+  });
+
   it("stores replay signature when replay signing secret is configured", async () => {
     process.env.BINARY2048_REPLAY_CODE_SECRET = "leaderboard-replay-sign";
     const gameId = (await createFinishedRankedGame());

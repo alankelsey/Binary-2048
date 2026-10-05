@@ -230,13 +230,13 @@ Run `npm run roadmap:status` to calculate progress from these checkboxes.
   - [x] Add browser coverage for ranked/daily rows, empty states, active tabs, sandbox labeling, keyboard focus, and narrow-screen horizontal scrolling
   - [x] Verify the presentation against both populated and empty data without treating the current per-instance leaderboard as durable
 - [x] Add leaderboard pagination plus a current-player rank/highlight after shared leaderboard persistence and authenticated player identity are available
-- [ ] Build a production operations console only after its authority and data prerequisites exist
+- [x] Build a production operations console only after its authority and data prerequisites exist
   - [x] Define an explicit server-verified admin role/claim or allowlist; account tier (`guest`, `authed`, or `paid`) must not grant admin access
   - [x] Expose authorized, read-only shared ops APIs for telemetry, storage status, league configuration, leaderboard operations, and model registry data
     - [x] Ship the authorized no-cost API surface with `no-store` responses and explicit `shared` versus `runtime` source scope; secure the previously public telemetry snapshot
     - [x] Replace runtime-scoped telemetry, league configuration, and model-registry sources with fleet-consistent data before calling the API set shared; complete this with the cost-gated work below
   - [x] Keep active storage smoke writes separate from passive health/status reads
-  - [ ] Build and accessibility-test the responsive ops UI after those backend prerequisites are complete
+  - [x] Build and accessibility-test the responsive ops UI after those backend prerequisites are complete ([desktop/mobile acceptance](./v1-ops-console-acceptance-2026-10-03.md))
 - [x] Marketing rollout hooks (social share CTAs, referral tracking)
 - [x] Privacy/compliance essentials: privacy page + user data export/delete endpoints
 - [x] GitHub Pages presence (repo landing page and playable-host strategy decision: iframe vs static mirror)
@@ -378,6 +378,11 @@ the end of V2. See [costed scope](./v1-costed-scope-2026-10-01.md).
 - [x] Convert Mongo session reads to awaited asynchronous hydration, then enable `BINARY2048_SESSION_STORE=mongo` when ranked/multi-device traffic justifies the additional Atlas operations ([acceptance](./v1-shared-infrastructure-acceptance-2026-10-02.md))
 - [x] Add fleet-wide ops persistence/aggregation for telemetry, league configuration, and model-registry data; keep aggregation and monitoring usage within the approved small-workload allowance ([acceptance](./v1-shared-infrastructure-acceptance-2026-10-02.md))
 
+### Final V1 acceptance follow-up — 2026-10-03
+
+- [ ] Resolve the HTTP 409 from terminal recovery-safe practice leaderboard submission and rerun the dependent authenticated store acceptance ([evidence](./v1-ops-console-acceptance-2026-10-03.md))
+- [ ] Complete real GitHub provider reauthentication with refreshed provider login state; the current application OAuth session passes but the provider round trip stops at login
+
 ## Binary 2048 V2
 
 Planning only: do not begin or continue V2 implementation until every V1
@@ -393,6 +398,7 @@ active V1-only scope.
   - [ ] Audit and upgrade the existing OpenAPI documentation into a Swagger UI or equivalent interactive V2 API explorer, with complete contracts, examples, security/rate-limit details, versioning, and automated route/schema drift checks
   - [ ] Complete the anchored Lock-0 behavior spike without changing production rules
   - [ ] Complete the unranked `Death by Luck` wildcard-mode spike without changing production rules
+  - [ ] Explore an optional gravity mode where all tiles fall downward or follow phone tilt; evaluate settling/merge rules, special tiles, motion permissions, accessible button/keyboard alternatives, and deterministic replay before deciding whether to implement
   - [ ] Complete the final mobile acceptance gate
     - [ ] Add a supplemental Playwright WebKit iPhone compatibility lane for the critical mobile flow
     - [ ] Complete the physical Android Chrome and iPhone Safari tutorial/New Game checklist in the existing acceptance evidence

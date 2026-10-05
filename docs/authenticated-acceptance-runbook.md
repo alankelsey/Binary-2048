@@ -39,6 +39,22 @@ checks account-bound inventory reads, cross-account denial, admin-grant denial,
 disabled direct purchase, and the resolved-tier Store UI. The audit never prints
 the token, changes inventory, initiates payment, or deletes user data.
 
+## Operator console acceptance
+
+Use the named allowlisted operator's real OAuth state. Run the read-only desktop
+and mobile layout, keyboard focus, shared-data, and anonymous-denial checks:
+
+```bash
+AUTH_BASE=https://www.binary2048.com AUTH_OPS_ACCEPTANCE=1 npx playwright test -c playwright.authenticated.config.ts tests/authenticated/ops.browser.spec.ts
+```
+
+The ops tests are opt-in so ordinary-user acceptance does not require operator
+privileges. They disable traces, screenshots, and video to avoid recording
+operator data. A valid ordinary-user session must not be used as operator
+acceptance evidence. Unit tests separately verify ordinary-user denial before
+operations data loads. These browser checks cover keyboard access and semantic
+structure; they do not constitute a complete screen-reader audit.
+
 ## Manual evidence still required
 
 - Restart Chrome and confirm `/auth` remains authenticated.

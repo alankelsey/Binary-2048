@@ -6,7 +6,7 @@ import { createReplaySignature } from "@/lib/binary2048/replay-signature";
 import { buildCanonicalRunRecord } from "@/lib/binary2048/run-record";
 import { getRunStore } from "@/lib/binary2048/run-store";
 import { getLeaderboardEligibility, submitLeaderboardEntry } from "@/lib/binary2048/leaderboard";
-import { exportSession, getSession, importRecoveryPayload } from "@/lib/binary2048/sessions";
+import { exportSession, resolveSessionWithRecovery } from "@/lib/binary2048/sessions";
 import type { GameExport, SessionRecoverySnapshot } from "@/lib/binary2048/types";
 
 type SubmitBody = {
@@ -36,14 +36,12 @@ export async function POST(req: Request) {
   const submitMode = resolveSandboxSubmissionMode(body);
 
   let activeGameId = body.gameId;
-  let session = body.recoverySnapshot ? null : (await getSession(activeGameId));
-  if (body.recoverySnapshot) {
-    try {
-      session = (await importRecoveryPayload(body.recoverySnapshot));
-      activeGameId = session.current.id;
-    } catch {
-      return NextResponse.json({ error: "Invalid recovery snapshot" }, { status: 400 });
-    }
+  let session;
+  try {
+    session = await resolveSessionWithRecovery(activeGameId, body.recoverySnapshot);
+    if (session) activeGameId = session.current.id;
+  } catch {
+    return NextResponse.json({ error: "Invalid recovery snapshot" }, { status: 400 });
   }
   if (!session) {
     return NextResponse.json({ error: "Game not found" }, { status: 404 });
