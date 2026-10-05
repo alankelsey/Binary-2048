@@ -3,6 +3,10 @@
 This file is the source of truth for roadmap completion tracking.
 Run `npm run roadmap:status` to calculate progress from these checkboxes.
 
+> **V1 complete — 2026-10-05:** All 320 V1 checklist items and final
+> production acceptance gates are complete. Continued product development is
+> tracked in the [Binary 2048 V2 delivery plan](./binary2048v2.md).
+
 ## Core Engine + API
 
 - [x] Deterministic RNG (`seed + rngStep`) in gameplay engine
