@@ -397,6 +397,9 @@ below record work already deployed before V2 formally started.
     - [x] Add end-to-end move performance marks for input capture, acceptance/queueing, request/response parsing, React commit, and next animation frame; record that the local engine is not run on the current server-gated path
     - [x] Record queue depth at capture, enqueue, dequeue, and drop, with bounded classified records for every valid directional input rejected by gameplay or UI state
     - [x] Record per-attempt UTF-8 request/response byte counts and recovery-history lengths, synchronous local-storage read/write duration, and total checkpoint construction/serialization/storage duration
+    - [ ] Add and deploy server move timings and private path provenance
+      - [x] Implement the move `Server-Timing` allowlist and bounded private provenance telemetry with branch coverage ([evidence](./v2-phase0-server-timing-2026-10-10.md))
+      - [ ] Verify production header preservation and demonstrate memory, Mongo, recovery, miss, and fallback paths with sanitized acceptance evidence
   - [ ] Audit and upgrade the existing OpenAPI documentation into a Swagger UI or equivalent interactive V2 API explorer, with complete contracts, examples, security/rate-limit details, versioning, and automated route/schema drift checks
   - [ ] Complete the anchored Lock-0 behavior spike without changing production rules
   - [ ] Complete the unranked `Death by Luck` wildcard-mode spike without changing production rules

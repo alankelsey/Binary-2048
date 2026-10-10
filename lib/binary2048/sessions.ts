@@ -1,7 +1,7 @@
 import { applyMove, buildExport, createGame, runScenario } from "@/lib/binary2048/engine";
 import { canContinueAfterWin } from "@/lib/binary2048/continue-policy";
 import { createRecoverySignature, verifyRecoverySignature } from "@/lib/binary2048/recovery-signature";
-import { getSessionStore, inheritSessionRevision } from "@/lib/binary2048/session-store";
+import { getSessionStore, getSessionStoreMode, inheritSessionRevision } from "@/lib/binary2048/session-store";
 import type { Cell, Dir, GameConfig, GameExport, GameSession, SessionRecoverySnapshot } from "@/lib/binary2048/types";
 
 const UNDO_MODES = {
@@ -33,6 +33,33 @@ export function getUndoMeta(session: Pick<GameSession, "undoLimit" | "undoUsed">
 type CreateSessionOptions = {
   sessionClass?: "ranked" | "unranked";
 };
+
+export type SessionPath =
+  | "resident_memory"
+  | "mongo_hydration"
+  | "recovery_snapshot"
+  | "legacy_export"
+  | "missing";
+
+export type SessionTimingName =
+  | "session_lookup"
+  | "recovery_verify"
+  | "recovery_replay"
+  | "recovery_import"
+  | "engine_move"
+  | "session_persist"
+  | "snapshot_build"
+  | "snapshot_sign";
+
+export type SessionTimingRecorder = (name: SessionTimingName, durationMs: number) => void;
+
+function nowMs() {
+  return performance.now();
+}
+
+function recordElapsed(recorder: SessionTimingRecorder | undefined, name: SessionTimingName, startedAt: number) {
+  recorder?.(name, Math.max(0, nowMs() - startedAt));
+}
 
 export async function createSession(config?: Partial<GameConfig>, initialGrid?: Cell[][], options?: CreateSessionOptions) {
   const created = createGame(config, initialGrid);
@@ -68,31 +95,65 @@ export async function resolveSessionWithRecovery(
   id: string,
   recoveryPayload?: GameExport | SessionRecoverySnapshot
 ) {
-  const existing = (await getSession(id));
-  if (!recoveryPayload) return existing;
-  if (existing && process.env.BINARY2048_SESSION_STORE === "mongo") return existing;
-  if (!existing) return (await importRecoveryPayload(recoveryPayload));
-  if (!isRecoverySnapshot(recoveryPayload)) return existing;
+  return (await resolveSessionWithRecoveryDetails(id, recoveryPayload)).session;
+}
+
+export async function resolveSessionWithRecoveryDetails(
+  id: string,
+  recoveryPayload?: GameExport | SessionRecoverySnapshot,
+  recorder?: SessionTimingRecorder
+): Promise<{ session: GameSession | null; path: SessionPath }> {
+  const lookupStartedAt = nowMs();
+  let existing: GameSession | null;
+  try {
+    existing = (await getSession(id));
+  } finally {
+    recordElapsed(recorder, "session_lookup", lookupStartedAt);
+  }
+  const existingPath: SessionPath = getSessionStoreMode() === "mongo" ? "mongo_hydration" : "resident_memory";
+  if (!recoveryPayload) return { session: existing, path: existing ? existingPath : "missing" };
+  if (existing && getSessionStoreMode() === "mongo") return { session: existing, path: existingPath };
+  if (!existing) {
+    const importStartedAt = nowMs();
+    try {
+      const session = (await importRecoveryPayload(recoveryPayload, recorder));
+      return { session, path: isRecoverySnapshot(recoveryPayload) ? "recovery_snapshot" : "legacy_export" };
+    } finally {
+      recordElapsed(recorder, "recovery_import", importStartedAt);
+    }
+  }
+  if (!isRecoverySnapshot(recoveryPayload)) return { session: existing, path: existingPath };
 
   const secret = process.env.BINARY2048_RECOVERY_SECRET ?? "";
+  const verificationStartedAt = nowMs();
   const isTrustedForSession =
     recoveryPayload.sessionId === id && verifyRecoverySignature(recoveryPayload, secret);
-  if (!isTrustedForSession) return existing;
+  recordElapsed(recorder, "recovery_verify", verificationStartedAt);
+  if (!isTrustedForSession) return { session: existing, path: existingPath };
 
   const browserIsNewer = recoveryPayload.moves.length > existing.steps.length;
   const sameLengthButDifferentHistory =
     recoveryPayload.moves.length === existing.steps.length && !directionsMatch(existing, recoveryPayload);
-  return browserIsNewer || sameLengthButDifferentHistory
-    ? (await importRecoverySnapshot(recoveryPayload))
-    : existing;
+  if (!browserIsNewer && !sameLengthButDifferentHistory) {
+    return { session: existing, path: existingPath };
+  }
+  const importStartedAt = nowMs();
+  try {
+    const session = (await importRecoverySnapshot(recoveryPayload, recorder));
+    return { session, path: "recovery_snapshot" };
+  } finally {
+    recordElapsed(recorder, "recovery_import", importStartedAt);
+  }
 }
 
-export async function moveSession(id: string, dir: Dir, expected?: GameSession) {
+export async function moveSession(id: string, dir: Dir, expected?: GameSession, recorder?: SessionTimingRecorder) {
   const session = expected ?? (await getSessionStore().get(id));
   if (!session) return null;
 
   const before = session.current;
+  const engineStartedAt = nowMs();
   const move = applyMove(before, dir);
+  recordElapsed(recorder, "engine_move", engineStartedAt);
   const step = {
     turn: move.state.turn,
     dir,
@@ -104,7 +165,12 @@ export async function moveSession(id: string, dir: Dir, expected?: GameSession) 
 
   session.steps.push(step);
   session.current = move.state;
-  (await getSessionStore().set(id, session));
+  const persistenceStartedAt = nowMs();
+  try {
+    (await getSessionStore().set(id, session));
+  } finally {
+    recordElapsed(recorder, "session_persist", persistenceStartedAt);
+  }
   return session;
 }
 
@@ -145,9 +211,14 @@ export async function exportSession(id: string) {
   );
 }
 
-export async function exportRecoverySnapshot(id: string, currentSession?: GameSession): Promise<SessionRecoverySnapshot | null> {
+export async function exportRecoverySnapshot(
+  id: string,
+  currentSession?: GameSession,
+  recorder?: SessionTimingRecorder
+): Promise<SessionRecoverySnapshot | null> {
   const session = currentSession ?? (await getSessionStore().get(id));
   if (!session) return null;
+  const buildStartedAt = nowMs();
   const snapshot: SessionRecoverySnapshot = {
     recoveryVersion: 1,
     rulesetId: "binary2048-v1",
@@ -162,8 +233,15 @@ export async function exportRecoverySnapshot(id: string, currentSession?: GameSe
       events: session.undoEvents.map((event) => ({ ...event }))
     }
   };
+  recordElapsed(recorder, "snapshot_build", buildStartedAt);
   const secret = process.env.BINARY2048_RECOVERY_SECRET ?? "";
-  return secret ? { ...snapshot, signature: createRecoverySignature(snapshot, secret) } : snapshot;
+  if (!secret) return snapshot;
+  const signingStartedAt = nowMs();
+  try {
+    return { ...snapshot, signature: createRecoverySignature(snapshot, secret) };
+  } finally {
+    recordElapsed(recorder, "snapshot_sign", signingStartedAt);
+  }
 }
 
 export async function listSessionState(id: string) {
@@ -181,7 +259,7 @@ export async function listSessionState(id: string) {
   };
 }
 
-export async function importSession(exported: GameExport) {
+export async function importSession(exported: GameExport, recorder?: SessionTimingRecorder) {
   if (!exported || typeof exported !== "object") throw new Error("Invalid export payload");
   if (!exported.config || !exported.initial?.grid || !Array.isArray(exported.steps)) {
     throw new Error("Export is missing required fields");
@@ -192,22 +270,27 @@ export async function importSession(exported: GameExport) {
   let current = initialState;
   const steps: GameSession["steps"] = [];
 
-  for (const step of exported.steps) {
-    if (!step || (step.dir !== "up" && step.dir !== "down" && step.dir !== "left" && step.dir !== "right")) {
-      throw new Error("Export contains invalid move direction");
+  const replayStartedAt = nowMs();
+  try {
+    for (const step of exported.steps) {
+      if (!step || (step.dir !== "up" && step.dir !== "down" && step.dir !== "left" && step.dir !== "right")) {
+        throw new Error("Export contains invalid move direction");
+      }
+      const before = current;
+      const move = applyMove(before, step.dir);
+      steps.push({
+        turn: move.state.turn,
+        dir: step.dir,
+        moved: move.moved,
+        before,
+        after: move.state,
+        events: move.events
+      });
+      current = move.state;
+      if (current.over) break;
     }
-    const before = current;
-    const move = applyMove(before, step.dir);
-    steps.push({
-      turn: move.state.turn,
-      dir: step.dir,
-      moved: move.moved,
-      before,
-      after: move.state,
-      events: move.events
-    });
-    current = move.state;
-    if (current.over) break;
+  } finally {
+    recordElapsed(recorder, "recovery_replay", replayStartedAt);
   }
 
   const session: GameSession = {
@@ -223,20 +306,33 @@ export async function importSession(exported: GameExport) {
       importedFromRulesetId: exported.meta?.rulesetId
     }
   };
-  (await getSessionStore().set(current.id, session));
+  const persistenceStartedAt = nowMs();
+  try {
+    (await getSessionStore().set(current.id, session));
+  } finally {
+    recordElapsed(recorder, "session_persist", persistenceStartedAt);
+  }
   return session;
 }
 
-export async function importRecoverySnapshot(snapshot: SessionRecoverySnapshot) {
+export async function importRecoverySnapshot(snapshot: SessionRecoverySnapshot, recorder?: SessionTimingRecorder) {
   if (snapshot?.recoveryVersion !== 1 || snapshot.rulesetId !== "binary2048-v1") {
     throw new Error("Unsupported recovery snapshot");
   }
   if (!snapshot.config || !Array.isArray(snapshot.initialGrid) || !Array.isArray(snapshot.moves)) {
     throw new Error("Recovery snapshot is missing required fields");
   }
-  const exported = runScenario(snapshot.config, snapshot.initialGrid, snapshot.moves);
-  const recovered = (await importSession(exported));
+  const replayStartedAt = nowMs();
+  let exported: GameExport;
+  try {
+    exported = runScenario(snapshot.config, snapshot.initialGrid, snapshot.moves);
+  } finally {
+    recordElapsed(recorder, "recovery_replay", replayStartedAt);
+  }
+  const recovered = (await importSession(exported, recorder));
+  const verificationStartedAt = nowMs();
   const trusted = verifyRecoverySignature(snapshot, process.env.BINARY2048_RECOVERY_SECRET ?? "");
+  recordElapsed(recorder, "recovery_verify", verificationStartedAt);
   if (trusted && snapshot.integrity && snapshot.undo) {
     if (snapshot.sessionId) {
       const generatedId = recovered.current.id;
@@ -248,17 +344,26 @@ export async function importRecoverySnapshot(snapshot: SessionRecoverySnapshot) 
         step.before.id = snapshot.sessionId;
         step.after.id = snapshot.sessionId;
       }
+      const deleteStartedAt = nowMs();
       (await getSessionStore().delete(generatedId));
+      recordElapsed(recorder, "session_persist", deleteStartedAt);
     }
     recovered.integrity = { ...snapshot.integrity };
     recovered.undoLimit = snapshot.undo.limit;
     recovered.undoUsed = snapshot.undo.used;
     recovered.undoEvents = snapshot.undo.events.map((event) => ({ ...event }));
+    const persistenceStartedAt = nowMs();
     (await getSessionStore().set(recovered.current.id, recovered));
+    recordElapsed(recorder, "session_persist", persistenceStartedAt);
   }
   return recovered;
 }
 
-export async function importRecoveryPayload(snapshot: GameExport | SessionRecoverySnapshot) {
-  return "recoveryVersion" in snapshot ? (await importRecoverySnapshot(snapshot)) : (await importSession(snapshot));
+export async function importRecoveryPayload(
+  snapshot: GameExport | SessionRecoverySnapshot,
+  recorder?: SessionTimingRecorder
+) {
+  return "recoveryVersion" in snapshot
+    ? (await importRecoverySnapshot(snapshot, recorder))
+    : (await importSession(snapshot, recorder));
 }

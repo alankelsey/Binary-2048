@@ -83,6 +83,12 @@ export class MongoSessionStore implements SessionStore {
   async delete(id: string) { await (await this.collection()).deleteOne({ id }); }
 }
 
+export function getSessionStoreMode(): "memory" | "mongo" {
+  return (process.env.BINARY2048_SESSION_STORE ?? process.env.BINARY2048_RUN_STORE ?? "memory").toLowerCase() === "mongo"
+    ? "mongo"
+    : "memory";
+}
+
 /** Preserve the read revision when replacing a trusted recovery snapshot. */
 export function inheritSessionRevision(target: GameSession, source: GameSession | null) {
   const revision = source ? versions.get(source) : undefined;
@@ -93,7 +99,7 @@ export function inheritSessionRevision(target: GameSession, source: GameSession 
 const globalStore = globalThis as typeof globalThis & { __binary2048_session_store?: SessionStore };
 export function getSessionStore(): SessionStore {
   if (!globalStore.__binary2048_session_store) {
-    const mode = (process.env.BINARY2048_SESSION_STORE ?? process.env.BINARY2048_RUN_STORE ?? "memory").toLowerCase();
+    const mode = getSessionStoreMode();
     if (mode === "mongo" && !process.env.BINARY2048_MONGO_URI) {
       throw new Error("BINARY2048_MONGO_URI is required when BINARY2048_SESSION_STORE=mongo");
     }

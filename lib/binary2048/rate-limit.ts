@@ -15,7 +15,12 @@ type CheckRateLimitInput = {
   max: number;
   windowMs: number;
   sharedForApiKeysOnly?: boolean;
+  identity?: ClientIdentity;
+  timingRecorder?: RateLimitTimingRecorder;
 };
+
+type ClientIdentity = ReturnType<typeof getClientIdentity>;
+export type RateLimitTimingRecorder = (name: "rate_limit_identity" | "rate_limit_counter", durationMs: number) => void;
 
 export type RateLimitResult = {
   allowed: boolean;
@@ -150,7 +155,9 @@ const mongoCounterStore: RateLimitCounterStore = {
 
 export async function checkRateLimit(input: CheckRateLimitInput): Promise<RateLimitResult> {
   const now = Date.now();
-  const identity = getClientIdentity(input.req);
+  const identityStartedAt = performance.now();
+  const identity = input.identity ?? getClientIdentity(input.req);
+  input.timingRecorder?.("rate_limit_identity", Math.max(0, performance.now() - identityStartedAt));
   const key = `${input.route}:${identity.identifier}`;
   const windowMs = Math.max(1000, input.windowMs);
   const limit = Math.max(1, input.max);
@@ -158,17 +165,22 @@ export async function checkRateLimit(input: CheckRateLimitInput): Promise<RateLi
   const useMongo = mongoConfigured && (!input.sharedForApiKeysOnly || identity.hasVerifiedApiKey);
   let backend: RateLimitResult["backend"] = useMongo ? "mongo" : "memory";
   let counter: CounterResult;
+  const counterStartedAt = performance.now();
   try {
-    counter = await (useMongo ? mongoCounterStore : memoryCounterStore).consume(key, windowMs, now);
-  } catch (error) {
-    if (!useMongo) throw error;
-    backend = "memory_fallback";
-    counter = await memoryCounterStore.consume(key, windowMs, now);
-    const failure = error as { name?: unknown; code?: unknown };
-    console.error("Mongo rate-limit store unavailable; using per-instance fallback", {
-      errorName: typeof failure?.name === "string" ? failure.name : "unknown",
-      errorCode: typeof failure?.code === "string" || typeof failure?.code === "number" ? failure.code : "unknown"
-    });
+    try {
+      counter = await (useMongo ? mongoCounterStore : memoryCounterStore).consume(key, windowMs, now);
+    } catch (error) {
+      if (!useMongo) throw error;
+      backend = "memory_fallback";
+      counter = await memoryCounterStore.consume(key, windowMs, now);
+      const failure = error as { name?: unknown; code?: unknown };
+      console.error("Mongo rate-limit store unavailable; using per-instance fallback", {
+        errorName: typeof failure?.name === "string" ? failure.name : "unknown",
+        errorCode: typeof failure?.code === "string" || typeof failure?.code === "number" ? failure.code : "unknown"
+      });
+    }
+  } finally {
+    input.timingRecorder?.("rate_limit_counter", Math.max(0, performance.now() - counterStartedAt));
   }
   const remaining = Math.max(0, limit - counter.count);
   return {
@@ -214,8 +226,10 @@ export async function checkSimulateRateLimit(req: Request) {
   });
 }
 
-export async function checkMoveRateLimit(req: Request) {
+export async function checkMoveRateLimit(req: Request, timingRecorder?: RateLimitTimingRecorder) {
+  const identityStartedAt = performance.now();
   const identity = getClientIdentity(req);
+  timingRecorder?.("rate_limit_identity", Math.max(0, performance.now() - identityStartedAt));
   const tierLimit = identity.tier ? getRateLimitPolicy(identity.tier).maxRequests : null;
   const defaultMoveLimit = Math.max(600, tierLimit ?? 600);
   return checkRateLimit({
@@ -223,7 +237,11 @@ export async function checkMoveRateLimit(req: Request) {
     route: "game_move",
     max: parsePositiveInt(process.env.BINARY2048_RATE_LIMIT_MOVE_MAX, defaultMoveLimit),
     windowMs: parsePositiveInt(process.env.BINARY2048_RATE_LIMIT_WINDOW_MS, 5 * 60 * 1000),
-    sharedForApiKeysOnly: true
+    sharedForApiKeysOnly: true,
+    identity,
+    timingRecorder: (name, durationMs) => {
+      if (name === "rate_limit_counter") timingRecorder?.(name, durationMs);
+    }
   });
 }
 

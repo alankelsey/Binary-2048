@@ -8,12 +8,15 @@ import {
   importRecoveryPayload
 } from "@/lib/binary2048/sessions";
 import { resetRateLimitStore } from "@/lib/binary2048/rate-limit";
+import { getOpsTelemetrySnapshot, resetOpsTelemetry } from "@/lib/binary2048/ops-telemetry";
 import { resetSessionStoreForTests } from "@/lib/binary2048/session-store";
 import type { Cell, GameConfig } from "@/lib/binary2048/types";
 
 describe("POST /api/games/:id/move hash guard", () => {
   beforeEach(() => {
     resetRateLimitStore();
+    resetSessionStoreForTests();
+    resetOpsTelemetry();
     delete process.env.BINARY2048_RATE_LIMIT_MOVE_MAX;
     delete process.env.BINARY2048_RATE_LIMIT_WINDOW_MS;
     delete process.env.BINARY2048_BOT_API_KEY_HASHES;
@@ -32,6 +35,21 @@ describe("POST /api/games/:id/move hash guard", () => {
       wildcardMultipliers: [2]
     }
   };
+
+  function serverTiming(res: Response) {
+    const value = res.headers.get("server-timing") ?? "";
+    const entries = value.split(",").map((part) => part.trim()).filter(Boolean);
+    const names = entries.map((entry) => entry.split(";")[0]);
+    for (const entry of entries) {
+      expect(entry).toMatch(/^[a-z_]+;dur=\d+\.\d{2}$/);
+      expect(Number(entry.match(/;dur=(\d+\.\d{2})$/)?.[1])).toBeGreaterThanOrEqual(0);
+    }
+    return { value, names };
+  }
+
+  function lastMoveTelemetry() {
+    return getOpsTelemetrySnapshot().recentMoveTimings.at(-1);
+  }
 
   const initialGrid: Cell[][] = [
     [{ t: "n", v: 1 }, { t: "n", v: 1 }, null, null],
@@ -86,6 +104,21 @@ describe("POST /api/games/:id/move hash guard", () => {
     expect(res.headers.get("ratelimit-reset")).toMatch(/^\d+$/);
     expect(res.headers.get("ratelimit-scope")).toBe("ip");
     expect(res.headers.get("ratelimit-tier")).toBe("guest");
+    expect(res.headers.get("cache-control")).toBe("no-store");
+    const timing = serverTiming(res);
+    expect(timing.names).toEqual(expect.arrayContaining([
+      "rate_limit_identity",
+      "rate_limit_counter",
+      "request_parse",
+      "session_lookup",
+      "engine_move",
+      "session_persist",
+      "snapshot_build",
+      "response_encode",
+      "total"
+    ]));
+    expect(timing.value).not.toContain(id);
+    expect(lastMoveTelemetry()).toMatchObject({ status: 200, sessionPath: "resident_memory", rateLimitBackend: "memory" });
   });
 
   it("returns 400 when neither dir nor action is provided", async () => {
@@ -102,6 +135,14 @@ describe("POST /api/games/:id/move hash guard", () => {
 
     expect(res.status).toBe(400);
     expect(json.error).toBe("dir or action is required");
+    expect(serverTiming(res).names).toEqual([
+      "rate_limit_identity",
+      "rate_limit_counter",
+      "request_parse",
+      "response_encode",
+      "total"
+    ]);
+    expect(lastMoveTelemetry()?.sessionPath).toBe("not_checked");
   });
 
   it("returns 404 for missing game id", async () => {
@@ -115,6 +156,8 @@ describe("POST /api/games/:id/move hash guard", () => {
 
     expect(res.status).toBe(404);
     expect(json.error).toBe("Game not found");
+    expect(serverTiming(res).names).toEqual(expect.arrayContaining(["session_lookup", "total"]));
+    expect(lastMoveTelemetry()?.sessionPath).toBe("missing");
   });
 
   it("atomically recovers a missing instance-local session and applies the move", async () => {
@@ -134,6 +177,15 @@ describe("POST /api/games/:id/move hash guard", () => {
     expect(json.current.score).toBe(2);
     expect(json.recoverySnapshot).toMatchObject({ recoveryVersion: 1, moves: ["left"] });
     expect((await getSession(json.id))?.steps).toHaveLength(1);
+    expect(serverTiming(res).names).toEqual(expect.arrayContaining([
+      "session_lookup",
+      "recovery_verify",
+      "recovery_replay",
+      "recovery_import",
+      "engine_move",
+      "session_persist"
+    ]));
+    expect(lastMoveTelemetry()?.sessionPath).toBe("recovery_snapshot");
   });
 
   it("accepts the legacy full browser snapshot during rollout", async () => {
@@ -150,6 +202,7 @@ describe("POST /api/games/:id/move hash guard", () => {
     expect(res.status).toBe(200);
     expect(json.current.turn).toBe(1);
     expect(json.recoverySnapshot).toMatchObject({ recoveryVersion: 1, moves: ["left"] });
+    expect(lastMoveTelemetry()?.sessionPath).toBe("legacy_export");
   });
 
   it("prefers a newer signed browser snapshot over a stale instance-local session", async () => {
@@ -167,6 +220,10 @@ describe("POST /api/games/:id/move hash guard", () => {
     );
     const firstJson = await firstMove.json();
     expect(firstJson.recoverySnapshot.moves).toEqual(["left"]);
+    const signedTiming = serverTiming(firstMove);
+    expect(signedTiming.names).toContain("snapshot_sign");
+    expect(signedTiming.value).not.toContain("move-recovery-secret");
+    expect(signedTiming.value).not.toContain(firstJson.recoverySnapshot.signature);
 
     resetSessionStoreForTests();
     (await importRecoveryPayload(initialSnapshot!));
@@ -211,5 +268,12 @@ describe("POST /api/games/:id/move hash guard", () => {
     expect(second.headers.get("ratelimit-remaining")).toBe("0");
     expect(second.headers.get("retry-after")).toMatch(/^\d+$/);
     expect((await getSession(id))?.steps.length).toBe(1);
+    expect(serverTiming(second).names).toEqual([
+      "rate_limit_identity",
+      "rate_limit_counter",
+      "response_encode",
+      "total"
+    ]);
+    expect(lastMoveTelemetry()).toMatchObject({ status: 429, sessionPath: "not_checked" });
   });
 });

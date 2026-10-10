@@ -15,7 +15,31 @@ type RouteMetric = {
 type TelemetryStore = {
   routes: Map<string, RouteMetric>;
   startedAtISO: string;
+  recentMoveTimings: MoveRouteTelemetry[];
 };
+
+export type MoveRouteTelemetry = {
+  status: number;
+  sessionPath: "resident_memory" | "mongo_hydration" | "recovery_snapshot" | "legacy_export" | "missing" | "not_checked";
+  rateLimitBackend: "memory" | "mongo" | "memory_fallback";
+  timingsMs: Record<string, number>;
+};
+
+const MOVE_TIMING_NAMES = new Set([
+  "rate_limit_identity",
+  "rate_limit_counter",
+  "request_parse",
+  "session_lookup",
+  "recovery_verify",
+  "recovery_replay",
+  "recovery_import",
+  "engine_move",
+  "session_persist",
+  "snapshot_build",
+  "snapshot_sign",
+  "response_encode",
+  "total"
+]);
 
 const MAX_RECENT_DURATIONS = 200;
 
@@ -25,8 +49,10 @@ const globalStore = globalThis as typeof globalThis & {
 
 const telemetry: TelemetryStore = globalStore.__binary2048_ops_telemetry ?? {
   routes: new Map<string, RouteMetric>(),
-  startedAtISO: new Date().toISOString()
+  startedAtISO: new Date().toISOString(),
+  recentMoveTimings: []
 };
+telemetry.recentMoveTimings ??= [];
 globalStore.__binary2048_ops_telemetry = telemetry;
 
 function sorted(values: number[]) {
@@ -88,6 +114,24 @@ export function recordRouteTelemetry(input: {
   }
 }
 
+export function recordMoveRouteTelemetry(input: MoveRouteTelemetry) {
+  const sanitized: MoveRouteTelemetry = {
+    status: input.status,
+    sessionPath: input.sessionPath,
+    rateLimitBackend: input.rateLimitBackend,
+    timingsMs: Object.fromEntries(
+      Object.entries(input.timingsMs)
+        .filter(([name, durationMs]) => MOVE_TIMING_NAMES.has(name) && Number.isFinite(durationMs))
+        .map(([name, durationMs]) => [name, Number(Math.max(0, durationMs).toFixed(2))])
+    )
+  };
+  telemetry.recentMoveTimings.push(sanitized);
+  if (telemetry.recentMoveTimings.length > MAX_RECENT_DURATIONS) {
+    telemetry.recentMoveTimings.splice(0, telemetry.recentMoveTimings.length - MAX_RECENT_DURATIONS);
+  }
+  if (sharedOpsEnabled()) console.info(JSON.stringify({ event: "binary2048_move_timing", ...sanitized }));
+}
+
 export function getOpsTelemetrySnapshot() {
   const latencyWarnMs = parseThreshold(process.env.BINARY2048_TELEMETRY_LATENCY_WARN_MS, 1500);
   const errorRateWarnPct = parseThreshold(process.env.BINARY2048_TELEMETRY_ERROR_RATE_WARN_PCT, 20);
@@ -126,12 +170,14 @@ export function getOpsTelemetrySnapshot() {
       errorRateWarnPct,
       costWarnUnits
     },
-    routes
+    routes,
+    recentMoveTimings: telemetry.recentMoveTimings.map((entry) => ({ ...entry, timingsMs: { ...entry.timingsMs } }))
   };
 }
 
 export function resetOpsTelemetry() {
   telemetry.routes.clear();
+  telemetry.recentMoveTimings.length = 0;
   telemetry.startedAtISO = new Date().toISOString();
 }
 
