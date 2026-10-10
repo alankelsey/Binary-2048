@@ -325,21 +325,24 @@ approved.
   recovery-history length for each move attempt. Measure synchronous
   local-storage reads and writes separately, and measure checkpoint duration
   across envelope creation, serialization, and storage.
-- [ ] Add `Server-Timing` for rate-limit identity, session lookup, recovery
+- [x] Add `Server-Timing` for rate-limit identity, session lookup, recovery
   verification/import/replay, engine move, snapshot construction/signing,
   awaited persistence, response encoding, and total route time.
   - [x] Implement the bounded metric allowlist on the move route and cover
     success, validation, missing-session, recovery, conflict, and rate-limit
     branches in local tests ([evidence](./v2-phase0-server-timing-2026-10-10.md)).
-  - [ ] Verify that the production hosting path preserves the header after
-    deployment and capture sanitized warm and cold samples.
-- [ ] Record whether a move used resident memory, Mongo hydration, recovery
+  - [x] Verify that the production hosting path preserves the header after
+    deployment and capture sanitized first-request and warm samples. Cold-start
+    classification remains part of the runtime-correlation item below.
+- [x] Record whether a move used resident memory, Mongo hydration, recovery
   import, or another fallback.
   - [x] Record the fixed-enum path and rate-limit backend in the bounded,
     access-controlled move telemetry stream; do not expose them in the public
     timing header ([evidence](./v2-phase0-server-timing-2026-10-10.md)).
-  - [ ] Demonstrate resident-memory, Mongo, recovery, miss, and fallback paths
-    in environment acceptance without recording identifiers or payloads.
+  - [x] Demonstrate resident-memory behavior locally and Mongo, recovery, and
+    miss paths in production without recording identifiers or payloads. Retain
+    rate-limit fallback as local unit evidence because production has no safe,
+    scoped dependency-fault control ([evidence](./v2-phase0-server-timing-2026-10-10.md)).
 - [ ] Capture cold-start, event-loop delay, memory, and workload correlation
   where the hosting environment permits it.
 - [ ] Repeat measurements on the user's Pixel in Chrome, desktop Chrome, and

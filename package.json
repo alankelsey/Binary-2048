@@ -83,6 +83,7 @@
     "ops:prod:admin-token:sync": "bash ./scripts/prod-admin-token-sync.sh",
     "ops:prod:storage-check": "bash ./scripts/prod-storage-check.sh",
     "ops:prod:storage-check:amplify": "bash ./scripts/prod-storage-check-amplify.sh",
+    "ops:v2:timing-acceptance": "node ./scripts/v2-phase0-timing-acceptance.mjs",
     "ops:egress:readiness": "bash ./scripts/fixed-egress-readiness.sh",
     "ops:egress:preflight": "bash ./scripts/fixed-egress-preflight.sh",
     "load:baseline": "k6 run ./scripts/load/k6-baseline.js",

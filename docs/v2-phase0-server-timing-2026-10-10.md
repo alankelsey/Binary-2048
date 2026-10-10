@@ -2,7 +2,7 @@
 
 Date: 2026-10-10
 
-Status: local implementation complete; deployment and environment sampling remain open.
+Status: deployed and accepted; runtime-correlation and device sampling remain open.
 
 ## Implemented contract
 
@@ -59,14 +59,67 @@ missing local `BINARY2048_AUTH_BRIDGE_SECRET`; a direct retry with a disposable
 value could not bind the local test port in the workspace sandbox. Production
 header preservation therefore remains part of deployment acceptance.
 
-## Production acceptance still required
+## Production acceptance
 
-After deployment, capture sanitized timing names and durations for guest and
-authenticated moves. Demonstrate the normal Mongo path, a recovery import, a
-miss, and any intentionally induced safe fallback. Confirm that the platform
-preserves `Server-Timing` and `Cache-Control`, and collect enough warm and cold
-samples to begin the Phase 0 baseline. Do not capture request or response
-bodies, IDs, cookies, credentials, signatures, or database details.
+Amplify job `377` deployed exact commit
+`c8e8985f631cf54dd78312b4432296a076dc0587` successfully. The standard
+production smoke passed on its first attempt against `www.binary2048.com`.
+
+The repeatable `ops:v2:timing-acceptance` probe keeps disposable IDs and
+recovery payloads in process memory and outputs only the target host, UTC
+window, status, cache policy, and allowlisted timing names and durations. The
+corrected acceptance run from `20:27:20.140Z` through `20:27:22.403Z` made five
+normal moves, one missing-session request, and one unsigned compact-recovery
+request. All seven responses returned `Cache-Control: no-store` and a valid
+`Server-Timing` header.
+
+The five normal Mongo moves returned HTTP 200 with route totals of 30.49,
+31.43, 32.13, 32.43, and 35.31 ms. Session lookup ranged from 13.39 to 16.77
+ms; awaited persistence ranged from 16.08 to 17.60 ms. The missing-session
+request returned HTTP 404 with the expected reduced stage set and a 34.30 ms
+route total. The recovery request returned HTTP 200 with verification, replay,
+import, persistence, move, snapshot, and signing stages; its total was 58.43
+ms, including 25.71 ms recovery import and an aggregate 42.52 ms persistence.
+
+A protected CloudWatch query over that narrow window returned exactly seven
+sanitized `binary2048_move_timing` events:
+
+| Count | Status | Session path | Rate-limit backend |
+| ---: | ---: | --- | --- |
+| 5 | 200 | `mongo_hydration` | `memory` |
+| 1 | 404 | `missing` | `memory` |
+| 1 | 200 | `recovery_snapshot` | `memory` |
+
+No request or response bodies, IDs, cookies, credentials, signatures, Mongo
+addresses, or raw exceptions were retained in this evidence. The compact
+recovery signature was removed in memory before using a mismatched disposable
+route ID, avoiding reliance on the current trusted-snapshot route-binding
+behavior.
+
+The `memory_fallback` rate-limit branch remains covered locally. Inducing it in
+production would require breaking the shared Mongo counter used by verified
+API keys and could weaken live enforcement or disrupt other Mongo-backed
+features. Production fault injection was intentionally not performed because
+there is no scoped runtime control. The browser move limiter correctly used
+its configured memory backend in all seven records; this is expected behavior,
+not a fallback.
+
+## Remaining Phase 0 work
+
+The public timings do not identify a true cold start, runtime instance,
+event-loop delay, memory/GC state, or concurrent workload. A first request
+after deployment is not reliable cold-start evidence. Those signals and the
+Pixel, desktop Chrome, and authenticated-session measurements remain open.
+
+The acceptance review also found three instrumentation accuracy issues for the
+next slice: a Mongo lookup failure is currently caught as an invalid-recovery
+HTTP 400, the missing-session route performs a second uninstrumented lookup,
+and failed recovery delete/final writes can omit their persistence duration.
+The production recovery baseline also confirms the existing duplicate
+replay/write work; it does not yet establish that work as the cause of the
+historical 2.7-second outlier.
+
+## Earlier review findings
 
 The review also found follow-up questions that should be proved before later
 optimization: recovery payload work is not explicitly bounded at this route,
