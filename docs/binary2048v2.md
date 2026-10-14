@@ -350,6 +350,9 @@ approved.
   ([evidence](./v2-phase0-runtime-correlation-2026-10-13.md)).
 - [ ] Repeat measurements on the user's Pixel in Chrome, desktop Chrome, and
   an authenticated session, not only in headless Chromium.
+  Visible Google Chrome desktop guest and authenticated measurements are
+  complete; the physical Pixel Chrome run remains open
+  ([evidence and device protocol](./v2-phase0-browser-device-acceptance-2026-10-13.md)).
 
 Exit criterion: a trace can explain where input-to-paint and server time were
 spent and can distinguish an ignored gesture from a queued gesture.

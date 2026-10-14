@@ -401,6 +401,7 @@ below record work already deployed before V2 formally started.
       - [x] Implement the move `Server-Timing` allowlist and bounded private provenance telemetry with branch coverage ([evidence](./v2-phase0-server-timing-2026-10-10.md))
       - [x] Verify production header preservation and demonstrate local memory/fallback plus production Mongo, recovery, and miss paths with sanitized acceptance evidence
     - [x] Add bounded process-first/reuse, event-loop, memory/GC, and instrumented move-workload correlation without claiming an authoritative Amplify cold start ([evidence](./v2-phase0-runtime-correlation-2026-10-13.md))
+    - Visible desktop Google Chrome guest and authenticated measurements passed; physical Pixel Chrome remains the Phase 0 blocker ([evidence and protocol](./v2-phase0-browser-device-acceptance-2026-10-13.md))
   - [ ] Audit and upgrade the existing OpenAPI documentation into a Swagger UI or equivalent interactive V2 API explorer, with complete contracts, examples, security/rate-limit details, versioning, and automated route/schema drift checks
   - [ ] Complete the anchored Lock-0 behavior spike without changing production rules
   - [ ] Complete the unranked `Death by Luck` wildcard-mode spike without changing production rules

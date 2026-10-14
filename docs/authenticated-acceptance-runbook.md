@@ -35,9 +35,11 @@ The audit verifies the real session and tier, refresh persistence, bridge-token
 minting, protected read-only data export, and a recovery-safe ranked practice
 run through terminal state and submission. The submission is automatically
 routed to the sandbox namespace and excluded from ordinary standings. It also
-checks account-bound inventory reads, cross-account denial, admin-grant denial,
-disabled direct purchase, and the resolved-tier Store UI. The audit never prints
-the token, changes inventory, initiates payment, or deletes user data.
+checks account-bound inventory reads, cross-account denial, disabled direct
+purchase, and the resolved-tier Store UI. Admin-grant denial remains covered by
+isolated route tests because a saved production identity may be operator-authorized.
+The audit never prints the token, changes inventory, initiates payment, or deletes
+user data.
 
 ## Operator console acceptance
 

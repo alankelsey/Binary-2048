@@ -63,3 +63,12 @@ single `+1 grant` was the account's only undo-charge entry and its balance was 1
 An authenticated `-1 adjust` restored the balance to 0, and a subsequent read
 verified both the adjustment ledger entry and final balance. No payment or data
 deletion occurred.
+
+On 2026-10-13, a V2 pre-measurement audit ran the old standard command without
+the operator-mode flag. The same operator identity authorized the still-present
+grant-denial probe, producing a second `+1 grant`. A guarded correction required
+the current balance to be 1 and the newest ledger row to be that recent grant,
+then applied one authenticated `-1 adjust`; the verification read showed the
+adjustment as the newest row and restored the balance to 0. The browser test now
+omits the production grant probe for every identity. Isolated route tests retain
+ordinary-user denial coverage.
