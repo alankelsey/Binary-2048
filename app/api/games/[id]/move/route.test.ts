@@ -209,6 +209,27 @@ describe("POST /api/games/:id/move hash guard", () => {
     expect(serverTiming(res).names).not.toContain("engine_move");
   });
 
+  it("keeps malformed recovery payloads classified as 400", async () => {
+    const res = await POST(
+      new Request("http://localhost/api/games/x/move", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "L", recoverySnapshot: { recoveryVersion: 1 } })
+      }),
+      { params: Promise.resolve({ id: "missing_malformed_recovery" }) }
+    );
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json.error).toBe("Invalid recovery snapshot");
+    expect(serverTiming(res).names).toEqual(expect.arrayContaining([
+      "session_lookup",
+      "recovery_import",
+      "response_encode",
+      "total"
+    ]));
+  });
+
   it.each([
     ["conflict", new SessionConflictError(), 409, "Session changed; refresh and retry"],
     ["unavailable", new Error("private storage failure"), 503, "Session storage is temporarily unavailable"]

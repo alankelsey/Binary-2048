@@ -343,8 +343,11 @@ approved.
     miss paths in production without recording identifiers or payloads. Retain
     rate-limit fallback as local unit evidence because production has no safe,
     scoped dependency-fault control ([evidence](./v2-phase0-server-timing-2026-10-10.md)).
-- [ ] Capture cold-start, event-loop delay, memory, and workload correlation
-  where the hosting environment permits it.
+- [x] Capture process-first/runtime-reuse proxies and authoritative platform
+  cold-start data where available, plus bounded process-local event-loop,
+  memory/GC, and instrumented move-workload correlation. Treat association as
+  context rather than causal proof
+  ([evidence](./v2-phase0-runtime-correlation-2026-10-13.md)).
 - [ ] Repeat measurements on the user's Pixel in Chrome, desktop Chrome, and
   an authenticated session, not only in headless Chromium.
 

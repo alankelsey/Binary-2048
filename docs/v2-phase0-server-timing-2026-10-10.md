@@ -111,10 +111,12 @@ event-loop delay, memory/GC state, or concurrent workload. A first request
 after deployment is not reliable cold-start evidence. Those signals and the
 Pixel, desktop Chrome, and authenticated-session measurements remain open.
 
-The acceptance review also found three instrumentation accuracy issues for the
-next slice: a Mongo lookup failure is currently caught as an invalid-recovery
-HTTP 400, the missing-session route performs a second uninstrumented lookup,
-and failed recovery delete/final writes can omit their persistence duration.
+The acceptance review also found three instrumentation accuracy issues: Mongo
+lookup failure classification, a second uninstrumented missing-session lookup,
+and omitted duration for failed recovery delete/final-write attempts. These
+were corrected and production runtime correlation was added in the
+[2026-10-13 follow-up](./v2-phase0-runtime-correlation-2026-10-13.md).
+
 The production recovery baseline also confirms the existing duplicate
 replay/write work; it does not yet establish that work as the cause of the
 historical 2.7-second outlier.
