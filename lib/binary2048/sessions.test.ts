@@ -8,6 +8,12 @@ import {
   undoSession
 } from "@/lib/binary2048/sessions";
 import type { Cell, GameConfig } from "@/lib/binary2048/types";
+import {
+  installSessionStoreForTests,
+  resetSessionStoreForTests,
+  SessionStorageUnavailableError,
+  type SessionStore
+} from "@/lib/binary2048/session-store";
 
 describe("session undo", () => {
   const config: Partial<GameConfig> = {
@@ -32,6 +38,7 @@ describe("session undo", () => {
 
   afterEach(() => {
     delete process.env.BINARY2048_RECOVERY_SECRET;
+    resetSessionStoreForTests();
   });
 
   it("reverts current state to previous step", async () => {
@@ -130,5 +137,31 @@ describe("session undo", () => {
     const resolved = (await resolveSessionWithRecovery(id, unsignedSnapshot));
 
     expect(resolved?.steps).toHaveLength(0);
+  });
+
+  it.each(["delete", "final_write"])("records failed recovery %s persistence", async (failurePoint) => {
+    process.env.BINARY2048_RECOVERY_SECRET = "session-recovery-secret";
+    const session = (await createSession(config, initialGrid));
+    const snapshot = (await exportRecoverySnapshot(session.current.id))!;
+    const timings: string[] = [];
+    const set = jest.fn()
+      .mockResolvedValueOnce(undefined)
+      .mockImplementationOnce(async () => {
+        if (failurePoint === "final_write") throw new Error("private write failure");
+      });
+    const store: SessionStore = {
+      get: jest.fn().mockResolvedValue(null),
+      set,
+      delete: failurePoint === "delete"
+        ? jest.fn().mockRejectedValue(new Error("private delete failure"))
+        : jest.fn().mockResolvedValue(undefined)
+    };
+    installSessionStoreForTests(store);
+
+    await expect(importRecoverySnapshot(snapshot, (name) => timings.push(name)))
+      .rejects.toBeInstanceOf(SessionStorageUnavailableError);
+    expect(timings.filter((name) => name === "session_persist")).toHaveLength(
+      failurePoint === "delete" ? 2 : 3
+    );
   });
 });

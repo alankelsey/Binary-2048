@@ -1,10 +1,11 @@
-import { SessionConflictError } from "@/lib/binary2048/session-store";
+import { SessionConflictError, SessionStorageUnavailableError } from "@/lib/binary2048/session-store";
 import { NextResponse } from "next/server";
 import { parseAction, toActionCode } from "@/lib/binary2048/action";
 import { stateHash } from "@/lib/binary2048/ai";
 import { canContinueAfterWin } from "@/lib/binary2048/continue-policy";
 import { checkMoveRateLimit, rateLimitHeaders } from "@/lib/binary2048/rate-limit";
 import { recordMoveRouteTelemetry, recordRouteTelemetry } from "@/lib/binary2048/ops-telemetry";
+import { beginMoveRuntimeObservation, shouldSampleMoveRuntime } from "@/lib/binary2048/move-runtime-telemetry";
 import {
   exportRecoverySnapshot,
   getUndoMeta,
@@ -49,6 +50,7 @@ function firstSpawn(events: GameEvent[]) {
 
 export async function POST(req: Request, context: { params: Promise<{ id: string }> }) {
   const routeStartedAt = performance.now();
+  const runtimeObservation = beginMoveRuntimeObservation();
   const timings = new Map<string, number>();
   const recordTiming = (name: Exclude<RouteTimingName, "request_parse" | "response_encode" | "total">, durationMs: number) => {
     timings.set(name, (timings.get(name) ?? 0) + Math.max(0, durationMs));
@@ -75,13 +77,19 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     if (!telemetryRecorded) {
       telemetryRecorded = true;
       const durationMs = timings.get("total") ?? 0;
-      recordRouteTelemetry({ route: "/api/games/:id/move", status, durationMs });
-      recordMoveRouteTelemetry({
-        status,
-        sessionPath,
-        rateLimitBackend: quota.backend,
-        timingsMs: Object.fromEntries(timings)
-      });
+      const runtime = runtimeObservation.finish();
+      try {
+        recordRouteTelemetry({ route: "/api/games/:id/move", status, durationMs });
+        recordMoveRouteTelemetry({
+          status,
+          sessionPath,
+          rateLimitBackend: quota.backend,
+          timingsMs: Object.fromEntries(timings),
+          ...(shouldSampleMoveRuntime(runtime, status, sessionPath) ? { runtime } : {})
+        });
+      } catch {
+        // Observability must never change gameplay behavior.
+      }
     }
     return response;
   };
@@ -106,7 +114,9 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     activeSession = resolution.session;
     sessionPath = resolution.path;
     if (activeSession) activeId = activeSession.current.id;
-  } catch {
+  } catch (error) {
+    if (error instanceof SessionConflictError) return respond({ error: error.message }, 409);
+    if (error instanceof SessionStorageUnavailableError) return respond({ error: error.message }, 503);
     return respond({ error: "Invalid recovery snapshot" }, 400);
   }
   if (typeof body.expectStateHash === "string") {
@@ -124,8 +134,8 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     }
   }
   let session;
-  try { session = await moveSession(activeId, dir, activeSession ?? undefined, recordTiming); }
-  catch (error) { return respond({ error: error instanceof SessionConflictError ? error.message : "Session storage unavailable" }, error instanceof SessionConflictError ? 409 : 503); }
+  try { session = await moveSession(activeId, dir, activeSession, recordTiming); }
+  catch (error) { return respond({ error: error instanceof SessionConflictError ? error.message : "Session storage is temporarily unavailable" }, error instanceof SessionConflictError ? 409 : 503); }
   if (!session) return respond({ error: "Game not found" }, 404);
   const lastStep = session.steps[session.steps.length - 1];
   const changed = lastStep?.moved ?? false;

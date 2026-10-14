@@ -9,18 +9,26 @@ import {
 } from "@/lib/binary2048/sessions";
 import { resetRateLimitStore } from "@/lib/binary2048/rate-limit";
 import { getOpsTelemetrySnapshot, resetOpsTelemetry } from "@/lib/binary2048/ops-telemetry";
-import { resetSessionStoreForTests } from "@/lib/binary2048/session-store";
+import {
+  installSessionStoreForTests,
+  resetSessionStoreForTests,
+  SessionConflictError,
+  type SessionStore
+} from "@/lib/binary2048/session-store";
 import type { Cell, GameConfig } from "@/lib/binary2048/types";
+import { resetMoveRuntimeTelemetryForTests } from "@/lib/binary2048/move-runtime-telemetry";
 
 describe("POST /api/games/:id/move hash guard", () => {
   beforeEach(() => {
     resetRateLimitStore();
     resetSessionStoreForTests();
     resetOpsTelemetry();
+    resetMoveRuntimeTelemetryForTests();
     delete process.env.BINARY2048_RATE_LIMIT_MOVE_MAX;
     delete process.env.BINARY2048_RATE_LIMIT_WINDOW_MS;
     delete process.env.BINARY2048_BOT_API_KEY_HASHES;
     delete process.env.BINARY2048_RECOVERY_SECRET;
+    delete process.env.BINARY2048_SESSION_STORE;
   });
 
   const config: Partial<GameConfig> = {
@@ -119,6 +127,14 @@ describe("POST /api/games/:id/move hash guard", () => {
     ]));
     expect(timing.value).not.toContain(id);
     expect(lastMoveTelemetry()).toMatchObject({ status: 200, sessionPath: "resident_memory", rateLimitBackend: "memory" });
+    expect(lastMoveTelemetry()?.runtime).toMatchObject({
+      schemaVersion: 1,
+      observation: "first_observed",
+      requestOrdinal: 1,
+      memory: { monitor: "available" },
+      workload: { monitor: "instrumented_move_route_only", movesInFlightAtStart: 1, movesInFlightAtEnd: 0 }
+    });
+    expect(timing.value).not.toContain(lastMoveTelemetry()?.runtime?.runtimeId);
   });
 
   it("returns 400 when neither dir nor action is provided", async () => {
@@ -146,6 +162,12 @@ describe("POST /api/games/:id/move hash guard", () => {
   });
 
   it("returns 404 for missing game id", async () => {
+    const get = jest.fn().mockResolvedValue(null);
+    installSessionStoreForTests({
+      get,
+      set: jest.fn(),
+      delete: jest.fn()
+    } as SessionStore);
     const req = new Request("http://localhost/api/games/x/move", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -158,6 +180,63 @@ describe("POST /api/games/:id/move hash guard", () => {
     expect(json.error).toBe("Game not found");
     expect(serverTiming(res).names).toEqual(expect.arrayContaining(["session_lookup", "total"]));
     expect(lastMoveTelemetry()?.sessionPath).toBe("missing");
+    expect(get).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ["without recovery", undefined],
+    ["with recovery", { recoveryVersion: 1 }]
+  ])("returns 503 when session lookup storage is unavailable %s", async (_label, recoverySnapshot) => {
+    installSessionStoreForTests({
+      get: jest.fn().mockRejectedValue(new Error("database details must stay private")),
+      set: jest.fn(),
+      delete: jest.fn()
+    } as SessionStore);
+    const res = await POST(
+      new Request("http://localhost/api/games/x/move", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "L", recoverySnapshot })
+      }),
+      { params: Promise.resolve({ id: "unavailable_game" }) }
+    );
+    const json = await res.json();
+
+    expect(res.status).toBe(503);
+    expect(json.error).toBe("Session storage is temporarily unavailable");
+    expect(JSON.stringify(json)).not.toContain("database details");
+    expect(serverTiming(res).names).toEqual(expect.arrayContaining(["session_lookup", "total"]));
+    expect(serverTiming(res).names).not.toContain("engine_move");
+  });
+
+  it.each([
+    ["conflict", new SessionConflictError(), 409, "Session changed; refresh and retry"],
+    ["unavailable", new Error("private storage failure"), 503, "Session storage is temporarily unavailable"]
+  ])("reports failed move persistence as %s", async (_label, failure, expectedStatus, expectedMessage) => {
+    const session = (await createSession(config, initialGrid));
+    const id = session.current.id;
+    const stored = structuredClone(session);
+    installSessionStoreForTests({
+      get: jest.fn().mockResolvedValue(stored),
+      set: jest.fn().mockRejectedValue(failure),
+      delete: jest.fn()
+    } as SessionStore);
+
+    const res = await POST(
+      new Request("http://localhost/api/games/x/move", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "L" })
+      }),
+      { params: Promise.resolve({ id }) }
+    );
+    const json = await res.json();
+
+    expect(res.status).toBe(expectedStatus);
+    expect(json.error).toBe(expectedMessage);
+    expect(serverTiming(res).names).toEqual(expect.arrayContaining(["engine_move", "session_persist", "total"]));
+    expect(lastMoveTelemetry()?.timingsMs.session_persist).toBeGreaterThanOrEqual(0);
+    expect(session.steps).toHaveLength(0);
   });
 
   it("atomically recovers a missing instance-local session and applies the move", async () => {

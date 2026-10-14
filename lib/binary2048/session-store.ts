@@ -6,6 +6,10 @@ export class SessionConflictError extends Error {
   constructor() { super("Session changed; refresh and retry"); this.name = "SessionConflictError"; }
 }
 
+export class SessionStorageUnavailableError extends Error {
+  constructor() { super("Session storage is temporarily unavailable"); this.name = "SessionStorageUnavailableError"; }
+}
+
 export type SessionStore = {
   set: (id: string, session: GameSession) => Promise<void>;
   get: (id: string) => Promise<GameSession | null>;
@@ -108,3 +112,4 @@ export function getSessionStore(): SessionStore {
   return globalStore.__binary2048_session_store;
 }
 export function resetSessionStoreForTests() { delete globalStore.__binary2048_session_store; }
+export function installSessionStoreForTests(store: SessionStore) { globalStore.__binary2048_session_store = store; }

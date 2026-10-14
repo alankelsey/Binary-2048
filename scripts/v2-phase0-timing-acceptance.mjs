@@ -1,7 +1,12 @@
 import { randomUUID } from "node:crypto";
 
 const base = (process.env.PROD_BASE ?? "https://www.binary2048.com").replace(/\/$/, "");
-const sampleCount = Math.max(1, Math.min(20, Number(process.env.TIMING_SAMPLE_COUNT ?? "6")));
+function boundedCount(raw, fallback, minimum, maximum) {
+  const value = Number(raw ?? fallback);
+  return Number.isInteger(value) ? Math.max(minimum, Math.min(maximum, value)) : fallback;
+}
+const sampleCount = boundedCount(process.env.TIMING_SAMPLE_COUNT, 6, 1, 20);
+const parallelSampleCount = boundedCount(process.env.TIMING_PARALLEL_SAMPLE_COUNT, 4, 2, 8);
 const allowedTimingNames = new Set([
   "rate_limit_identity",
   "rate_limit_counter",
@@ -92,6 +97,22 @@ const recovery = await request(`/api/games/${randomUUID()}/move`, {
   body: JSON.stringify({ dir: "right", recoverySnapshot: unsignedRecoverySnapshot })
 }, 200);
 samples.push(sanitizedSample("recovery_import", recovery.response));
+
+const parallelGames = await Promise.all(Array.from({ length: parallelSampleCount }, () => request("/api/games", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: "{}"
+}, 200)));
+const parallelMoves = await Promise.all(parallelGames.map((game) => request(
+  `/api/games/${encodeURIComponent(game.body.id)}/move`,
+  {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ dir: "left", recoverySnapshot: game.body.recoverySnapshot })
+  },
+  200
+)));
+for (const move of parallelMoves) samples.push(sanitizedSample("parallel_move", move.response));
 
 for (const sample of samples) {
   if (sample.cacheControl !== "no-store") throw new Error("Move response is missing Cache-Control: no-store");

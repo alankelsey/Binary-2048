@@ -1,5 +1,6 @@
 import { sharedOpsEnabled, readOpsValue } from "@/lib/binary2048/ops-shared";
 import type { FleetTelemetry } from "../../workers/telemetry";
+import { sanitizeMoveRuntimeTelemetry, type MoveRuntimeTelemetry } from "@/lib/binary2048/move-runtime-telemetry";
 type RouteMetric = {
   route: string;
   calls: number;
@@ -23,6 +24,7 @@ export type MoveRouteTelemetry = {
   sessionPath: "resident_memory" | "mongo_hydration" | "recovery_snapshot" | "legacy_export" | "missing" | "not_checked";
   rateLimitBackend: "memory" | "mongo" | "memory_fallback";
   timingsMs: Record<string, number>;
+  runtime?: MoveRuntimeTelemetry;
 };
 
 const MOVE_TIMING_NAMES = new Set([
@@ -123,7 +125,8 @@ export function recordMoveRouteTelemetry(input: MoveRouteTelemetry) {
       Object.entries(input.timingsMs)
         .filter(([name, durationMs]) => MOVE_TIMING_NAMES.has(name) && Number.isFinite(durationMs))
         .map(([name, durationMs]) => [name, Number(Math.max(0, durationMs).toFixed(2))])
-    )
+    ),
+    ...(input.runtime ? { runtime: sanitizeMoveRuntimeTelemetry(input.runtime) } : {})
   };
   telemetry.recentMoveTimings.push(sanitized);
   if (telemetry.recentMoveTimings.length > MAX_RECENT_DURATIONS) {

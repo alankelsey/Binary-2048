@@ -1,7 +1,13 @@
 import { applyMove, buildExport, createGame, runScenario } from "@/lib/binary2048/engine";
 import { canContinueAfterWin } from "@/lib/binary2048/continue-policy";
 import { createRecoverySignature, verifyRecoverySignature } from "@/lib/binary2048/recovery-signature";
-import { getSessionStore, getSessionStoreMode, inheritSessionRevision } from "@/lib/binary2048/session-store";
+import {
+  getSessionStore,
+  getSessionStoreMode,
+  inheritSessionRevision,
+  SessionConflictError,
+  SessionStorageUnavailableError
+} from "@/lib/binary2048/session-store";
 import type { Cell, Dir, GameConfig, GameExport, GameSession, SessionRecoverySnapshot } from "@/lib/binary2048/types";
 
 const UNDO_MODES = {
@@ -61,6 +67,35 @@ function recordElapsed(recorder: SessionTimingRecorder | undefined, name: Sessio
   recorder?.(name, Math.max(0, nowMs() - startedAt));
 }
 
+function rethrowSessionStorageError(error: unknown): never {
+  if (error instanceof SessionConflictError || error instanceof SessionStorageUnavailableError) throw error;
+  throw new SessionStorageUnavailableError();
+}
+
+async function readStoredSession(id: string) {
+  try {
+    return await getSessionStore().get(id);
+  } catch (error) {
+    rethrowSessionStorageError(error);
+  }
+}
+
+async function writeStoredSession(id: string, session: GameSession) {
+  try {
+    await getSessionStore().set(id, session);
+  } catch (error) {
+    rethrowSessionStorageError(error);
+  }
+}
+
+async function deleteStoredSession(id: string) {
+  try {
+    await getSessionStore().delete(id);
+  } catch (error) {
+    rethrowSessionStorageError(error);
+  }
+}
+
 export async function createSession(config?: Partial<GameConfig>, initialGrid?: Cell[][], options?: CreateSessionOptions) {
   const created = createGame(config, initialGrid);
   const session: GameSession = {
@@ -72,12 +107,12 @@ export async function createSession(config?: Partial<GameConfig>, initialGrid?: 
     undoEvents: [],
     integrity: { sessionClass: options?.sessionClass ?? "unranked", source: "created" }
   };
-  (await getSessionStore().set(created.state.id, session));
+  (await writeStoredSession(created.state.id, session));
   return session;
 }
 
 export async function getSession(id: string) {
-  return (await getSessionStore().get(id)) ?? null;
+  return (await readStoredSession(id)) ?? null;
 }
 
 function isRecoverySnapshot(
@@ -146,8 +181,8 @@ export async function resolveSessionWithRecoveryDetails(
   }
 }
 
-export async function moveSession(id: string, dir: Dir, expected?: GameSession, recorder?: SessionTimingRecorder) {
-  const session = expected ?? (await getSessionStore().get(id));
+export async function moveSession(id: string, dir: Dir, expected?: GameSession | null, recorder?: SessionTimingRecorder) {
+  const session = expected === undefined ? (await readStoredSession(id)) : expected;
   if (!session) return null;
 
   const before = session.current;
@@ -167,7 +202,7 @@ export async function moveSession(id: string, dir: Dir, expected?: GameSession, 
   session.current = move.state;
   const persistenceStartedAt = nowMs();
   try {
-    (await getSessionStore().set(id, session));
+    (await writeStoredSession(id, session));
   } finally {
     recordElapsed(recorder, "session_persist", persistenceStartedAt);
   }
@@ -175,7 +210,7 @@ export async function moveSession(id: string, dir: Dir, expected?: GameSession, 
 }
 
 export async function undoSession(id: string, expected?: GameSession) {
-  const session = expected ?? (await getSessionStore().get(id));
+  const session = expected ?? (await readStoredSession(id));
   if (!session) return { session: null, error: "NOT_FOUND" as const };
   if (session.steps.length === 0) return { session, error: null };
   if (session.undoUsed >= session.undoLimit) return { session, error: "LIMIT_REACHED" as const };
@@ -189,12 +224,12 @@ export async function undoSession(id: string, expected?: GameSession) {
     undoneTurn: step.turn,
     usedAfter: session.undoUsed
   });
-  (await getSessionStore().set(id, session));
+  (await writeStoredSession(id, session));
   return { session, error: null };
 }
 
 export async function exportSession(id: string) {
-  const session = (await getSessionStore().get(id));
+  const session = (await readStoredSession(id));
   if (!session) return null;
   return buildExport(
     session.current.config,
@@ -216,7 +251,7 @@ export async function exportRecoverySnapshot(
   currentSession?: GameSession,
   recorder?: SessionTimingRecorder
 ): Promise<SessionRecoverySnapshot | null> {
-  const session = currentSession ?? (await getSessionStore().get(id));
+  const session = currentSession ?? (await readStoredSession(id));
   if (!session) return null;
   const buildStartedAt = nowMs();
   const snapshot: SessionRecoverySnapshot = {
@@ -245,7 +280,7 @@ export async function exportRecoverySnapshot(
 }
 
 export async function listSessionState(id: string) {
-  const session = (await getSessionStore().get(id));
+  const session = (await readStoredSession(id));
   if (!session) return null;
   return {
     id,
@@ -308,7 +343,7 @@ export async function importSession(exported: GameExport, recorder?: SessionTimi
   };
   const persistenceStartedAt = nowMs();
   try {
-    (await getSessionStore().set(current.id, session));
+    (await writeStoredSession(current.id, session));
   } finally {
     recordElapsed(recorder, "session_persist", persistenceStartedAt);
   }
@@ -336,7 +371,13 @@ export async function importRecoverySnapshot(snapshot: SessionRecoverySnapshot, 
   if (trusted && snapshot.integrity && snapshot.undo) {
     if (snapshot.sessionId) {
       const generatedId = recovered.current.id;
-      const existing = await getSession(snapshot.sessionId);
+      const lookupStartedAt = nowMs();
+      let existing: GameSession | null;
+      try {
+        existing = await getSession(snapshot.sessionId);
+      } finally {
+        recordElapsed(recorder, "session_lookup", lookupStartedAt);
+      }
       inheritSessionRevision(recovered, existing);
       recovered.initialState.id = snapshot.sessionId;
       recovered.current.id = snapshot.sessionId;
@@ -345,16 +386,22 @@ export async function importRecoverySnapshot(snapshot: SessionRecoverySnapshot, 
         step.after.id = snapshot.sessionId;
       }
       const deleteStartedAt = nowMs();
-      (await getSessionStore().delete(generatedId));
-      recordElapsed(recorder, "session_persist", deleteStartedAt);
+      try {
+        (await deleteStoredSession(generatedId));
+      } finally {
+        recordElapsed(recorder, "session_persist", deleteStartedAt);
+      }
     }
     recovered.integrity = { ...snapshot.integrity };
     recovered.undoLimit = snapshot.undo.limit;
     recovered.undoUsed = snapshot.undo.used;
     recovered.undoEvents = snapshot.undo.events.map((event) => ({ ...event }));
     const persistenceStartedAt = nowMs();
-    (await getSessionStore().set(recovered.current.id, recovered));
-    recordElapsed(recorder, "session_persist", persistenceStartedAt);
+    try {
+      (await writeStoredSession(recovered.current.id, recovered));
+    } finally {
+      recordElapsed(recorder, "session_persist", persistenceStartedAt);
+    }
   }
   return recovered;
 }
