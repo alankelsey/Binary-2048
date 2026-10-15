@@ -2,7 +2,7 @@
 
 Status: active delivery plan; V1 completed 2026-10-05
 Created: 2026-09-17  
-Implementation status: Phases 0 and 1 complete; Phase 2 local prediction is next
+Implementation status: Phases 0 and 1 complete; Phase 2 browser engine interface complete
 
 ## Purpose
 
@@ -445,8 +445,9 @@ order; silent input loss is zero in automated and real-device tests.
 
 ### Phase 2: local prediction and reconciliation
 
-- [ ] Define a browser-safe interface around the existing deterministic
-  engine without duplicating game rules.
+- [x] Define a browser-safe interface around the existing deterministic
+  engine without duplicating game rules
+  ([evidence](./v2-phase2-browser-engine-interface-2026-10-15.md)).
 - [ ] Apply and paint valid casual moves locally before network I/O.
 - [ ] Maintain separate predicted, acknowledged, and pending state.
 - [ ] Add turn and state-hash reconciliation.
