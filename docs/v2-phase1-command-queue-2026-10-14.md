@@ -2,8 +2,8 @@
 
 Date: 2026-10-14
 
-Status: the first Phase 1 item is implemented and locally accepted. Phase 1 is
-not complete, and physical Pixel acceptance remains open.
+Status: the first Phase 1 item is implemented, deployed, and production-smoke
+accepted. Phase 1 is not complete, and physical Pixel acceptance remains open.
 
 ## Behavior
 
@@ -72,3 +72,5 @@ and ordering behavior but does not replace the open real-finger Pixel run.
   pages. The local wrapper then reached the known environment-only smoke blocker:
   `/api/auth/bridge-token` returned 503 because the production bridge secret is
   intentionally unavailable locally.
+- Runtime commit `9b76f35d0036f04cb3583624f39c7c46fa802a8f` deployed successfully
+  through Amplify job 382. The post-deploy production verification passed.
