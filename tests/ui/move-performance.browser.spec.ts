@@ -13,6 +13,11 @@ test("classifies a directional input when no playable game is available", async 
   });
 
   await page.goto("/");
+  const difficulty = page.getByLabel("Difficulty", { exact: true });
+  await difficulty.focus();
+  await page.keyboard.press("ArrowDown");
+  expect(await page.evaluate(() => performance.getEntriesByName("binary2048:move-dropped").length)).toBe(0);
+  await difficulty.blur();
   await page.keyboard.press("ArrowLeft");
 
   await expect.poll(() =>
@@ -33,7 +38,7 @@ test("classifies a directional input when no playable game is available", async 
   });
 });
 
-test("records accepted and queued moves through the next painted frame", async ({ page }) => {
+test("routes rapid keyboard, touch, and controls through one ordered queue", async ({ page }) => {
   const initialGrid: Cell[][] = [
     [{ t: "n", v: 1 }, null, null, null],
     [null, null, null, null],
@@ -118,19 +123,46 @@ test("records accepted and queued moves through the next painted frame", async (
   await page.goto("/");
   await page.getByRole("button", { name: "Start New Game" }).click();
   await expect(page.locator(".card")).toHaveAttribute("aria-busy", "false");
-  const rapidMoves: Array<{ key: string; direction: Dir }> = [
-    { key: "ArrowLeft", direction: "left" },
-    { key: "ArrowDown", direction: "down" },
-    { key: "ArrowLeft", direction: "left" },
-    { key: "ArrowDown", direction: "down" },
-    { key: "ArrowRight", direction: "right" },
-    { key: "ArrowLeft", direction: "left" },
-    { key: "ArrowUp", direction: "up" },
-    { key: "ArrowRight", direction: "right" },
-    { key: "ArrowDown", direction: "down" },
-    { key: "ArrowUp", direction: "up" }
+  for (const name of ["Move up", "Move left", "Move down", "Move right"]) {
+    const control = page.getByRole("button", { name });
+    await expect(control).toBeVisible();
+    const box = await control.boundingBox();
+    expect(box?.width).toBeGreaterThanOrEqual(44);
+    expect(box?.height).toBeGreaterThanOrEqual(44);
+  }
+  const rapidMoves: Array<{ source: "keyboard" | "touch" | "control"; direction: Dir; key?: string }> = [
+    { source: "keyboard", key: "ArrowLeft", direction: "left" },
+    { source: "touch", direction: "down" },
+    { source: "control", direction: "left" },
+    { source: "keyboard", key: "ArrowDown", direction: "down" },
+    { source: "touch", direction: "right" },
+    { source: "control", direction: "left" },
+    { source: "keyboard", key: "ArrowUp", direction: "up" },
+    { source: "touch", direction: "right" },
+    { source: "control", direction: "down" },
+    { source: "touch", direction: "up" }
   ];
-  for (const move of rapidMoves) await page.keyboard.press(move.key);
+  await page.evaluate((moves) => {
+    const board = document.querySelector<HTMLElement>(".board");
+    if (!board) throw new Error("Board was not found");
+    for (const move of moves) {
+      if (move.source === "keyboard") {
+        window.dispatchEvent(new KeyboardEvent("keydown", { key: move.key, bubbles: true, cancelable: true }));
+        continue;
+      }
+      if (move.source === "control") {
+        document.querySelector<HTMLButtonElement>(`[data-direction="${move.direction}"]`)?.click();
+        continue;
+      }
+      const start = new Touch({ identifier: 1, target: board, clientX: 100, clientY: 100 });
+      const endPoint = {
+        left: [40, 100], right: [160, 100], up: [100, 40], down: [100, 160]
+      }[move.direction];
+      const end = new Touch({ identifier: 1, target: board, clientX: endPoint[0], clientY: endPoint[1] });
+      board.dispatchEvent(new TouchEvent("touchstart", { bubbles: true, touches: [start] }));
+      board.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }));
+    }
+  }, rapidMoves);
 
   const acceptedRapidMoves = rapidMoves.slice(0, 9);
   await expect.poll(() => completedMoves.length, { timeout: 10_000 }).toBe(acceptedRapidMoves.length);
@@ -141,17 +173,6 @@ test("records accepted and queued moves through the next painted frame", async (
   await expect.poll(() =>
     page.evaluate(() => performance.getEntriesByName("binary2048:move-dropped").length)
   ).toBe(1);
-  await page.locator(".board").evaluate((board) => {
-    const start = new Touch({ identifier: 1, target: board, clientX: 80, clientY: 80 });
-    const end = new Touch({ identifier: 1, target: board, clientX: 160, clientY: 80 });
-    board.dispatchEvent(new TouchEvent("touchstart", { bubbles: true, touches: [start] }));
-    board.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }));
-  });
-  await expect.poll(() => completedMoves.length).toBe(acceptedRapidMoves.length + 1);
-  await expect.poll(() =>
-    page.evaluate(() => performance.getEntriesByName("binary2048:move-complete").length)
-  ).toBe(acceptedRapidMoves.length + 1);
-
   const traces = await page.evaluate(() =>
     performance.getEntriesByName("binary2048:move-complete").map((entry) =>
       (entry as PerformanceMark).detail as {
@@ -175,12 +196,10 @@ test("records accepted and queued moves through the next painted frame", async (
     )
   );
   expect(traces.map((trace) => trace.direction)).toEqual([
-    ...acceptedRapidMoves.map((move) => move.direction),
-    "right"
+    ...acceptedRapidMoves.map((move) => move.direction)
   ]);
   expect(traces.map((trace) => trace.source)).toEqual([
-    ...acceptedRapidMoves.map(() => "keyboard"),
-    "touch"
+    ...acceptedRapidMoves.map((move) => move.source)
   ]);
   expect(traces.every((trace) => trace.localEngineStatus === "not_run")).toBe(true);
   expect(traces.every((trace) => trace.outcome === "completed")).toBe(true);
@@ -215,9 +234,6 @@ test("records accepted and queued moves through the next painted frame", async (
       { stage: "dequeue", depth: acceptedRapidMoves.length - index - 2 }
     ]);
   }
-  expect(traces.at(-1)?.phases.map((phase) => phase.phase)).toEqual(
-    traces[0].phases.map((phase) => phase.phase)
-  );
   for (const trace of traces) {
     expect(trace.phases.every((phase, index) => index === 0 || phase.atMs >= trace.phases[index - 1].atMs)).toBe(true);
     expect(trace.phases.find((phase) => phase.phase === "request_start")?.attempt).toBe(1);
@@ -242,7 +258,7 @@ test("records accepted and queued moves through the next painted frame", async (
   }
   expect(
     await page.evaluate(() => performance.getEntriesByName("binary2048:move-input-to-next-frame").length)
-  ).toBe(acceptedRapidMoves.length + 1);
+  ).toBe(acceptedRapidMoves.length);
   const dropped = await page.evaluate(() =>
     (performance.getEntriesByName("binary2048:move-dropped")[0] as PerformanceMark).detail as {
       direction: string;
@@ -255,7 +271,7 @@ test("records accepted and queued moves through the next painted frame", async (
   );
   expect(dropped).toMatchObject({
     direction: rapidMoves.at(-1)?.direction,
-    source: "keyboard",
+    source: rapidMoves.at(-1)?.source,
     outcome: "dropped",
     dropReason: "queue_full",
     queueDepthSamples: [
@@ -265,3 +281,92 @@ test("records accepted and queued moves through the next painted frame", async (
     phases: [{ phase: "input_capture" }, { phase: "dropped" }]
   });
 });
+
+for (const scenario of [
+  { name: "terminal response", status: 200, dropReason: "buffer_cleared_terminal_state" },
+  { name: "failed response", status: 500, dropReason: "buffer_cleared_move_error" }
+] as const) {
+  test(`clears queued commands after a ${scenario.name}`, async ({ page }) => {
+    const initialGrid: Cell[][] = [
+      [{ t: "n", v: 1 }, null, null, null],
+      [null, null, null, null],
+      [null, null, null, null],
+      [null, null, null, null]
+    ];
+    const initial: GameState = {
+      id: `g_queue_clear_${scenario.status}`,
+      config: { ...DEFAULT_CONFIG, seed: scenario.status },
+      width: 4,
+      height: 4,
+      seed: scenario.status,
+      rngStep: 0,
+      score: 0,
+      turn: 0,
+      won: false,
+      over: false,
+      grid: initialGrid
+    };
+    let moveRequests = 0;
+
+    await page.addInitScript(() => {
+      window.localStorage.removeItem("binary2048.currentGameId");
+      window.localStorage.removeItem("binary2048.resumeSnapshot");
+      window.localStorage.setItem("binary2048.tutorial.v1", '{"version":1,"status":"dismissed"}');
+      document.cookie = "binary2048_tutorial_suppress=1; Path=/; SameSite=Lax";
+      performance.clearMarks();
+      performance.clearMeasures();
+    });
+    await page.route("**/api/games", async (route) => {
+      if (route.request().method() !== "POST") return route.continue();
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          id: initial.id,
+          current: initial,
+          undo: { limit: 2, used: 0, remaining: 2 },
+          integrity: { sessionClass: "unranked", source: "created" }
+        })
+      });
+    });
+    await page.route("**/api/games/*/move", async (route) => {
+      moveRequests += 1;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      if (scenario.status === 500) {
+        await route.fulfill({ status: 500, contentType: "application/json", body: '{"error":"move failed"}' });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          id: initial.id,
+          current: { ...initial, turn: 1, over: true },
+          lastStep: { moved: true, events: [] },
+          undo: { limit: 2, used: 0, remaining: 2 },
+          integrity: { sessionClass: "unranked", source: "created" }
+        })
+      });
+    });
+
+    await page.goto("/");
+    await page.getByRole("button", { name: "Start New Game" }).click();
+    await expect(page.locator(".card")).toHaveAttribute("aria-busy", "false");
+    await page.evaluate(() => {
+      for (const key of ["ArrowLeft", "ArrowDown", "ArrowRight"]) {
+        window.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
+      }
+    });
+
+    await expect.poll(() =>
+      page.evaluate(() => performance.getEntriesByName("binary2048:move-dropped").length)
+    ).toBe(2);
+    expect(moveRequests).toBe(1);
+    const reasons = await page.evaluate(() =>
+      performance.getEntriesByName("binary2048:move-dropped").map((entry) =>
+        (entry as PerformanceMark).detail.dropReason as string
+      )
+    );
+    expect(reasons).toEqual([scenario.dropReason, scenario.dropReason]);
+  });
+}

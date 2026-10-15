@@ -112,6 +112,7 @@ type GameState = {
 };
 type UndoMeta = { limit: number; used: number; remaining: number };
 type SessionClass = "ranked" | "unranked";
+type MoveCommand = { dir: Dir; trace: MovePerformanceTrace };
 
 const SPAWN_MODES: Record<
   SpawnMode,
@@ -217,10 +218,11 @@ export default function Home() {
   const controlTapStateRef = useRef(createInitialRageTapState());
   const pendingNewGameRef = useRef(false);
   const moveInFlightRef = useRef(false);
-  const bufferedMovesRef = useRef<Array<{ dir: Dir; trace: MovePerformanceTrace }>>([]);
+  const bufferedMovesRef = useRef<MoveCommand[]>([]);
   const pendingPaintTraceRef = useRef<{ trace: MovePerformanceTrace; turn: number } | null>(null);
   const paintFrameRef = useRef<number | null>(null);
   const paintFrameTraceRef = useRef<MovePerformanceTrace | null>(null);
+  const executeMoveHandlerRef = useRef<(command: MoveCommand) => void>(() => undefined);
   const keyboardInputHandlerRef = useRef<(event: KeyboardEvent) => void>(() => undefined);
   const diagnosticSequenceRef = useRef(0);
   const authBridgeRef = useRef<ReturnType<typeof createClientAuthBridge> | null>(null);
@@ -261,12 +263,6 @@ export default function Home() {
       const buffered = bufferedMovesRef.current.shift();
       if (buffered) dropMovePerformanceTrace(buffered.trace, reason, queueDepth);
     }
-  }
-
-  function dropDirectionalInput(dir: Dir, source: MoveInputSource, reason: MoveInputDropReason) {
-    const trace = startMovePerformanceTrace(dir, source);
-    recordMoveQueueDepth(trace, "capture", bufferedMovesRef.current.length);
-    dropMovePerformanceTrace(trace, reason, bufferedMovesRef.current.length);
   }
 
   useEffect(() => {
@@ -506,13 +502,21 @@ export default function Home() {
     }
   }
 
-  async function move(dir: Dir, trace?: MovePerformanceTrace) {
-    const inputTrace = trace ?? startMovePerformanceTrace(dir, "control");
-    if (!inputTrace.queueDepthSamples.some((sample) => sample.stage === "capture")) {
-      recordMoveQueueDepth(inputTrace, "capture", bufferedMovesRef.current.length);
+  function submitMoveCommand(dir: Dir, source: MoveInputSource) {
+    const inputTrace = startMovePerformanceTrace(dir, source);
+    recordMoveQueueDepth(inputTrace, "capture", bufferedMovesRef.current.length);
+    const command: MoveCommand = { dir, trace: inputTrace };
+    if (
+      newGameSetupOpen ||
+      newGameTutorialChoiceOpen ||
+      tutorialLaunchConfirmOpen ||
+      tutorialExitConfirmOpen
+    ) {
+      dropMovePerformanceTrace(inputTrace, "modal_open", bufferedMovesRef.current.length);
+      return;
     }
     if (tutorial) {
-      if (tutorial.phase !== "active" || tutorialExitConfirmOpen || tutorialLaunchConfirmOpen) {
+      if (tutorial.phase !== "active") {
         dropMovePerformanceTrace(inputTrace, "tutorial_unavailable", bufferedMovesRef.current.length);
         return;
       }
@@ -546,7 +550,7 @@ export default function Home() {
       dropMovePerformanceTrace(inputTrace, "win_continuation_required", bufferedMovesRef.current.length);
       return;
     }
-    if (moveInFlightRef.current) {
+    if (moveInFlightRef.current || bufferedMovesRef.current.length > 0) {
       if (bufferedMovesRef.current.length < MAX_BUFFERED_MOVES) {
         markMovePerformancePhase(inputTrace, "queued");
         bufferedMovesRef.current.push({ dir, trace: inputTrace });
@@ -565,7 +569,15 @@ export default function Home() {
       dropMovePerformanceTrace(inputTrace, "busy", bufferedMovesRef.current.length);
       return;
     }
-    const activeTrace = inputTrace;
+    void executeMove(command);
+  }
+
+  async function executeMove(command: MoveCommand) {
+    const { dir, trace: activeTrace } = command;
+    if (!gameId || !state) {
+      dropMovePerformanceTrace(activeTrace, "game_unavailable", bufferedMovesRef.current.length);
+      return;
+    }
     if (!activeTrace.phases.some((phase) => phase.phase === "queued")) {
       markMovePerformancePhase(activeTrace, "accepted");
     }
@@ -752,6 +764,10 @@ export default function Home() {
       setBusy(false);
     }
   }
+
+  executeMoveHandlerRef.current = (command) => {
+    void executeMove(command);
+  };
 
   async function undoMove() {
     if (busy || replay || !gameId) return;
@@ -1117,29 +1133,22 @@ export default function Home() {
     const nextMove = bufferedMovesRef.current.shift();
     if (nextMove) {
       recordMoveQueueDepth(nextMove.trace, "dequeue", bufferedMovesRef.current.length);
-      void move(nextMove.dir, nextMove.trace);
+      executeMoveHandlerRef.current(nextMove);
     }
   }, [busy, gameId, state, replay, continueAfterWin]);
 
   keyboardInputHandlerRef.current = (event: KeyboardEvent) => {
     const dir = keyToDir(event.key);
     if (!dir) return;
+    const target = event.target;
     if (
-      newGameSetupOpen ||
-      newGameTutorialChoiceOpen ||
-      tutorialLaunchConfirmOpen ||
-      tutorialExitConfirmOpen ||
-      (tutorial && tutorial.phase !== "active")
-    ) {
-      dropDirectionalInput(
-        dir,
-        "keyboard",
-        tutorial && tutorial.phase !== "active" ? "tutorial_unavailable" : "modal_open"
-      );
-      return;
-    }
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLSelectElement ||
+      target instanceof HTMLTextAreaElement ||
+      (target instanceof HTMLElement && target.isContentEditable)
+    ) return;
     event.preventDefault();
-    void move(dir, startMovePerformanceTrace(dir, "keyboard"));
+    submitMoveCommand(dir, "keyboard");
   };
 
   useEffect(() => {
@@ -1235,40 +1244,7 @@ export default function Home() {
     touchStartRef.current = null;
     const dir = swipeToDir(dx, dy, 24);
     if (!dir) return;
-    if (
-      newGameSetupOpen ||
-      newGameTutorialChoiceOpen ||
-      tutorialLaunchConfirmOpen ||
-      tutorialExitConfirmOpen
-    ) {
-      dropDirectionalInput(dir, "touch", "modal_open");
-      return;
-    }
-    if (tutorial && tutorial.phase !== "active") {
-      dropDirectionalInput(dir, "touch", "tutorial_unavailable");
-      return;
-    }
-    if (replay) {
-      dropDirectionalInput(dir, "touch", "replay_active");
-      return;
-    }
-    if (busy) {
-      dropDirectionalInput(dir, "touch", "busy");
-      return;
-    }
-    if (!tutorial && !state) {
-      dropDirectionalInput(dir, "touch", "game_unavailable");
-      return;
-    }
-    if (!tutorial && state?.over) {
-      dropDirectionalInput(dir, "touch", "game_over");
-      return;
-    }
-    if (!tutorial && state?.won && !continueAfterWin) {
-      dropDirectionalInput(dir, "touch", "win_continuation_required");
-      return;
-    }
-    void move(dir, startMovePerformanceTrace(dir, "touch"));
+    submitMoveCommand(dir, "touch");
   }
 
   function enterTutorial() {
@@ -2077,6 +2053,30 @@ export default function Home() {
             </div>
           ) : null}
         </div>
+        {!replay &&
+        !newGameSetupOpen &&
+        !newGameTutorialChoiceOpen &&
+        !tutorialLaunchConfirmOpen &&
+        !tutorialExitConfirmOpen &&
+        !tutorial &&
+        state &&
+        !state.over &&
+        (!state.won || continueAfterWin) ? (
+          <div className="direction-controls" role="group" aria-label="Directional controls">
+            <button type="button" className="direction-up" data-direction="up" aria-label="Move up" onClick={() => submitMoveCommand("up", "control")}>
+              <span aria-hidden="true">↑</span>
+            </button>
+            <button type="button" className="direction-left" data-direction="left" aria-label="Move left" onClick={() => submitMoveCommand("left", "control")}>
+              <span aria-hidden="true">←</span>
+            </button>
+            <button type="button" className="direction-down" data-direction="down" aria-label="Move down" onClick={() => submitMoveCommand("down", "control")}>
+              <span aria-hidden="true">↓</span>
+            </button>
+            <button type="button" className="direction-right" data-direction="right" aria-label="Move right" onClick={() => submitMoveCommand("right", "control")}>
+              <span aria-hidden="true">→</span>
+            </button>
+          </div>
+        ) : null}
         <div onPointerDownCapture={handleControlsPointerDown}>
         <div className="actions actions-primary" id="game-controls">
           {state ? (

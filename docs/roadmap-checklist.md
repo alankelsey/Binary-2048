@@ -402,10 +402,13 @@ below record work already deployed before V2 formally started.
       - [x] Verify production header preservation and demonstrate local memory/fallback plus production Mongo, recovery, and miss paths with sanitized acceptance evidence
     - [x] Add bounded process-first/reuse, event-loop, memory/GC, and instrumented move-workload correlation without claiming an authoritative Amplify cold start ([evidence](./v2-phase0-runtime-correlation-2026-10-13.md))
     - Visible desktop Google Chrome guest and authenticated measurements passed; physical Pixel Chrome remains the Phase 0 blocker ([evidence and protocol](./v2-phase0-browser-device-acceptance-2026-10-13.md))
+  - [ ] Complete Phase 1 input correctness
+    - [x] Route keyboard, recognized touch swipes, and accessible onscreen direction controls through one normal-gameplay FIFO command path; keep tutorial commands in the later boundary-state work ([evidence](./v2-phase1-command-queue-2026-10-14.md))
   - [ ] Audit and upgrade the existing OpenAPI documentation into a Swagger UI or equivalent interactive V2 API explorer, with complete contracts, examples, security/rate-limit details, versioning, and automated route/schema drift checks
   - [ ] Complete the anchored Lock-0 behavior spike without changing production rules
   - [ ] Complete the unranked `Death by Luck` wildcard-mode spike without changing production rules
   - [ ] Explore an optional gravity mode where all tiles fall downward or follow phone tilt; evaluate settling/merge rules, special tiles, motion permissions, accessible button/keyboard alternatives, and deterministic replay before deciding whether to implement
+  - [ ] Complete the cosmetic store, 3D board/tile, animated-tile, and player background-upload research spike with an accessible, performance-budgeted proof ([brief](./v2-cosmetic-store-visual-spike-2026-10-14.md))
   - [ ] Complete the final mobile acceptance gate
     - [ ] Add a supplemental Playwright WebKit iPhone compatibility lane for the critical mobile flow
     - [ ] Complete the physical Android Chrome and iPhone Safari tutorial/New Game checklist in the existing acceptance evidence

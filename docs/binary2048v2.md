@@ -37,6 +37,8 @@ the available trace, are listed under **Discrepancies and proof required**.
    save drafts, export them, and reuse them in simulations and tournaments.
 8. Tutorial reminder preferences follow authenticated players across devices
    without removing the always-available Tutorial entry points.
+9. Optional cosmetic purchases and player-created backgrounds can personalize
+   the board without changing rules, odds, score, ranking, or accessibility.
 
 ### Gravity and phone-tilt mode exploration
 
@@ -302,6 +304,59 @@ tiles can trigger despawn, and how several locks age independently.
   acceptance criteria with the spike decision; do not ship the mode until that
   decision is recorded.
 
+### Cosmetic store, 3D themes, and custom backgrounds
+
+Use the two 2026-10-14 board concepts as art-direction references for materials
+and depth, not as production screenshots or baked UI. Their perspective is too
+oblique for a responsive square interaction grid. Rebuild the look as separate,
+orthographic web layers so visual depth never changes board geometry or hitboxes
+([asset workflow and spike brief](./v2-cosmetic-store-visual-spike-2026-10-14.md)).
+
+- [ ] Define a Rocket League-style cosmetic catalog for tile sets, board
+  frames/borders, slot treatments, board surfaces, and page backgrounds. Specify
+  preview, purchase, ownership, equip/loadout, bundles, rarity/rotation only if
+  justified, receipts/refunds, gifting policy, and cross-device entitlements.
+  Cosmetics must remain noncompetitive and must never change rules or odds.
+  Use durable cosmetic entitlements and versioned loadouts rather than the
+  existing consumable quantity balances; keep preview/equip separate from a
+  later verified real-money checkout.
+- [ ] Prototype a versioned theme manifest and renderer that composes independent
+  tile, number/icon, slot, frame, surface, and background assets. Prove mixed
+  ownership/loadouts, fallback assets, cache invalidation, offline behavior,
+  replay/share portability, and compatibility with every special tile. Validate
+  IDs, renderer/schema versions, owned-origin URLs, dimensions, MIME, byte size,
+  content hashes, provenance, fallbacks, accessibility tokens, and compatibility;
+  keep cosmetics outside deterministic state and verify equip ownership server-side.
+- [ ] Compare CSS/SVG depth, pre-rendered orthographic 2D sprites, and a bounded
+  WebGL/3D renderer. Measure load, memory, GPU, paint/composite, battery, and
+  input-to-next-frame on the target Pixel before choosing a production path.
+  Choose numeric transfer, decoded-memory, animation, LCP/CLS, and input-latency
+  budgets before judging the proof.
+- [ ] Prototype small original animated tile treatments using CSS/vector motion
+  or a bounded sprite atlas. Set simultaneous-animation, frame-rate, decoded
+  memory, and bundle budgets; provide static fallbacks and honor
+  `prefers-reduced-motion`. Do not use unlicensed anime characters or styles
+  that imitate a specific living artist or protected franchise.
+- [ ] Design a player background-upload pipeline with authenticated ownership,
+  direct object-storage upload, strict byte/dimension/type limits, actual image
+  decoding, metadata stripping, safe crop/focal-point tools, moderation/reporting,
+  copyright attestations, derivative generation, quotas, deletion/export, CDN
+  isolation, and cost/abuse controls. Uploaded content must never become CSS,
+  HTML, SVG, script, or a public URL before validation.
+- [ ] Produce a small asset proof from the concept direction: one wood/brass/felt
+  board theme, one jewel/beveled tile set including zero/wildcard/Lock-0, one
+  responsive background, and one animated-tile sample. Test light/dark contrast,
+  color-vision modes, legibility through large values, 320px/200% zoom, and
+  reduced motion before any store implementation decision. Record immutable
+  reference locations and creator/generator, ownership, license, and allowed
+  derivative use before producing assets.
+
+Cosmetic spike exit criterion: a checked-in decision record chooses the
+rendering and asset formats, performance budgets, entitlement model, upload
+safety boundary, content policy, moderation/cost plan, and accessible fallback
+behavior. A themed proof must fit the existing deterministic board without
+changing gameplay state.
+
 Exit criterion: checked-in decision records choose precise semantics,
 configuration, versioning, and balance targets with deterministic prototype
 evidence. Current production behavior remains unchanged until separately
@@ -359,7 +414,9 @@ spent and can distinguish an ignored gesture from a queued gesture.
 
 ### Phase 1: make input handling correct
 
-- [ ] Route touch, keyboard, and onscreen controls through one command queue.
+- [x] Route touch, keyboard, and onscreen controls through one normal-gameplay
+  command queue; tutorial commands remain part of the later boundary-state work
+  ([evidence](./v2-phase1-command-queue-2026-10-14.md)).
 - [ ] Define the queue limit and visible behavior when it is full.
 - [ ] Clear touch state correctly on end and cancel and handle unsupported
   multi-touch explicitly.
