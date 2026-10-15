@@ -173,6 +173,14 @@ test("routes rapid keyboard, touch, and controls through one ordered queue", asy
   await expect.poll(() =>
     page.evaluate(() => performance.getEntriesByName("binary2048:move-dropped").length)
   ).toBe(1);
+  const queueFeedback = page.locator(".move-queue-feedback");
+  await expect(queueFeedback).toHaveText("Move not queued: 8 moves are already waiting.");
+  await expect(queueFeedback).toHaveAttribute("role", "status");
+  await expect(queueFeedback).toHaveAttribute("aria-live", "polite");
+  await expect(queueFeedback).toHaveAttribute("aria-atomic", "true");
+  for (const name of ["Move up", "Move left", "Move down", "Move right"]) {
+    await expect(page.getByRole("button", { name })).toBeEnabled();
+  }
   const traces = await page.evaluate(() =>
     performance.getEntriesByName("binary2048:move-complete").map((entry) =>
       (entry as PerformanceMark).detail as {
@@ -280,6 +288,7 @@ test("routes rapid keyboard, touch, and controls through one ordered queue", asy
     ],
     phases: [{ phase: "input_capture" }, { phase: "dropped" }]
   });
+  await expect(queueFeedback).toHaveText("");
 });
 
 for (const scenario of [

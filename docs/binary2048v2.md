@@ -417,9 +417,16 @@ spent and can distinguish an ignored gesture from a queued gesture.
 - [x] Route touch, keyboard, and onscreen controls through one normal-gameplay
   command queue; tutorial commands remain part of the later boundary-state work
   ([evidence](./v2-phase1-command-queue-2026-10-14.md)).
-- [ ] Define the queue limit and visible behavior when it is full.
+- [x] Define the queue as one active move plus at most eight pending moves. Drop
+  the newest input at capacity with unchanged `queue_full` telemetry, keep every
+  input surface enabled, and show a bounded visible/polite status explaining
+  that the move was not queued
+  ([evidence](./v2-phase1-input-boundaries-2026-10-14.md)).
 - [ ] Clear touch state correctly on end and cancel and handle unsupported
-  multi-touch explicitly.
+  multi-touch explicitly. The identity-aware state machine and synthetic
+  acceptance are complete; physical Pixel cancellation, interruption, and
+  multi-touch recovery remain open
+  ([evidence](./v2-phase1-input-boundaries-2026-10-14.md)).
 - [ ] Add real rapid-swipe tests in addition to rapid-arrow tests.
 - [ ] Add tests for ordering, queue saturation, no-op moves, game-over
   boundaries, new-game transitions, and delayed/out-of-order responses.

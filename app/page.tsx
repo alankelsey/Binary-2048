@@ -2,7 +2,16 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type TouchEvent } from "react";
 import { computeCellEffects, type CellEffect, type MoveEvent } from "@/lib/binary2048/cell-effects";
-import { keyToDir, swipeToDir } from "@/lib/binary2048/input";
+import {
+  beginSwipeGesture,
+  cancelSwipeGesture,
+  continueSwipeGesture,
+  createSwipeGestureState,
+  endSwipeGesture,
+  keyToDir,
+  swipeToDir,
+  type SwipeTouchPoint
+} from "@/lib/binary2048/input";
 import { getUiPolicy } from "@/lib/binary2048/ui-policy";
 import { parseReplayExport, replayStateAtStep, type ReplayData } from "@/lib/binary2048/replay";
 import { buildShareLandingUrl, buildShareText, buildShareUrls } from "@/lib/binary2048/share";
@@ -138,6 +147,18 @@ const GAME_LOG_ENABLED = process.env.NEXT_PUBLIC_GAME_LOG_ENABLED === "1";
 const UI_POLICY = getUiPolicy();
 const FULLSCREEN_TOGGLE_ENABLED = isFullscreenToggleEnabled();
 const MAX_BUFFERED_MOVES = 8;
+const QUEUE_FULL_FEEDBACK_MS = 2800;
+
+function toSwipeTouchPoints(
+  touches: { length: number; item(index: number): { identifier: number; clientX: number; clientY: number } }
+): SwipeTouchPoint[] {
+  const points: SwipeTouchPoint[] = [];
+  for (let index = 0; index < touches.length; index += 1) {
+    const touch = touches.item(index);
+    points.push({ identifier: touch.identifier, clientX: touch.clientX, clientY: touch.clientY });
+  }
+  return points;
+}
 
 function Binary2048Logo() {
   return (
@@ -209,9 +230,11 @@ export default function Home() {
   const [newGameTutorialChoiceOpen, setNewGameTutorialChoiceOpen] = useState(false);
   const [tutorialLaunchConfirmOpen, setTutorialLaunchConfirmOpen] = useState(false);
   const [tutorialExitConfirmOpen, setTutorialExitConfirmOpen] = useState(false);
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const [queueFullFeedback, setQueueFullFeedback] = useState(false);
+  const swipeGestureRef = useRef(createSwipeGestureState());
   const effectTimerRef = useRef<number | null>(null);
   const tutorialAdvanceTimerRef = useRef<number | null>(null);
+  const queueFullFeedbackTimerRef = useRef<number | null>(null);
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const replayInputRef = useRef<HTMLInputElement | null>(null);
   const fullscreenShellRef = useRef<HTMLDivElement | null>(null);
@@ -258,11 +281,23 @@ export default function Home() {
   );
 
   function clearBufferedMoves(reason: MoveInputDropReason) {
+    swipeGestureRef.current = createSwipeGestureState();
     while (bufferedMovesRef.current.length > 0) {
       const queueDepth = bufferedMovesRef.current.length;
       const buffered = bufferedMovesRef.current.shift();
       if (buffered) dropMovePerformanceTrace(buffered.trace, reason, queueDepth);
     }
+  }
+
+  function showQueueFullFeedback() {
+    setQueueFullFeedback(true);
+    if (queueFullFeedbackTimerRef.current !== null) {
+      window.clearTimeout(queueFullFeedbackTimerRef.current);
+    }
+    queueFullFeedbackTimerRef.current = window.setTimeout(() => {
+      queueFullFeedbackTimerRef.current = null;
+      setQueueFullFeedback(false);
+    }, QUEUE_FULL_FEEDBACK_MS);
   }
 
   useEffect(() => {
@@ -562,7 +597,10 @@ export default function Home() {
           turn: state.turn
         });
       }
-      else dropMovePerformanceTrace(inputTrace, "queue_full", bufferedMovesRef.current.length);
+      else {
+        dropMovePerformanceTrace(inputTrace, "queue_full", bufferedMovesRef.current.length);
+        showQueueFullFeedback();
+      }
       return;
     }
     if (busy) {
@@ -1209,6 +1247,7 @@ export default function Home() {
     return () => {
       if (effectTimerRef.current) window.clearTimeout(effectTimerRef.current);
       if (tutorialAdvanceTimerRef.current) window.clearTimeout(tutorialAdvanceTimerRef.current);
+      if (queueFullFeedbackTimerRef.current !== null) window.clearTimeout(queueFullFeedbackTimerRef.current);
       if (paintFrameRef.current !== null) window.cancelAnimationFrame(paintFrameRef.current);
       if (paintFrameTraceRef.current) discardMovePerformanceTrace(paintFrameTraceRef.current);
       if (pendingPaintTraceRef.current) discardMovePerformanceTrace(pendingPaintTraceRef.current.trace);
@@ -1229,22 +1268,34 @@ export default function Home() {
   }, [replay, replayPlaying, replaySpeed]);
 
   function onBoardTouchStart(event: TouchEvent<HTMLDivElement>) {
-    const touch = event.touches[0];
-    if (!touch) return;
-    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+    swipeGestureRef.current = beginSwipeGesture(
+      swipeGestureRef.current,
+      toSwipeTouchPoints(event.touches)
+    );
+  }
+
+  function onBoardTouchMove(event: TouchEvent<HTMLDivElement>) {
+    swipeGestureRef.current = continueSwipeGesture(
+      swipeGestureRef.current,
+      toSwipeTouchPoints(event.touches)
+    );
   }
 
   function onBoardTouchEnd(event: TouchEvent<HTMLDivElement>) {
-    if (!touchStartRef.current) return;
-    const touch = event.changedTouches[0];
-    if (!touch) return;
-
-    const dx = touch.clientX - touchStartRef.current.x;
-    const dy = touch.clientY - touchStartRef.current.y;
-    touchStartRef.current = null;
-    const dir = swipeToDir(dx, dy, 24);
+    const result = endSwipeGesture(
+      swipeGestureRef.current,
+      toSwipeTouchPoints(event.touches),
+      toSwipeTouchPoints(event.changedTouches)
+    );
+    swipeGestureRef.current = result.state;
+    if (!result.delta) return;
+    const dir = swipeToDir(result.delta.dx, result.delta.dy, 24);
     if (!dir) return;
     submitMoveCommand(dir, "touch");
+  }
+
+  function onBoardTouchCancel(event: TouchEvent<HTMLDivElement>) {
+    swipeGestureRef.current = cancelSwipeGesture(toSwipeTouchPoints(event.touches));
   }
 
   function enterTutorial() {
@@ -1834,7 +1885,9 @@ export default function Home() {
             className="board"
             style={{ gridTemplateColumns: `repeat(${viewState?.width ?? 4}, minmax(0, 1fr))` }}
             onTouchStart={onBoardTouchStart}
+            onTouchMove={onBoardTouchMove}
             onTouchEnd={onBoardTouchEnd}
+            onTouchCancel={onBoardTouchCancel}
             role="grid"
             aria-label={tutorial ? "Binary 2048 tutorial board" : "Binary 2048 game board"}
           >
@@ -2053,6 +2106,16 @@ export default function Home() {
             </div>
           ) : null}
         </div>
+        {!tutorial ? (
+          <p
+            className="move-queue-feedback"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {queueFullFeedback ? "Move not queued: 8 moves are already waiting." : ""}
+          </p>
+        ) : null}
         {!replay &&
         !newGameSetupOpen &&
         !newGameTutorialChoiceOpen &&

@@ -89,6 +89,12 @@ tokens, and storage values.
    React-commit and next-frame marks. Record a sanitized yes/no observation with
    UTC time and discard the raw trace after review. Chrome pipeline events do not
    prove physical display presentation, so retain the existing metric limit.
+8. Touch-boundary run: begin a swipe and trigger a system cancellation or app
+   interruption, then make a fresh valid swipe. Next, touch with a second finger,
+   lift the fingers in each order, and make another fresh valid swipe. Cancelled
+   and multi-touch sequences must create no move request or classified move
+   record; each following single-finger swipe must complete normally. Retain only
+   pass/fail counts, not raw touch or device data.
 
 Clear command:
 
