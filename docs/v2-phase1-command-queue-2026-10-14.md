@@ -8,7 +8,8 @@ accepted. Phase 1 is not complete, and physical Pixel acceptance remains open.
 ## Behavior
 
 During normal gameplay, keyboard directions, recognized board swipes, and four
-accessible onscreen direction buttons now call one `submitMoveCommand` entry point. That entry point
+optional accessible onscreen direction buttons call one `submitMoveCommand`
+entry point. That entry point
 creates the source-tagged performance trace, records capture depth, applies the
 same modal/tutorial/replay/game/terminal checks, and either starts, queues, or
 classifies the command as dropped.
@@ -29,11 +30,12 @@ the server move queue. Tutorial cancellation, rapid-input, and stale-state
 behavior stays open under the later Phase 1 boundary-state item.
 
 The onscreen control is a native-button D-pad with stable accessible names
-`Move up`, `Move left`, `Move down`, and `Move right`. Each target is at least
-44×44 CSS pixels and remains operable while a move is in flight so it can use
-the queue. It is absent during the gesture-guided tutorial and when replay, a
-blocking modal, game over, or a pending win decision makes directional input
-unavailable. Arrow/WASD handling ignores
+`Move up`, `Move left`, `Move down`, and `Move right`. It defaults hidden and
+appears only when the player enables `Show direction buttons` in New Game
+options. Each target is at least 44×44 CSS pixels and remains operable while a
+move is in flight so it can use the queue. It is absent during the
+gesture-guided tutorial and when replay, a blocking modal, game over, or a
+pending win decision makes directional input unavailable. Arrow/WASD handling ignores
 input, select, textarea, and contenteditable targets so form navigation does not
 become a game command.
 
@@ -52,7 +54,8 @@ onscreen-control sources. It proves:
   appropriate classified reason and send no later request;
 - payload, local-storage, checkpoint, React-commit, and next-frame trace data
   remain intact; and
-- the four controls are visible with 44×44-or-larger bounds.
+- the opt-in starts unchecked, and the four enabled controls are visible with
+  44×44-or-larger bounds.
 
 The companion rejection test proves a focused Difficulty select keeps native
 arrow-key behavior without producing a move trace, then a gameplay direction is

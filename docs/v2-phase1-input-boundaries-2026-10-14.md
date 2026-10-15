@@ -3,15 +3,15 @@
 Date: 2026-10-14
 
 Status: queue-capacity behavior is implemented, deployed, and production-smoke
-accepted. The touch state machine is implemented and synthetically accepted;
-physical Pixel cancellation and multi-touch recovery remain open.
+accepted. The touch state machine passed synthetic coverage and physical Pixel
+interruption/multi-touch recovery acceptance.
 
 ## Queue-capacity contract
 
 Normal gameplay permits one executing move and at most eight pending moves in
 FIFO order. When eight are waiting, the newest keyboard, recognized swipe, or
-onscreen-control input is not queued. Controls remain enabled so every source
-uses the same classification path. The rejected trace retains source,
+enabled onscreen-control input is not queued. Opted-in direction buttons remain
+enabled so every visible source uses the same classification path. The rejected trace retains source,
 `queue_full`, and capture/drop depth eight; earlier commands are never replaced,
 coalesced, or replayed.
 
@@ -62,7 +62,14 @@ records.
 - Runtime commit `d4929cadb1f34b2d994950a195e5cf752369096a` deployed successfully
   through Amplify job 384. The post-deploy production verification passed.
 
-Synthetic `TouchEvent` coverage proves application transitions, not Android or
-Chrome event generation. The physical Pixel protocol now includes cancellation,
-interruption, both multi-touch lift orders, and fresh-swipe recovery. Keep the
-touch roadmap parent open until that device evidence passes.
+## Physical Pixel acceptance
+
+On 2026-10-15 UTC, Pixel 10-family Chrome 155 on Android 17 passed the physical
+touch-boundary protocol in portrait on Wi-Fi against production commit
+`e911256`. A contact interrupted by locking the device created no move record or
+request, and the following single-finger swipe completed with a valid timing
+projection. Two separate multi-touch runs lifted the second finger first and the
+first finger first. Each multi-touch sequence created no move record or request,
+and each following single-finger swipe completed once with valid timing. Only
+the permitted device family/version, orientation, network class, UTC date,
+commit, and guest state were retained.

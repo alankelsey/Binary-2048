@@ -202,6 +202,7 @@ export default function Home() {
   const [colorMode, setColorMode] = useState<ColorMode>("default");
   const [themeMode, setThemeMode] = useState<ThemeMode>("classic");
   const [gameMode, setGameMode] = useState<GameMode>("classic");
+  const [showDirectionControls, setShowDirectionControls] = useState(false);
   const [cellEffects, setCellEffects] = useState<Record<string, CellEffect>>({});
   const [undo, setUndo] = useState<UndoMeta>({ limit: 2, used: 0, remaining: 2 });
   const [replay, setReplay] = useState<{ data: ReplayData; step: number; sourceName: string } | null>(null);
@@ -1763,7 +1764,7 @@ export default function Home() {
       </header> : null}
       {!tutorial ? <p className="tagline">Made mostly for bots by mostly bots: Bonus tiles: zero annihilator + wildcard multipliers.</p> : null}
       <div ref={fullscreenShellRef} className={`fullscreen-shell ${fullscreenActive ? "fullscreen-active" : ""}`}>
-        <div className="card" aria-busy={busy}>
+        <div className={`card ${tutorial ? "tutorial-card" : ""}`} aria-busy={busy}>
         {!tutorial ? <div className="meta">
           <span>Game: {tutorial ? "Tutorial" : replay ? `Replay (${replay.sourceName})` : gameId || "-"}</span>
           <span className="score-pill">Score: {viewState?.score ?? 0}</span>
@@ -2038,6 +2039,14 @@ export default function Home() {
               <label className="tutorial-suppress-choice">
                 <input
                   type="checkbox"
+                  checked={showDirectionControls}
+                  onChange={(event) => setShowDirectionControls(event.target.checked)}
+                />
+                Show direction buttons
+              </label>
+              <label className="tutorial-suppress-choice">
+                <input
+                  type="checkbox"
                   checked={!suppressTutorialReminder}
                   onChange={(event) => setTutorialReminderSuppressed(!event.target.checked)}
                 />
@@ -2124,7 +2133,8 @@ export default function Home() {
         !tutorial &&
         state &&
         !state.over &&
-        (!state.won || continueAfterWin) ? (
+        (!state.won || continueAfterWin) &&
+        showDirectionControls ? (
           <div className="direction-controls" role="group" aria-label="Directional controls">
             <button type="button" className="direction-up" data-direction="up" aria-label="Move up" onClick={() => submitMoveCommand("up", "control")}>
               <span aria-hidden="true">↑</span>

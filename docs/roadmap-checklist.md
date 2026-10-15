@@ -393,7 +393,7 @@ V1 completed on 2026-10-05. V2 is now active. Checked observability entries
 below record work already deployed before V2 formally started.
 
 - [ ] Execute the [Binary 2048 V2 delivery plan](./binary2048v2.md)
-  - [ ] Complete Phase 0 measurement and input-observability baseline
+  - [x] Complete Phase 0 measurement and input-observability baseline
     - [x] Add end-to-end move performance marks for input capture, acceptance/queueing, request/response parsing, React commit, and next animation frame; record that the local engine is not run on the current server-gated path
     - [x] Record queue depth at capture, enqueue, dequeue, and drop, with bounded classified records for every valid directional input rejected by gameplay or UI state
     - [x] Record per-attempt UTF-8 request/response byte counts and recovery-history lengths, synchronous local-storage read/write duration, and total checkpoint construction/serialization/storage duration
@@ -401,10 +401,12 @@ below record work already deployed before V2 formally started.
       - [x] Implement the move `Server-Timing` allowlist and bounded private provenance telemetry with branch coverage ([evidence](./v2-phase0-server-timing-2026-10-10.md))
       - [x] Verify production header preservation and demonstrate local memory/fallback plus production Mongo, recovery, and miss paths with sanitized acceptance evidence
     - [x] Add bounded process-first/reuse, event-loop, memory/GC, and instrumented move-workload correlation without claiming an authoritative Amplify cold start ([evidence](./v2-phase0-runtime-correlation-2026-10-13.md))
-    - Visible desktop Google Chrome guest and authenticated measurements passed; physical Pixel Chrome remains the Phase 0 blocker ([evidence and protocol](./v2-phase0-browser-device-acceptance-2026-10-13.md))
-  - [ ] Complete Phase 1 input correctness
-    - [x] Route keyboard, recognized touch swipes, and accessible onscreen direction controls through one normal-gameplay FIFO command path; keep tutorial commands in the later boundary-state work ([evidence](./v2-phase1-command-queue-2026-10-14.md))
+    - Visible desktop Google Chrome guest/authenticated measurements and the physical Pixel Chrome gesture/frame protocol passed ([evidence and protocol](./v2-phase0-browser-device-acceptance-2026-10-13.md))
+  - [x] Complete Phase 1 input correctness
+    - [x] Route keyboard, recognized touch swipes, and opt-in accessible onscreen direction controls through one normal-gameplay FIFO command path; direction buttons default hidden and are enabled in New Game options ([evidence](./v2-phase1-command-queue-2026-10-14.md))
     - [x] Define the eight-pending-move limit and show accessible, bounded feedback when a saturated input is not queued ([evidence](./v2-phase1-input-boundaries-2026-10-14.md))
+    - Physical Pixel interruption, both multi-touch lift orders, and fresh-swipe recovery passed with invalid contacts producing no move record or request ([evidence](./v2-phase1-input-boundaries-2026-10-14.md))
+    - Physical and browser-input rapid-swipe acceptance proved zero silent loss, FIFO queueing, and explicit saturation classification ([evidence](./v2-phase1-rapid-swipe-2026-10-15.md))
     - [x] Prove FIFO ordering, saturation, no-op draining, game-over/error clearing, new-game isolation, and delayed-response serialization ([evidence](./v2-phase1-ordering-boundaries-2026-10-14.md))
   - [ ] Audit and upgrade the existing OpenAPI documentation into a Swagger UI or equivalent interactive V2 API explorer, with complete contracts, examples, security/rate-limit details, versioning, and automated route/schema drift checks
   - [ ] Complete the anchored Lock-0 behavior spike without changing production rules

@@ -23,6 +23,7 @@ test.describe("difficulty help disclosure", () => {
     await openDifficultyOptions(page);
     await expect(page.locator("#new-game-difficulty")).toBeVisible();
     await expect(page.getByRole("button", { name: "Show difficulty help" })).toBeVisible();
+    await expect(page.getByRole("checkbox", { name: "Show direction buttons" })).not.toBeChecked();
   });
 
   test("the help button is keyboard focusable and Enter opens the note, updating aria-expanded", async ({ page }) => {

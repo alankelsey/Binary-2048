@@ -1,10 +1,10 @@
 # V2 Phase 0 browser and device acceptance
 
-Date: 2026-10-13 America/Boise (desktop capture: 2026-10-14 UTC)
+Date: 2026-10-13 America/Boise (desktop capture: 2026-10-14 UTC; Pixel capture:
+2026-10-15 UTC)
 
-Status: desktop Google Chrome guest and authenticated measurements passed. The
-physical Pixel Chrome run remains open, so the Phase 0 roadmap item and parent
-remain unchecked.
+Status: complete. Desktop Google Chrome guest/authenticated measurements and the
+physical Pixel Chrome gesture/frame protocol passed. Phase 0 is closed.
 
 ## Measurement contract
 
@@ -57,6 +57,38 @@ for persistence, and 30.16 ms total. Authenticated medians were 12.47 ms,
 phase rather than assigned a cause; authentication bridge work is currently part
 of the unattributed capture-to-request interval.
 
+## Physical Pixel production result
+
+Target: `https://www.binary2048.com`, deployed commit `e911256`, Pixel 10 family,
+Android 17, Chrome 155, portrait on Wi-Fi, guest state. Capture completed
+2026-10-15 UTC. No serial, full user agent, identity, SSID, IP, cookie, token,
+storage value, screenshot, HAR, or raw trace was retained.
+
+| Run | Classified result | Input-to-next-frame median / p95 | Acceptance |
+|---|---|---:|---|
+| Deliberate, eight swipes | 8 accepted, 0 queued, 0 dropped | 221.0 / 634.0 ms | Passed |
+| Rapid, six swipes | 6 accepted, 0 queued, 0 dropped | 251.8 / 509.7 ms | Passed |
+| Faster retry, six swipes | 6 accepted, 0 queued, 0 dropped | 252.4 / 457.8 ms | Passed |
+
+Every completed swipe had one valid `Server-Timing` projection and every valid
+swipe was classified. The physical bursts did not fill the queue because each
+request completed before the next recognized gesture crossed threshold; this is
+reported as observed rather than treated as queue-saturation evidence. The
+desktop rapid runs already proved accepted, queued, and `queue_full`
+classification under controlled saturation.
+
+A board tap and an outside-board swipe left the move count at 14 and created
+zero completed/dropped records and zero move requests. A separate attached,
+memory-only Chrome performance recording observed the React-commit and
+next-frame marks followed by `BeginFrame`, `DrawFrame`, and `Paint`; only that
+sanitized result was retained and the raw trace was discarded.
+
+The interruption and multi-touch boundary runs also passed. Locking the device
+during a held board contact created no move record or request, and a fresh swipe
+completed normally. Both two-finger lift orders created no move record or
+request; the fresh single-finger swipe after each sequence completed exactly
+once with a valid timing projection.
+
 ## Physical Pixel Chrome protocol
 
 Record only the Pixel family, Android major, Chrome major, portrait orientation,
@@ -102,6 +134,7 @@ Clear command:
 performance.clearMarks('binary2048:move-complete');
 performance.clearMarks('binary2048:move-dropped');
 performance.clearMeasures('binary2048:move-input-to-next-frame');
+performance.clearResourceTimings();
 ```
 
 Sanitized extractor:
@@ -164,3 +197,9 @@ projection per completed move, coherent queue depths,
 intentionally ignored controls producing no move record, and an observed Chrome
 frame/paint after the recorded update. Explicit `busy` or `queue_full` drops are
 observability passes and Phase 1 correctness findings; they are not silent loss.
+
+The checked-in `scripts/v2-phase0-pixel-console.mjs` performs exact-origin/tab
+selection and emits only the sanitized status, counts, or projection above.
+`scripts/v2-phase0-pixel-frame.mjs` keeps its bounded trace in memory, emits only
+the frame/paint observation, and discards the trace on exit. Both attach through
+Chrome's browser-level approval path and detach after each operation.

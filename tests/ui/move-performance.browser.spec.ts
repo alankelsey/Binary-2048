@@ -121,6 +121,15 @@ test("routes rapid keyboard, touch, and controls through one ordered queue", asy
   });
 
   await page.goto("/");
+  const directionButtonsToggle = page.getByRole("checkbox", { name: "Show direction buttons" });
+  await expect(directionButtonsToggle).not.toBeChecked();
+  await page.getByRole("button", { name: "Start New Game" }).click();
+  await expect(page.locator(".card")).toHaveAttribute("aria-busy", "false");
+  await expect(page.getByRole("group", { name: "Directional controls" })).toHaveCount(0);
+
+  await page.getByRole("button", { name: "New Game", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "NEW GAME" })).toBeVisible();
+  await directionButtonsToggle.check();
   await page.getByRole("button", { name: "Start New Game" }).click();
   await expect(page.locator(".card")).toHaveAttribute("aria-busy", "false");
   for (const name of ["Move up", "Move left", "Move down", "Move right"]) {

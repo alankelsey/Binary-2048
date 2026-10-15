@@ -2,7 +2,7 @@
 
 Status: active delivery plan; V1 completed 2026-10-05
 Created: 2026-09-17  
-Implementation status: Phase 0 started; first client move-timing slice implemented
+Implementation status: Phases 0 and 1 complete; Phase 2 local prediction is next
 
 ## Purpose
 
@@ -403,10 +403,10 @@ approved.
   memory/GC, and instrumented move-workload correlation. Treat association as
   context rather than causal proof
   ([evidence](./v2-phase0-runtime-correlation-2026-10-13.md)).
-- [ ] Repeat measurements on the user's Pixel in Chrome, desktop Chrome, and
+- [x] Repeat measurements on the user's Pixel in Chrome, desktop Chrome, and
   an authenticated session, not only in headless Chromium.
-  Visible Google Chrome desktop guest and authenticated measurements are
-  complete; the physical Pixel Chrome run remains open
+  Visible Google Chrome desktop guest/authenticated measurements and the
+  physical Pixel Chrome gesture/frame protocol are complete
   ([evidence and device protocol](./v2-phase0-browser-device-acceptance-2026-10-13.md)).
 
 Exit criterion: a trace can explain where input-to-paint and server time were
@@ -414,20 +414,25 @@ spent and can distinguish an ignored gesture from a queued gesture.
 
 ### Phase 1: make input handling correct
 
-- [x] Route touch, keyboard, and onscreen controls through one normal-gameplay
-  command queue; tutorial commands remain part of the later boundary-state work
+- [x] Route touch, keyboard, and optional onscreen controls through one
+  normal-gameplay command queue. Direction buttons default hidden and can be
+  enabled with `Show direction buttons` in New Game options; tutorial commands
+  remain part of the later boundary-state work
   ([evidence](./v2-phase1-command-queue-2026-10-14.md)).
 - [x] Define the queue as one active move plus at most eight pending moves. Drop
   the newest input at capacity with unchanged `queue_full` telemetry, keep every
   input surface enabled, and show a bounded visible/polite status explaining
   that the move was not queued
   ([evidence](./v2-phase1-input-boundaries-2026-10-14.md)).
-- [ ] Clear touch state correctly on end and cancel and handle unsupported
-  multi-touch explicitly. The identity-aware state machine and synthetic
-  acceptance are complete; physical Pixel cancellation, interruption, and
-  multi-touch recovery remain open
+- [x] Clear touch state correctly on end and cancel and handle unsupported
+  multi-touch explicitly. The identity-aware state machine passed synthetic
+  coverage plus physical Pixel interruption, both multi-touch lift orders, and
+  fresh-swipe recovery
   ([evidence](./v2-phase1-input-boundaries-2026-10-14.md)).
-- [ ] Add real rapid-swipe tests in addition to rapid-arrow tests.
+- [x] Add real rapid-swipe tests in addition to rapid-arrow tests. Physical
+  Pixel bursts prove zero unclassified gestures; a deterministic browser-input
+  burst proves FIFO queueing and explicit saturation behavior
+  ([evidence](./v2-phase1-rapid-swipe-2026-10-15.md)).
 - [x] Add tests for ordering, queue saturation, no-op moves, game-over
   boundaries, new-game transitions, and delayed/out-of-order responses. Under
   the Phase 1 serial transport contract, “out of order” means proving request

@@ -17,6 +17,9 @@
     "authed",
     "inapp",
     "json",
+    "touchcancel",
+    "unranked",
+    "unreviewed",
     "webhook",
     "sku",
     "skus"
