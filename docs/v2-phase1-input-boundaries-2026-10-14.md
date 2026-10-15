@@ -2,9 +2,9 @@
 
 Date: 2026-10-14
 
-Status: queue-capacity behavior is implemented and locally accepted. The touch
-state machine is implemented and synthetically accepted; physical Pixel
-cancellation and multi-touch recovery remain open.
+Status: queue-capacity behavior is implemented, deployed, and production-smoke
+accepted. The touch state machine is implemented and synthetically accepted;
+physical Pixel cancellation and multi-touch recovery remain open.
 
 ## Queue-capacity contract
 
@@ -59,6 +59,8 @@ records.
   pages. The local wrapper then reached the known environment-only smoke blocker:
   `/api/auth/bridge-token` returned 503 because the production bridge secret is
   intentionally unavailable locally.
+- Runtime commit `d4929cadb1f34b2d994950a195e5cf752369096a` deployed successfully
+  through Amplify job 384. The post-deploy production verification passed.
 
 Synthetic `TouchEvent` coverage proves application transitions, not Android or
 Chrome event generation. The physical Pixel protocol now includes cancellation,
