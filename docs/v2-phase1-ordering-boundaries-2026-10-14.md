@@ -3,8 +3,8 @@
 Date: 2026-10-14
 
 Status: the automated ordering, saturation, no-op, terminal/error, new-game,
-and delayed-response boundary item is locally accepted. Physical rapid-swipe
-and touch-interruption acceptance remain open.
+and delayed-response boundary item is deployed and production-smoke accepted.
+Physical rapid-swipe and touch-interruption acceptance remain open.
 
 ## Serial response invariant
 
@@ -69,6 +69,8 @@ after replacement.
   pages. The local wrapper then reached the known environment-only smoke blocker:
   `/api/auth/bridge-token` returned 503 because the production bridge secret is
   intentionally unavailable locally.
+- Commit `e410f6076844ade3855ad85e2a6cae8ec48c1c93` deployed successfully
+  through Amplify job 386. The post-deploy production verification passed.
 
 These browser tests use mocked local routes so delays and states are controlled
 without mutating production. They complement rather than replace the physical
