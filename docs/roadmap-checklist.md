@@ -405,6 +405,7 @@ below record work already deployed before V2 formally started.
   - [ ] Complete Phase 1 input correctness
     - [x] Route keyboard, recognized touch swipes, and accessible onscreen direction controls through one normal-gameplay FIFO command path; keep tutorial commands in the later boundary-state work ([evidence](./v2-phase1-command-queue-2026-10-14.md))
     - [x] Define the eight-pending-move limit and show accessible, bounded feedback when a saturated input is not queued ([evidence](./v2-phase1-input-boundaries-2026-10-14.md))
+    - [x] Prove FIFO ordering, saturation, no-op draining, game-over/error clearing, new-game isolation, and delayed-response serialization ([evidence](./v2-phase1-ordering-boundaries-2026-10-14.md))
   - [ ] Audit and upgrade the existing OpenAPI documentation into a Swagger UI or equivalent interactive V2 API explorer, with complete contracts, examples, security/rate-limit details, versioning, and automated route/schema drift checks
   - [ ] Complete the anchored Lock-0 behavior spike without changing production rules
   - [ ] Complete the unranked `Death by Luck` wildcard-mode spike without changing production rules

@@ -428,8 +428,12 @@ spent and can distinguish an ignored gesture from a queued gesture.
   multi-touch recovery remain open
   ([evidence](./v2-phase1-input-boundaries-2026-10-14.md)).
 - [ ] Add real rapid-swipe tests in addition to rapid-arrow tests.
-- [ ] Add tests for ordering, queue saturation, no-op moves, game-over
-  boundaries, new-game transitions, and delayed/out-of-order responses.
+- [x] Add tests for ordering, queue saturation, no-op moves, game-over
+  boundaries, new-game transitions, and delayed/out-of-order responses. Under
+  the Phase 1 serial transport contract, “out of order” means proving request
+  concurrency never exceeds one and a later request cannot start before the
+  prior delayed response is applied
+  ([evidence](./v2-phase1-ordering-boundaries-2026-10-14.md)).
 
 Exit criterion: every valid accepted input is applied exactly once and in
 order; silent input loss is zero in automated and real-device tests.
