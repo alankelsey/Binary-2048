@@ -218,13 +218,15 @@ test("routes rapid keyboard, touch, and controls through one ordered queue", asy
   expect(traces.map((trace) => trace.source)).toEqual([
     ...acceptedRapidMoves.map((move) => move.source)
   ]);
-  expect(traces.every((trace) => trace.localEngineStatus === "not_run")).toBe(true);
+  expect(traces.every((trace) => trace.localEngineStatus === "completed")).toBe(true);
   expect(traces.every((trace) => trace.outcome === "completed")).toBe(true);
   expect(traces[0].queueDepthSamples).toMatchObject([{ stage: "capture", depth: 0 }]);
   expect(traces[0].phases.map((phase) => phase.phase)).toEqual([
     "input_capture",
     "accepted",
-    "local_engine_not_run",
+    "local_engine_start",
+    "local_engine_end",
+    "local_prediction_paint",
     "request_start",
     "response_headers",
     "response_parse_start",
@@ -235,7 +237,9 @@ test("routes rapid keyboard, touch, and controls through one ordered queue", asy
   const queuedPhases = [
     "input_capture",
     "queued",
-    "local_engine_not_run",
+    "local_engine_start",
+    "local_engine_end",
+    "local_prediction_paint",
     "request_start",
     "response_headers",
     "response_parse_start",

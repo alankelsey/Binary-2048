@@ -108,6 +108,24 @@ describe("move performance tracing", () => {
     expect(utf8ByteLength('{"label":"2048 ⚡"}')).toBe(20);
   });
 
+  it("records completed local-engine timing separately from network acknowledgement", () => {
+    const { target, marks } = fakePerformance();
+    const trace = startMovePerformanceTrace("down", "touch", target);
+    markMovePerformancePhase(trace, "accepted", undefined, target);
+    markMovePerformancePhase(trace, "local_engine_start", undefined, target);
+    markMovePerformancePhase(trace, "local_engine_end", undefined, target);
+    markMovePerformancePhase(trace, "local_prediction_paint", undefined, target);
+    markMovePerformancePhase(trace, "request_start", 1, target);
+    markMovePerformancePhase(trace, "react_commit", undefined, target);
+    finishMovePerformanceTrace(trace, target);
+
+    const complete = marks.find((entry) => entry.name === MOVE_PERFORMANCE_COMPLETE_MARK);
+    expect(complete?.options?.detail).toMatchObject({
+      localEngineStatus: "completed",
+      localEngineDurationMs: 1
+    });
+  });
+
   it("records queue depth through enqueue and dequeue", () => {
     const { target, marks } = fakePerformance();
     const trace = startMovePerformanceTrace("left", "keyboard", target);

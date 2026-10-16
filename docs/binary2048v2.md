@@ -2,7 +2,7 @@
 
 Status: active delivery plan; V1 completed 2026-10-05
 Created: 2026-09-17  
-Implementation status: Phases 0 and 1 complete; Phase 2 browser engine interface complete
+Implementation status: Phases 0 and 1 complete; Phase 2 casual local prediction active
 
 ## Purpose
 
@@ -448,8 +448,10 @@ order; silent input loss is zero in automated and real-device tests.
 - [x] Define a browser-safe interface around the existing deterministic
   engine without duplicating game rules
   ([evidence](./v2-phase2-browser-engine-interface-2026-10-15.md)).
-- [ ] Apply and paint valid casual moves locally before network I/O.
-- [ ] Maintain separate predicted, acknowledged, and pending state.
+- [x] Apply and paint valid casual moves locally before network I/O
+  ([evidence](./v2-phase2-local-prediction-2026-10-16.md)).
+- [x] Maintain separate predicted, acknowledged, and pending state
+  ([evidence](./v2-phase2-local-prediction-2026-10-16.md)).
 - [ ] Add turn and state-hash reconciliation.
 - [ ] Define rollback, retry, offline, and unrecoverable-divergence behavior.
 - [ ] Extend the model to ranked play after casual divergence tests pass.

@@ -6,6 +6,9 @@ export type MovePerformancePhase =
   | "queued"
   | "dropped"
   | "local_engine_not_run"
+  | "local_engine_start"
+  | "local_engine_end"
+  | "local_prediction_paint"
   | "request_start"
   | "response_headers"
   | "response_parse_start"
@@ -257,11 +260,18 @@ export function finishMovePerformanceTrace(
   if (!first || !last) return;
 
   trimCompletedEntries(target);
+  const localEngineStart = trace.phases.find((phase) => phase.phase === "local_engine_start");
+  const localEngineEnd = trace.phases.find((phase) => phase.phase === "local_engine_end");
+  const localEngineDurationMs =
+    localEngineStart && localEngineEnd
+      ? Math.max(0, localEngineEnd.atMs - localEngineStart.atMs)
+      : null;
   const detail = {
     traceId: trace.id,
     direction: trace.direction,
     source: trace.source,
-    localEngineStatus: "not_run",
+    localEngineStatus: localEngineDurationMs === null ? "not_run" : "completed",
+    localEngineDurationMs,
     outcome: "completed",
     queueDepthSamples: trace.queueDepthSamples.map((sample) => ({ ...sample })),
     payloadSamples: trace.payloadSamples.map((sample) => ({ ...sample })),

@@ -409,8 +409,11 @@ below record work already deployed before V2 formally started.
     - Physical and browser-input rapid-swipe acceptance proved zero silent loss, FIFO queueing, and explicit saturation classification ([evidence](./v2-phase1-rapid-swipe-2026-10-15.md))
     - [x] Prove FIFO ordering, saturation, no-op draining, game-over/error clearing, new-game isolation, and delayed-response serialization ([evidence](./v2-phase1-ordering-boundaries-2026-10-14.md))
   - Phase 2 browser engine boundary is versioned, browser-bundle constrained,
-    and parity-tested against the canonical server engine; local optimistic
-    mutation remains open ([evidence](./v2-phase2-browser-engine-interface-2026-10-15.md))
+    and parity-tested against the canonical server engine; casual moves now
+    paint locally through explicit acknowledged, predicted, and pending state
+    while ranked rendering remains server-authoritative
+    ([interface evidence](./v2-phase2-browser-engine-interface-2026-10-15.md),
+    [local-prediction evidence](./v2-phase2-local-prediction-2026-10-16.md))
   - [ ] Audit and upgrade the existing OpenAPI documentation into a Swagger UI or equivalent interactive V2 API explorer, with complete contracts, examples, security/rate-limit details, versioning, and automated route/schema drift checks
   - [ ] Complete the anchored Lock-0 behavior spike without changing production rules
   - [ ] Complete the unranked `Death by Luck` wildcard-mode spike without changing production rules

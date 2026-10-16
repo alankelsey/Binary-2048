@@ -27,6 +27,13 @@ import { getToolbarActionState } from "@/lib/binary2048/toolbar-actions";
 import { getNewGameGuardState } from "@/lib/binary2048/new-game-guard";
 import { getNewGameStartAction } from "@/lib/binary2048/startup-new-game";
 import { requestResumableMove } from "@/lib/binary2048/resumable-move";
+import {
+  acknowledgeClientPrediction,
+  createClientPredictionModel,
+  enqueueClientPrediction,
+  resetClientPrediction,
+  type ClientPredictionModel
+} from "@/lib/binary2048/client-prediction";
 import { createClientAuthBridge } from "@/lib/binary2048/client-auth-bridge";
 import {
   copyTextWithFallback,
@@ -79,7 +86,7 @@ import { GameOverOverlay, NewGameOverlay, WinOverlay } from "@/app/game-overlays
 import { applyUiPolicyOverrides, type UIControlOverrides } from "@/lib/binary2048/ui-policy-override";
 import type { UIControl } from "@/lib/binary2048/ui-policy";
 import { createReferralCode, type MarketingEventType } from "@/lib/binary2048/marketing";
-import type { GameExport, SessionRecoverySnapshot } from "@/lib/binary2048/types";
+import type { Cell, Dir, GameExport, GameState, SessionRecoverySnapshot } from "@/lib/binary2048/types";
 import {
   discardMovePerformanceTrace,
   dropMovePerformanceTrace,
@@ -96,32 +103,18 @@ import {
   type MovePerformanceTrace
 } from "@/lib/binary2048/move-performance";
 
-type Tile = { t: "n"; v: number } | { t: "z" } | { t: "w"; m: number } | { t: "i" };
-type Cell = Tile | null;
-type Dir = "up" | "down" | "left" | "right";
 type SpawnMode = "normal" | "ltfg" | "death";
 type ColorMode = "default" | "cb-protanopia" | "cb-deuteranopia" | "cb-tritanopia";
 type GameMode = "classic" | "bitstorm";
 
-type GameState = {
-  id: string;
-  width: number;
-  height: number;
-  config?: {
-    spawn?: {
-      pWildcard?: number;
-      pLock?: number;
-    };
-  };
-  score: number;
-  turn: number;
-  won: boolean;
-  over: boolean;
-  grid: Cell[][];
-};
 type UndoMeta = { limit: number; used: number; remaining: number };
 type SessionClass = "ranked" | "unranked";
-type MoveCommand = { dir: Dir; trace: MovePerformanceTrace };
+type MoveCommand = {
+  dir: Dir;
+  trace: MovePerformanceTrace;
+  locallyPredicted: boolean;
+  localPaintReady: Promise<void>;
+};
 
 const SPAWN_MODES: Record<
   SpawnMode,
@@ -193,6 +186,7 @@ export default function Home() {
   const themeModeKey = "binary2048.themeMode";
   const [gameId, setGameId] = useState<string>("");
   const [state, setState] = useState<GameState | null>(null);
+  const [acknowledgedState, setAcknowledgedState] = useState<GameState | null>(null);
   const [busy, setBusy] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [startNewGamePending, setStartNewGamePending] = useState(false);
@@ -243,6 +237,8 @@ export default function Home() {
   const pendingNewGameRef = useRef(false);
   const moveInFlightRef = useRef(false);
   const bufferedMovesRef = useRef<MoveCommand[]>([]);
+  const predictionModelRef = useRef<ClientPredictionModel | null>(null);
+  const localPaintWaitersRef = useRef<Array<{ trace: MovePerformanceTrace; resolve: () => void }>>([]);
   const pendingPaintTraceRef = useRef<{ trace: MovePerformanceTrace; turn: number } | null>(null);
   const paintFrameRef = useRef<number | null>(null);
   const paintFrameTraceRef = useRef<MovePerformanceTrace | null>(null);
@@ -288,6 +284,18 @@ export default function Home() {
       const buffered = bufferedMovesRef.current.shift();
       if (buffered) dropMovePerformanceTrace(buffered.trace, reason, queueDepth);
     }
+  }
+
+  function resetPrediction(acknowledged?: GameState | null) {
+    if (!acknowledged) {
+      predictionModelRef.current = null;
+      return;
+    }
+    predictionModelRef.current = predictionModelRef.current
+      ? resetClientPrediction(predictionModelRef.current, acknowledged)
+      : createClientPredictionModel(acknowledged);
+    setAcknowledgedState(acknowledged);
+    setState(acknowledged);
   }
 
   function showQueueFullFeedback() {
@@ -375,6 +383,8 @@ export default function Home() {
     economy?: { canContinueAfterWin?: boolean };
   }) {
     setGameId(json.id);
+    predictionModelRef.current = createClientPredictionModel(json.current);
+    setAcknowledgedState(json.current);
     setState(json.current);
     setContinueAfterWin(false);
     setSessionClass((json?.integrity?.sessionClass as SessionClass) ?? "unranked");
@@ -457,6 +467,7 @@ export default function Home() {
     setReplay(null);
     setPreparedReplayUrl("");
     clearBufferedMoves("buffer_cleared_new_game");
+    resetPrediction(state);
     setContinueAfterWin(false);
     setNewGameConfirmArmed(false);
     setBusy(true);
@@ -541,7 +552,12 @@ export default function Home() {
   function submitMoveCommand(dir: Dir, source: MoveInputSource) {
     const inputTrace = startMovePerformanceTrace(dir, source);
     recordMoveQueueDepth(inputTrace, "capture", bufferedMovesRef.current.length);
-    const command: MoveCommand = { dir, trace: inputTrace };
+    const command: MoveCommand = {
+      dir,
+      trace: inputTrace,
+      locallyPredicted: false,
+      localPaintReady: Promise.resolve()
+    };
     if (
       newGameSetupOpen ||
       newGameTutorialChoiceOpen ||
@@ -574,28 +590,30 @@ export default function Home() {
       dropMovePerformanceTrace(inputTrace, "replay_active", bufferedMovesRef.current.length);
       return;
     }
-    if (!gameId || !state) {
+    const currentState = predictionModelRef.current?.predicted ?? state;
+    if (!gameId || !currentState) {
       dropMovePerformanceTrace(inputTrace, "game_unavailable", bufferedMovesRef.current.length);
       return;
     }
-    if (state.over) {
+    if (currentState.over) {
       dropMovePerformanceTrace(inputTrace, "game_over", bufferedMovesRef.current.length);
       return;
     }
-    if (state.won && !continueAfterWin) {
+    if (currentState.won && !continueAfterWin) {
       dropMovePerformanceTrace(inputTrace, "win_continuation_required", bufferedMovesRef.current.length);
       return;
     }
     if (moveInFlightRef.current || bufferedMovesRef.current.length > 0) {
       if (bufferedMovesRef.current.length < MAX_BUFFERED_MOVES) {
         markMovePerformancePhase(inputTrace, "queued");
-        bufferedMovesRef.current.push({ dir, trace: inputTrace });
+        applyLocalPrediction(command);
+        bufferedMovesRef.current.push(command);
         recordMoveQueueDepth(inputTrace, "enqueue", bufferedMovesRef.current.length);
         addDiagnostic("move_buffered", {
           dir,
           gameId,
           queued: bufferedMovesRef.current.length,
-          turn: state.turn
+          turn: currentState.turn
         });
       }
       else {
@@ -608,7 +626,31 @@ export default function Home() {
       dropMovePerformanceTrace(inputTrace, "busy", bufferedMovesRef.current.length);
       return;
     }
+    markMovePerformancePhase(inputTrace, "accepted");
+    applyLocalPrediction(command);
     void executeMove(command);
+  }
+
+  function applyLocalPrediction(command: MoveCommand) {
+    const model = predictionModelRef.current;
+    if (sessionClass !== "unranked" || !model) {
+      markMovePerformancePhase(command.trace, "local_engine_not_run");
+      return;
+    }
+
+    markMovePerformancePhase(command.trace, "local_engine_start");
+    const prediction = enqueueClientPrediction(model, {
+      id: command.trace.id,
+      direction: command.dir
+    });
+    markMovePerformancePhase(command.trace, "local_engine_end");
+    predictionModelRef.current = prediction.model;
+    command.locallyPredicted = true;
+    command.localPaintReady = new Promise<void>((resolve) => {
+      localPaintWaitersRef.current.push({ trace: command.trace, resolve });
+    });
+    setState(prediction.after);
+    startCellEffects(computeCellEffects(prediction.before, prediction.after, prediction.events, command.dir));
   }
 
   async function executeMove(command: MoveCommand) {
@@ -617,15 +659,12 @@ export default function Home() {
       dropMovePerformanceTrace(activeTrace, "game_unavailable", bufferedMovesRef.current.length);
       return;
     }
-    if (!activeTrace.phases.some((phase) => phase.phase === "queued")) {
-      markMovePerformancePhase(activeTrace, "accepted");
-    }
-    markMovePerformancePhase(activeTrace, "local_engine_not_run");
     moveInFlightRef.current = true;
-    const previous = state;
+    const previous = predictionModelRef.current?.acknowledged ?? state;
     setBusy(true);
     setErrorMessage("");
     try {
+      await command.localPaintReady;
       const moveResult = await requestResumableMove({
         sessionId: gameId,
         async requestMove(sessionId, recoveredSession?: { id: string; recoverySnapshot: GameExport | SessionRecoverySnapshot }) {
@@ -782,16 +821,34 @@ export default function Home() {
       setCanContinueAfterWin(resolveCanContinueAfterWin(json));
       if (json?.undo) setUndo(json.undo as UndoMeta);
       const events = Array.isArray(json?.lastStep?.events) ? (json.lastStep.events as MoveEvent[]) : [];
+      setAcknowledgedState(next);
+      if (command.locallyPredicted && predictionModelRef.current) {
+        const acknowledged = acknowledgeClientPrediction(
+          predictionModelRef.current,
+          activeTrace.id,
+          next
+        );
+        predictionModelRef.current = acknowledged;
+        if (next.over || (next.won && !continueAfterWin)) {
+          clearBufferedMoves("buffer_cleared_terminal_state");
+          resetPrediction(next);
+        } else {
+          setState(acknowledged.predicted);
+        }
+      } else {
+        predictionModelRef.current = createClientPredictionModel(next);
+        setState(next);
+        startCellEffects(computeCellEffects(previous, next, events, dir));
+      }
       pendingPaintTraceRef.current = { trace: activeTrace, turn: next.turn };
-      setState(next);
       setNewGameConfirmArmed(false);
-      startCellEffects(computeCellEffects(previous, next, events, dir));
       if (next.over) {
         window.localStorage.removeItem(gameIdKey);
       }
     } catch (error) {
       discardMovePerformanceTrace(activeTrace);
       clearBufferedMoves("buffer_cleared_move_error");
+      resetPrediction(predictionModelRef.current?.acknowledged ?? previous);
       addDiagnostic(
         "move_error",
         { dir, gameId, turn: previous.turn, message: diagnosticValue(error) },
@@ -839,7 +896,10 @@ export default function Home() {
       if (json.recoverySnapshot) {
         saveResumeSnapshot(window.localStorage, responseId, json.recoverySnapshot as SessionRecoverySnapshot);
       }
-      setState(json.current as GameState);
+      const undone = json.current as GameState;
+      predictionModelRef.current = createClientPredictionModel(undone);
+      setAcknowledgedState(undone);
+      setState(undone);
       if (json?.undo) setUndo(json.undo as UndoMeta);
       setNewGameConfirmArmed(false);
       setCellEffects({});
@@ -1121,11 +1181,11 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const score = state?.score ?? 0;
+    const score = acknowledgedState?.score ?? 0;
     if (score <= highScore) return;
     setHighScore(score);
     window.sessionStorage.setItem(highScoreKey, String(score));
-  }, [state?.score, highScore]);
+  }, [acknowledgedState?.score, highScore]);
 
   useEffect(() => {
     setNewGameConfirmArmed(false);
@@ -1151,8 +1211,17 @@ export default function Home() {
   }, [themeMode]);
 
   useLayoutEffect(() => {
+    const localPaintWaiters = localPaintWaitersRef.current.splice(0);
+    if (localPaintWaiters.length > 0) {
+      window.requestAnimationFrame(() => {
+        for (const waiter of localPaintWaiters) {
+          markMovePerformancePhase(waiter.trace, "local_prediction_paint");
+          waiter.resolve();
+        }
+      });
+    }
     const pending = pendingPaintTraceRef.current;
-    if (!pending || !state || state.turn !== pending.turn) return;
+    if (!pending || !state || (predictionModelRef.current?.acknowledged.turn ?? state.turn) !== pending.turn) return;
     pendingPaintTraceRef.current = null;
     markMovePerformancePhase(pending.trace, "react_commit");
     paintFrameTraceRef.current = pending.trace;
@@ -1165,7 +1234,8 @@ export default function Home() {
 
   useEffect(() => {
     if (busy || moveInFlightRef.current || bufferedMovesRef.current.length === 0) return;
-    if (replay || !gameId || !state || state.over || (state.won && !continueAfterWin)) {
+    const acknowledged = predictionModelRef.current?.acknowledged ?? state;
+    if (replay || !gameId || !acknowledged || acknowledged.over || (acknowledged.won && !continueAfterWin)) {
       clearBufferedMoves("buffer_cleared_terminal_state");
       return;
     }
@@ -1245,6 +1315,7 @@ export default function Home() {
   }, [tutorial]);
 
   useEffect(() => {
+    const localPaintWaiters = localPaintWaitersRef;
     return () => {
       if (effectTimerRef.current) window.clearTimeout(effectTimerRef.current);
       if (tutorialAdvanceTimerRef.current) window.clearTimeout(tutorialAdvanceTimerRef.current);
@@ -1252,6 +1323,7 @@ export default function Home() {
       if (paintFrameRef.current !== null) window.cancelAnimationFrame(paintFrameRef.current);
       if (paintFrameTraceRef.current) discardMovePerformanceTrace(paintFrameTraceRef.current);
       if (pendingPaintTraceRef.current) discardMovePerformanceTrace(pendingPaintTraceRef.current.trace);
+      for (const waiter of localPaintWaiters.current.splice(0)) waiter.resolve();
       clearBufferedMoves("component_unmounted");
     };
   }, []);
@@ -1301,9 +1373,11 @@ export default function Home() {
 
   function enterTutorial() {
     clearBufferedMoves("buffer_cleared_tutorial_start");
+    resetPrediction(null);
     window.localStorage.removeItem(gameIdKey);
     clearResumeSnapshot(window.localStorage);
     setGameId("");
+    setAcknowledgedState(null);
     setState(null);
     setReplay(null);
     setNewGameSetupOpen(false);
@@ -1332,6 +1406,7 @@ export default function Home() {
     setTutorial(null);
     setTutorialExitConfirmOpen(false);
     setGameId("");
+    setAcknowledgedState(null);
     setState(null);
     window.localStorage.removeItem(gameIdKey);
     clearResumeSnapshot(window.localStorage);
@@ -1376,7 +1451,7 @@ export default function Home() {
   const viewState = tutorial?.board ?? (replay ? replayStateAtStep(replay.data, replay.step) : state);
   const wildcardRate = viewState?.config?.spawn?.pWildcard;
   const activeMode = typeof wildcardRate === "number" ? modeFromWildcardRate(wildcardRate) : spawnMode;
-  const winPending = Boolean(!tutorial && !replay && state?.won && !continueAfterWin);
+  const winPending = Boolean(!tutorial && !replay && acknowledgedState?.won && !continueAfterWin);
   const terminalOverlayBlocked = newGameSetupOpen || newGameTutorialChoiceOpen;
   const isPlayable = Boolean(!replay && state && !state.over && !winPending);
   const isActiveRun = Boolean(!replay && state && !state.over && !winPending && (state.turn ?? 0) > 0);
@@ -1772,7 +1847,7 @@ export default function Home() {
           <span>High: {highScore}</span>
           <span>Difficulty: {SPAWN_MODES[activeMode].label}</span>
           <span>Mode: {GAME_MODES[gameMode].label}</span>
-          <span>{tutorial ? "Tutorial" : replay ? "Replay" : state?.won ? "Won" : state?.over ? "Game Over" : "Active"}</span>
+          <span>{tutorial ? "Tutorial" : replay ? "Replay" : acknowledgedState?.won ? "Won" : acknowledgedState?.over ? "Game Over" : "Active"}</span>
         </div> : (
           <div className="tutorial-status-bar">
             <span>Lesson {tutorial.lessonIndex + 1} of {TUTORIAL_LESSONS.length}</span>
@@ -1786,7 +1861,7 @@ export default function Home() {
               : replay
             ? `Replay step ${replayStep} of ${replayStepsTotal}. Score ${viewState?.score ?? 0}. Moves ${viewState?.turn ?? 0}.`
             : `Game ${gameId || "-"}, score ${viewState?.score ?? 0}, moves ${viewState?.turn ?? 0}, ${
-                viewState?.over ? "game over" : viewState?.won ? "won" : "active"
+                acknowledgedState?.over ? "game over" : acknowledgedState?.won ? "won" : "active"
               }.`}
         </p>
         {replay ? (
@@ -1881,7 +1956,7 @@ export default function Home() {
           </div>
         ) : null}
         {errorMessage ? <p className="status-error">{errorMessage}</p> : null}
-        <div className={`board-shell ${viewState?.over ? "game-over" : ""} ${winPending ? "game-won" : ""}`}>
+        <div className={`board-shell ${acknowledgedState?.over ? "game-over" : ""} ${winPending ? "game-won" : ""}`}>
           <div
             className="board"
             style={{ gridTemplateColumns: `repeat(${viewState?.width ?? 4}, minmax(0, 1fr))` }}
@@ -1972,7 +2047,7 @@ export default function Home() {
             </div>
           ) : null}
           <GameOverOverlay
-            visible={Boolean(!tutorial && !terminalOverlayBlocked && viewState?.over)}
+            visible={Boolean(!tutorial && !replay && !terminalOverlayBlocked && acknowledgedState?.over)}
             score={viewState?.score ?? 0}
             highScore={Math.max(highScore, viewState?.score ?? 0)}
             onNewGame={openNewGameSetup}
