@@ -27,6 +27,7 @@ export type MoveInputDropReason =
   | "win_continuation_required"
   | "queue_full"
   | "busy"
+  | "prediction_blocked"
   | "buffer_cleared_new_game"
   | "buffer_cleared_move_error"
   | "buffer_cleared_divergence"

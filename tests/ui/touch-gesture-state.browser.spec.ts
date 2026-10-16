@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
-import { DEFAULT_CONFIG } from "@/lib/binary2048/engine";
+import { applyMove, DEFAULT_CONFIG } from "@/lib/binary2048/engine";
 import type { Cell, Dir, GameState } from "@/lib/binary2048/types";
+import { gameStateHash, STATE_HASH_VERSION } from "@/lib/binary2048/state-identity";
 
 type GestureStep = {
   type: "touchstart" | "touchmove" | "touchend" | "touchcancel";
@@ -70,13 +71,15 @@ test("invalidates cancelled, stale, mismatched, and multi-touch gestures", async
   await page.route("**/api/games/*/move", async (route) => {
     const body = route.request().postDataJSON() as { dir: Dir };
     moves.push(body.dir);
-    current = { ...current, turn: moves.length, score: moves.length };
+    current = applyMove(current, body.dir).state;
     await route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
         id: current.id,
         current,
+        stateHash: gameStateHash(current),
+        stateHashVersion: STATE_HASH_VERSION,
         lastStep: { moved: true, events: [] },
         undo: { limit: 2, used: 0, remaining: 2 },
         integrity: { sessionClass: "unranked", source: "created" }

@@ -176,6 +176,12 @@ test("routes rapid keyboard, touch, and controls through one ordered queue", asy
     }
   }, rapidMoves);
 
+  const queueFeedback = page.locator(".move-queue-feedback");
+  await expect(queueFeedback).toHaveText("Move not queued: 8 moves are already waiting.");
+  await expect(queueFeedback).toHaveAttribute("role", "status");
+  await expect(queueFeedback).toHaveAttribute("aria-live", "polite");
+  await expect(queueFeedback).toHaveAttribute("aria-atomic", "true");
+
   const acceptedRapidMoves = rapidMoves.slice(0, 9);
   await expect.poll(() => completedMoves.length, { timeout: 10_000 }).toBe(acceptedRapidMoves.length);
   expect(completedMoves).toEqual(acceptedRapidMoves.map((move) => move.direction));
@@ -185,11 +191,6 @@ test("routes rapid keyboard, touch, and controls through one ordered queue", asy
   await expect.poll(() =>
     page.evaluate(() => performance.getEntriesByName("binary2048:move-dropped").length)
   ).toBe(1);
-  const queueFeedback = page.locator(".move-queue-feedback");
-  await expect(queueFeedback).toHaveText("Move not queued: 8 moves are already waiting.");
-  await expect(queueFeedback).toHaveAttribute("role", "status");
-  await expect(queueFeedback).toHaveAttribute("aria-live", "polite");
-  await expect(queueFeedback).toHaveAttribute("aria-atomic", "true");
   for (const name of ["Move up", "Move left", "Move down", "Move right"]) {
     await expect(page.getByRole("button", { name })).toBeEnabled();
   }

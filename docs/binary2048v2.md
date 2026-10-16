@@ -2,7 +2,7 @@
 
 Status: active delivery plan; V1 completed 2026-10-05
 Created: 2026-09-17  
-Implementation status: Phases 0 and 1 complete; Phase 2 casual reconciliation active
+Implementation status: Phases 0 and 1 complete; Phase 2 casual reliability active
 
 ## Purpose
 
@@ -455,7 +455,10 @@ order; silent input loss is zero in automated and real-device tests.
 - [x] Add versioned turn and state-hash reconciliation with legacy unversioned
   request compatibility and fail-closed divergence classification
   ([evidence](./v2-phase2-state-reconciliation-2026-10-16.md)).
-- [ ] Define rollback, retry, offline, and unrecoverable-divergence behavior.
+- [x] Define rollback, bounded retry, in-memory offline continuation, duplicate
+  acknowledgement, and unrecoverable-divergence behavior for casual play
+  ([evidence](./v2-phase2-reliability-policy-2026-10-16.md)). Durable pending-tail
+  persistence remains assigned to Phase 3.
 - [ ] Extend the model to ranked play after casual divergence tests pass.
 
 Exit criterion: normal network latency and isolated response outliers do not

@@ -228,6 +228,8 @@ export default function Home() {
   const [tutorialLaunchConfirmOpen, setTutorialLaunchConfirmOpen] = useState(false);
   const [tutorialExitConfirmOpen, setTutorialExitConfirmOpen] = useState(false);
   const [queueFullFeedback, setQueueFullFeedback] = useState(false);
+  const [connectionMessage, setConnectionMessage] = useState("");
+  const [predictionBlocked, setPredictionBlocked] = useState(false);
   const swipeGestureRef = useRef(createSwipeGestureState());
   const effectTimerRef = useRef<number | null>(null);
   const tutorialAdvanceTimerRef = useRef<number | null>(null);
@@ -385,6 +387,7 @@ export default function Home() {
     economy?: { canContinueAfterWin?: boolean };
   }) {
     setGameId(json.id);
+    setPredictionBlocked(false);
     predictionModelRef.current = createClientPredictionModel(json.current);
     setAcknowledgedState(json.current);
     setState(json.current);
@@ -592,6 +595,11 @@ export default function Home() {
       dropMovePerformanceTrace(inputTrace, "replay_active", bufferedMovesRef.current.length);
       return;
     }
+    if (predictionBlocked) {
+      dropMovePerformanceTrace(inputTrace, "prediction_blocked", bufferedMovesRef.current.length);
+      setErrorMessage("This game must be reloaded or replaced with a new game before more moves can be sent.");
+      return;
+    }
     const currentState = predictionModelRef.current?.predicted ?? state;
     if (!gameId || !currentState) {
       dropMovePerformanceTrace(inputTrace, "game_unavailable", bufferedMovesRef.current.length);
@@ -669,8 +677,12 @@ export default function Home() {
       await command.localPaintReady;
       const moveResult = await requestResumableMove({
         sessionId: gameId,
-        async requestMove(sessionId, recoveredSession?: { id: string; recoverySnapshot: GameExport | SessionRecoverySnapshot }) {
-          const attempt = recoveredSession ? 2 : 1;
+        async requestMove(
+          sessionId,
+          recoveredSession: { id: string; recoverySnapshot: GameExport | SessionRecoverySnapshot } | undefined,
+          context
+        ) {
+          const attempt = context.attempt;
           const authHeaders = await authBridgeRef.current?.authorizationHeader();
           const loadedRecovery = recoveredSession
             ? null
@@ -769,11 +781,50 @@ export default function Home() {
           return loadedRecovery.snapshot
             ? { id: staleSessionId, recoverySnapshot: loadedRecovery.snapshot }
             : null;
+        },
+        isOnline: sessionClass === "unranked" ? () => navigator.onLine : undefined,
+        waitUntilOnline: sessionClass === "unranked"
+          ? () => new Promise<void>((resolve) => {
+              window.addEventListener("online", () => resolve(), { once: true });
+            })
+          : undefined,
+        retryDelay: () => new Promise<void>((resolve) => window.setTimeout(resolve, 250)),
+        onReliabilityState(reliabilityState) {
+          if (reliabilityState === "offline_wait") {
+            setConnectionMessage("Offline. Your moves are queued on this device and will resume in order when the connection returns.");
+          } else if (reliabilityState === "retrying") {
+            setConnectionMessage("Connection interrupted. Retrying this move once…");
+          } else {
+            setConnectionMessage("Back online. Sending queued moves in order.");
+          }
         }
       });
-      const { attempt } = moveResult;
+      let { attempt } = moveResult;
+      if (attempt.status === 409) {
+        const authHeaders = await authBridgeRef.current?.authorizationHeader();
+        const conflictSessionId = moveResult.recoveredSession?.id ?? gameId;
+        const authoritativeResponse = await fetch(`/api/games/${conflictSessionId}`, { headers: authHeaders });
+        const authoritative = await authoritativeResponse.json().catch(() => ({}));
+        if (authoritativeResponse.ok && authoritative?.current) {
+          const authoritativeState = authoritative.current as GameState;
+          attempt = {
+            ok: true,
+            status: 200,
+            payload: {
+              ...authoritative,
+              stateHashVersion: STATE_HASH_VERSION,
+              stateHash: gameStateHash(authoritativeState),
+              conflictResolved: true
+            }
+          };
+        }
+      }
       const json = attempt.payload as { current?: GameState; error?: string; stateHash?: unknown; stateHashVersion?: unknown; undo?: UndoMeta; lastStep?: { events?: MoveEvent[] }; integrity?: { sessionClass?: SessionClass } };
       if (!attempt.ok || !json?.current) {
+        if (attempt.status === 409) {
+          setPredictionBlocked(true);
+          throw new Error("Could not verify the authoritative game after a conflict. Reload or start a new game.");
+        }
         if (attempt.status === 404) {
           void trackMarketing("session_resume_miss", "resume", {
             gameId,
@@ -784,6 +835,7 @@ export default function Home() {
         throw new Error(typeof json.error === "string" ? json.error : "Failed to apply move");
       }
       setErrorMessage("");
+      setConnectionMessage("");
       const next = json.current as GameState;
       const responseId = typeof (json as { id?: unknown }).id === "string" ? (json as { id: string }).id : gameId;
       if (responseId !== gameId) {
@@ -863,9 +915,13 @@ export default function Home() {
           if (reconciliation.classification === "stale_response") {
             acknowledgedForPaint = predictionModelRef.current.acknowledged;
             resetPrediction(acknowledgedForPaint);
+            setPredictionBlocked(true);
             setErrorMessage("Ignored a stale server response. Reload to resynchronize before continuing.");
           } else {
             resetPrediction(next);
+            if (reconciliation.classification === "unsupported_hash_version") {
+              setPredictionBlocked(true);
+            }
             setErrorMessage(
               reconciliation.classification === "unsupported_hash_version"
                 ? "Stopped queued moves because the server state-hash version is unsupported."
@@ -893,6 +949,7 @@ export default function Home() {
       }
     } catch (error) {
       discardMovePerformanceTrace(activeTrace);
+      setConnectionMessage("");
       clearBufferedMoves("buffer_cleared_move_error");
       resetPrediction(predictionModelRef.current?.acknowledged ?? previous);
       addDiagnostic(
@@ -2002,6 +2059,11 @@ export default function Home() {
           </div>
         ) : null}
         {errorMessage ? <p className="status-error">{errorMessage}</p> : null}
+        {connectionMessage ? (
+          <p className="connection-status" role="status" aria-live="polite" aria-atomic="true">
+            {connectionMessage}
+          </p>
+        ) : null}
         <div className={`board-shell ${acknowledgedState?.over ? "game-over" : ""} ${winPending ? "game-won" : ""}`}>
           <div
             className="board"

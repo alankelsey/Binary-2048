@@ -165,7 +165,7 @@ test("paints a casual prediction before move network I/O and acknowledges it onc
   );
 });
 
-test("rolls predicted and queued moves back when the active request fails", async ({ page }) => {
+test("rolls predicted and queued moves back after the active request exhausts its retry", async ({ page }) => {
   const initial = initialState("g_phase2_rollback");
   let releaseMove!: () => void;
   const moveGate = new Promise<void>((resolve) => {
@@ -198,7 +198,7 @@ test("rolls predicted and queued moves back when the active request fails", asyn
   releaseMove();
   await expect(page.getByText("storage unavailable")).toBeVisible();
   await expect.poll(() => renderedLabels(page)).toEqual(labels(initial));
-  expect(requests).toEqual(["left"]);
+  expect(requests).toEqual(["left", "left"]);
   await expect.poll(() =>
     page.evaluate(() => performance.getEntriesByName("binary2048:move-dropped").length)
   ).toBe(1);
@@ -310,4 +310,92 @@ test("keeps ranked rendering server-authoritative", async ({ page }) => {
     (performance.getEntriesByName("binary2048:move-complete")[0] as PerformanceMark).detail
   );
   expect(completeTrace.localEngineStatus).toBe("not_run");
+});
+
+test("retries a recoverable failure once and preserves the predicted board", async ({ page }) => {
+  const initial = initialState("g_phase2_retry");
+  const authoritative = applyMove(initial, "left").state;
+  let attempts = 0;
+  await prepare(page);
+  await page.route("**/api/games", async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(createdPayload(initial)) });
+  });
+  await page.route("**/api/games/*/move", async (route) => {
+    attempts += 1;
+    await route.fulfill(attempts === 1
+      ? { status: 503, contentType: "application/json", body: '{"error":"temporary"}' }
+      : { status: 200, contentType: "application/json", body: JSON.stringify(createdPayload(authoritative)) });
+  });
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "Start New Game" }).click();
+  await expect(page.locator(".card")).toHaveAttribute("aria-busy", "false");
+  await page.keyboard.press("ArrowLeft");
+  await expect.poll(() => attempts).toBe(2);
+  await expect.poll(() => renderedLabels(page)).toEqual(labels(authoritative));
+  await expect(page.getByText("Connection interrupted. Retrying this move once…")).toHaveCount(0);
+});
+
+test("turns a retry conflict into a duplicate acknowledgement without a second move", async ({ page }) => {
+  const initial = initialState("g_phase2_duplicate_ack");
+  const authoritative = applyMove(initial, "left").state;
+  let moveAttempts = 0;
+  let reads = 0;
+  await prepare(page);
+  await page.route("**/api/games", async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(createdPayload(initial)) });
+  });
+  await page.route("**/api/games/*/move", async (route) => {
+    moveAttempts += 1;
+    await route.fulfill(moveAttempts === 1
+      ? { status: 503, contentType: "application/json", body: '{"error":"response lost"}' }
+      : { status: 409, contentType: "application/json", body: '{"error":"stale precondition"}' });
+  });
+  await page.route("**/api/games/g_phase2_duplicate_ack", async (route) => {
+    reads += 1;
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(createdPayload(authoritative)) });
+  });
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "Start New Game" }).click();
+  await expect(page.locator(".card")).toHaveAttribute("aria-busy", "false");
+  await page.keyboard.press("ArrowLeft");
+  await expect.poll(() => moveAttempts).toBe(2);
+  await expect.poll(() => reads).toBe(1);
+  await expect.poll(() => renderedLabels(page)).toEqual(labels(authoritative));
+  await expect(page.locator(".meta")).toContainText(`Moves: ${authoritative.turn}`);
+  await expect(page.locator(".status-error")).toHaveCount(0);
+});
+
+test("keeps a bounded in-memory prediction while offline and resumes in FIFO order", async ({ page }) => {
+  const initial = initialState("g_phase2_offline");
+  let current = initial;
+  const requests: Dir[] = [];
+  await prepare(page);
+  await page.route("**/api/games", async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(createdPayload(initial)) });
+  });
+  await page.route("**/api/games/*/move", async (route) => {
+    const dir = (route.request().postDataJSON() as { dir: Dir }).dir;
+    requests.push(dir);
+    current = applyMove(current, dir).state;
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(createdPayload(current)) });
+  });
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "Start New Game" }).click();
+  await expect(page.locator(".card")).toHaveAttribute("aria-busy", "false");
+  await page.context().setOffline(true);
+  await page.evaluate(() => {
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true, cancelable: true }));
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true }));
+  });
+  await expect(page.getByText(/Offline\. Your moves are queued/)).toBeVisible();
+  expect(requests).toEqual([]);
+  await page.context().setOffline(false);
+  await expect.poll(() => requests).toEqual(["left", "down"]);
+  await expect.poll(() => renderedLabels(page)).toEqual(labels(current));
 });
