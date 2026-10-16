@@ -63,4 +63,7 @@ open plan items.
 - Optimized production compilation: passed. The local post-build smoke reached
   the expected environment boundary because the auth-bridge secret is absent;
   `/api/auth/bridge-token` returned 503 instead of the configured production
-  unauthenticated 401. Production smoke is recorded after deployment.
+  unauthenticated 401.
+- Runtime commit `7d27373` deployed successfully in Amplify job 389, whose
+  recorded commit was `7d273733de40d7f2f34d463fee1a8926977348d5`.
+- Production smoke against `https://www.binary2048.com`: passed after job 389.
