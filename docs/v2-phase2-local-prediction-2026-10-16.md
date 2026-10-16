@@ -83,4 +83,7 @@ new-game isolation, delayed responses, and classified drops.
 - Optimized production compilation: passed. The local post-build smoke reached
   the expected environment boundary because the auth-bridge secret is absent;
   `/api/auth/bridge-token` returned 503 instead of the configured production
-  unauthenticated 401. Deployment smoke is recorded after release.
+  unauthenticated 401.
+- Runtime commit `2690706` deployed successfully in Amplify job 391, whose
+  recorded commit was `26907061a885147d9fd54fffecf73c0479353fa8`.
+- Production smoke against `https://www.binary2048.com`: passed after job 391.
