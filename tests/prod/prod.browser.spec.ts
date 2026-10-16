@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { applyMove, createGame, DEFAULT_CONFIG, generateBitstormInitialGrid } from "@/lib/binary2048/engine";
 import type { Dir, GameConfig, GameState } from "@/lib/binary2048/types";
+import { gameStateHash, STATE_HASH_VERSION } from "@/lib/binary2048/state-identity";
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -206,6 +207,8 @@ test("the manual left-down and right-left loop reaches the game-over overlay", a
       body: JSON.stringify({
         id: current.id,
         current,
+        stateHash: gameStateHash(current),
+        stateHashVersion: STATE_HASH_VERSION,
         lastStep: { events: result.events },
         recoverySnapshot: {
           recoveryVersion: 1,

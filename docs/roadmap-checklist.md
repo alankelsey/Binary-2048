@@ -411,9 +411,11 @@ below record work already deployed before V2 formally started.
   - Phase 2 browser engine boundary is versioned, browser-bundle constrained,
     and parity-tested against the canonical server engine; casual moves now
     paint locally through explicit acknowledged, predicted, and pending state
-    while ranked rendering remains server-authoritative
+    and reconcile every acknowledgement by versioned turn/state identity while
+    ranked rendering remains server-authoritative
     ([interface evidence](./v2-phase2-browser-engine-interface-2026-10-15.md),
-    [local-prediction evidence](./v2-phase2-local-prediction-2026-10-16.md))
+    [local-prediction evidence](./v2-phase2-local-prediction-2026-10-16.md),
+    [reconciliation evidence](./v2-phase2-state-reconciliation-2026-10-16.md))
   - [ ] Audit and upgrade the existing OpenAPI documentation into a Swagger UI or equivalent interactive V2 API explorer, with complete contracts, examples, security/rate-limit details, versioning, and automated route/schema drift checks
   - [ ] Complete the anchored Lock-0 behavior spike without changing production rules
   - [ ] Complete the unranked `Death by Luck` wildcard-mode spike without changing production rules

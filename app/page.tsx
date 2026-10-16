@@ -28,12 +28,13 @@ import { getNewGameGuardState } from "@/lib/binary2048/new-game-guard";
 import { getNewGameStartAction } from "@/lib/binary2048/startup-new-game";
 import { requestResumableMove } from "@/lib/binary2048/resumable-move";
 import {
-  acknowledgeClientPrediction,
   createClientPredictionModel,
   enqueueClientPrediction,
+  reconcileClientPrediction,
   resetClientPrediction,
   type ClientPredictionModel
 } from "@/lib/binary2048/client-prediction";
+import { gameStateHash, STATE_HASH_VERSION } from "@/lib/binary2048/state-identity";
 import { createClientAuthBridge } from "@/lib/binary2048/client-auth-bridge";
 import {
   copyTextWithFallback,
@@ -96,6 +97,7 @@ import {
   recordMoveLocalStorageDuration,
   recordMovePayloadMetrics,
   recordMoveQueueDepth,
+  recordMoveReconciliation,
   startMovePerformanceTrace,
   utf8ByteLength,
   type MoveInputDropReason,
@@ -695,7 +697,12 @@ export default function Home() {
             recoveryRetry: Boolean(recoveredSession)
           });
           markMovePerformancePhase(activeTrace, "request_start", attempt);
-          const requestBody = JSON.stringify({ dir, recoverySnapshot });
+          const requestBody = JSON.stringify({
+            dir,
+            recoverySnapshot,
+            expectStateHashVersion: STATE_HASH_VERSION,
+            expectStateHash: gameStateHash(previous)
+          });
           const response = await fetch(`/api/games/${sessionId}/move`, {
             method: "POST",
             headers: { "content-type": "application/json", ...authHeaders },
@@ -765,7 +772,7 @@ export default function Home() {
         }
       });
       const { attempt } = moveResult;
-      const json = attempt.payload as { current?: GameState; error?: string; undo?: UndoMeta; lastStep?: { events?: MoveEvent[] }; integrity?: { sessionClass?: SessionClass } };
+      const json = attempt.payload as { current?: GameState; error?: string; stateHash?: unknown; stateHashVersion?: unknown; undo?: UndoMeta; lastStep?: { events?: MoveEvent[] }; integrity?: { sessionClass?: SessionClass } };
       if (!attempt.ok || !json?.current) {
         if (attempt.status === 404) {
           void trackMarketing("session_resume_miss", "resume", {
@@ -821,28 +828,67 @@ export default function Home() {
       setCanContinueAfterWin(resolveCanContinueAfterWin(json));
       if (json?.undo) setUndo(json.undo as UndoMeta);
       const events = Array.isArray(json?.lastStep?.events) ? (json.lastStep.events as MoveEvent[]) : [];
-      setAcknowledgedState(next);
+      let acknowledgedForPaint = next;
       if (command.locallyPredicted && predictionModelRef.current) {
-        const acknowledged = acknowledgeClientPrediction(
+        const reconciliation = reconcileClientPrediction(
           predictionModelRef.current,
           activeTrace.id,
-          next
+          {
+            state: next,
+            stateHash: json.stateHash,
+            stateHashVersion: json.stateHashVersion
+          }
         );
-        predictionModelRef.current = acknowledged;
-        if (next.over || (next.won && !continueAfterWin)) {
+        recordMoveReconciliation(
+          activeTrace,
+          reconciliation.classification,
+          reconciliation.expectedTurn,
+          reconciliation.actualTurn
+        );
+        addDiagnostic(
+          "prediction_reconciliation",
+          {
+            classification: reconciliation.classification,
+            expectedTurn: reconciliation.expectedTurn,
+            actualTurn: reconciliation.actualTurn
+          },
+          reconciliation.classification === "match" ? "info" : "error"
+        );
+
+        if (reconciliation.classification === "match" && reconciliation.model) {
+          predictionModelRef.current = reconciliation.model;
+          setAcknowledgedState(next);
+        } else {
+          clearBufferedMoves("buffer_cleared_divergence");
+          if (reconciliation.classification === "stale_response") {
+            acknowledgedForPaint = predictionModelRef.current.acknowledged;
+            resetPrediction(acknowledgedForPaint);
+            setErrorMessage("Ignored a stale server response. Reload to resynchronize before continuing.");
+          } else {
+            resetPrediction(next);
+            setErrorMessage(
+              reconciliation.classification === "unsupported_hash_version"
+                ? "Stopped queued moves because the server state-hash version is unsupported."
+                : "Prediction differed from the server. Continued from the authoritative board."
+            );
+          }
+        }
+
+        if (reconciliation.classification === "match" && (next.over || (next.won && !continueAfterWin))) {
           clearBufferedMoves("buffer_cleared_terminal_state");
           resetPrediction(next);
-        } else {
-          setState(acknowledged.predicted);
+        } else if (reconciliation.classification === "match" && reconciliation.model) {
+          setState(reconciliation.model.predicted);
         }
       } else {
         predictionModelRef.current = createClientPredictionModel(next);
+        setAcknowledgedState(next);
         setState(next);
         startCellEffects(computeCellEffects(previous, next, events, dir));
       }
-      pendingPaintTraceRef.current = { trace: activeTrace, turn: next.turn };
+      pendingPaintTraceRef.current = { trace: activeTrace, turn: acknowledgedForPaint.turn };
       setNewGameConfirmArmed(false);
-      if (next.over) {
+      if (acknowledgedForPaint.over) {
         window.localStorage.removeItem(gameIdKey);
       }
     } catch (error) {

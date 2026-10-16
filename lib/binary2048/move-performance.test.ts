@@ -10,6 +10,7 @@ import {
   recordMoveLocalStorageDuration,
   recordMovePayloadMetrics,
   recordMoveQueueDepth,
+  recordMoveReconciliation,
   startMovePerformanceTrace,
   utf8ByteLength,
   type MovePerformanceTarget
@@ -116,13 +117,15 @@ describe("move performance tracing", () => {
     markMovePerformancePhase(trace, "local_engine_end", undefined, target);
     markMovePerformancePhase(trace, "local_prediction_paint", undefined, target);
     markMovePerformancePhase(trace, "request_start", 1, target);
+    recordMoveReconciliation(trace, "match", 1, 1);
     markMovePerformancePhase(trace, "react_commit", undefined, target);
     finishMovePerformanceTrace(trace, target);
 
     const complete = marks.find((entry) => entry.name === MOVE_PERFORMANCE_COMPLETE_MARK);
     expect(complete?.options?.detail).toMatchObject({
       localEngineStatus: "completed",
-      localEngineDurationMs: 1
+      localEngineDurationMs: 1,
+      reconciliationSamples: [{ classification: "match", expectedTurn: 1, actualTurn: 1 }]
     });
   });
 

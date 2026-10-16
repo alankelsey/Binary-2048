@@ -2,7 +2,7 @@
 
 Status: active delivery plan; V1 completed 2026-10-05
 Created: 2026-09-17  
-Implementation status: Phases 0 and 1 complete; Phase 2 casual local prediction active
+Implementation status: Phases 0 and 1 complete; Phase 2 casual reconciliation active
 
 ## Purpose
 
@@ -452,7 +452,9 @@ order; silent input loss is zero in automated and real-device tests.
   ([evidence](./v2-phase2-local-prediction-2026-10-16.md)).
 - [x] Maintain separate predicted, acknowledged, and pending state
   ([evidence](./v2-phase2-local-prediction-2026-10-16.md)).
-- [ ] Add turn and state-hash reconciliation.
+- [x] Add versioned turn and state-hash reconciliation with legacy unversioned
+  request compatibility and fail-closed divergence classification
+  ([evidence](./v2-phase2-state-reconciliation-2026-10-16.md)).
 - [ ] Define rollback, retry, offline, and unrecoverable-divergence behavior.
 - [ ] Extend the model to ranked play after casual divergence tests pass.
 

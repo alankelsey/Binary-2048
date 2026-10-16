@@ -1,4 +1,5 @@
 import { GET } from "@/app/api/games/[id]/encoded/route";
+import { STATE_HASH_VERSION } from "@/lib/binary2048/state-identity";
 import { createSession } from "@/lib/binary2048/sessions";
 import type { Cell, GameConfig } from "@/lib/binary2048/types";
 
@@ -41,6 +42,7 @@ describe("GET /api/games/:id/encoded", () => {
     expect(Array.isArray(json.encodedFlat)).toBe(true);
     expect(json.encodedFlat.length).toBe(4 * 4 * 2);
     expect(typeof json.stateHash).toBe("string");
+    expect(json.stateHashVersion).toBe(STATE_HASH_VERSION);
     expect(json.candidates).toHaveLength(json.legalActions.length);
     for (const candidate of json.candidates) {
       expect(json.legalActions).toContain(candidate.action);

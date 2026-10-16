@@ -9,6 +9,7 @@ import {
   legalMoves,
   stateHash
 } from "@/lib/binary2048/ai";
+import { STATE_HASH_VERSION } from "@/lib/binary2048/state-identity";
 import { getSession } from "@/lib/binary2048/sessions";
 
 const RULESET_ID = "binary2048-v1";
@@ -29,6 +30,7 @@ export async function GET(_: Request, context: { params: Promise<{ id: string }>
     encodedState,
     encodedFlat,
     stateHash: stateHash(state),
+    stateHashVersion: STATE_HASH_VERSION,
     actionSpace: ACTION_SPACE,
     legalMoves: legalDirMoves,
     legalActions,

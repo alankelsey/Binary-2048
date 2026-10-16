@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
-import { DEFAULT_CONFIG } from "@/lib/binary2048/engine";
+import { applyMove, DEFAULT_CONFIG } from "@/lib/binary2048/engine";
 import type { Cell, Dir, GameState } from "@/lib/binary2048/types";
+import { gameStateHash, STATE_HASH_VERSION } from "@/lib/binary2048/state-identity";
 
 const initialGrid: Cell[][] = [
   [{ t: "n", v: 1 }, null, null, null],
@@ -71,10 +72,12 @@ test("serializes delayed moves and keeps draining after a no-op response", async
     maximumActiveRequests = Math.max(maximumActiveRequests, activeRequests);
     const requestNumber = requestDirections.length;
     await new Promise((resolve) => setTimeout(resolve, requestNumber === 1 ? 300 : requestNumber === 2 ? 20 : 100));
-    if (requestNumber > 1) current = { ...current, turn: requestNumber - 1, score: requestNumber - 1 };
+    current = applyMove(current, dir).state;
     const responseBody = JSON.stringify({
       id: current.id,
       current,
+      stateHash: gameStateHash(current),
+      stateHashVersion: STATE_HASH_VERSION,
       lastStep: { moved: requestNumber > 1, events: [] },
       recoverySnapshot: {
         recoveryVersion: 1,
@@ -134,13 +137,15 @@ test("isolates new-game modal and replacement-session inputs", async ({ page }) 
     moveSessionIds.push(sessionId);
     moveDirections.push(dir);
     const base = sessionId === replacementGame.id ? replacementGame : oldGame;
-    const current = { ...base, turn: 1, score: 1 };
+    const current = applyMove(base, dir).state;
     await route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
         id: sessionId,
         current,
+        stateHash: gameStateHash(current),
+        stateHashVersion: STATE_HASH_VERSION,
         lastStep: { moved: true, events: [] },
         undo: { limit: 2, used: 0, remaining: 2 },
         integrity: { sessionClass: "unranked", source: "created" }

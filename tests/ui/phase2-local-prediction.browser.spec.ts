@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { applyMove, DEFAULT_CONFIG } from "@/lib/binary2048/engine";
 import type { Cell, Dir, GameState } from "@/lib/binary2048/types";
+import { gameStateHash, STATE_HASH_VERSION } from "@/lib/binary2048/state-identity";
 
 const initialGrid: Cell[][] = [
   [null, { t: "n", v: 1 }, { t: "n", v: 1 }, null],
@@ -46,6 +47,8 @@ function createdPayload(state: GameState) {
   return {
     id: state.id,
     current: state,
+    stateHash: gameStateHash(state),
+    stateHashVersion: STATE_HASH_VERSION,
     recoverySnapshot: {
       recoveryVersion: 1,
       rulesetId: "binary2048-v1",
@@ -98,6 +101,7 @@ test("paints a casual prediction before move network I/O and acknowledges it onc
     releaseMove = resolve;
   });
   const requests: Dir[] = [];
+  const requestBodies: Array<{ expectStateHash?: string; expectStateHashVersion?: string }> = [];
 
   await prepare(page);
   await page.route("**/api/games", async (route) => {
@@ -105,8 +109,14 @@ test("paints a casual prediction before move network I/O and acknowledges it onc
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(createdPayload(current)) });
   });
   await page.route("**/api/games/*/move", async (route) => {
-    const { dir } = route.request().postDataJSON() as { dir: Dir };
+    const body = route.request().postDataJSON() as {
+      dir: Dir;
+      expectStateHash?: string;
+      expectStateHashVersion?: string;
+    };
+    const { dir } = body;
     requests.push(dir);
+    requestBodies.push(body);
     await moveGate;
     current = applyMove(current, dir).state;
     await route.fulfill({
@@ -135,6 +145,10 @@ test("paints a casual prediction before move network I/O and acknowledges it onc
   );
   expect(fetchSnapshot?.labels).toEqual(labels(predicted));
   expect(fetchSnapshot?.moves).toContain(`Moves: ${predicted.turn}`);
+  expect(requestBodies[0]).toMatchObject({
+    expectStateHash: gameStateHash(initialState("g_phase2_prediction")),
+    expectStateHashVersion: STATE_HASH_VERSION
+  });
 
   releaseMove();
   await expect.poll(() =>
@@ -188,6 +202,59 @@ test("rolls predicted and queued moves back when the active request fails", asyn
   await expect.poll(() =>
     page.evaluate(() => performance.getEntriesByName("binary2048:move-dropped").length)
   ).toBe(1);
+});
+
+test("classifies injected hash divergence and stops the predicted tail", async ({ page }) => {
+  const initial = initialState("g_phase2_divergence");
+  const canonical = applyMove(initial, "left").state;
+  const authoritative = { ...canonical, score: canonical.score + 4 };
+  let releaseMove!: () => void;
+  const moveGate = new Promise<void>((resolve) => {
+    releaseMove = resolve;
+  });
+  const requests: Dir[] = [];
+
+  await prepare(page);
+  await page.route("**/api/games", async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(createdPayload(initial)) });
+  });
+  await page.route("**/api/games/*/move", async (route) => {
+    requests.push((route.request().postDataJSON() as { dir: Dir }).dir);
+    await moveGate;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...createdPayload(authoritative),
+        lastStep: { moved: true, events: [] }
+      })
+    });
+  });
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "Start New Game" }).click();
+  await expect(page.locator(".card")).toHaveAttribute("aria-busy", "false");
+  await page.evaluate(() => {
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true, cancelable: true }));
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true }));
+  });
+  await expect.poll(() => requests).toEqual(["left"]);
+
+  releaseMove();
+  await expect(page.getByText("Prediction differed from the server. Continued from the authoritative board.")).toBeVisible();
+  await expect.poll(() => renderedLabels(page)).toEqual(labels(authoritative));
+  expect(requests).toEqual(["left"]);
+  const trace = await page.evaluate(() =>
+    (performance.getEntriesByName("binary2048:move-complete")[0] as PerformanceMark).detail
+  );
+  expect(trace.reconciliationSamples).toEqual([
+    expect.objectContaining({ classification: "state_hash_mismatch" })
+  ]);
+  const dropped = await page.evaluate(() =>
+    (performance.getEntriesByName("binary2048:move-dropped")[0] as PerformanceMark).detail
+  );
+  expect(dropped.dropReason).toBe("buffer_cleared_divergence");
 });
 
 test("keeps ranked rendering server-authoritative", async ({ page }) => {

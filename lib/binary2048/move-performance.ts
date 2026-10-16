@@ -29,6 +29,7 @@ export type MoveInputDropReason =
   | "busy"
   | "buffer_cleared_new_game"
   | "buffer_cleared_move_error"
+  | "buffer_cleared_divergence"
   | "buffer_cleared_terminal_state"
   | "buffer_cleared_tutorial_start"
   | "component_unmounted";
@@ -73,6 +74,11 @@ export type MovePerformanceTrace = {
   checkpointSamples: Array<{
     durationMs: number;
     recoveryHistoryLength: number;
+  }>;
+  reconciliationSamples: Array<{
+    classification: string;
+    expectedTurn: number;
+    actualTurn: number;
   }>;
 };
 
@@ -131,7 +137,8 @@ export function startMovePerformanceTrace(
     queueDepthSamples: [],
     payloadSamples: [],
     localStorageSamples: [],
-    checkpointSamples: []
+    checkpointSamples: [],
+    reconciliationSamples: []
   };
   markMovePerformancePhase(trace, "input_capture", undefined, target);
   return trace;
@@ -175,6 +182,15 @@ export function recordMoveCheckpointDuration(
     durationMs: Math.max(0, durationMs),
     recoveryHistoryLength: Math.max(0, Math.trunc(recoveryHistoryLength))
   });
+}
+
+export function recordMoveReconciliation(
+  trace: MovePerformanceTrace,
+  classification: string,
+  expectedTurn: number,
+  actualTurn: number
+) {
+  trace.reconciliationSamples.push({ classification, expectedTurn, actualTurn });
 }
 
 export function recordMoveQueueDepth(
@@ -277,6 +293,7 @@ export function finishMovePerformanceTrace(
     payloadSamples: trace.payloadSamples.map((sample) => ({ ...sample })),
     localStorageSamples: trace.localStorageSamples.map((sample) => ({ ...sample })),
     checkpointSamples: trace.checkpointSamples.map((sample) => ({ ...sample })),
+    reconciliationSamples: trace.reconciliationSamples.map((sample) => ({ ...sample })),
     phases: trace.phases.map((phase) => ({ ...phase }))
   };
   target.measure(MOVE_PERFORMANCE_MEASURE, { start: first.atMs, end: last.atMs, detail });

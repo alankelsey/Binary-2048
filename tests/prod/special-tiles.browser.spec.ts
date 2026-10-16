@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { applyMove, createGame, DEFAULT_CONFIG } from "@/lib/binary2048/engine";
 import type { Cell, Dir, GameConfig, GameState } from "@/lib/binary2048/types";
+import { gameStateHash, STATE_HASH_VERSION } from "@/lib/binary2048/state-identity";
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -70,6 +71,8 @@ test("special tiles render and resolve through a browser move", async ({ page })
       body: JSON.stringify({
         id: current.id,
         current,
+        stateHash: gameStateHash(current),
+        stateHashVersion: STATE_HASH_VERSION,
         lastStep: { events: result.events },
         undo: { limit: 0, used: 0, remaining: 0 },
         integrity: { sessionClass: "unranked", source: "created" }

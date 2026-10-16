@@ -2,6 +2,7 @@ import { SessionConflictError, SessionStorageUnavailableError } from "@/lib/bina
 import { NextResponse } from "next/server";
 import { parseAction, toActionCode } from "@/lib/binary2048/action";
 import { stateHash } from "@/lib/binary2048/ai";
+import { legacyGameStateHashV1, STATE_HASH_VERSION } from "@/lib/binary2048/state-identity";
 import { canContinueAfterWin } from "@/lib/binary2048/continue-policy";
 import { checkMoveRateLimit, rateLimitHeaders } from "@/lib/binary2048/rate-limit";
 import { recordMoveRouteTelemetry, recordRouteTelemetry } from "@/lib/binary2048/ops-telemetry";
@@ -103,10 +104,22 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     }, 429);
   }
   const parseStartedAt = performance.now();
-  const body = (await req.json().catch(() => ({}))) as { dir?: unknown; action?: unknown; expectStateHash?: unknown; recoverySnapshot?: GameExport | SessionRecoverySnapshot };
+  const body = (await req.json().catch(() => ({}))) as { dir?: unknown; action?: unknown; expectStateHash?: unknown; expectStateHashVersion?: unknown; recoverySnapshot?: GameExport | SessionRecoverySnapshot };
   const dir = parseAction(body.dir ?? body.action);
   timings.set("request_parse", Math.max(0, performance.now() - parseStartedAt));
   if (!dir) return respond({ error: "dir or action is required" }, 400);
+  if (
+    body.expectStateHashVersion !== undefined &&
+    body.expectStateHashVersion !== STATE_HASH_VERSION
+  ) {
+    return respond(
+      {
+        error: "Unsupported state hash version",
+        supportedStateHashVersion: STATE_HASH_VERSION
+      },
+      400
+    );
+  }
   let activeId = id;
   let activeSession;
   try {
@@ -122,12 +135,16 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
   if (typeof body.expectStateHash === "string") {
     if (!activeSession) return respond({ error: "Game not found" }, 404);
     const actualHash = stateHash(activeSession.current);
-    if (actualHash !== body.expectStateHash) {
+    const compatibleHashes = body.expectStateHashVersion === STATE_HASH_VERSION
+      ? [actualHash]
+      : [actualHash, legacyGameStateHashV1(activeSession.current)];
+    if (!compatibleHashes.includes(body.expectStateHash)) {
       return respond(
         {
           error: "State hash mismatch",
           expected: body.expectStateHash,
-          actual: actualHash
+          actual: actualHash,
+          actualStateHashVersion: STATE_HASH_VERSION
         },
         409
       );
@@ -151,6 +168,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     action: toActionCode(dir),
     dir,
     stateHash: stateHash(session.current),
+    stateHashVersion: STATE_HASH_VERSION,
     changed,
     reward,
     done: Boolean(session.current.over || session.current.won),

@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
-import { DEFAULT_CONFIG } from "@/lib/binary2048/engine";
+import { applyMove, DEFAULT_CONFIG } from "@/lib/binary2048/engine";
 import type { Cell, Dir, GameState } from "@/lib/binary2048/types";
+import { gameStateHash, STATE_HASH_VERSION } from "@/lib/binary2048/state-identity";
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -74,10 +75,8 @@ test("rapid arrow keys stay ordered across instance recovery", async ({ page }) 
 
     completedMoves.push(body.dir);
     current = {
-      ...current,
+      ...applyMove(current, body.dir).state,
       id: `g_rapid_${completedMoves.length}`,
-      turn: completedMoves.length,
-      score: completedMoves.length
     };
     activeRequests -= 1;
     await route.fulfill({
@@ -86,6 +85,8 @@ test("rapid arrow keys stay ordered across instance recovery", async ({ page }) 
       body: JSON.stringify({
         id: current.id,
         current,
+        stateHash: gameStateHash(current),
+        stateHashVersion: STATE_HASH_VERSION,
         lastStep: { events: [] },
         recoverySnapshot: {
           recoveryVersion: 1,

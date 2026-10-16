@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
-import { DEFAULT_CONFIG } from "@/lib/binary2048/engine";
+import { applyMove, DEFAULT_CONFIG } from "@/lib/binary2048/engine";
 import type { Cell, Dir, GameState } from "@/lib/binary2048/types";
+import { gameStateHash, STATE_HASH_VERSION } from "@/lib/binary2048/state-identity";
 
 test.use({ hasTouch: true, viewport: { width: 412, height: 915 } });
 
@@ -60,13 +61,15 @@ test("orders a real browser touch burst and classifies queue saturation", async 
     activeRequests += 1;
     maxActiveRequests = Math.max(maxActiveRequests, activeRequests);
     if (requestIndex === 0) await firstResponseGate;
-    current = { ...current, turn: requestIndex + 1, score: requestIndex + 1 };
+    current = applyMove(current, body.dir).state;
     await route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
         id: current.id,
         current,
+        stateHash: gameStateHash(current),
+        stateHashVersion: STATE_HASH_VERSION,
         lastStep: { moved: true, events: [] },
         undo: { limit: 2, used: 0, remaining: 2 },
         integrity: { sessionClass: "unranked", source: "created" }

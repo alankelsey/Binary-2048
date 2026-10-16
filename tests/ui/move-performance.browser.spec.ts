@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
-import { DEFAULT_CONFIG } from "@/lib/binary2048/engine";
+import { applyMove, DEFAULT_CONFIG } from "@/lib/binary2048/engine";
 import type { Cell, Dir, GameState } from "@/lib/binary2048/types";
+import { gameStateHash, STATE_HASH_VERSION } from "@/lib/binary2048/state-identity";
 
 test("classifies a directional input when no playable game is available", async ({ page }) => {
   await page.addInitScript(() => {
@@ -96,10 +97,12 @@ test("routes rapid keyboard, touch, and controls through one ordered queue", asy
     requestBodies.push(route.request().postData() ?? "");
     await new Promise((resolve) => setTimeout(resolve, 150));
     completedMoves.push(body.dir);
-    current = { ...current, turn: completedMoves.length, score: completedMoves.length };
+    current = applyMove(current, body.dir).state;
     const responseBody = JSON.stringify({
       id: current.id,
       current,
+      stateHash: gameStateHash(current),
+      stateHashVersion: STATE_HASH_VERSION,
       lastStep: { moved: true, events: [] },
       recoverySnapshot: {
         recoveryVersion: 1,
@@ -305,7 +308,7 @@ test("routes rapid keyboard, touch, and controls through one ordered queue", asy
 });
 
 for (const scenario of [
-  { name: "terminal response", status: 200, dropReason: "buffer_cleared_terminal_state" },
+  { name: "terminal response", status: 200, dropReason: "buffer_cleared_divergence" },
   { name: "failed response", status: 500, dropReason: "buffer_cleared_move_error" }
 ] as const) {
   test(`clears queued commands after a ${scenario.name}`, async ({ page }) => {
@@ -329,6 +332,7 @@ for (const scenario of [
       grid: initialGrid
     };
     let moveRequests = 0;
+    const terminal = { ...initial, turn: 1, over: true };
 
     await page.addInitScript(() => {
       window.localStorage.removeItem("binary2048.currentGameId");
@@ -363,7 +367,9 @@ for (const scenario of [
         contentType: "application/json",
         body: JSON.stringify({
           id: initial.id,
-          current: { ...initial, turn: 1, over: true },
+          current: terminal,
+          stateHash: gameStateHash(terminal),
+          stateHashVersion: STATE_HASH_VERSION,
           lastStep: { moved: true, events: [] },
           undo: { limit: 2, used: 0, remaining: 2 },
           integrity: { sessionClass: "unranked", source: "created" }

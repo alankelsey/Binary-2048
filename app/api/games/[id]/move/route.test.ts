@@ -1,4 +1,5 @@
 import { stateHash } from "@/lib/binary2048/ai";
+import { legacyGameStateHashV1, STATE_HASH_VERSION } from "@/lib/binary2048/state-identity";
 import { POST } from "@/app/api/games/[id]/move/route";
 import {
   createSession,
@@ -94,7 +95,11 @@ describe("POST /api/games/:id/move hash guard", () => {
     const req = new Request("http://localhost/api/games/x/move", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ action: "L", expectStateHash: expected })
+      body: JSON.stringify({
+        action: "L",
+        expectStateHash: expected,
+        expectStateHashVersion: STATE_HASH_VERSION
+      })
     });
     const res = await POST(req, { params: Promise.resolve({ id }) });
     const json = await res.json();
@@ -104,6 +109,7 @@ describe("POST /api/games/:id/move hash guard", () => {
     expect(json.dir).toBe("left");
     expect(json.stepCount).toBe(1);
     expect(typeof json.stateHash).toBe("string");
+    expect(json.stateHashVersion).toBe(STATE_HASH_VERSION);
     expect(json.integrity?.sessionClass).toBe("unranked");
     expect(json.economy?.canContinueAfterWin).toBe(true);
     expect((await getSession(id))?.steps.length).toBe(1);
@@ -135,6 +141,39 @@ describe("POST /api/games/:id/move hash guard", () => {
       workload: { monitor: "instrumented_move_route_only", movesInFlightAtStart: 1, movesInFlightAtEnd: 0 }
     });
     expect(timing.value).not.toContain(lastMoveTelemetry()?.runtime?.runtimeId);
+  });
+
+  it("rejects an explicitly unsupported state-hash version before mutation", async () => {
+    const session = await createSession(config, initialGrid);
+    const req = new Request("http://localhost/api/games/x/move", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        action: "L",
+        expectStateHash: stateHash(session.current),
+        expectStateHashVersion: "future-hash"
+      })
+    });
+    const res = await POST(req, { params: Promise.resolve({ id: session.current.id }) });
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json).toMatchObject({
+      error: "Unsupported state hash version",
+      supportedStateHashVersion: STATE_HASH_VERSION
+    });
+    expect((await getSession(session.current.id))?.steps).toHaveLength(0);
+  });
+
+  it("accepts the legacy hash when the request omits a version", async () => {
+    const session = await createSession(config, initialGrid);
+    const req = new Request("http://localhost/api/games/x/move", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "L", expectStateHash: legacyGameStateHashV1(session.current) })
+    });
+    const res = await POST(req, { params: Promise.resolve({ id: session.current.id }) });
+    expect(res.status).toBe(200);
   });
 
   it("returns 400 when neither dir nor action is provided", async () => {

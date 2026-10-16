@@ -1,6 +1,7 @@
 import { applyMove } from "@/lib/binary2048/engine";
 import { parseAction, toActionCode, type ActionCode } from "@/lib/binary2048/action";
 import type { Cell, Dir, GameState } from "@/lib/binary2048/types";
+import { gameStateHash, legacyGameStateHashV1 } from "@/lib/binary2048/state-identity";
 
 export type EncodedCell = {
   type: 0 | 1 | 2 | 3 | 4;
@@ -78,21 +79,8 @@ export function flattenEncodedState(encoded: EncodedState): number[] {
   return out;
 }
 
-export function stateHash(state: Pick<GameState, "grid" | "turn" | "score" | "rngStep">): string {
-  const encoded = encodeState(state);
-  const flattened = flattenEncodedState(encoded);
-  const signature = JSON.stringify({
-    t: state.turn,
-    s: state.score,
-    r: state.rngStep,
-    f: flattened
-  });
-
-  // FNV-1a 32-bit hash for fast deterministic state identity checks.
-  let hash = 0x811c9dc5;
-  for (let i = 0; i < signature.length; i++) {
-    hash ^= signature.charCodeAt(i);
-    hash = Math.imul(hash, 0x01000193) >>> 0;
-  }
-  return hash.toString(16).padStart(8, "0");
+export function stateHash(
+  state: GameState | Pick<GameState, "grid" | "turn" | "score" | "rngStep">
+): string {
+  return "config" in state ? gameStateHash(state) : legacyGameStateHashV1(state);
 }

@@ -1,3 +1,5 @@
+import { STATE_HASH_VERSION } from "@/lib/binary2048/state-identity";
+
 const RATE_LIMIT_HEADERS = {
   "RateLimit-Limit": { description: "Maximum requests permitted in the current quota window", schema: { type: "integer" } },
   "RateLimit-Remaining": { description: "Requests remaining in the current quota window", schema: { type: "integer" } },
@@ -413,18 +415,51 @@ export const OPENAPI_SPEC = {
         ],
         requestBody: {
           required: true,
-          content: { "application/json": { schema: { type: "object" } } }
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  dir: { type: "string", enum: ["up", "down", "left", "right"] },
+                  action: { type: "string", enum: ["U", "D", "L", "R"] },
+                  expectStateHashVersion: { type: "string", const: STATE_HASH_VERSION },
+                  expectStateHash: { type: "string", pattern: "^[0-9a-f]{8}$" },
+                  recoverySnapshot: { type: "object" }
+                },
+                anyOf: [{ required: ["dir"] }, { required: ["action"] }]
+              }
+            }
+          }
         },
         responses: {
-          "200": { description: "Move applied", headers: RATE_LIMIT_HEADERS },
+          "200": {
+            description: "Move applied with versioned authoritative state identity",
+            headers: RATE_LIMIT_HEADERS,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["current", "stateHash", "stateHashVersion"],
+                  properties: {
+                    current: { type: "object" },
+                    stateHash: { type: "string", pattern: "^[0-9a-f]{8}$" },
+                    stateHashVersion: { type: "string", const: STATE_HASH_VERSION }
+                  }
+                }
+              }
+            }
+          },
+          "400": { description: "Invalid move or unsupported explicit state-hash version" },
           "404": { description: "Game not found" },
+          "409": { description: "State-hash precondition or persistence conflict" },
           "429": {
             description: "Gameplay move rate limit exceeded",
             headers: {
               ...RATE_LIMIT_HEADERS,
               "Retry-After": { description: "Seconds until retry is allowed", schema: { type: "integer" } }
             }
-          }
+          },
+          "503": { description: "Session storage temporarily unavailable" }
         }
       }
     },
