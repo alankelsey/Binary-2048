@@ -1,12 +1,15 @@
 import {
   clearResumeSnapshot,
+  loadCompactResumeRecoveryWithMetrics,
   loadResumeSnapshot,
   loadResumeSnapshotWithMetrics,
   RESUME_SNAPSHOT_STORAGE_KEY,
+  saveCompactResumeRecovery,
   saveResumeSnapshot
 } from "@/lib/binary2048/resume-recovery";
+import { COMPACT_RECOVERY_VERSION } from "@/lib/binary2048/compact-recovery";
 import { runScenario } from "@/lib/binary2048/engine";
-import type { Cell, GameConfig } from "@/lib/binary2048/types";
+import type { Cell, Dir, GameConfig } from "@/lib/binary2048/types";
 
 describe("resume recovery snapshot", () => {
   const config: GameConfig = {
@@ -90,5 +93,51 @@ describe("resume recovery snapshot", () => {
     );
     expect(loaded.localStorageDurationMs).toBe(0.75);
     expect(loaded.snapshot && "meta" in loaded.snapshot ? loaded.snapshot.meta.replay.moves : null).toEqual(["left"]);
+  });
+
+  it("stores a versioned checkpoint with bounded acknowledged and pending tails", () => {
+    const exported = runScenario(config, initialGrid, ["left"]);
+    const checkpoint = {
+      recoveryVersion: 1 as const,
+      rulesetId: "binary2048-v1" as const,
+      sessionId: exported.final.id,
+      config,
+      initialGrid,
+      moves: ["left"] as Dir[],
+      signature: "checkpoint-signature"
+    };
+    const values = new Map<string, string>();
+    const storage = {
+      setItem(key: string, value: string) { values.set(key, value); },
+      getItem(key: string) { return values.get(key) ?? null; }
+    };
+
+    saveCompactResumeRecovery(storage, exported.final.id, {
+      version: COMPACT_RECOVERY_VERSION,
+      checkpoint,
+      acknowledgedTail: ["down"],
+      pendingTail: ["right", "up"]
+    });
+
+    expect(loadResumeSnapshot(storage, exported.final.id)).toBeNull();
+    expect(loadCompactResumeRecoveryWithMetrics(storage, exported.final.id).recovery).toEqual({
+      version: COMPACT_RECOVERY_VERSION,
+      checkpoint,
+      acknowledgedTail: ["down"],
+      pendingTail: ["right", "up"]
+    });
+  });
+
+  it("rejects malformed compact resume records without accepting a legacy fallback", () => {
+    const storage = {
+      getItem() {
+        return JSON.stringify({
+          version: COMPACT_RECOVERY_VERSION,
+          gameId: "g_bad",
+          recovery: { version: COMPACT_RECOVERY_VERSION, checkpoint: {}, acknowledgedTail: ["diagonal"], pendingTail: [] }
+        });
+      }
+    };
+    expect(loadCompactResumeRecoveryWithMetrics(storage, "g_bad").recovery).toBeNull();
   });
 });

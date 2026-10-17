@@ -2,14 +2,18 @@ import { SessionConflictError } from "@/lib/binary2048/session-store";
 import { NextResponse } from "next/server";
 import { exportRecoverySnapshot, getUndoMeta, resolveSessionWithRecovery, undoSession } from "@/lib/binary2048/sessions";
 import type { GameExport, SessionRecoverySnapshot } from "@/lib/binary2048/types";
+import type { CompactRecoveryPayload } from "@/lib/binary2048/compact-recovery";
 
 export async function POST(req: Request, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
-  const body = (await req.json().catch(() => ({}))) as { recoverySnapshot?: GameExport | SessionRecoverySnapshot };
+  const body = (await req.json().catch(() => ({}))) as {
+    recoverySnapshot?: GameExport | SessionRecoverySnapshot;
+    compactRecovery?: CompactRecoveryPayload;
+  };
   let activeId = id;
   let activeSession;
   try {
-    activeSession = (await resolveSessionWithRecovery(activeId, body.recoverySnapshot));
+    activeSession = (await resolveSessionWithRecovery(activeId, body.compactRecovery ?? body.recoverySnapshot));
     if (activeSession) activeId = activeSession.current.id;
   } catch {
     return NextResponse.json({ error: "Invalid recovery snapshot" }, { status: 400 });

@@ -1,6 +1,8 @@
 import { stateHash } from "@/lib/binary2048/ai";
 import { legacyGameStateHashV1, STATE_HASH_VERSION } from "@/lib/binary2048/state-identity";
 import { COMPACT_SYNC_VERSION } from "@/lib/binary2048/compact-sync";
+import { COMPACT_RECOVERY_VERSION } from "@/lib/binary2048/compact-recovery";
+import { applyMove } from "@/lib/binary2048/engine";
 import { POST } from "@/app/api/games/[id]/move/route";
 import {
   createSession,
@@ -265,6 +267,42 @@ describe("POST /api/games/:id/move hash guard", () => {
     expect(res.status).toBe(200);
     expect(json.recoverySnapshot).toMatchObject({ recoveryVersion: 1, moves: ["left"] });
     expect(json.sync).toBeUndefined();
+  });
+
+  it("recovers a missing compact session from its signed checkpoint and bounded tail", async () => {
+    process.env.BINARY2048_RECOVERY_SECRET = "compact-tail-route-secret";
+    const session = await createSession(config, initialGrid);
+    const checkpoint = await exportRecoverySnapshot(session.current.id, session);
+    expect(checkpoint?.signature).toEqual(expect.any(String));
+    const recoveredCurrent = applyMove(session.current, "left").state;
+    resetSessionStoreForTests();
+
+    const res = await POST(
+      new Request("http://localhost/api/games/x/move", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          dir: "down",
+          syncVersion: COMPACT_SYNC_VERSION,
+          expectTurn: recoveredCurrent.turn,
+          expectStateHashVersion: STATE_HASH_VERSION,
+          expectStateHash: stateHash(recoveredCurrent),
+          compactRecovery: {
+            version: COMPACT_RECOVERY_VERSION,
+            checkpoint,
+            acknowledgedTail: ["left"]
+          }
+        })
+      }),
+      { params: Promise.resolve({ id: session.current.id }) }
+    );
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.current.turn).toBe(applyMove(recoveredCurrent, "down").state.turn);
+    expect(json.integrity).toMatchObject({ sessionClass: "unranked", source: "created" });
+    expect(json.sync).toMatchObject({ checkpoint: true });
+    expect(json.recoverySnapshot.moves).toEqual(["left", "down"]);
   });
 
   it("rejects an explicitly unsupported state-hash version before mutation", async () => {

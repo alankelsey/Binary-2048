@@ -472,7 +472,8 @@ delay local animation, and seeded client/server runs produce identical states.
 - [x] Replace full-history normal move traffic with turn/hash
   acknowledgements and periodic signed checkpoints
   ([evidence](./v2-phase3-compact-sync-2026-10-16.md)).
-- [ ] Persist a last-acknowledged checkpoint plus a bounded pending tail.
+- [x] Persist a last-acknowledged checkpoint plus a bounded pending tail
+  ([evidence](./v2-phase3-durable-checkpoint-tail-2026-10-17.md)).
 - [ ] Move local-storage writes outside the input-to-paint path and ensure a
   lifecycle flush cannot corrupt or regress state.
 - [ ] Make shared-store hydration awaitable with a bounded timeout before

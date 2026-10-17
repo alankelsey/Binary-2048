@@ -22,6 +22,7 @@ import {
   type SessionTimingName
 } from "@/lib/binary2048/sessions";
 import type { GameEvent, GameExport, SessionRecoverySnapshot } from "@/lib/binary2048/types";
+import type { CompactRecoveryPayload } from "@/lib/binary2048/compact-recovery";
 
 type RouteTimingName = SessionTimingName | "rate_limit_identity" | "rate_limit_counter" | "request_parse" | "response_encode" | "total";
 
@@ -117,6 +118,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     expectStateHash?: unknown;
     expectStateHashVersion?: unknown;
     recoverySnapshot?: GameExport | SessionRecoverySnapshot;
+    compactRecovery?: CompactRecoveryPayload;
     syncVersion?: unknown;
   };
   const dir = parseAction(body.dir ?? body.action);
@@ -155,7 +157,8 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
   let activeId = id;
   let activeSession;
   try {
-    const resolution = await resolveSessionWithRecoveryDetails(activeId, body.recoverySnapshot, recordTiming);
+    const recoveryPayload = body.compactRecovery ?? body.recoverySnapshot;
+    const resolution = await resolveSessionWithRecoveryDetails(activeId, recoveryPayload, recordTiming);
     activeSession = resolution.session;
     sessionPath = resolution.path;
     if (activeSession) activeId = activeSession.current.id;
@@ -209,7 +212,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
   const checkpoint = !compact || shouldIssueCompactCheckpoint({
     turn: session.steps.length,
     terminal,
-    recovered: Boolean(body.recoverySnapshot)
+    recovered: Boolean(body.recoverySnapshot || body.compactRecovery)
   });
   const recoverySnapshot = checkpoint
     ? (await exportRecoverySnapshot(activeId, session, recordTiming))

@@ -1,5 +1,6 @@
 import { OPENAPI_SPEC } from "@/lib/binary2048/openapi";
 import { COMPACT_SYNC_VERSION } from "@/lib/binary2048/compact-sync";
+import { COMPACT_RECOVERY_VERSION } from "@/lib/binary2048/compact-recovery";
 
 describe("OPENAPI_SPEC", () => {
   it("contains expected core gameplay routes", () => {
@@ -8,6 +9,7 @@ describe("OPENAPI_SPEC", () => {
     expect(OPENAPI_SPEC.paths["/api/games/{id}/move"]?.post?.summary).toBe("Apply one move");
     expect(OPENAPI_SPEC.paths["/api/games/{id}/move"].post.responses["429"].headers["Retry-After"].schema.type).toBe("integer");
     expect(OPENAPI_SPEC.paths["/api/games/{id}/move"].post.requestBody.content["application/json"].schema.properties.syncVersion.const).toBe(COMPACT_SYNC_VERSION);
+    expect(OPENAPI_SPEC.paths["/api/games/{id}/move"].post.requestBody.content["application/json"].schema.properties.compactRecovery.properties.version.const).toBe(COMPACT_RECOVERY_VERSION);
     expect(OPENAPI_SPEC.paths["/api/games/{id}/undo"]?.post?.summary).toBe("Undo the last move");
   });
 

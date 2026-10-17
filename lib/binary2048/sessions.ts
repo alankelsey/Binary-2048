@@ -9,6 +9,10 @@ import {
   SessionStorageUnavailableError
 } from "@/lib/binary2048/session-store";
 import type { Cell, Dir, GameConfig, GameExport, GameSession, SessionRecoverySnapshot } from "@/lib/binary2048/types";
+import {
+  isCompactRecoveryPayload,
+  type CompactRecoveryPayload
+} from "@/lib/binary2048/compact-recovery";
 
 const UNDO_MODES = {
   normal: { pWildcard: 0.1, undoLimit: 2 },
@@ -115,10 +119,20 @@ export async function getSession(id: string) {
   return (await readStoredSession(id)) ?? null;
 }
 
+type RecoveryPayload = GameExport | SessionRecoverySnapshot | CompactRecoveryPayload;
+
 function isRecoverySnapshot(
-  payload: GameExport | SessionRecoverySnapshot
+  payload: RecoveryPayload
 ): payload is SessionRecoverySnapshot {
   return "recoveryVersion" in payload;
+}
+
+function recoveryDirections(payload: RecoveryPayload) {
+  if (isCompactRecoveryPayload(payload)) {
+    return [...payload.checkpoint.moves, ...payload.acknowledgedTail];
+  }
+  if (isRecoverySnapshot(payload)) return payload.moves;
+  return payload.steps.map((step) => step.dir);
 }
 
 function directionsMatch(session: GameSession, snapshot: SessionRecoverySnapshot) {
@@ -128,14 +142,14 @@ function directionsMatch(session: GameSession, snapshot: SessionRecoverySnapshot
 
 export async function resolveSessionWithRecovery(
   id: string,
-  recoveryPayload?: GameExport | SessionRecoverySnapshot
+  recoveryPayload?: RecoveryPayload
 ) {
   return (await resolveSessionWithRecoveryDetails(id, recoveryPayload)).session;
 }
 
 export async function resolveSessionWithRecoveryDetails(
   id: string,
-  recoveryPayload?: GameExport | SessionRecoverySnapshot,
+  recoveryPayload?: RecoveryPayload,
   recorder?: SessionTimingRecorder
 ): Promise<{ session: GameSession | null; path: SessionPath }> {
   const lookupStartedAt = nowMs();
@@ -152,10 +166,25 @@ export async function resolveSessionWithRecoveryDetails(
     const importStartedAt = nowMs();
     try {
       const session = (await importRecoveryPayload(recoveryPayload, recorder));
-      return { session, path: isRecoverySnapshot(recoveryPayload) ? "recovery_snapshot" : "legacy_export" };
+      return {
+        session,
+        path: isRecoverySnapshot(recoveryPayload) || isCompactRecoveryPayload(recoveryPayload)
+          ? "recovery_snapshot"
+          : "legacy_export"
+      };
     } finally {
       recordElapsed(recorder, "recovery_import", importStartedAt);
     }
+  }
+  if (isCompactRecoveryPayload(recoveryPayload)) {
+    const desiredDirections = recoveryDirections(recoveryPayload);
+    const browserIsNewer = desiredDirections.length > existing.steps.length;
+    const sameLengthButDifferentHistory =
+      desiredDirections.length === existing.steps.length &&
+      existing.steps.some((step, index) => step.dir !== desiredDirections[index]);
+    if (!browserIsNewer && !sameLengthButDifferentHistory) return { session: existing, path: existingPath };
+    const imported = await importCompactRecoveryPayload(recoveryPayload, recorder);
+    return { session: imported, path: "recovery_snapshot" };
   }
   if (!isRecoverySnapshot(recoveryPayload)) return { session: existing, path: existingPath };
 
@@ -407,10 +436,29 @@ export async function importRecoverySnapshot(snapshot: SessionRecoverySnapshot, 
 }
 
 export async function importRecoveryPayload(
-  snapshot: GameExport | SessionRecoverySnapshot,
+  snapshot: RecoveryPayload,
   recorder?: SessionTimingRecorder
 ) {
-  return "recoveryVersion" in snapshot
+  return isCompactRecoveryPayload(snapshot)
+    ? (await importCompactRecoveryPayload(snapshot, recorder))
+    : "recoveryVersion" in snapshot
     ? (await importRecoverySnapshot(snapshot, recorder))
     : (await importSession(snapshot, recorder));
+}
+
+export async function importCompactRecoveryPayload(
+  payload: CompactRecoveryPayload,
+  recorder?: SessionTimingRecorder
+) {
+  if (!isCompactRecoveryPayload(payload)) throw new Error("Unsupported compact recovery payload");
+  const secret = process.env.BINARY2048_RECOVERY_SECRET ?? "";
+  if (!secret || !verifyRecoverySignature(payload.checkpoint, secret)) {
+    throw new Error("Compact recovery checkpoint is not trusted");
+  }
+  const session = await importRecoverySnapshot(payload.checkpoint, recorder);
+  for (const dir of payload.acknowledgedTail) {
+    const moved = await moveSession(session.current.id, dir, session, recorder);
+    if (!moved) throw new Error("Compact recovery session disappeared");
+  }
+  return session;
 }

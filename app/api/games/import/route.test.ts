@@ -1,5 +1,7 @@
 import { POST } from "@/app/api/games/import/route";
 import { runScenario } from "@/lib/binary2048/engine";
+import { createRecoverySignature } from "@/lib/binary2048/recovery-signature";
+import { COMPACT_RECOVERY_VERSION } from "@/lib/binary2048/compact-recovery";
 import type { Cell, GameConfig } from "@/lib/binary2048/types";
 
 describe("POST /api/games/import", () => {
@@ -69,6 +71,54 @@ describe("POST /api/games/import", () => {
     expect(res.status).toBe(200);
     expect(json.current.turn).toBe(1);
     expect(json.recoverySnapshot).toMatchObject({ recoveryVersion: 1, moves: ["left"] });
+  });
+
+  it("replays a bounded tail from a trusted signed checkpoint", async () => {
+    process.env.BINARY2048_RECOVERY_SECRET = "compact-recovery-test-secret";
+    const checkpoint = {
+      recoveryVersion: 1 as const,
+      rulesetId: "binary2048-v1" as const,
+      sessionId: "g_compact_recovery",
+      config,
+      initialGrid,
+      moves: ["left"] as Array<"left">,
+      integrity: { sessionClass: "ranked" as const, source: "created" as const },
+      undo: { limit: 0, used: 0, events: [] as [] }
+    };
+    const payload = {
+      version: COMPACT_RECOVERY_VERSION,
+      checkpoint: { ...checkpoint, signature: createRecoverySignature(checkpoint, process.env.BINARY2048_RECOVERY_SECRET) },
+      acknowledgedTail: ["down" as const, "right" as const]
+    };
+    const req = new Request("http://localhost/api/games/import", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.id).toBe("g_compact_recovery");
+    expect(json.steps.map((step: { dir: string }) => step.dir)).toEqual(["left", "down", "right"]);
+    expect(json.integrity).toMatchObject({ sessionClass: "ranked", source: "created" });
+    expect(json.recoverySnapshot.moves).toEqual(["left", "down", "right"]);
+    delete process.env.BINARY2048_RECOVERY_SECRET;
+  });
+
+  it("rejects an unsigned compact recovery checkpoint", async () => {
+    const req = new Request("http://localhost/api/games/import", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        version: COMPACT_RECOVERY_VERSION,
+        checkpoint: { recoveryVersion: 1, rulesetId: "binary2048-v1", config, initialGrid, moves: [] },
+        acknowledgedTail: []
+      })
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(400);
   });
 
   it("imports a compact recovery history with 250 moves", async () => {

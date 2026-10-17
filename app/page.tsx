@@ -75,10 +75,15 @@ import {
 } from "@/lib/binary2048/tutorial";
 import {
   clearResumeSnapshot,
+  loadCompactResumeRecoveryWithMetrics,
   loadResumeSnapshot,
   loadResumeSnapshotWithMetrics,
-  saveResumeSnapshot
+  saveCompactResumeRecovery
 } from "@/lib/binary2048/resume-recovery";
+import {
+  COMPACT_RECOVERY_VERSION,
+  type CompactRecoveryPayload
+} from "@/lib/binary2048/compact-recovery";
 import {
   createInitialRageTapState,
   normalizeAuditControlLabel,
@@ -242,6 +247,12 @@ export default function Home() {
   const pendingNewGameRef = useRef(false);
   const moveInFlightRef = useRef(false);
   const bufferedMovesRef = useRef<MoveCommand[]>([]);
+  const resumeRecoveryRef = useRef<{
+    gameId: string;
+    checkpoint: SessionRecoverySnapshot;
+    acknowledgedTail: Dir[];
+  } | null>(null);
+  const restoredPendingMovesRef = useRef<Dir[]>([]);
   const predictionModelRef = useRef<ClientPredictionModel | null>(null);
   const localPaintWaitersRef = useRef<Array<{ trace: MovePerformanceTrace; resolve: () => void }>>([]);
   const pendingPaintTraceRef = useRef<{ trace: MovePerformanceTrace; turn: number } | null>(null);
@@ -289,6 +300,33 @@ export default function Home() {
       const buffered = bufferedMovesRef.current.shift();
       if (buffered) dropMovePerformanceTrace(buffered.trace, reason, queueDepth);
     }
+  }
+
+  function persistCompactRecovery(
+    id: string,
+    options: {
+      checkpoint?: SessionRecoverySnapshot;
+      acknowledgedDirection?: Dir;
+      pendingTail?: Dir[];
+    }
+  ) {
+    const previous = resumeRecoveryRef.current;
+    const checkpoint = options.checkpoint ?? (previous?.gameId === id ? previous.checkpoint : undefined);
+    if (!checkpoint) return null;
+    const acknowledgedTail = options.checkpoint
+      ? []
+      : [...(previous?.gameId === id ? previous.acknowledgedTail : []), ...(options.acknowledgedDirection ? [options.acknowledgedDirection] : [])];
+    if (acknowledgedTail.length >= 25) return null;
+    const pendingTail = options.pendingTail ?? [];
+    const recovery = {
+      version: COMPACT_RECOVERY_VERSION,
+      checkpoint,
+      acknowledgedTail,
+      pendingTail
+    } as const;
+    const metrics = saveCompactResumeRecovery(window.localStorage, id, recovery);
+    resumeRecoveryRef.current = { gameId: id, checkpoint, acknowledgedTail };
+    return { metrics, recovery };
   }
 
   function resetPrediction(acknowledged?: GameState | null) {
@@ -399,7 +437,7 @@ export default function Home() {
     setCellEffects({});
     window.localStorage.setItem(gameIdKey, json.id);
     if (json.recoverySnapshot) {
-      saveResumeSnapshot(window.localStorage, json.id, json.recoverySnapshot);
+      persistCompactRecovery(json.id, { checkpoint: json.recoverySnapshot });
     }
     addDiagnostic("session_loaded", {
       gameId: json.id,
@@ -417,7 +455,7 @@ export default function Home() {
     }
   }
 
-  async function importSnapshotExport(snapshotExport: unknown): Promise<{
+  async function importSnapshotExport(snapshotExport: GameExport | SessionRecoverySnapshot | CompactRecoveryPayload): Promise<{
     id: string;
     current: GameState;
     undo?: UndoMeta;
@@ -441,6 +479,18 @@ export default function Home() {
     expectedGameId?: string,
     options?: { notify?: boolean }
   ): Promise<{ id: string; current: GameState; undo?: UndoMeta } | null> {
+    const compact = loadCompactResumeRecoveryWithMetrics(window.localStorage, expectedGameId);
+    if (compact.recovery) {
+      const recovered = await importSnapshotExport(compact.recovery);
+      if (!recovered) return null;
+      restoredPendingMovesRef.current = [...compact.recovery.pendingTail];
+      void trackMarketing("session_resume_success", "resume", {
+        source: "compact_checkpoint_tail",
+        expectedGameId: expectedGameId ?? "unknown"
+      });
+      if (options?.notify !== false) setErrorMessage("Recovered your last local game snapshot.");
+      return recovered;
+    }
     const snapshot = loadResumeSnapshot(window.localStorage, expectedGameId);
     if (!snapshot) return null;
     const recovered = await importSnapshotExport(snapshot);
@@ -480,6 +530,8 @@ export default function Home() {
     setErrorMessage("");
     if (options?.clearSnapshot !== false) {
       clearResumeSnapshot(window.localStorage);
+      resumeRecoveryRef.current = null;
+      restoredPendingMovesRef.current = [];
     }
     try {
       const pZero = 0.15;
@@ -681,16 +733,32 @@ export default function Home() {
     setErrorMessage("");
     try {
       await command.localPaintReady;
+      const pendingBeforeRequest = persistCompactRecovery(gameId, {
+        pendingTail: predictionModelRef.current?.pending.map((pending) => pending.direction) ?? []
+      });
+      if (pendingBeforeRequest) {
+        recordMoveLocalStorageDuration(
+          activeTrace,
+          "write",
+          pendingBeforeRequest.metrics.localStorageDurationMs,
+          1
+        );
+      }
       const moveResult = await requestResumableMove({
         sessionId: gameId,
         async requestMove(
           sessionId,
-          recoveredSession: { id: string; recoverySnapshot: GameExport | SessionRecoverySnapshot } | undefined,
+          recoveredSession: {
+            id: string;
+            recoverySnapshot?: GameExport | SessionRecoverySnapshot;
+            compactRecovery?: CompactRecoveryPayload;
+          } | undefined,
           context
         ) {
           const attempt = context.attempt;
           const authHeaders = await authBridgeRef.current?.authorizationHeader();
           const recoverySnapshot = recoveredSession?.recoverySnapshot;
+          const compactRecovery = recoveredSession?.compactRecovery;
           addDiagnostic("move_request", {
             dir,
             gameId: sessionId,
@@ -708,6 +776,7 @@ export default function Home() {
             syncVersion: COMPACT_SYNC_VERSION,
             expectTurn: previous.turn,
             recoverySnapshot,
+            compactRecovery,
             expectStateHashVersion: STATE_HASH_VERSION,
             expectStateHash: gameStateHash(previous)
           });
@@ -767,6 +836,16 @@ export default function Home() {
           };
         },
         async recoverSession(staleSessionId) {
+          const compactRecovery = loadCompactResumeRecoveryWithMetrics(window.localStorage, staleSessionId);
+          if (compactRecovery.recovery) {
+            recordMoveLocalStorageDuration(
+              activeTrace,
+              "read",
+              compactRecovery.localStorageDurationMs,
+              2
+            );
+            return { id: staleSessionId, compactRecovery: compactRecovery.recovery };
+          }
           const loadedRecovery = loadResumeSnapshotWithMetrics(window.localStorage, staleSessionId);
           recordMoveLocalStorageDuration(
             activeTrace,
@@ -839,25 +918,6 @@ export default function Home() {
         window.localStorage.setItem(gameIdKey, responseId);
       }
       const recoverySnapshot = (json as { recoverySnapshot?: SessionRecoverySnapshot }).recoverySnapshot;
-      if (recoverySnapshot) {
-        const checkpointMetrics = saveResumeSnapshot(window.localStorage, responseId, recoverySnapshot);
-        recordMoveLocalStorageDuration(
-          activeTrace,
-          "write",
-          checkpointMetrics.localStorageDurationMs,
-          moveResult.recoveredSession ? 2 : 1
-        );
-        recordMoveCheckpointDuration(
-          activeTrace,
-          checkpointMetrics.checkpointDurationMs,
-          recoverySnapshot.moves.length
-        );
-        addDiagnostic("recovery_snapshot_saved", {
-          gameId: responseId,
-          moves: recoverySnapshot.moves.length,
-          turn: next.turn
-        });
-      }
       if (next.turn < previous.turn || next.score < previous.score) {
         addDiagnostic(
           "state_regression_detected",
@@ -877,6 +937,7 @@ export default function Home() {
       if (json?.undo) setUndo(json.undo as UndoMeta);
       const events = Array.isArray(json?.lastStep?.events) ? (json.lastStep.events as MoveEvent[]) : [];
       let acknowledgedForPaint = next;
+      let acknowledgementMatched = false;
       if (command.locallyPredicted && predictionModelRef.current) {
         const reconciliation = reconcileClientPrediction(
           predictionModelRef.current,
@@ -906,6 +967,7 @@ export default function Home() {
         if (reconciliation.classification === "match" && reconciliation.model) {
           predictionModelRef.current = reconciliation.model;
           setAcknowledgedState(next);
+          acknowledgementMatched = true;
         } else {
           clearBufferedMoves("buffer_cleared_divergence");
           const rankedDivergence = sessionClass === "ranked";
@@ -940,6 +1002,33 @@ export default function Home() {
         setAcknowledgedState(next);
         setState(next);
         startCellEffects(computeCellEffects(previous, next, events, dir));
+        acknowledgementMatched = true;
+      }
+      if (acknowledgementMatched) {
+        const persisted = persistCompactRecovery(responseId, {
+          ...(recoverySnapshot ? { checkpoint: recoverySnapshot } : { acknowledgedDirection: dir }),
+          pendingTail: predictionModelRef.current?.pending.map((pending) => pending.direction) ?? []
+        });
+        if (persisted) {
+          recordMoveLocalStorageDuration(
+            activeTrace,
+            "write",
+            persisted.metrics.localStorageDurationMs,
+            moveResult.recoveredSession ? 2 : 1
+          );
+          recordMoveCheckpointDuration(
+            activeTrace,
+            persisted.metrics.checkpointDurationMs,
+            persisted.recovery.checkpoint.moves.length + persisted.recovery.acknowledgedTail.length
+          );
+          addDiagnostic("compact_recovery_saved", {
+            gameId: responseId,
+            checkpointMoves: persisted.recovery.checkpoint.moves.length,
+            acknowledgedTail: persisted.recovery.acknowledgedTail.length,
+            pendingTail: persisted.recovery.pendingTail.length,
+            turn: next.turn
+          });
+        }
       }
       pendingPaintTraceRef.current = { trace: activeTrace, turn: acknowledgedForPaint.turn };
       setNewGameConfirmArmed(false);
@@ -951,6 +1040,7 @@ export default function Home() {
       setConnectionMessage("");
       clearBufferedMoves("buffer_cleared_move_error");
       resetPrediction(predictionModelRef.current?.acknowledged ?? previous);
+      persistCompactRecovery(gameId, { pendingTail: [] });
       if (sessionClass === "ranked") setPredictionBlocked(true);
       addDiagnostic(
         "move_error",
@@ -973,18 +1063,25 @@ export default function Home() {
     setBusy(true);
     setErrorMessage("");
     try {
-      const requestUndo = async (recoverySnapshot?: GameExport | SessionRecoverySnapshot) => {
+      const requestUndo = async (
+        recoverySnapshot?: GameExport | SessionRecoverySnapshot,
+        compactRecovery?: CompactRecoveryPayload
+      ) => {
         const authHeaders = await authBridgeRef.current?.authorizationHeader();
         return fetch(`/api/games/${gameId}/undo`, {
           method: "POST",
           headers: { "content-type": "application/json", ...authHeaders },
-          body: JSON.stringify({ recoverySnapshot })
+          body: JSON.stringify({ recoverySnapshot, compactRecovery })
         });
       };
       let res = await requestUndo();
       if (res.status === 404) {
-        const recoverySnapshot = loadResumeSnapshot(window.localStorage, gameId);
-        if (recoverySnapshot) res = await requestUndo(recoverySnapshot);
+        const compactRecovery = loadCompactResumeRecoveryWithMetrics(window.localStorage, gameId).recovery;
+        if (compactRecovery) res = await requestUndo(undefined, compactRecovery);
+        else {
+          const recoverySnapshot = loadResumeSnapshot(window.localStorage, gameId);
+          if (recoverySnapshot) res = await requestUndo(recoverySnapshot);
+        }
       }
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json?.current) {
@@ -997,7 +1094,7 @@ export default function Home() {
         window.localStorage.setItem(gameIdKey, responseId);
       }
       if (json.recoverySnapshot) {
-        saveResumeSnapshot(window.localStorage, responseId, json.recoverySnapshot as SessionRecoverySnapshot);
+        persistCompactRecovery(responseId, { checkpoint: json.recoverySnapshot as SessionRecoverySnapshot });
       }
       const undone = json.current as GameState;
       predictionModelRef.current = createClientPredictionModel(undone);
@@ -1349,6 +1446,12 @@ export default function Home() {
     }
   }, [busy, gameId, state, replay, continueAfterWin]);
 
+  useEffect(() => {
+    if (initializing || busy || !gameId || !state || restoredPendingMovesRef.current.length === 0) return;
+    const recoveredDirections = restoredPendingMovesRef.current.splice(0);
+    for (const direction of recoveredDirections) submitMoveCommand(direction, "recovery");
+  }, [initializing, busy, gameId, state]);
+
   keyboardInputHandlerRef.current = (event: KeyboardEvent) => {
     const dir = keyToDir(event.key);
     if (!dir) return;
@@ -1676,16 +1779,18 @@ export default function Home() {
 
   async function fetchGameExport(compact = false) {
     if (!gameId) throw new Error("No active game to export");
-    const recoverySnapshot = loadResumeSnapshot(window.localStorage, gameId);
-    const recoveryMoves =
-      recoverySnapshot && "recoveryVersion" in recoverySnapshot
+    const compactRecovery = loadCompactResumeRecoveryWithMetrics(window.localStorage, gameId).recovery;
+    const recoverySnapshot = compactRecovery ? undefined : loadResumeSnapshot(window.localStorage, gameId);
+    const recoveryMoves = compactRecovery
+      ? compactRecovery.checkpoint.moves.length + compactRecovery.acknowledgedTail.length
+      : recoverySnapshot && "recoveryVersion" in recoverySnapshot
         ? recoverySnapshot.moves.length
         : recoverySnapshot?.steps.length ?? null;
     addDiagnostic("export_request", { gameId, compact, recoveryMoves });
     const exportRes = await fetch(`/api/games/${gameId}/export${compact ? "?compact=1" : ""}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ recoverySnapshot })
+      body: JSON.stringify({ recoverySnapshot, compactRecovery })
     });
     const exported = await exportRes.json().catch(() => ({}));
     addDiagnostic(

@@ -4,13 +4,15 @@ import { buildReplayAudit } from "@/lib/binary2048/replay-audit";
 import { createReplaySignature } from "@/lib/binary2048/replay-signature";
 import { exportSession, resolveSessionWithRecovery } from "@/lib/binary2048/sessions";
 import type { GameExport, SessionRecoverySnapshot } from "@/lib/binary2048/types";
+import type { CompactRecoveryPayload } from "@/lib/binary2048/compact-recovery";
 
 type ExportBody = {
   recoverySnapshot?: GameExport | SessionRecoverySnapshot;
+  compactRecovery?: CompactRecoveryPayload;
 };
 
-async function resolveExport(id: string, recoverySnapshot?: GameExport | SessionRecoverySnapshot) {
-  const session = (await resolveSessionWithRecovery(id, recoverySnapshot));
+async function resolveExport(id: string, recoveryPayload?: GameExport | SessionRecoverySnapshot | CompactRecoveryPayload) {
+  const session = (await resolveSessionWithRecovery(id, recoveryPayload));
   return session ? (await exportSession(session.current.id)) : null;
 }
 
@@ -62,7 +64,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
   const { id } = await context.params;
   try {
     const body = (await req.json().catch(() => ({}))) as ExportBody;
-    const exported = (await resolveExport(id, body.recoverySnapshot));
+    const exported = (await resolveExport(id, body.compactRecovery ?? body.recoverySnapshot));
     if (!exported) return NextResponse.json({ error: "Game not found" }, { status: 404 });
     return exportResponse(req, exported.final.id, exported);
   } catch (error) {

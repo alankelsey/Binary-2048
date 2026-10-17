@@ -1,5 +1,6 @@
 import { STATE_HASH_VERSION } from "@/lib/binary2048/state-identity";
 import { COMPACT_SYNC_VERSION } from "@/lib/binary2048/compact-sync";
+import { COMPACT_RECOVERY_VERSION } from "@/lib/binary2048/compact-recovery";
 
 const RATE_LIMIT_HEADERS = {
   "RateLimit-Limit": { description: "Maximum requests permitted in the current quota window", schema: { type: "integer" } },
@@ -427,7 +428,20 @@ export const OPENAPI_SPEC = {
                   expectTurn: { type: "integer", minimum: 0 },
                   expectStateHashVersion: { type: "string", const: STATE_HASH_VERSION },
                   expectStateHash: { type: "string", pattern: "^[0-9a-f]{8}$" },
-                  recoverySnapshot: { type: "object" }
+                  recoverySnapshot: { type: "object" },
+                  compactRecovery: {
+                    type: "object",
+                    description: "Trusted signed checkpoint plus at most 24 acknowledged directions; accepted only after session loss",
+                    properties: {
+                      version: { type: "string", const: COMPACT_RECOVERY_VERSION },
+                      checkpoint: { type: "object" },
+                      acknowledgedTail: {
+                        type: "array",
+                        maxItems: 24,
+                        items: { type: "string", enum: ["up", "down", "left", "right"] }
+                      }
+                    }
+                  }
                 },
                 anyOf: [{ required: ["dir"] }, { required: ["action"] }]
               }

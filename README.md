@@ -460,6 +460,11 @@ BASE_URL=http://localhost:3000 npm run load:stage:abuse
     a signed recovery checkpoint every 25 persisted moves, after recovery, and
     at terminal state. Unversioned clients retain the legacy full-snapshot
     response during migration.
+  - After a missing-session response, a compact client may send
+    `compactRecovery: { version: "checkpoint-tail-v1", checkpoint,
+    acknowledgedTail }`. The checkpoint must retain its server signature and
+    the tail is limited to 24 directions; the server verifies the checkpoint,
+    replays the tail, and preserves the original session integrity.
   - Applies one move and returns updated state
   - Uses a dedicated quota (default `600` requests / 5 minutes per validated bot key or IP fallback)
   - AI-friendly fields included in response:

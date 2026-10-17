@@ -1,4 +1,4 @@
-export type MoveInputSource = "keyboard" | "touch" | "control";
+export type MoveInputSource = "keyboard" | "touch" | "control" | "recovery";
 
 export type MovePerformancePhase =
   | "input_capture"

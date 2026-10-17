@@ -307,7 +307,7 @@ test.describe("mobile action dock", () => {
     ];
     const current = createGame(config, grid).state;
     let createRequests = 0;
-    let moveRecoverySnapshot: unknown;
+    let moveCompactRecovery: unknown;
 
     await page.addInitScript(() => {
       window.localStorage.removeItem("binary2048.currentGameId");
@@ -332,7 +332,7 @@ test.describe("mobile action dock", () => {
       });
     });
     await page.route("**/api/games/*/move", async (route) => {
-      moveRecoverySnapshot = (route.request().postDataJSON() as { recoverySnapshot?: unknown }).recoverySnapshot;
+      moveCompactRecovery = (route.request().postDataJSON() as { compactRecovery?: unknown }).compactRecovery;
       await route.fulfill({ status: 404, contentType: "application/json", body: '{"error":"Game not found"}' });
     });
 
@@ -348,7 +348,7 @@ test.describe("mobile action dock", () => {
       })
     ).toBeVisible();
     await expect(page.getByRole("gridcell", { name: /number 2$/ })).toHaveCount(2);
-    expect(moveRecoverySnapshot).toBeTruthy();
+    expect(moveCompactRecovery).toMatchObject({ version: "checkpoint-tail-v1", acknowledgedTail: [] });
     expect(createRequests).toBe(1);
   });
 
@@ -362,10 +362,10 @@ test.describe("mobile action dock", () => {
     ];
     const routes = mockGameRoutes(page, grid, standardConfig(42));
     await routes.install();
-    let recoverySnapshot: unknown;
+    let compactRecovery: unknown;
     await page.route("**/api/games/*/export", async (route) => {
       expect(route.request().method()).toBe("POST");
-      recoverySnapshot = (route.request().postDataJSON() as { recoverySnapshot?: unknown }).recoverySnapshot;
+      compactRecovery = (route.request().postDataJSON() as { compactRecovery?: unknown }).compactRecovery;
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -385,7 +385,7 @@ test.describe("mobile action dock", () => {
     const download = await downloadPromise;
 
     expect(download.suggestedFilename()).toBe("guest-game.json");
-    expect(recoverySnapshot).toBeTruthy();
+    expect(compactRecovery).toMatchObject({ version: "checkpoint-tail-v1" });
     await expect(page.getByText("Game export downloaded")).toBeVisible();
   });
 
@@ -407,9 +407,9 @@ test.describe("mobile action dock", () => {
     const config = standardConfig(43);
     const routes = mockGameRoutes(page, grid, config);
     await routes.install();
-    let recoverySnapshot: unknown;
+    let compactRecovery: unknown;
     await page.route("**/api/games/*/export?compact=1", async (route) => {
-      recoverySnapshot = (route.request().postDataJSON() as { recoverySnapshot?: unknown }).recoverySnapshot;
+      compactRecovery = (route.request().postDataJSON() as { compactRecovery?: unknown }).compactRecovery;
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -444,7 +444,7 @@ test.describe("mobile action dock", () => {
     await page.getByRole("button", { name: "Start New Game" }).click();
     await page.getByRole("button", { name: "Copy Replay Link" }).click();
 
-    expect(recoverySnapshot).toBeTruthy();
+    expect(compactRecovery).toMatchObject({ version: "checkpoint-tail-v1", acknowledgedTail: [] });
     await expect(page.getByText("Replay link ready—tap Copy Replay Link again")).toBeVisible();
     await expect(page.getByRole("link", { name: "Open Replay Link" })).toHaveAttribute(
       "href",

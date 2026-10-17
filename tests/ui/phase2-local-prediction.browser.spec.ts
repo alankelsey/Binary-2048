@@ -129,13 +129,13 @@ test("paints a casual prediction before move network I/O and acknowledges it onc
     requestBodies.push(body);
     await moveGate;
     current = applyMove(current, dir).state;
+    const { recoverySnapshot: _recoverySnapshot, ...compactResponse } = createdPayload(current);
     await route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
-        ...createdPayload(current),
-        lastStep: { moved: true, events: [] },
-        recoverySnapshot: { ...createdPayload(current).recoverySnapshot, moves: requests }
+        ...compactResponse,
+        lastStep: { moved: true, events: [] }
       })
     });
   });
@@ -168,6 +168,14 @@ test("paints a casual prediction before move network I/O and acknowledges it onc
     page.evaluate(() => performance.getEntriesByName("binary2048:move-complete").length)
   ).toBe(1);
   await expect.poll(() => renderedLabels(page)).toEqual(labels(current));
+  const durableRecovery = await page.evaluate(() => {
+    const raw = window.localStorage.getItem("binary2048.resumeSnapshot");
+    return raw ? JSON.parse(raw) : null;
+  });
+  expect(durableRecovery).toMatchObject({
+    version: "checkpoint-tail-v1",
+    recovery: { acknowledgedTail: ["left"], pendingTail: [] }
+  });
   const trace = await page.evaluate(() =>
     (performance.getEntriesByName("binary2048:move-complete")[0] as PerformanceMark).detail
   );
@@ -176,6 +184,49 @@ test("paints a casual prediction before move network I/O and acknowledges it onc
   expect(trace.phases.map((phase: { phase: string }) => phase.phase)).toEqual(
     expect.arrayContaining(["local_engine_start", "local_engine_end", "local_prediction_paint"])
   );
+});
+
+test("sends the signed checkpoint plus acknowledged tail when a compact session is missing", async ({ page }) => {
+  let current = initialState("g_phase3_compact_recovery");
+  const bodies: Array<{ dir: Dir; compactRecovery?: { acknowledgedTail?: Dir[] }; recoverySnapshot?: unknown }> = [];
+
+  await prepare(page);
+  await page.route("**/api/games", async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(createdPayload(current)) });
+  });
+  await page.route("**/api/games/*/move", async (route) => {
+    const body = route.request().postDataJSON() as typeof bodies[number];
+    bodies.push(body);
+    if (bodies.length === 2) {
+      await route.fulfill({ status: 404, contentType: "application/json", body: '{"error":"Game not found"}' });
+      return;
+    }
+    current = applyMove(current, body.dir).state;
+    const { recoverySnapshot: _recoverySnapshot, ...response } = createdPayload(current);
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ...response, lastStep: { moved: true, events: [] } })
+    });
+  });
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "Start New Game" }).click();
+  await expect(page.locator(".card")).toHaveAttribute("aria-busy", "false");
+  await page.keyboard.press("ArrowLeft");
+  await expect.poll(() => bodies.length).toBe(1);
+  await page.keyboard.press("ArrowDown");
+  await expect.poll(() => bodies.length).toBe(3);
+
+  expect(bodies.map((body) => body.dir)).toEqual(["left", "down", "down"]);
+  expect(bodies[2].recoverySnapshot).toBeUndefined();
+  expect(bodies[2].compactRecovery).toMatchObject({
+    version: "checkpoint-tail-v1",
+    acknowledgedTail: ["left"],
+    pendingTail: ["down"]
+  });
+  await expect.poll(() => renderedLabels(page)).toEqual(labels(current));
 });
 
 test("rolls predicted and queued moves back after the active request exhausts its retry", async ({ page }) => {
