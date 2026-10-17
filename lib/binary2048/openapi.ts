@@ -1,4 +1,5 @@
 import { STATE_HASH_VERSION } from "@/lib/binary2048/state-identity";
+import { COMPACT_SYNC_VERSION } from "@/lib/binary2048/compact-sync";
 
 const RATE_LIMIT_HEADERS = {
   "RateLimit-Limit": { description: "Maximum requests permitted in the current quota window", schema: { type: "integer" } },
@@ -422,6 +423,8 @@ export const OPENAPI_SPEC = {
                 properties: {
                   dir: { type: "string", enum: ["up", "down", "left", "right"] },
                   action: { type: "string", enum: ["U", "D", "L", "R"] },
+                  syncVersion: { type: "string", const: COMPACT_SYNC_VERSION },
+                  expectTurn: { type: "integer", minimum: 0 },
                   expectStateHashVersion: { type: "string", const: STATE_HASH_VERSION },
                   expectStateHash: { type: "string", pattern: "^[0-9a-f]{8}$" },
                   recoverySnapshot: { type: "object" }
@@ -433,7 +436,7 @@ export const OPENAPI_SPEC = {
         },
         responses: {
           "200": {
-            description: "Move applied with versioned authoritative state identity",
+            description: "Move applied with versioned authoritative state identity; compact clients receive a signed recovery checkpoint every 25 persisted moves, on recovery, and at terminal state",
             headers: RATE_LIMIT_HEADERS,
             content: {
               "application/json": {
@@ -443,13 +446,22 @@ export const OPENAPI_SPEC = {
                   properties: {
                     current: { type: "object" },
                     stateHash: { type: "string", pattern: "^[0-9a-f]{8}$" },
-                    stateHashVersion: { type: "string", const: STATE_HASH_VERSION }
+                    stateHashVersion: { type: "string", const: STATE_HASH_VERSION },
+                    sync: {
+                      type: "object",
+                      properties: {
+                        version: { type: "string", const: COMPACT_SYNC_VERSION },
+                        checkpoint: { type: "boolean" },
+                        checkpointStep: { type: ["integer", "null"] },
+                        checkpointInterval: { type: "integer", const: 25 }
+                      }
+                    }
                   }
                 }
               }
             }
           },
-          "400": { description: "Invalid move or unsupported explicit state-hash version" },
+          "400": { description: "Invalid move or unsupported explicit state-hash/compact-sync version" },
           "404": { description: "Game not found" },
           "409": { description: "State-hash precondition or persistence conflict" },
           "429": {

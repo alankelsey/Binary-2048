@@ -268,13 +268,13 @@ test("routes rapid keyboard, touch, and controls through one ordered queue", asy
       attempt: 1,
       requestBytes: Buffer.byteLength(requestBody, "utf8"),
       responseBytes: Buffer.byteLength(responseBodies[index], "utf8"),
-      requestRecoveryHistoryLength: index,
+      requestRecoveryHistoryLength: 0,
       responseRecoveryHistoryLength: index + 1
     }))
   );
   for (const [index, trace] of traces.entries()) {
-    expect(trace.localStorageSamples).toHaveLength(2);
-    expect(trace.localStorageSamples.map((sample) => sample.operation)).toEqual(["read", "write"]);
+    expect(trace.localStorageSamples).toHaveLength(1);
+    expect(trace.localStorageSamples.map((sample) => sample.operation)).toEqual(["write"]);
     expect(trace.localStorageSamples.every((sample) => sample.attempt === 1 && sample.durationMs >= 0)).toBe(true);
     expect(trace.checkpointSamples).toEqual([
       expect.objectContaining({ recoveryHistoryLength: index + 1 })

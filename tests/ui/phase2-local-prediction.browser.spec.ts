@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { applyMove, DEFAULT_CONFIG } from "@/lib/binary2048/engine";
 import type { Cell, Dir, GameState } from "@/lib/binary2048/types";
 import { gameStateHash, STATE_HASH_VERSION } from "@/lib/binary2048/state-identity";
+import { COMPACT_SYNC_VERSION } from "@/lib/binary2048/compact-sync";
 
 const initialGrid: Cell[][] = [
   [null, { t: "n", v: 1 }, { t: "n", v: 1 }, null],
@@ -101,7 +102,13 @@ test("paints a casual prediction before move network I/O and acknowledges it onc
     releaseMove = resolve;
   });
   const requests: Dir[] = [];
-  const requestBodies: Array<{ expectStateHash?: string; expectStateHashVersion?: string }> = [];
+  const requestBodies: Array<{
+    expectStateHash?: string;
+    expectStateHashVersion?: string;
+    expectTurn?: number;
+    syncVersion?: string;
+    recoverySnapshot?: unknown;
+  }> = [];
 
   await prepare(page);
   await page.route("**/api/games", async (route) => {
@@ -113,6 +120,9 @@ test("paints a casual prediction before move network I/O and acknowledges it onc
       dir: Dir;
       expectStateHash?: string;
       expectStateHashVersion?: string;
+      expectTurn?: number;
+      syncVersion?: string;
+      recoverySnapshot?: unknown;
     };
     const { dir } = body;
     requests.push(dir);
@@ -147,8 +157,11 @@ test("paints a casual prediction before move network I/O and acknowledges it onc
   expect(fetchSnapshot?.moves).toContain(`Moves: ${predicted.turn}`);
   expect(requestBodies[0]).toMatchObject({
     expectStateHash: gameStateHash(initialState("g_phase2_prediction")),
-    expectStateHashVersion: STATE_HASH_VERSION
+    expectStateHashVersion: STATE_HASH_VERSION,
+    expectTurn: 0,
+    syncVersion: COMPACT_SYNC_VERSION
   });
+  expect(requestBodies[0].recoverySnapshot).toBeUndefined();
 
   releaseMove();
   await expect.poll(() =>

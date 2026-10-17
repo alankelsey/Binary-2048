@@ -455,6 +455,11 @@ BASE_URL=http://localhost:3000 npm run load:stage:abuse
   - Optional concurrency guard: `expectStateHash` (returns `409` if stale);
     send `expectStateHashVersion: "fnv1a32-game-state-v2"` for the canonical V2
     contract. Unversioned V1/V2 hashes remain accepted during migration.
+  - Compact V2 clients send `syncVersion: "turn-hash-checkpoint-v1"` and
+    `expectTurn`. Their normal requests omit recovery history; the server emits
+    a signed recovery checkpoint every 25 persisted moves, after recovery, and
+    at terminal state. Unversioned clients retain the legacy full-snapshot
+    response during migration.
   - Applies one move and returns updated state
   - Uses a dedicated quota (default `600` requests / 5 minutes per validated bot key or IP fallback)
   - AI-friendly fields included in response:

@@ -3,6 +3,12 @@ import { NextResponse } from "next/server";
 import { parseAction, toActionCode } from "@/lib/binary2048/action";
 import { stateHash } from "@/lib/binary2048/ai";
 import { legacyGameStateHashV1, STATE_HASH_VERSION } from "@/lib/binary2048/state-identity";
+import {
+  COMPACT_CHECKPOINT_INTERVAL,
+  COMPACT_SYNC_VERSION,
+  isCompactSyncVersion,
+  shouldIssueCompactCheckpoint
+} from "@/lib/binary2048/compact-sync";
 import { canContinueAfterWin } from "@/lib/binary2048/continue-policy";
 import { checkMoveRateLimit, rateLimitHeaders } from "@/lib/binary2048/rate-limit";
 import { recordMoveRouteTelemetry, recordRouteTelemetry } from "@/lib/binary2048/ops-telemetry";
@@ -104,10 +110,36 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     }, 429);
   }
   const parseStartedAt = performance.now();
-  const body = (await req.json().catch(() => ({}))) as { dir?: unknown; action?: unknown; expectStateHash?: unknown; expectStateHashVersion?: unknown; recoverySnapshot?: GameExport | SessionRecoverySnapshot };
+  const body = (await req.json().catch(() => ({}))) as {
+    dir?: unknown;
+    action?: unknown;
+    expectTurn?: unknown;
+    expectStateHash?: unknown;
+    expectStateHashVersion?: unknown;
+    recoverySnapshot?: GameExport | SessionRecoverySnapshot;
+    syncVersion?: unknown;
+  };
   const dir = parseAction(body.dir ?? body.action);
   timings.set("request_parse", Math.max(0, performance.now() - parseStartedAt));
   if (!dir) return respond({ error: "dir or action is required" }, 400);
+  if (body.syncVersion !== undefined && !isCompactSyncVersion(body.syncVersion)) {
+    return respond(
+      { error: "Unsupported compact sync version", supportedSyncVersion: COMPACT_SYNC_VERSION },
+      400
+    );
+  }
+  if (
+    isCompactSyncVersion(body.syncVersion) &&
+    (typeof body.expectStateHash !== "string" || body.expectStateHashVersion !== STATE_HASH_VERSION || !Number.isInteger(body.expectTurn))
+  ) {
+    return respond(
+      {
+        error: "Compact synchronization requires expectTurn and the current versioned state hash",
+        supportedStateHashVersion: STATE_HASH_VERSION
+      },
+      400
+    );
+  }
   if (
     body.expectStateHashVersion !== undefined &&
     body.expectStateHashVersion !== STATE_HASH_VERSION
@@ -150,6 +182,20 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
       );
     }
   }
+  if (
+    isCompactSyncVersion(body.syncVersion) &&
+    activeSession &&
+    (!Number.isInteger(body.expectTurn) || body.expectTurn !== activeSession?.current.turn)
+  ) {
+    return respond(
+      {
+        error: "Turn mismatch",
+        expectedTurn: body.expectTurn,
+        actualTurn: activeSession?.current.turn ?? null
+      },
+      409
+    );
+  }
   let session;
   try { session = await moveSession(activeId, dir, activeSession, recordTiming); }
   catch (error) { return respond({ error: error instanceof SessionConflictError ? error.message : "Session storage is temporarily unavailable" }, error instanceof SessionConflictError ? 409 : 503); }
@@ -158,11 +204,20 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
   const changed = lastStep?.moved ?? false;
   const reward = (lastStep?.after?.score ?? session.current.score) - (lastStep?.before?.score ?? session.current.score);
   const spawned = firstSpawn(lastStep?.events ?? []);
-  const recoverySnapshot = (await exportRecoverySnapshot(activeId, session, recordTiming));
+  const compact = isCompactSyncVersion(body.syncVersion);
+  const terminal = Boolean(session.current.over || session.current.won);
+  const checkpoint = !compact || shouldIssueCompactCheckpoint({
+    turn: session.steps.length,
+    terminal,
+    recovered: Boolean(body.recoverySnapshot)
+  });
+  const recoverySnapshot = checkpoint
+    ? (await exportRecoverySnapshot(activeId, session, recordTiming))
+    : undefined;
   return respond({
     id: activeId,
     current: session.current,
-    recoverySnapshot,
+    ...(recoverySnapshot ? { recoverySnapshot } : {}),
     stepCount: session.steps.length,
     lastStep,
     action: toActionCode(dir),
@@ -171,7 +226,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     stateHashVersion: STATE_HASH_VERSION,
     changed,
     reward,
-    done: Boolean(session.current.over || session.current.won),
+    done: terminal,
     spawned,
     undo: getUndoMeta(session),
     integrity: session.integrity,
@@ -183,6 +238,16 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
       spawned,
       events: lastStep?.events ?? [],
       illegalMove: !changed
-    }
+    },
+    ...(compact
+      ? {
+          sync: {
+            version: COMPACT_SYNC_VERSION,
+            checkpoint,
+            checkpointStep: checkpoint ? session.steps.length : null,
+            checkpointInterval: COMPACT_CHECKPOINT_INTERVAL
+          }
+        }
+      : {})
   });
 }

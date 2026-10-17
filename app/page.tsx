@@ -35,6 +35,7 @@ import {
   type ClientPredictionModel
 } from "@/lib/binary2048/client-prediction";
 import { gameStateHash, STATE_HASH_VERSION } from "@/lib/binary2048/state-identity";
+import { COMPACT_SYNC_VERSION } from "@/lib/binary2048/compact-sync";
 import { createClientAuthBridge } from "@/lib/binary2048/client-auth-bridge";
 import {
   copyTextWithFallback,
@@ -689,19 +690,7 @@ export default function Home() {
         ) {
           const attempt = context.attempt;
           const authHeaders = await authBridgeRef.current?.authorizationHeader();
-          const loadedRecovery = recoveredSession
-            ? null
-            : loadResumeSnapshotWithMetrics(window.localStorage, sessionId);
-          if (loadedRecovery) {
-            recordMoveLocalStorageDuration(
-              activeTrace,
-              "read",
-              loadedRecovery.localStorageDurationMs,
-              attempt
-            );
-          }
-          const recoverySnapshot =
-            recoveredSession?.recoverySnapshot ?? loadedRecovery?.snapshot ?? undefined;
+          const recoverySnapshot = recoveredSession?.recoverySnapshot;
           addDiagnostic("move_request", {
             dir,
             gameId: sessionId,
@@ -716,6 +705,8 @@ export default function Home() {
           markMovePerformancePhase(activeTrace, "request_start", attempt);
           const requestBody = JSON.stringify({
             dir,
+            syncVersion: COMPACT_SYNC_VERSION,
+            expectTurn: previous.turn,
             recoverySnapshot,
             expectStateHashVersion: STATE_HASH_VERSION,
             expectStateHash: gameStateHash(previous)

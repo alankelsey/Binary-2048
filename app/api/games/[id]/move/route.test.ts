@@ -1,5 +1,6 @@
 import { stateHash } from "@/lib/binary2048/ai";
 import { legacyGameStateHashV1, STATE_HASH_VERSION } from "@/lib/binary2048/state-identity";
+import { COMPACT_SYNC_VERSION } from "@/lib/binary2048/compact-sync";
 import { POST } from "@/app/api/games/[id]/move/route";
 import {
   createSession,
@@ -141,6 +142,129 @@ describe("POST /api/games/:id/move hash guard", () => {
       workload: { monitor: "instrumented_move_route_only", movesInFlightAtStart: 1, movesInFlightAtEnd: 0 }
     });
     expect(timing.value).not.toContain(lastMoveTelemetry()?.runtime?.runtimeId);
+  });
+
+  it("rejects unsupported compact synchronization before mutation", async () => {
+    const session = await createSession(config, initialGrid);
+    const res = await POST(
+      new Request("http://localhost/api/games/x/move", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ dir: "left", syncVersion: "turn-hash-checkpoint-v2" })
+      }),
+      { params: Promise.resolve({ id: session.current.id }) }
+    );
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json).toMatchObject({
+      error: "Unsupported compact sync version",
+      supportedSyncVersion: COMPACT_SYNC_VERSION
+    });
+    expect((await getSession(session.current.id))?.steps).toHaveLength(0);
+  });
+
+  it("requires a turn and current versioned hash for compact synchronization", async () => {
+    const session = await createSession(config, initialGrid);
+    const res = await POST(
+      new Request("http://localhost/api/games/x/move", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ dir: "left", syncVersion: COMPACT_SYNC_VERSION })
+      }),
+      { params: Promise.resolve({ id: session.current.id }) }
+    );
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json.error).toContain("requires expectTurn");
+    expect((await getSession(session.current.id))?.steps).toHaveLength(0);
+  });
+
+  it("rejects compact turn mismatch without mutation", async () => {
+    const session = await createSession(config, initialGrid);
+    const res = await POST(
+      new Request("http://localhost/api/games/x/move", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          dir: "left",
+          syncVersion: COMPACT_SYNC_VERSION,
+          expectTurn: session.current.turn + 1,
+          expectStateHashVersion: STATE_HASH_VERSION,
+          expectStateHash: stateHash(session.current)
+        })
+      }),
+      { params: Promise.resolve({ id: session.current.id }) }
+    );
+    const json = await res.json();
+
+    expect(res.status).toBe(409);
+    expect(json).toMatchObject({ error: "Turn mismatch", actualTurn: session.current.turn });
+    expect((await getSession(session.current.id))?.steps).toHaveLength(0);
+  });
+
+  it("keeps compact move payloads bounded between periodic signed checkpoints", async () => {
+    process.env.BINARY2048_RECOVERY_SECRET = "compact-checkpoint-secret";
+    const session = await createSession(config, initialGrid);
+    const requestBytes: number[] = [];
+    const responseBytes: number[] = [];
+    let current = session.current;
+
+    for (let index = 1; index <= 26; index += 1) {
+      const requestBody = JSON.stringify({
+        dir: "left",
+        syncVersion: COMPACT_SYNC_VERSION,
+        expectTurn: current.turn,
+        expectStateHashVersion: STATE_HASH_VERSION,
+        expectStateHash: stateHash(current)
+      });
+      const res = await POST(
+        new Request("http://localhost/api/games/x/move", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: requestBody
+        }),
+        { params: Promise.resolve({ id: session.current.id }) }
+      );
+      expect(res.status).toBe(200);
+      const responseText = await res.text();
+      const json = JSON.parse(responseText) as { current: typeof current; recoverySnapshot?: unknown; sync?: { checkpoint?: boolean; checkpointStep?: number | null } };
+      current = json.current;
+      expect(json.sync).toMatchObject({ version: COMPACT_SYNC_VERSION, checkpoint: index === 25 });
+      if (index === 25) {
+        expect(json.recoverySnapshot).toMatchObject({
+          recoveryVersion: 1,
+          moves: expect.any(Array),
+          signature: expect.any(String)
+        });
+        expect(json.sync?.checkpointStep).toBe(25);
+      } else {
+        expect(json.recoverySnapshot).toBeUndefined();
+        requestBytes.push(new TextEncoder().encode(requestBody).byteLength);
+        responseBytes.push(new TextEncoder().encode(responseText).byteLength);
+      }
+    }
+
+    expect(Math.max(...requestBytes) - Math.min(...requestBytes)).toBeLessThan(8);
+    expect(Math.max(...responseBytes) - Math.min(...responseBytes)).toBeLessThan(256);
+    expect(Math.max(...responseBytes)).toBeLessThan(3_000);
+  });
+
+  it("keeps the legacy full recovery response for unversioned clients", async () => {
+    const session = await createSession(config, initialGrid);
+    const res = await POST(
+      new Request("http://localhost/api/games/x/move", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ dir: "left" })
+      }),
+      { params: Promise.resolve({ id: session.current.id }) }
+    );
+    const json = await res.json();
+    expect(res.status).toBe(200);
+    expect(json.recoverySnapshot).toMatchObject({ recoveryVersion: 1, moves: ["left"] });
+    expect(json.sync).toBeUndefined();
   });
 
   it("rejects an explicitly unsupported state-hash version before mutation", async () => {

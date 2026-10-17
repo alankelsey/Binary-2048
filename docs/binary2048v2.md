@@ -469,8 +469,9 @@ delay local animation, and seeded client/server runs produce identical states.
 
 ### Phase 3: compact synchronization and recovery
 
-- [ ] Replace full-history normal move traffic with turn/hash
-  acknowledgements and periodic signed checkpoints.
+- [x] Replace full-history normal move traffic with turn/hash
+  acknowledgements and periodic signed checkpoints
+  ([evidence](./v2-phase3-compact-sync-2026-10-16.md)).
 - [ ] Persist a last-acknowledged checkpoint plus a bounded pending tail.
 - [ ] Move local-storage writes outside the input-to-paint path and ensure a
   lifecycle flush cannot corrupt or regress state.
