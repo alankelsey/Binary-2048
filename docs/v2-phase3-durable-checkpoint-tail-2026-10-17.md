@@ -58,5 +58,8 @@ preventing stale flushes from overwriting a newer checkpoint.
 - Full local browser suite: 68 tests passed, 1 diagnostics-only test skipped.
 - TypeScript check: passed.
 
-Build, deployment, and production-smoke results are recorded after the release
-gates complete.
+## Release verification
+
+- Runtime commit `eecfe14` deployed through Amplify job 401 successfully.
+- Non-mutating production smoke checks passed against
+  `https://www.binary2048.com`.
