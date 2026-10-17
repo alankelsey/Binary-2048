@@ -600,6 +600,11 @@ export default function Home() {
       setErrorMessage("This game must be reloaded or replaced with a new game before more moves can be sent.");
       return;
     }
+    if (sessionClass === "ranked" && !navigator.onLine) {
+      dropMovePerformanceTrace(inputTrace, "ranked_offline", bufferedMovesRef.current.length);
+      setErrorMessage("Ranked moves require a connection. Reconnect before continuing.");
+      return;
+    }
     const currentState = predictionModelRef.current?.predicted ?? state;
     if (!gameId || !currentState) {
       dropMovePerformanceTrace(inputTrace, "game_unavailable", bufferedMovesRef.current.length);
@@ -643,7 +648,7 @@ export default function Home() {
 
   function applyLocalPrediction(command: MoveCommand) {
     const model = predictionModelRef.current;
-    if (sessionClass !== "unranked" || !model) {
+    if (!model) {
       markMovePerformancePhase(command.trace, "local_engine_not_run");
       return;
     }
@@ -912,6 +917,7 @@ export default function Home() {
           setAcknowledgedState(next);
         } else {
           clearBufferedMoves("buffer_cleared_divergence");
+          const rankedDivergence = sessionClass === "ranked";
           if (reconciliation.classification === "stale_response") {
             acknowledgedForPaint = predictionModelRef.current.acknowledged;
             resetPrediction(acknowledgedForPaint);
@@ -919,11 +925,13 @@ export default function Home() {
             setErrorMessage("Ignored a stale server response. Reload to resynchronize before continuing.");
           } else {
             resetPrediction(next);
-            if (reconciliation.classification === "unsupported_hash_version") {
+            if (rankedDivergence || reconciliation.classification === "unsupported_hash_version") {
               setPredictionBlocked(true);
             }
             setErrorMessage(
-              reconciliation.classification === "unsupported_hash_version"
+              rankedDivergence
+                ? "Ranked prediction could not be verified. Reload or start a new game before continuing."
+                : reconciliation.classification === "unsupported_hash_version"
                 ? "Stopped queued moves because the server state-hash version is unsupported."
                 : "Prediction differed from the server. Continued from the authoritative board."
             );
@@ -952,6 +960,7 @@ export default function Home() {
       setConnectionMessage("");
       clearBufferedMoves("buffer_cleared_move_error");
       resetPrediction(predictionModelRef.current?.acknowledged ?? previous);
+      if (sessionClass === "ranked") setPredictionBlocked(true);
       addDiagnostic(
         "move_error",
         { dir, gameId, turn: previous.turn, message: diagnosticValue(error) },

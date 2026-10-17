@@ -420,6 +420,10 @@ below record work already deployed before V2 formally started.
       transient retry, bounded in-memory reconnect ordering, duplicate-ack
       recovery, explicit resynchronization stops, and ranked fail-closed
       behavior ([evidence](./v2-phase2-reliability-policy-2026-10-16.md))
+    - [x] Complete the ranked prediction integrity decision and connected-play
+      implementation while preserving server authority and rejecting offline or
+      unverifiable ranked moves
+      ([evidence](./v2-phase2-ranked-prediction-2026-10-16.md))
   - [ ] Audit and upgrade the existing OpenAPI documentation into a Swagger UI or equivalent interactive V2 API explorer, with complete contracts, examples, security/rate-limit details, versioning, and automated route/schema drift checks
   - [ ] Complete the anchored Lock-0 behavior spike without changing production rules
   - [ ] Complete the unranked `Death by Luck` wildcard-mode spike without changing production rules

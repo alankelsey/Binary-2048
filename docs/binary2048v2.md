@@ -2,7 +2,7 @@
 
 Status: active delivery plan; V1 completed 2026-10-05
 Created: 2026-09-17  
-Implementation status: Phases 0 and 1 complete; Phase 2 casual reliability active
+Implementation status: Phases 0, 1, and 2 complete
 
 ## Purpose
 
@@ -459,7 +459,10 @@ order; silent input loss is zero in automated and real-device tests.
   acknowledgement, and unrecoverable-divergence behavior for casual play
   ([evidence](./v2-phase2-reliability-policy-2026-10-16.md)). Durable pending-tail
   persistence remains assigned to Phase 3.
-- [ ] Extend the model to ranked play after casual divergence tests pass.
+- [x] Extend immediate local paint to connected ranked play while retaining
+  server authority, rejecting offline ranked input, and requiring reload or New
+  Game after any unverified acknowledgement or ambiguous transport failure
+  ([decision and evidence](./v2-phase2-ranked-prediction-2026-10-16.md)).
 
 Exit criterion: normal network latency and isolated response outliers do not
 delay local animation, and seeded client/server runs produce identical states.

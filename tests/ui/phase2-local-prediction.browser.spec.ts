@@ -257,7 +257,7 @@ test("classifies injected hash divergence and stops the predicted tail", async (
   expect(dropped.dropReason).toBe("buffer_cleared_divergence");
 });
 
-test("keeps ranked rendering server-authoritative", async ({ page }) => {
+test("paints ranked prediction immediately but advances only on authoritative acknowledgement", async ({ page }) => {
   const initial = initialState("g_phase2_ranked");
   const authoritative = applyMove(initial, "left").state;
   let releaseMove!: () => void;
@@ -297,7 +297,7 @@ test("keeps ranked rendering server-authoritative", async ({ page }) => {
   await expect(page.locator(".card")).toHaveAttribute("aria-busy", "false");
   await page.keyboard.press("ArrowLeft");
   await expect.poll(() => requestStarted).toBe(true);
-  expect(await renderedLabels(page)).toEqual(labels(initial));
+  expect(await renderedLabels(page)).toEqual(labels(authoritative));
 
   releaseMove();
   await expect.poll(() => renderedLabels(page)).toEqual(labels(authoritative));
@@ -309,7 +309,90 @@ test("keeps ranked rendering server-authoritative", async ({ page }) => {
   const completeTrace = await page.evaluate(() =>
     (performance.getEntriesByName("binary2048:move-complete")[0] as PerformanceMark).detail
   );
-  expect(completeTrace.localEngineStatus).toBe("not_run");
+  expect(completeTrace.localEngineStatus).toBe("completed");
+  expect(completeTrace.reconciliationSamples).toEqual([
+    expect.objectContaining({ classification: "match" })
+  ]);
+});
+
+test("blocks ranked input after authoritative divergence", async ({ page }) => {
+  const initial = initialState("g_phase2_ranked_divergence");
+  const predicted = applyMove(initial, "left").state;
+  const authoritative = { ...predicted, score: predicted.score + 8 };
+  let requests = 0;
+  await prepare(page);
+  await page.route("**/api/games", async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...createdPayload(initial),
+        integrity: { sessionClass: "ranked", source: "created" }
+      })
+    });
+  });
+  await page.route("**/api/games/*/move", async (route) => {
+    requests += 1;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...createdPayload(authoritative),
+        integrity: { sessionClass: "ranked", source: "created" }
+      })
+    });
+  });
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "Start New Game" }).click();
+  await expect(page.locator(".card")).toHaveAttribute("aria-busy", "false");
+  await page.keyboard.press("ArrowLeft");
+  await expect(page.getByText(/Ranked prediction could not be verified/)).toBeVisible();
+  await expect.poll(() => renderedLabels(page)).toEqual(labels(authoritative));
+  await page.keyboard.press("ArrowDown");
+  await page.waitForTimeout(100);
+  expect(requests).toBe(1);
+  await expect(page.getByText(/must be reloaded or replaced/)).toBeVisible();
+  const dropped = await page.evaluate(() =>
+    (performance.getEntriesByName("binary2048:move-dropped")[0] as PerformanceMark).detail
+  );
+  expect(dropped.dropReason).toBe("prediction_blocked");
+});
+
+test("rejects ranked moves while offline without painting or requesting", async ({ page }) => {
+  const initial = initialState("g_phase2_ranked_offline");
+  let requests = 0;
+  await prepare(page);
+  await page.route("**/api/games", async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...createdPayload(initial),
+        integrity: { sessionClass: "ranked", source: "created" }
+      })
+    });
+  });
+  await page.route("**/api/games/*/move", async (route) => {
+    requests += 1;
+    await route.fulfill({ status: 500, body: "unexpected" });
+  });
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "Start New Game" }).click();
+  await expect(page.locator(".card")).toHaveAttribute("aria-busy", "false");
+  await page.context().setOffline(true);
+  await page.keyboard.press("ArrowLeft");
+  await expect(page.getByText("Ranked moves require a connection. Reconnect before continuing.")).toBeVisible();
+  expect(requests).toBe(0);
+  expect(await renderedLabels(page)).toEqual(labels(initial));
+  const dropped = await page.evaluate(() =>
+    (performance.getEntriesByName("binary2048:move-dropped")[0] as PerformanceMark).detail
+  );
+  expect(dropped.dropReason).toBe("ranked_offline");
+  await page.context().setOffline(false);
 });
 
 test("retries a recoverable failure once and preserves the predicted board", async ({ page }) => {
