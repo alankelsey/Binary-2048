@@ -77,5 +77,8 @@ Unit and route coverage proves:
 - Existing lint warnings in `app/page.tsx`, `ghost-race.ts`, and
   `training-data.ts` were unchanged and do not block the build.
 
-Deployment and production-smoke results are recorded after the release gates
-complete.
+## Release verification
+
+- Runtime commit `927fa8e` deployed through Amplify job 399 successfully.
+- Non-mutating production smoke checks passed against
+  `https://www.binary2048.com`.
