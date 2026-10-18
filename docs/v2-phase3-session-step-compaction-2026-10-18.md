@@ -68,4 +68,7 @@ version negotiation, malformed-v2 handling, and future recovery formats.
 - Full local browser suite: 69 tests passed, 1 diagnostics-only test skipped.
 - TypeScript and optimized production compilation passed.
 
-Deployment and production-smoke results are recorded after release.
+## Release verification
+
+- Runtime commit `0f99f61` deployed successfully in Amplify job 407.
+- Production smoke checks against `https://www.binary2048.com` passed.
