@@ -29,4 +29,7 @@ and ranked integrity remain server-authoritative.
 - Unit suite: 167 suites, 602 tests passed.
 - TypeScript and optimized production compilation: passed.
 
-Deployment job and production-smoke results are recorded after release.
+## Release verification
+
+- Runtime commit `1ffd0c2` deployed successfully in Amplify job 403.
+- Production smoke checks against `https://www.binary2048.com` passed.
