@@ -433,6 +433,9 @@ below record work already deployed before V2 formally started.
   - [x] Coalesce compact-resume storage writes after paint and flush only the
     newest revision during page lifecycle transitions
     ([evidence](./v2-phase3-coalesced-resume-writes-2026-10-17.md))
+  - [x] Await bounded Mongo shared-store hydration before returning a gameplay
+    missing-session response
+    ([evidence](./v2-phase3-shared-store-hydration-2026-10-17.md))
   - [ ] Audit and upgrade the existing OpenAPI documentation into a Swagger UI or equivalent interactive V2 API explorer, with complete contracts, examples, security/rate-limit details, versioning, and automated route/schema drift checks
   - [ ] Complete the anchored Lock-0 behavior spike without changing production rules
   - [ ] Complete the unranked `Death by Luck` wildcard-mode spike without changing production rules

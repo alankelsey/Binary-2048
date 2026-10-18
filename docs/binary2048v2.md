@@ -477,8 +477,9 @@ delay local animation, and seeded client/server runs produce identical states.
 - [x] Move local-storage writes outside the input-to-paint path and ensure a
   lifecycle flush cannot corrupt or regress state
   ([evidence](./v2-phase3-coalesced-resume-writes-2026-10-17.md)).
-- [ ] Make shared-store hydration awaitable with a bounded timeout before
-  returning `Game not found`.
+- [x] Make shared-store hydration awaitable with a bounded timeout before
+  returning `Game not found`
+  ([evidence](./v2-phase3-shared-store-hydration-2026-10-17.md)).
 - [ ] Measure and reduce full-state retention in `session.steps` while
   preserving undo, replay, export, and integrity requirements.
 - [ ] Define schema/version migration and backwards-compatible recovery.

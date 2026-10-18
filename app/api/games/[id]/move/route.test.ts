@@ -33,6 +33,8 @@ describe("POST /api/games/:id/move hash guard", () => {
     delete process.env.BINARY2048_BOT_API_KEY_HASHES;
     delete process.env.BINARY2048_RECOVERY_SECRET;
     delete process.env.BINARY2048_SESSION_STORE;
+    delete process.env.BINARY2048_SHARED_SESSION_HYDRATION_TIMEOUT_MS;
+    delete process.env.BINARY2048_SHARED_SESSION_HYDRATION_POLL_MS;
   });
 
   const config: Partial<GameConfig> = {
@@ -382,6 +384,81 @@ describe("POST /api/games/:id/move hash guard", () => {
     expect(serverTiming(res).names).toEqual(expect.arrayContaining(["session_lookup", "total"]));
     expect(lastMoveTelemetry()?.sessionPath).toBe("missing");
     expect(get).toHaveBeenCalledTimes(1);
+  });
+
+  it("waits briefly for shared-store hydration before moving a just-visible session", async () => {
+    const session = (await createSession(config, initialGrid));
+    process.env.BINARY2048_SESSION_STORE = "mongo";
+    process.env.BINARY2048_SHARED_SESSION_HYDRATION_TIMEOUT_MS = "50";
+    process.env.BINARY2048_SHARED_SESSION_HYDRATION_POLL_MS = "1";
+    const get = jest.fn()
+      .mockResolvedValueOnce(null)
+      .mockResolvedValue(session);
+    installSessionStoreForTests({ get, set: jest.fn(), delete: jest.fn() } as SessionStore);
+
+    const res = await POST(
+      new Request("http://localhost/api/games/x/move", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "L" })
+      }),
+      { params: Promise.resolve({ id: session.current.id }) }
+    );
+
+    expect(res.status).toBe(200);
+    expect(get).toHaveBeenCalledTimes(2);
+    expect(serverTiming(res).names).toEqual(expect.arrayContaining(["session_lookup", "session_hydration_wait"]));
+    expect(lastMoveTelemetry()?.sessionPath).toBe("mongo_hydration");
+  });
+
+  it("returns 404 only after the bounded shared-store hydration window expires", async () => {
+    process.env.BINARY2048_SESSION_STORE = "mongo";
+    process.env.BINARY2048_SHARED_SESSION_HYDRATION_TIMEOUT_MS = "20";
+    process.env.BINARY2048_SHARED_SESSION_HYDRATION_POLL_MS = "1";
+    const get = jest.fn().mockResolvedValue(null);
+    installSessionStoreForTests({ get, set: jest.fn(), delete: jest.fn() } as SessionStore);
+
+    const res = await POST(
+      new Request("http://localhost/api/games/x/move", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "L" })
+      }),
+      { params: Promise.resolve({ id: "true_missing_game" }) }
+    );
+    const json = await res.json();
+
+    expect(res.status).toBe(404);
+    expect(json.error).toBe("Game not found");
+    expect(get.mock.calls.length).toBeGreaterThan(1);
+    expect(serverTiming(res).names).toEqual(expect.arrayContaining(["session_hydration_wait"]));
+    expect(lastMoveTelemetry()?.sessionPath).toBe("missing");
+  });
+
+  it("preserves the sanitized 503 when a shared-store hydration retry fails", async () => {
+    process.env.BINARY2048_SESSION_STORE = "mongo";
+    process.env.BINARY2048_SHARED_SESSION_HYDRATION_TIMEOUT_MS = "50";
+    process.env.BINARY2048_SHARED_SESSION_HYDRATION_POLL_MS = "1";
+    const get = jest.fn()
+      .mockResolvedValueOnce(null)
+      .mockRejectedValueOnce(new Error("private shared-store failure"));
+    installSessionStoreForTests({ get, set: jest.fn(), delete: jest.fn() } as SessionStore);
+
+    const res = await POST(
+      new Request("http://localhost/api/games/x/move", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "L" })
+      }),
+      { params: Promise.resolve({ id: "hydration_failure" }) }
+    );
+    const json = await res.json();
+
+    expect(res.status).toBe(503);
+    expect(json.error).toBe("Session storage is temporarily unavailable");
+    expect(JSON.stringify(json)).not.toContain("private shared-store failure");
+    expect(get).toHaveBeenCalledTimes(2);
+    expect(serverTiming(res).names).toEqual(expect.arrayContaining(["session_hydration_wait"]));
   });
 
   it.each([

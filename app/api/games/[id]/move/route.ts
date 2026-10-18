@@ -31,6 +31,7 @@ const SERVER_TIMING_ORDER: RouteTimingName[] = [
   "rate_limit_counter",
   "request_parse",
   "session_lookup",
+  "session_hydration_wait",
   "recovery_verify",
   "recovery_replay",
   "recovery_import",
@@ -158,7 +159,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
   let activeSession;
   try {
     const recoveryPayload = body.compactRecovery ?? body.recoverySnapshot;
-    const resolution = await resolveSessionWithRecoveryDetails(activeId, recoveryPayload, recordTiming);
+    const resolution = await resolveSessionWithRecoveryDetails(activeId, recoveryPayload, recordTiming, { signal: req.signal });
     activeSession = resolution.session;
     sessionPath = resolution.path;
     if (activeSession) activeId = activeSession.current.id;

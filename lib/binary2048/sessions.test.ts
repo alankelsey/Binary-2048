@@ -2,6 +2,7 @@ import {
   createSession,
   exportRecoverySnapshot,
   getSession,
+  getSessionAfterHydration,
   importRecoverySnapshot,
   moveSession,
   resolveSessionWithRecovery,
@@ -38,6 +39,9 @@ describe("session undo", () => {
 
   afterEach(() => {
     delete process.env.BINARY2048_RECOVERY_SECRET;
+    delete process.env.BINARY2048_SESSION_STORE;
+    delete process.env.BINARY2048_SHARED_SESSION_HYDRATION_TIMEOUT_MS;
+    delete process.env.BINARY2048_SHARED_SESSION_HYDRATION_POLL_MS;
     resetSessionStoreForTests();
   });
 
@@ -97,6 +101,25 @@ describe("session undo", () => {
     const session = (await createSession(config, initialGrid));
     expect(session.integrity.sessionClass).toBe("unranked");
     expect(session.integrity.source).toBe("created");
+  });
+
+  it("cancels a shared-store hydration retry without classifying it as storage failure", async () => {
+    process.env.BINARY2048_SESSION_STORE = "mongo";
+    const controller = new AbortController();
+    const get = jest.fn().mockImplementation(async () => {
+      controller.abort();
+      return null;
+    });
+    installSessionStoreForTests({ get, set: jest.fn(), delete: jest.fn() } as SessionStore);
+    const timings: string[] = [];
+
+    await expect(getSessionAfterHydration("cancelled_hydration", {
+      signal: controller.signal,
+      recorder: (name) => timings.push(name)
+    })).resolves.toBeNull();
+
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(timings).toEqual(["session_hydration_wait"]);
   });
 
   it("reconstructs the current game from a compact recovery snapshot", async () => {

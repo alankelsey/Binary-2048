@@ -53,6 +53,7 @@ export type SessionPath =
 
 export type SessionTimingName =
   | "session_lookup"
+  | "session_hydration_wait"
   | "recovery_verify"
   | "recovery_replay"
   | "recovery_import"
@@ -65,6 +66,44 @@ export type SessionTimingRecorder = (name: SessionTimingName, durationMs: number
 
 function nowMs() {
   return performance.now();
+}
+
+const DEFAULT_SHARED_SESSION_HYDRATION_TIMEOUT_MS = 180;
+const DEFAULT_SHARED_SESSION_HYDRATION_POLL_MS = 20;
+
+function boundedDuration(value: string | undefined, fallback: number, maximum: number) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? Math.min(Math.floor(parsed), maximum) : fallback;
+}
+
+function sharedSessionHydrationTimeoutMs() {
+  return boundedDuration(
+    process.env.BINARY2048_SHARED_SESSION_HYDRATION_TIMEOUT_MS,
+    DEFAULT_SHARED_SESSION_HYDRATION_TIMEOUT_MS,
+    1_000
+  );
+}
+
+function sharedSessionHydrationPollMs() {
+  return Math.max(1, boundedDuration(
+    process.env.BINARY2048_SHARED_SESSION_HYDRATION_POLL_MS,
+    DEFAULT_SHARED_SESSION_HYDRATION_POLL_MS,
+    100
+  ));
+}
+
+function waitForHydration(ms: number, signal?: AbortSignal) {
+  if (signal?.aborted) return Promise.resolve(false);
+  return new Promise<boolean>((resolve) => {
+    const timer = setTimeout(() => finish(true), ms);
+    const onAbort = () => finish(false);
+    const finish = (completed: boolean) => {
+      clearTimeout(timer);
+      signal?.removeEventListener("abort", onAbort);
+      resolve(completed);
+    };
+    signal?.addEventListener("abort", onAbort, { once: true });
+  });
 }
 
 function recordElapsed(recorder: SessionTimingRecorder | undefined, name: SessionTimingName, startedAt: number) {
@@ -81,6 +120,36 @@ async function readStoredSession(id: string) {
     return await getSessionStore().get(id);
   } catch (error) {
     rethrowSessionStorageError(error);
+  }
+}
+
+/**
+ * A shared-store null can race a just-completed write from another runtime.
+ * Only Mongo-backed reads wait briefly for that record; memory mode remains a
+ * single lookup. Cancellation stops the retry loop and preserves the normal
+ * missing-session result rather than converting it into a storage failure.
+ */
+export async function getSessionAfterHydration(
+  id: string,
+  options?: { signal?: AbortSignal; recorder?: SessionTimingRecorder }
+) {
+  const first = await readStoredSession(id);
+  if (first || getSessionStoreMode() !== "mongo") return first;
+
+  const startedAt = nowMs();
+  const deadline = startedAt + sharedSessionHydrationTimeoutMs();
+  try {
+    while (!options?.signal?.aborted) {
+      const remaining = deadline - nowMs();
+      if (remaining <= 0) return null;
+      const waited = await waitForHydration(Math.min(sharedSessionHydrationPollMs(), remaining), options?.signal);
+      if (!waited) return null;
+      const hydrated = await readStoredSession(id);
+      if (hydrated) return hydrated;
+    }
+    return null;
+  } finally {
+    recordElapsed(options?.recorder, "session_hydration_wait", startedAt);
   }
 }
 
@@ -115,8 +184,8 @@ export async function createSession(config?: Partial<GameConfig>, initialGrid?: 
   return session;
 }
 
-export async function getSession(id: string) {
-  return (await readStoredSession(id)) ?? null;
+export async function getSession(id: string, options?: { signal?: AbortSignal; recorder?: SessionTimingRecorder }) {
+  return (await getSessionAfterHydration(id, options)) ?? null;
 }
 
 type RecoveryPayload = GameExport | SessionRecoverySnapshot | CompactRecoveryPayload;
@@ -142,20 +211,22 @@ function directionsMatch(session: GameSession, snapshot: SessionRecoverySnapshot
 
 export async function resolveSessionWithRecovery(
   id: string,
-  recoveryPayload?: RecoveryPayload
+  recoveryPayload?: RecoveryPayload,
+  options?: { signal?: AbortSignal; recorder?: SessionTimingRecorder }
 ) {
-  return (await resolveSessionWithRecoveryDetails(id, recoveryPayload)).session;
+  return (await resolveSessionWithRecoveryDetails(id, recoveryPayload, options?.recorder, options)).session;
 }
 
 export async function resolveSessionWithRecoveryDetails(
   id: string,
   recoveryPayload?: RecoveryPayload,
-  recorder?: SessionTimingRecorder
+  recorder?: SessionTimingRecorder,
+  options?: { signal?: AbortSignal }
 ): Promise<{ session: GameSession | null; path: SessionPath }> {
   const lookupStartedAt = nowMs();
   let existing: GameSession | null;
   try {
-    existing = (await getSession(id));
+    existing = (await getSession(id, { recorder, signal: options?.signal }));
   } finally {
     recordElapsed(recorder, "session_lookup", lookupStartedAt);
   }
@@ -211,7 +282,7 @@ export async function resolveSessionWithRecoveryDetails(
 }
 
 export async function moveSession(id: string, dir: Dir, expected?: GameSession | null, recorder?: SessionTimingRecorder) {
-  const session = expected === undefined ? (await readStoredSession(id)) : expected;
+  const session = expected === undefined ? (await getSession(id, { recorder })) : expected;
   if (!session) return null;
 
   const before = session.current;
@@ -239,7 +310,7 @@ export async function moveSession(id: string, dir: Dir, expected?: GameSession |
 }
 
 export async function undoSession(id: string, expected?: GameSession) {
-  const session = expected ?? (await readStoredSession(id));
+  const session = expected ?? (await getSession(id));
   if (!session) return { session: null, error: "NOT_FOUND" as const };
   if (session.steps.length === 0) return { session, error: null };
   if (session.undoUsed >= session.undoLimit) return { session, error: "LIMIT_REACHED" as const };
@@ -258,7 +329,7 @@ export async function undoSession(id: string, expected?: GameSession) {
 }
 
 export async function exportSession(id: string) {
-  const session = (await readStoredSession(id));
+  const session = (await getSession(id));
   if (!session) return null;
   return buildExport(
     session.current.config,
@@ -280,7 +351,7 @@ export async function exportRecoverySnapshot(
   currentSession?: GameSession,
   recorder?: SessionTimingRecorder
 ): Promise<SessionRecoverySnapshot | null> {
-  const session = currentSession ?? (await readStoredSession(id));
+  const session = currentSession ?? (await getSession(id, { recorder }));
   if (!session) return null;
   const buildStartedAt = nowMs();
   const snapshot: SessionRecoverySnapshot = {
@@ -309,7 +380,7 @@ export async function exportRecoverySnapshot(
 }
 
 export async function listSessionState(id: string) {
-  const session = (await readStoredSession(id));
+  const session = (await getSession(id));
   if (!session) return null;
   return {
     id,
