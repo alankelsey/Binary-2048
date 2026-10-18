@@ -8,7 +8,17 @@ import {
   SessionConflictError,
   SessionStorageUnavailableError
 } from "@/lib/binary2048/session-store";
-import type { Cell, Dir, GameConfig, GameExport, GameSession, SessionRecoverySnapshot } from "@/lib/binary2048/types";
+import type {
+  Cell,
+  Dir,
+  GameConfig,
+  GameExport,
+  GameSession,
+  GameState,
+  SessionRecoverySnapshot,
+  SessionStepRecord,
+  StepRecord
+} from "@/lib/binary2048/types";
 import {
   isCompactRecoveryPayload,
   type CompactRecoveryPayload
@@ -19,6 +29,8 @@ const UNDO_MODES = {
   ltfg: { pWildcard: 0.2, undoLimit: 1 },
   death: { pWildcard: 0.04, undoLimit: 0 }
 } as const;
+
+export const SESSION_SCHEMA_VERSION = 2 as const;
 
 function inferUndoLimit(config: Partial<GameConfig> | GameConfig | undefined): number {
   const wildcard = config?.spawn?.pWildcard;
@@ -110,6 +122,61 @@ function recordElapsed(recorder: SessionTimingRecorder | undefined, name: Sessio
   recorder?.(name, Math.max(0, nowMs() - startedAt));
 }
 
+const copy = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+
+type StoredSession = Omit<GameSession, "sessionVersion" | "steps" | "undoStates"> & {
+  sessionVersion?: number;
+  steps: Array<SessionStepRecord | StepRecord>;
+  undoStates?: GameState[];
+};
+
+function isDirection(value: unknown): value is Dir {
+  return value === "up" || value === "down" || value === "left" || value === "right";
+}
+
+function replaySessionSteps(initialState: GameState, directions: Dir[]) {
+  let current = copy(initialState);
+  const fullSteps: StepRecord[] = [];
+  for (const dir of directions) {
+    const before = copy(current);
+    const move = applyMove(current, dir);
+    const after = copy(move.state);
+    fullSteps.push({ turn: after.turn, dir, moved: move.moved, before, after, events: copy(move.events) });
+    current = move.state;
+  }
+  return { current, fullSteps };
+}
+
+export function materializeSessionSteps(session: Pick<GameSession, "initialState" | "steps">): StepRecord[] {
+  return replaySessionSteps(session.initialState, session.steps.map((step) => step.dir)).fullSteps;
+}
+
+function normalizeStoredSession(raw: GameSession): GameSession {
+  const stored = raw as unknown as StoredSession;
+  if (stored.sessionVersion === SESSION_SCHEMA_VERSION && Array.isArray(stored.undoStates)) return raw;
+
+  const directions = Array.isArray(stored.steps)
+    ? stored.steps.flatMap((step) => isDirection(step?.dir) ? [step.dir] : [])
+    : [];
+  const replayed = replaySessionSteps(stored.initialState, directions);
+  const compactSteps = replayed.fullSteps.map<SessionStepRecord>((step) => ({
+    turn: step.turn,
+    dir: step.dir,
+    moved: step.moved
+  }));
+  const undoCapacity = Math.max(0, stored.undoLimit - stored.undoUsed);
+  const undoStates = undoCapacity > 0
+    ? replayed.fullSteps.slice(-undoCapacity).map((step) => copy(step.before))
+    : [];
+
+  Object.assign(stored, {
+    sessionVersion: SESSION_SCHEMA_VERSION,
+    steps: compactSteps,
+    undoStates
+  });
+  return stored as GameSession;
+}
+
 function rethrowSessionStorageError(error: unknown): never {
   if (error instanceof SessionConflictError || error instanceof SessionStorageUnavailableError) throw error;
   throw new SessionStorageUnavailableError();
@@ -117,7 +184,8 @@ function rethrowSessionStorageError(error: unknown): never {
 
 async function readStoredSession(id: string) {
   try {
-    return await getSessionStore().get(id);
+    const session = await getSessionStore().get(id);
+    return session ? normalizeStoredSession(session) : null;
   } catch (error) {
     rethrowSessionStorageError(error);
   }
@@ -172,9 +240,11 @@ async function deleteStoredSession(id: string) {
 export async function createSession(config?: Partial<GameConfig>, initialGrid?: Cell[][], options?: CreateSessionOptions) {
   const created = createGame(config, initialGrid);
   const session: GameSession = {
+    sessionVersion: SESSION_SCHEMA_VERSION,
     initialState: created.state,
     current: created.state,
     steps: [],
+    undoStates: [],
     undoLimit: inferUndoLimit(created.state.config),
     undoUsed: 0,
     undoEvents: [],
@@ -285,7 +355,7 @@ export async function moveSession(id: string, dir: Dir, expected?: GameSession |
   const session = expected === undefined ? (await getSession(id, { recorder })) : expected;
   if (!session) return null;
 
-  const before = session.current;
+  const before = copy(session.current);
   const engineStartedAt = nowMs();
   const move = applyMove(before, dir);
   recordElapsed(recorder, "engine_move", engineStartedAt);
@@ -298,7 +368,14 @@ export async function moveSession(id: string, dir: Dir, expected?: GameSession |
     events: move.events
   };
 
-  session.steps.push(step);
+  session.steps.push({ turn: step.turn, dir: step.dir, moved: step.moved });
+  const undoCapacity = Math.max(0, session.undoLimit - session.undoUsed);
+  if (undoCapacity > 0) {
+    session.undoStates.push(before);
+    if (session.undoStates.length > undoCapacity) {
+      session.undoStates.splice(0, session.undoStates.length - undoCapacity);
+    }
+  }
   session.current = move.state;
   const persistenceStartedAt = nowMs();
   try {
@@ -306,7 +383,7 @@ export async function moveSession(id: string, dir: Dir, expected?: GameSession |
   } finally {
     recordElapsed(recorder, "session_persist", persistenceStartedAt);
   }
-  return session;
+  return { session, lastStep: step };
 }
 
 export async function undoSession(id: string, expected?: GameSession) {
@@ -317,7 +394,9 @@ export async function undoSession(id: string, expected?: GameSession) {
 
   const step = session.steps.pop();
   if (!step) return { session, error: null };
-  session.current = step.before;
+  const undoState = session.undoStates.pop();
+  if (!undoState) throw new Error("Session undo state is unavailable");
+  session.current = undoState;
   session.undoUsed += 1;
   session.undoEvents.push({
     i: session.undoEvents.length,
@@ -331,10 +410,11 @@ export async function undoSession(id: string, expected?: GameSession) {
 export async function exportSession(id: string) {
   const session = (await getSession(id));
   if (!session) return null;
+  const steps = materializeSessionSteps(session);
   return buildExport(
     session.current.config,
     session.initialState,
-    session.steps,
+    steps,
     session.current,
     session.integrity,
     {
@@ -403,7 +483,8 @@ export async function importSession(exported: GameExport, recorder?: SessionTimi
   const created = createGame(exported.config, exported.initial.grid);
   const initialState = created.state;
   let current = initialState;
-  const steps: GameSession["steps"] = [];
+  const steps: SessionStepRecord[] = [];
+  const undoStates: GameState[] = [];
 
   const replayStartedAt = nowMs();
   try {
@@ -413,14 +494,16 @@ export async function importSession(exported: GameExport, recorder?: SessionTimi
       }
       const before = current;
       const move = applyMove(before, step.dir);
-      steps.push({
+      const fullStep: StepRecord = {
         turn: move.state.turn,
         dir: step.dir,
         moved: move.moved,
         before,
         after: move.state,
         events: move.events
-      });
+      };
+      steps.push({ turn: fullStep.turn, dir: fullStep.dir, moved: fullStep.moved });
+      undoStates.push(copy(before));
       current = move.state;
       if (current.over) break;
     }
@@ -429,9 +512,11 @@ export async function importSession(exported: GameExport, recorder?: SessionTimi
   }
 
   const session: GameSession = {
+    sessionVersion: SESSION_SCHEMA_VERSION,
     initialState,
     current,
     steps,
+    undoStates: undoStates.slice(-inferUndoLimit(exported.config)),
     undoLimit: inferUndoLimit(exported.config),
     undoUsed: 0,
     undoEvents: [],
@@ -481,10 +566,7 @@ export async function importRecoverySnapshot(snapshot: SessionRecoverySnapshot, 
       inheritSessionRevision(recovered, existing);
       recovered.initialState.id = snapshot.sessionId;
       recovered.current.id = snapshot.sessionId;
-      for (const step of recovered.steps) {
-        step.before.id = snapshot.sessionId;
-        step.after.id = snapshot.sessionId;
-      }
+      for (const state of recovered.undoStates) state.id = snapshot.sessionId;
       const deleteStartedAt = nowMs();
       try {
         (await deleteStoredSession(generatedId));
@@ -496,6 +578,8 @@ export async function importRecoverySnapshot(snapshot: SessionRecoverySnapshot, 
     recovered.undoLimit = snapshot.undo.limit;
     recovered.undoUsed = snapshot.undo.used;
     recovered.undoEvents = snapshot.undo.events.map((event) => ({ ...event }));
+    const undoCapacity = Math.max(0, recovered.undoLimit - recovered.undoUsed);
+    recovered.undoStates = undoCapacity > 0 ? recovered.undoStates.slice(-undoCapacity) : [];
     const persistenceStartedAt = nowMs();
     try {
       (await writeStoredSession(recovered.current.id, recovered));

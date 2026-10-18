@@ -480,8 +480,9 @@ delay local animation, and seeded client/server runs produce identical states.
 - [x] Make shared-store hydration awaitable with a bounded timeout before
   returning `Game not found`
   ([evidence](./v2-phase3-shared-store-hydration-2026-10-17.md)).
-- [ ] Measure and reduce full-state retention in `session.steps` while
-  preserving undo, replay, export, and integrity requirements.
+- [x] Measure and reduce full-state retention in `session.steps` while
+  preserving undo, replay, export, and integrity requirements
+  ([evidence](./v2-phase3-session-step-compaction-2026-10-18.md)).
 - [ ] Define schema/version migration and backwards-compatible recovery.
 
 Exit criterion: ordinary move payload size is effectively constant and a

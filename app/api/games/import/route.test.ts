@@ -2,6 +2,7 @@ import { POST } from "@/app/api/games/import/route";
 import { runScenario } from "@/lib/binary2048/engine";
 import { createRecoverySignature } from "@/lib/binary2048/recovery-signature";
 import { COMPACT_RECOVERY_VERSION } from "@/lib/binary2048/compact-recovery";
+import { getSession } from "@/lib/binary2048/sessions";
 import type { Cell, GameConfig } from "@/lib/binary2048/types";
 
 describe("POST /api/games/import", () => {
@@ -147,6 +148,11 @@ describe("POST /api/games/import", () => {
     expect(res.status).toBe(200);
     expect(json.steps).toHaveLength(250);
     expect(json.recoverySnapshot.moves).toHaveLength(250);
+    const stored = await getSession(json.id);
+    expect(stored?.sessionVersion).toBe(2);
+    expect(stored?.steps).toHaveLength(250);
+    expect(stored?.steps.every((step) => !("before" in step) && !("after" in step))).toBe(true);
+    expect(stored?.undoStates.length).toBeLessThanOrEqual(2);
   });
 
   it("returns 413 for an oversized import body", async () => {

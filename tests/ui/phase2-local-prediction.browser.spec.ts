@@ -185,6 +185,53 @@ test("paints a casual prediction before move network I/O and acknowledges it onc
   );
 });
 
+test("keeps a 250-plus-turn browser move on the compact synchronization path", async ({ page }) => {
+  let current: GameState = {
+    ...initialState("g_phase3_long_session"),
+    turn: 250,
+    rngStep: 250,
+    score: 4096
+  };
+  let requestBody: {
+    dir: Dir;
+    expectTurn?: number;
+    syncVersion?: string;
+    recoverySnapshot?: unknown;
+    compactRecovery?: unknown;
+  } | null = null;
+
+  await prepare(page);
+  await page.route("**/api/games", async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(createdPayload(current)) });
+  });
+  await page.route("**/api/games/*/move", async (route) => {
+    requestBody = route.request().postDataJSON() as typeof requestBody;
+    current = applyMove(current, requestBody!.dir).state;
+    const { recoverySnapshot: _recoverySnapshot, ...response } = createdPayload(current);
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ...response, lastStep: { moved: true, events: [] } })
+    });
+  });
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "Start New Game" }).click();
+  await expect(page.locator(".card")).toHaveAttribute("aria-busy", "false");
+  await page.keyboard.press("ArrowLeft");
+
+  await expect.poll(() => requestBody).not.toBeNull();
+  expect(requestBody).toMatchObject({
+    dir: "left",
+    expectTurn: 250,
+    syncVersion: COMPACT_SYNC_VERSION
+  });
+  expect(requestBody).not.toHaveProperty("recoverySnapshot");
+  expect(requestBody).not.toHaveProperty("compactRecovery");
+  await expect(page.locator(".meta")).toContainText("Moves: 251");
+});
+
 test("sends the signed checkpoint plus acknowledged tail when a compact session is missing", async ({ page }) => {
   let current = initialState("g_phase3_compact_recovery");
   const bodies: Array<{ dir: Dir; compactRecovery?: { acknowledgedTail?: Dir[] }; recoverySnapshot?: unknown }> = [];

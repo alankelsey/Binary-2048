@@ -56,10 +56,18 @@ export type StepRecord = {
   events: GameEvent[];
 };
 
+export type SessionStepRecord = {
+  turn: number;
+  dir: Dir;
+  moved: boolean;
+};
+
 export type GameSession = {
+  sessionVersion: 2;
   initialState: GameState;
   current: GameState;
-  steps: StepRecord[];
+  steps: SessionStepRecord[];
+  undoStates: GameState[];
   undoLimit: number;
   undoUsed: number;
   undoEvents: UndoEvent[];

@@ -200,11 +200,11 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
       409
     );
   }
-  let session;
-  try { session = await moveSession(activeId, dir, activeSession, recordTiming); }
+  let moveResult;
+  try { moveResult = await moveSession(activeId, dir, activeSession, recordTiming); }
   catch (error) { return respond({ error: error instanceof SessionConflictError ? error.message : "Session storage is temporarily unavailable" }, error instanceof SessionConflictError ? 409 : 503); }
-  if (!session) return respond({ error: "Game not found" }, 404);
-  const lastStep = session.steps[session.steps.length - 1];
+  if (!moveResult) return respond({ error: "Game not found" }, 404);
+  const { session, lastStep } = moveResult;
   const changed = lastStep?.moved ?? false;
   const reward = (lastStep?.after?.score ?? session.current.score) - (lastStep?.before?.score ?? session.current.score);
   const spawned = firstSpawn(lastStep?.events ?? []);

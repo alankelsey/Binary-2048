@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { canContinueAfterWin } from "@/lib/binary2048/continue-policy";
 import { parseJsonWithLimit, RequestBodyTooLargeError } from "@/lib/binary2048/request-body-limit";
-import { exportRecoverySnapshot, getUndoMeta, importRecoveryPayload } from "@/lib/binary2048/sessions";
+import { exportRecoverySnapshot, getUndoMeta, importRecoveryPayload, materializeSessionSteps } from "@/lib/binary2048/sessions";
 import type { GameExport, SessionRecoverySnapshot } from "@/lib/binary2048/types";
 import type { CompactRecoveryPayload } from "@/lib/binary2048/compact-recovery";
 
@@ -18,7 +18,7 @@ export async function POST(req: Request) {
       id: session.current.id,
       current: session.current,
       recoverySnapshot: (await exportRecoverySnapshot(session.current.id)),
-      steps: session.steps,
+      steps: materializeSessionSteps(session),
       undo: getUndoMeta(session),
       integrity: session.integrity,
       economy: {
