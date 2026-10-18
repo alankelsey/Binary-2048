@@ -168,11 +168,10 @@ test("paints a casual prediction before move network I/O and acknowledges it onc
     page.evaluate(() => performance.getEntriesByName("binary2048:move-complete").length)
   ).toBe(1);
   await expect.poll(() => renderedLabels(page)).toEqual(labels(current));
-  const durableRecovery = await page.evaluate(() => {
+  await expect.poll(() => page.evaluate(() => {
     const raw = window.localStorage.getItem("binary2048.resumeSnapshot");
     return raw ? JSON.parse(raw) : null;
-  });
-  expect(durableRecovery).toMatchObject({
+  })).toMatchObject({
     version: "checkpoint-tail-v1",
     recovery: { acknowledgedTail: ["left"], pendingTail: [] }
   });

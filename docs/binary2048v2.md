@@ -474,8 +474,9 @@ delay local animation, and seeded client/server runs produce identical states.
   ([evidence](./v2-phase3-compact-sync-2026-10-16.md)).
 - [x] Persist a last-acknowledged checkpoint plus a bounded pending tail
   ([evidence](./v2-phase3-durable-checkpoint-tail-2026-10-17.md)).
-- [ ] Move local-storage writes outside the input-to-paint path and ensure a
-  lifecycle flush cannot corrupt or regress state.
+- [x] Move local-storage writes outside the input-to-paint path and ensure a
+  lifecycle flush cannot corrupt or regress state
+  ([evidence](./v2-phase3-coalesced-resume-writes-2026-10-17.md)).
 - [ ] Make shared-store hydration awaitable with a bounded timeout before
   returning `Game not found`.
 - [ ] Measure and reduce full-state retention in `session.steps` while

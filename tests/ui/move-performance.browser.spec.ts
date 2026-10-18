@@ -273,13 +273,9 @@ test("routes rapid keyboard, touch, and controls through one ordered queue", asy
     }))
   );
   for (const [index, trace] of traces.entries()) {
-    expect(trace.localStorageSamples).toHaveLength(2);
-    expect(trace.localStorageSamples.map((sample) => sample.operation)).toEqual(["write", "write"]);
+    expect(trace.localStorageSamples).toHaveLength(0);
     expect(trace.localStorageSamples.every((sample) => sample.attempt === 1 && sample.durationMs >= 0)).toBe(true);
-    expect(trace.checkpointSamples).toEqual([
-      expect.objectContaining({ recoveryHistoryLength: index + 1 })
-    ]);
-    expect(trace.checkpointSamples[0].durationMs).toBeGreaterThanOrEqual(0);
+    expect(trace.checkpointSamples).toEqual([]);
   }
   expect(
     await page.evaluate(() => performance.getEntriesByName("binary2048:move-input-to-next-frame").length)
