@@ -134,6 +134,24 @@ function isDirection(value: unknown): value is Dir {
   return value === "up" || value === "down" || value === "left" || value === "right";
 }
 
+function isCompactStep(value: unknown): value is SessionStepRecord {
+  if (!value || typeof value !== "object") return false;
+  const step = value as Partial<SessionStepRecord>;
+  return Number.isInteger(step.turn) && isDirection(step.dir) && typeof step.moved === "boolean";
+}
+
+function assertSupportedStoredSession(stored: StoredSession) {
+  const version = stored.sessionVersion;
+  if (version !== undefined && version !== 1 && version !== SESSION_SCHEMA_VERSION) {
+    throw new Error(`Unsupported session schema version: ${String(version)}`);
+  }
+  if (version === SESSION_SCHEMA_VERSION) {
+    if (!Array.isArray(stored.steps) || !stored.steps.every(isCompactStep) || !Array.isArray(stored.undoStates)) {
+      throw new Error("Invalid session schema v2 record");
+    }
+  }
+}
+
 function replaySessionSteps(initialState: GameState, directions: Dir[]) {
   let current = copy(initialState);
   const fullSteps: StepRecord[] = [];
@@ -153,7 +171,8 @@ export function materializeSessionSteps(session: Pick<GameSession, "initialState
 
 function normalizeStoredSession(raw: GameSession): GameSession {
   const stored = raw as unknown as StoredSession;
-  if (stored.sessionVersion === SESSION_SCHEMA_VERSION && Array.isArray(stored.undoStates)) return raw;
+  assertSupportedStoredSession(stored);
+  if (stored.sessionVersion === SESSION_SCHEMA_VERSION) return raw;
 
   const directions = Array.isArray(stored.steps)
     ? stored.steps.flatMap((step) => isDirection(step?.dir) ? [step.dir] : [])
@@ -259,6 +278,26 @@ export async function getSession(id: string, options?: { signal?: AbortSignal; r
 }
 
 type RecoveryPayload = GameExport | SessionRecoverySnapshot | CompactRecoveryPayload;
+
+function assertSupportedRecoveryPayload(payload: unknown) {
+  if (!payload || typeof payload !== "object") throw new Error("Invalid recovery payload");
+  const candidate = payload as Record<string, unknown>;
+  if ("recoveryVersion" in candidate) {
+    if (candidate.recoveryVersion !== 1) {
+      throw new Error(`Unsupported recovery snapshot version: ${String(candidate.recoveryVersion)}`);
+    }
+    return;
+  }
+  if (typeof candidate.version === "string") {
+    if (!isCompactRecoveryPayload(candidate)) {
+      throw new Error(`Unsupported compact recovery version: ${candidate.version}`);
+    }
+    return;
+  }
+  if ("version" in candidate && candidate.version !== 1) {
+    throw new Error(`Unsupported game export version: ${String(candidate.version)}`);
+  }
+}
 
 function isRecoverySnapshot(
   payload: RecoveryPayload
@@ -476,6 +515,9 @@ export async function listSessionState(id: string) {
 
 export async function importSession(exported: GameExport, recorder?: SessionTimingRecorder) {
   if (!exported || typeof exported !== "object") throw new Error("Invalid export payload");
+  if ("version" in exported && exported.version !== 1) {
+    throw new Error(`Unsupported game export version: ${String(exported.version)}`);
+  }
   if (!exported.config || !exported.initial?.grid || !Array.isArray(exported.steps)) {
     throw new Error("Export is missing required fields");
   }
@@ -594,6 +636,7 @@ export async function importRecoveryPayload(
   snapshot: RecoveryPayload,
   recorder?: SessionTimingRecorder
 ) {
+  assertSupportedRecoveryPayload(snapshot);
   return isCompactRecoveryPayload(snapshot)
     ? (await importCompactRecoveryPayload(snapshot, recorder))
     : "recoveryVersion" in snapshot

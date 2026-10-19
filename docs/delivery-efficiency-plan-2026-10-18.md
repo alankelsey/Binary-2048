@@ -176,3 +176,10 @@ the deployment-monitoring acceptance bound.
 
 The roadmap item remains open until a comparable V2 product slice measures the
 35% output-token target and confirms unchanged release confidence.
+
+The first product pilot was the Phase 3 schema/recovery migration on 2026-10-19.
+It kept iterative tests focused and found both a hidden browser downgrade path
+and a compile-error reporting gap before the final matrix. Three combined
+discovery reads exceeded the 5,000-token limit, however, so the 35% reduction is
+not claimed. The next pilot must split all discovery reads at the hard limit;
+see the [slice evidence](./v2-phase3-schema-recovery-migration-2026-10-19.md).

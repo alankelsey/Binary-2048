@@ -84,6 +84,26 @@ test("authenticated browser converts a realistic full export before importing", 
   await expect(page.locator(".meta span", { hasText: "Moves: 7" })).toBeVisible();
 });
 
+test("rejects a future full-export version before sending it", async ({ page }) => {
+  await emulateAuthenticatedShell(page);
+  let importRequests = 0;
+  await page.route("**/api/games/import", async (route) => {
+    importRequests += 1;
+    await route.abort();
+  });
+  const future = { ...runScenario(config, initialGrid, [...moves]), version: 2 };
+
+  await page.goto("/");
+  await page.getByTestId("import-json-input").setInputFiles({
+    name: "future-export.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(future))
+  });
+
+  await expect(page.locator(".status-error")).toContainText("Unsupported game export version: 2");
+  expect(importRequests).toBe(0);
+});
+
 test("shows a specific message when CloudFront or WAF blocks import", async ({ page }) => {
   await emulateAuthenticatedShell(page);
   await page.route("**/api/games/import", async (route) => {

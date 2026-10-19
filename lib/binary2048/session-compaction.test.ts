@@ -91,6 +91,49 @@ it("does not retain undo boards when migrating a zero-undo session", async () =>
   expect(migrated?.undoStates).toEqual([]);
 });
 
+it("migrates an explicitly versioned v1 session", async () => {
+  const exported = runScenario(config, initialGrid, ["right", "down"]);
+  installSessionStoreForTests({
+    get: jest.fn().mockResolvedValue({
+      sessionVersion: 1,
+      initialState: exported.initial,
+      current: exported.final,
+      steps: exported.steps,
+      undoLimit: 2,
+      undoUsed: 0,
+      undoEvents: [],
+      integrity: { sessionClass: "unranked", source: "created" }
+    }),
+    set: jest.fn(),
+    delete: jest.fn()
+  } as unknown as SessionStore);
+
+  const migrated = await getSession(exported.final.id);
+  expect(migrated).toMatchObject({ sessionVersion: 2, current: exported.final });
+  expect(migrated?.steps.map((step) => step.dir)).toEqual(["right", "down"]);
+});
+
+it("fails closed for future and malformed current session schemas", async () => {
+  const exported = runScenario(config, initialGrid, ["right"]);
+  const base = {
+    initialState: exported.initial,
+    current: exported.final,
+    steps: exported.steps.map(({ turn, dir, moved }) => ({ turn, dir, moved })),
+    undoStates: [],
+    undoLimit: 2,
+    undoUsed: 0,
+    undoEvents: [],
+    integrity: { sessionClass: "unranked", source: "created" }
+  };
+  const get = jest.fn()
+    .mockResolvedValueOnce({ ...base, sessionVersion: 3 })
+    .mockResolvedValueOnce({ ...base, sessionVersion: 2, undoStates: undefined });
+  installSessionStoreForTests({ get, set: jest.fn(), delete: jest.fn() } as unknown as SessionStore);
+
+  await expect(getSession(exported.final.id)).rejects.toThrow("Session storage is temporarily unavailable");
+  await expect(getSession(exported.final.id)).rejects.toThrow("Session storage is temporarily unavailable");
+});
+
 it("keeps a 275-command session compact while preserving export, undo, and recovery", async () => {
   process.env.BINARY2048_RECOVERY_SECRET = "session-compaction-recovery-secret";
   const created = await createSession(config, initialGrid);

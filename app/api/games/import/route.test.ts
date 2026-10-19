@@ -3,7 +3,7 @@ import { runScenario } from "@/lib/binary2048/engine";
 import { createRecoverySignature } from "@/lib/binary2048/recovery-signature";
 import { COMPACT_RECOVERY_VERSION } from "@/lib/binary2048/compact-recovery";
 import { getSession } from "@/lib/binary2048/sessions";
-import type { Cell, GameConfig } from "@/lib/binary2048/types";
+import type { Cell, GameConfig, GameExport } from "@/lib/binary2048/types";
 
 describe("POST /api/games/import", () => {
   const config: GameConfig = {
@@ -49,6 +49,21 @@ describe("POST /api/games/import", () => {
     expect(typeof json.integrity?.importedFromRulesetId).toBe("string");
   });
 
+  it("keeps accepting a legacy unversioned full export", async () => {
+    const legacy: Partial<GameExport> = { ...runScenario(config, initialGrid, ["left"]) };
+    delete legacy.version;
+    const req = new Request("http://localhost/api/games/import", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(legacy)
+    });
+
+    const res = await POST(req);
+    const json = await res.json();
+    expect(res.status).toBe(200);
+    expect(json.steps.map((step: { dir: string }) => step.dir)).toEqual(["left"]);
+  });
+
   it("returns 400 for invalid payload", async () => {
     const req = new Request("http://localhost/api/games/import", {
       method: "POST",
@@ -59,6 +74,22 @@ describe("POST /api/games/import", () => {
     const json = await res.json();
     expect(res.status).toBe(400);
     expect(typeof json.error).toBe("string");
+  });
+
+  it.each([
+    ["recovery snapshot", { recoveryVersion: 2, rulesetId: "binary2048-v1", config, initialGrid, moves: [] }, "Unsupported recovery snapshot version: 2"],
+    ["compact recovery", { version: "checkpoint-tail-v2", checkpoint: {}, acknowledgedTail: [] }, "Unsupported compact recovery version: checkpoint-tail-v2"],
+    ["full export", { ...runScenario(config, initialGrid, []), version: 2 }, "Unsupported game export version: 2"]
+  ])("rejects an unsupported %s envelope explicitly", async (_label, payload, message) => {
+    const req = new Request("http://localhost/api/games/import", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+    await expect(res.json()).resolves.toEqual({ error: message });
   });
 
   it("imports a compact recovery snapshot", async () => {

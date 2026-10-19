@@ -483,7 +483,8 @@ delay local animation, and seeded client/server runs produce identical states.
 - [x] Measure and reduce full-state retention in `session.steps` while
   preserving undo, replay, export, and integrity requirements
   ([evidence](./v2-phase3-session-step-compaction-2026-10-18.md)).
-- [ ] Define schema/version migration and backwards-compatible recovery.
+- [x] Define schema/version migration and backwards-compatible recovery
+  ([evidence](./v2-phase3-schema-recovery-migration-2026-10-19.md)).
 
 Exit criterion: ordinary move payload size is effectively constant and a
 250-plus-move game resumes without rollback, duplication, or a full replay on

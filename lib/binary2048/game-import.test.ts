@@ -48,6 +48,13 @@ describe("game import", () => {
     expect(toGameImportPayload(recovery)).toBe(recovery);
   });
 
+  it("does not downgrade a future full export into recovery v1", () => {
+    const exported = runScenario(config, initialGrid, ["left"]);
+    expect(() => toGameImportPayload({ ...exported, version: 2 })).toThrow(
+      "Unsupported game export version: 2"
+    );
+  });
+
   it("returns specific edge-security and size errors", () => {
     expect(getGameImportErrorMessage(403)).toContain("site security");
     expect(getGameImportErrorMessage(413)).toBe("Import file is too large.");

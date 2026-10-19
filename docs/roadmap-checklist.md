@@ -439,6 +439,9 @@ below record work already deployed before V2 formally started.
   - [x] Replace full-board session step retention with compact command records
     and bounded undo states while materializing exports on demand
     ([evidence](./v2-phase3-session-step-compaction-2026-10-18.md))
+  - [x] Complete explicit schema migration and backwards-compatible recovery
+    boundaries while rejecting unknown versions without coercion
+    ([evidence](./v2-phase3-schema-recovery-migration-2026-10-19.md))
   - [ ] Pilot and adopt the token- and tool-efficient V2 delivery workflow
     without reducing release gates
     ([plan](./delivery-efficiency-plan-2026-10-18.md))

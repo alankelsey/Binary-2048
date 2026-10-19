@@ -16,6 +16,9 @@ function isFullGameExport(value: unknown): value is GameExport {
 
 export function toGameImportPayload(value: unknown): unknown {
   if (!isFullGameExport(value)) return value;
+  if (value.version !== 1) {
+    throw new Error(`Unsupported game export version: ${String(value.version)}`);
+  }
 
   const replayMoves = value.meta?.replay?.moves;
   const moves = Array.isArray(replayMoves) ? replayMoves : value.steps.map((step) => step.dir);

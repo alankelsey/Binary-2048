@@ -24,7 +24,7 @@ function formatJestSummary(results) {
 class ConciseJestReporter {
   onRunComplete(_contexts, results) {
     for (const suite of results.testResults ?? []) {
-      if (suite.numFailingTests > 0 && suite.failureMessage) {
+      if (suite.failureMessage) {
         process.stderr.write(`\nFAIL ${suite.testFilePath}\n${suite.failureMessage.trim()}\n`);
       }
     }

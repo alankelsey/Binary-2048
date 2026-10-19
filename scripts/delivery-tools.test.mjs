@@ -44,6 +44,36 @@ test("concise Jest summary derives a passing state from native counts", () => {
   assert.match(summary, /^PASS:/);
 });
 
+test("concise Jest reporter prints a failed suite even when no test executed", () => {
+  const writes = [];
+  const originalWrite = process.stderr.write;
+  process.stderr.write = ((chunk) => {
+    writes.push(String(chunk));
+    return true;
+  });
+  try {
+    const Reporter = require("./concise-jest-reporter.cjs");
+    new Reporter().onRunComplete(new Set(), {
+      numPassedTestSuites: 0,
+      numFailedTestSuites: 1,
+      numTotalTestSuites: 1,
+      numPassedTests: 0,
+      numFailedTests: 0,
+      numPendingTests: 0,
+      numTotalTests: 0,
+      wasInterrupted: false,
+      testResults: [{
+        testFilePath: "/fixture/compile.test.ts",
+        failureMessage: "TypeScript compile error"
+      }]
+    });
+  } finally {
+    process.stderr.write = originalWrite;
+  }
+
+  assert.match(writes.join(""), /TypeScript compile error/);
+});
+
 test("concise Playwright summary retains expected skips", () => {
   const summary = formatPlaywrightSummary(
     { passed: 68, failed: 0, skipped: 1, total: 69 },
