@@ -84,9 +84,17 @@ See `/api/openapi` for up-to-date route definitions.
 
 ```bash
 npm run test:unit
+npm run test:unit:concise
+npm run test:ui:concise
+npm run test:delivery-tools
 npm run test:all
 npm run mongo:smoke
 ```
+
+Use the concise commands for delivery work. They preserve the underlying exit
+status and print complete failures with one final count, while avoiding output
+for every passing suite. During implementation, pass affected test paths after
+`--`; run the full release matrix once the candidate is stable.
 
 Current suite includes:
 

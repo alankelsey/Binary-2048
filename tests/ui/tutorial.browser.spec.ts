@@ -350,9 +350,12 @@ test("a restored guest game honors the tutorial opt-out cookie", async ({ page, 
 
 for (const terminal of ["over", "won"] as const) {
   test(`${terminal} overlay supports export and routes New Game to inline choices`, async ({ page }) => {
-    let recoverySnapshot: unknown;
+    let recoveryProof: { recoverySnapshot?: unknown; compactRecovery?: unknown } = {};
     await page.route("**/api/games/*/export", async (route) => {
-      recoverySnapshot = (route.request().postDataJSON() as { recoverySnapshot?: unknown }).recoverySnapshot;
+      recoveryProof = route.request().postDataJSON() as {
+        recoverySnapshot?: unknown;
+        compactRecovery?: unknown;
+      };
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -375,7 +378,7 @@ for (const terminal of ["over", "won"] as const) {
     await exportJson.press("Enter");
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toBe(`${terminal}-game.json`);
-    expect(recoverySnapshot).toBeTruthy();
+    expect(recoveryProof.recoverySnapshot ?? recoveryProof.compactRecovery).toBeTruthy();
     await expect(page.getByText("Game export downloaded")).toBeVisible();
     const replayJson = dialog.getByRole("button", { name: "Replay JSON" });
     await expect(replayJson).toBeVisible();

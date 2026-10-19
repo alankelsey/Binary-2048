@@ -78,8 +78,12 @@ Required GitHub repo secrets:
 Local/manual check:
 
 ```bash
-APP_ID=dzxvs1esr22z9 BRANCH_NAME=main AWS_REGION=us-east-2 npm run ops:amplify:watch
+APP_ID=dzxvs1esr22z9 BRANCH_NAME=main AWS_REGION=us-east-2 \
+  EXPECT_COMMIT_ID="$(git rev-parse HEAD)" npm run ops:amplify:watch
 ```
+
+The watcher checks every 45 seconds by default, reports status changes or once
+per minute, and fails if `EXPECT_COMMIT_ID` does not match the deployed job.
 
 Production endpoint smoke:
 

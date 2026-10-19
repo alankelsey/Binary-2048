@@ -439,6 +439,9 @@ below record work already deployed before V2 formally started.
   - [x] Replace full-board session step retention with compact command records
     and bounded undo states while materializing exports on demand
     ([evidence](./v2-phase3-session-step-compaction-2026-10-18.md))
+  - [ ] Pilot and adopt the token- and tool-efficient V2 delivery workflow
+    without reducing release gates
+    ([plan](./delivery-efficiency-plan-2026-10-18.md))
   - [ ] Audit and upgrade the existing OpenAPI documentation into a Swagger UI or equivalent interactive V2 API explorer, with complete contracts, examples, security/rate-limit details, versioning, and automated route/schema drift checks
   - [ ] Complete the anchored Lock-0 behavior spike without changing production rules
   - [ ] Complete the unranked `Death by Luck` wildcard-mode spike without changing production rules

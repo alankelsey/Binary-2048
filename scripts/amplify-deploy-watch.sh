@@ -5,7 +5,9 @@ APP_ID="${APP_ID:-}"
 BRANCH_NAME="${BRANCH_NAME:-main}"
 AWS_REGION="${AWS_REGION:-us-east-2}"
 TIMEOUT_SECONDS="${TIMEOUT_SECONDS:-900}"
-POLL_SECONDS="${POLL_SECONDS:-15}"
+POLL_SECONDS="${POLL_SECONDS:-45}"
+REPORT_SECONDS="${REPORT_SECONDS:-60}"
+EXPECT_COMMIT_ID="${EXPECT_COMMIT_ID:-}"
 
 if [[ -z "${APP_ID}" ]]; then
   echo "APP_ID is required (Amplify app id)." >&2
@@ -22,25 +24,14 @@ latest_job_id() {
     --output text | awk "NF { print \$1; exit }"
 }
 
-job_status() {
+job_summary() {
   local job_id="$1"
   aws amplify get-job \
     --app-id "${APP_ID}" \
     --branch-name "${BRANCH_NAME}" \
     --job-id "${job_id}" \
     --region "${AWS_REGION}" \
-    --query "job.summary.status" \
-    --output text
-}
-
-job_commit() {
-  local job_id="$1"
-  aws amplify get-job \
-    --app-id "${APP_ID}" \
-    --branch-name "${BRANCH_NAME}" \
-    --job-id "${job_id}" \
-    --region "${AWS_REGION}" \
-    --query "job.summary.commitId" \
+    --query "[job.summary.status, job.summary.commitId]" \
     --output text
 }
 
@@ -61,23 +52,26 @@ if [[ -z "${JOB_ID}" || "${JOB_ID}" == "None" ]]; then
   exit 1
 fi
 
-if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
-  {
-    echo "job_id=${JOB_ID}"
-    echo "commit_id=$(job_commit "${JOB_ID}")"
-  } >> "${GITHUB_OUTPUT}"
-fi
-
 echo "Watching Amplify job ${JOB_ID} for ${APP_ID}/${BRANCH_NAME} in ${AWS_REGION}"
 START_EPOCH="$(date +%s)"
+LAST_REPORT_EPOCH=0
+LAST_STATUS=""
 
 while true; do
-  STATUS="$(job_status "${JOB_ID}")"
-  COMMIT_ID="$(job_commit "${JOB_ID}")"
+  read -r STATUS COMMIT_ID <<< "$(job_summary "${JOB_ID}")"
   NOW_EPOCH="$(date +%s)"
   ELAPSED="$((NOW_EPOCH - START_EPOCH))"
 
-  echo "status=${STATUS} elapsed=${ELAPSED}s commit=${COMMIT_ID}"
+  if [[ -n "${EXPECT_COMMIT_ID}" && "${COMMIT_ID}" != "${EXPECT_COMMIT_ID}" ]]; then
+    echo "Amplify commit mismatch: expected=${EXPECT_COMMIT_ID} actual=${COMMIT_ID} job=${JOB_ID}" >&2
+    exit 4
+  fi
+
+  if [[ "${STATUS}" != "${LAST_STATUS}" || $((NOW_EPOCH - LAST_REPORT_EPOCH)) -ge "${REPORT_SECONDS}" ]]; then
+    echo "status=${STATUS} elapsed=${ELAPSED}s commit=${COMMIT_ID}"
+    LAST_STATUS="${STATUS}"
+    LAST_REPORT_EPOCH="${NOW_EPOCH}"
+  fi
 
   case "${STATUS}" in
     SUCCEED)

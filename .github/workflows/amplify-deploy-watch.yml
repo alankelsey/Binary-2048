@@ -62,7 +62,9 @@ jobs:
           BRANCH_NAME: main
           AWS_REGION: us-east-2
           TIMEOUT_SECONDS: 1200
-          POLL_SECONDS: 15
+          POLL_SECONDS: 45
+          REPORT_SECONDS: 60
+          EXPECT_COMMIT_ID: ${{ github.sha }}
         run: npm run ops:amplify:watch
 
       - name: Post-deploy production verification gate
