@@ -169,5 +169,10 @@ build smoke. The UI run also found and corrected a stale assertion that accepted
 only legacy recovery snapshots after compact recovery became the preferred
 export proof.
 
+Runtime commit `0e117d6` deployed successfully as Amplify job 409. Its watcher
+used five combined status/commit retrievals over 184 seconds, enforced the full
+expected commit SHA, and was followed by a passing production smoke. This meets
+the deployment-monitoring acceptance bound.
+
 The roadmap item remains open until a comparable V2 product slice measures the
 35% output-token target and confirms unchanged release confidence.
