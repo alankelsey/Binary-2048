@@ -8,6 +8,39 @@ export type DiagnosticEntry = {
   details?: Record<string, string | number | boolean | null>;
 };
 
+export type DiagnosticRingBuffer = {
+  readonly capacity: number;
+  readonly size: number;
+  push(entry: DiagnosticEntry): void;
+  clear(): void;
+  snapshot(): DiagnosticEntry[];
+};
+
+export function createDiagnosticRingBuffer(capacity = 250): DiagnosticRingBuffer {
+  if (!Number.isInteger(capacity) || capacity < 1) throw new Error("Diagnostic capacity must be positive");
+  const entries = new Array<DiagnosticEntry>(capacity);
+  let start = 0;
+  let size = 0;
+
+  return {
+    capacity,
+    get size() { return size; },
+    push(entry) {
+      const index = (start + size) % capacity;
+      entries[index] = entry;
+      if (size < capacity) size += 1;
+      else start = (start + 1) % capacity;
+    },
+    clear() {
+      start = 0;
+      size = 0;
+    },
+    snapshot() {
+      return Array.from({ length: size }, (_, index) => entries[(start + index) % capacity]);
+    }
+  };
+}
+
 const SENSITIVE_VALUE = /("?(?:authorization|token|signature|secret|password)"?\s*[:=]\s*)("[^"\s]*"|[^,\s}]+)/gi;
 const BEARER_VALUE = /Bearer\s+[A-Za-z0-9._~+/=-]+/gi;
 

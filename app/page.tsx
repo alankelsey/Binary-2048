@@ -43,6 +43,7 @@ import {
   filenameFromDisposition
 } from "@/lib/binary2048/browser-actions";
 import {
+  createDiagnosticRingBuffer,
   diagnosticValue,
   formatDiagnosticEntries,
   type DiagnosticEntry,
@@ -213,8 +214,8 @@ export default function Home() {
   const [replaySpeed, setReplaySpeed] = useState(5);
   const [shareMessage, setShareMessage] = useState<string>("");
   const [preparedReplayUrl, setPreparedReplayUrl] = useState<string>("");
-  const [diagnosticEntries, setDiagnosticEntries] = useState<DiagnosticEntry[]>([]);
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
+  const [, setDiagnosticRevision] = useState(0);
   const [newGameConfirmArmed, setNewGameConfirmArmed] = useState(false);
   const [fullscreenSupported, setFullscreenSupported] = useState(false);
   const [fullscreenActive, setFullscreenActive] = useState(false);
@@ -264,6 +265,8 @@ export default function Home() {
   const executeMoveHandlerRef = useRef<(command: MoveCommand) => void>(() => undefined);
   const keyboardInputHandlerRef = useRef<(event: KeyboardEvent) => void>(() => undefined);
   const diagnosticSequenceRef = useRef(0);
+  const diagnosticBufferRef = useRef<ReturnType<typeof createDiagnosticRingBuffer> | null>(null);
+  const diagnosticsOpenRef = useRef(false);
   const authBridgeRef = useRef<ReturnType<typeof createClientAuthBridge> | null>(null);
   const modalTriggerRef = useRef<HTMLElement | null>(null);
   if (!authBridgeRef.current) {
@@ -275,6 +278,7 @@ export default function Home() {
         document.querySelector<HTMLElement>(".auth-shell")?.dataset.authenticated === "true"
     );
   }
+  if (!diagnosticBufferRef.current) diagnosticBufferRef.current = createDiagnosticRingBuffer(250);
 
   const addDiagnostic = useCallback(
     (
@@ -291,7 +295,8 @@ export default function Home() {
         event,
         details
       };
-      setDiagnosticEntries((current) => [...current.slice(-249), entry]);
+      diagnosticBufferRef.current?.push(entry);
+      if (diagnosticsOpenRef.current) setDiagnosticRevision((revision) => revision + 1);
     },
     []
   );
@@ -1732,7 +1737,9 @@ export default function Home() {
         })
       : "https://github.com/alankelsey/Binary-2048/issues/new";
   const socialUrls = buildShareUrls(shareText, shareUrl);
-  const diagnosticText = GAME_LOG_ENABLED ? formatDiagnosticEntries(diagnosticEntries) : "";
+  const diagnosticText = GAME_LOG_ENABLED && diagnosticsOpen
+    ? formatDiagnosticEntries(diagnosticBufferRef.current?.snapshot() ?? [])
+    : "";
 
   async function trackMarketing(
     type: MarketingEventType,
@@ -1796,7 +1803,9 @@ export default function Home() {
 
   async function copyDiagnosticLog() {
     if (!GAME_LOG_ENABLED) return;
-    const copied = await copyTextWithFallback(diagnosticText);
+    const copied = await copyTextWithFallback(
+      formatDiagnosticEntries(diagnosticBufferRef.current?.snapshot() ?? [])
+    );
     setShareMessage(copied ? "Diagnostic log copied" : "Unable to copy diagnostic log; select the text manually");
     window.setTimeout(() => setShareMessage(""), copied ? 1800 : 2600);
   }
@@ -2606,20 +2615,27 @@ export default function Home() {
         </div>
         {GAME_LOG_ENABLED ? <section className="diagnostics-panel" aria-label="Game diagnostics">
           <div className="diagnostics-header">
-            <strong>Game Log ({diagnosticEntries.length})</strong>
+            <strong>Game Log ({diagnosticBufferRef.current?.size ?? 0})</strong>
             <div className="diagnostics-actions">
               <button
                 type="button"
                 aria-expanded={diagnosticsOpen}
                 aria-controls="game-diagnostics-log"
-                onClick={() => setDiagnosticsOpen((open) => !open)}
+                onClick={() => setDiagnosticsOpen((open) => {
+                  const next = !open;
+                  diagnosticsOpenRef.current = next;
+                  return next;
+                })}
               >
                 {diagnosticsOpen ? "Hide Log" : "Show Log"}
               </button>
               <button type="button" onClick={() => void copyDiagnosticLog()}>
                 Copy Log
               </button>
-              <button type="button" onClick={() => setDiagnosticEntries([])}>
+              <button type="button" onClick={() => {
+                diagnosticBufferRef.current?.clear();
+                if (diagnosticsOpenRef.current) setDiagnosticRevision((revision) => revision + 1);
+              }}>
                 Clear Log
               </button>
             </div>

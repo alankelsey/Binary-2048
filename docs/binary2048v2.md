@@ -492,8 +492,10 @@ the common path.
 
 ### Phase 4: remove optional work from active play
 
-- [ ] Store diagnostics in a bounded ref-backed ring buffer.
-- [ ] Default the support log closed and format it only on open or copy.
+- [x] Store diagnostics in a bounded ref-backed ring buffer
+  ([evidence](./v2-phase4-diagnostic-ring-buffer-2026-10-19.md)).
+- [x] Default the support log closed and format it only on open or copy
+  ([evidence](./v2-phase4-diagnostic-ring-buffer-2026-10-19.md)).
 - [ ] Always retain errors, state regressions, slow acknowledgements,
   divergence, recovery fallback, and input-drop counts.
 - [ ] Lazy-load Import, Export, replay sharing, advanced help, and diagnostics.

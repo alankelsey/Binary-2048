@@ -442,6 +442,9 @@ below record work already deployed before V2 formally started.
   - [x] Complete explicit schema migration and backwards-compatible recovery
     boundaries while rejecting unknown versions without coercion
     ([evidence](./v2-phase3-schema-recovery-migration-2026-10-19.md))
+  - [x] Move diagnostics into a bounded ref-backed ring and format the support
+    log only when opened or copied
+    ([evidence](./v2-phase4-diagnostic-ring-buffer-2026-10-19.md))
   - [ ] Pilot and adopt the token- and tool-efficient V2 delivery workflow
     without reducing release gates
     ([plan](./delivery-efficiency-plan-2026-10-18.md))

@@ -4,6 +4,16 @@ import type { Cell, Dir, GameConfig, GameState } from "@/lib/binary2048/types";
 
 const gameLogEnabled = process.env.NEXT_PUBLIC_GAME_LOG_ENABLED === "1";
 
+function recoveryMoves(body: {
+  recoverySnapshot?: { moves?: Dir[] };
+  compactRecovery?: { checkpoint?: { moves?: Dir[] }; acknowledgedTail?: Dir[] };
+}) {
+  return body.recoverySnapshot?.moves ?? [
+    ...(body.compactRecovery?.checkpoint?.moves ?? []),
+    ...(body.compactRecovery?.acknowledgedTail ?? [])
+  ];
+}
+
 test("game log collection and UI are disabled by default", async ({ page }) => {
   test.skip(gameLogEnabled, "Runs only against the normal app configuration");
   await page.goto("/");
@@ -71,8 +81,12 @@ test("game log captures moves, export/replay results, console errors, and suppor
     });
   });
   await page.route("**/api/games/*/move", async (route) => {
-    const body = route.request().postDataJSON() as { dir: Dir; recoverySnapshot?: { moves?: Dir[] } };
-    expect(body.recoverySnapshot?.moves).toEqual(moves);
+    const body = route.request().postDataJSON() as {
+      dir: Dir;
+      recoverySnapshot?: { moves?: Dir[] };
+      compactRecovery?: { checkpoint?: { moves?: Dir[] }; acknowledgedTail?: Dir[] };
+    };
+    expect(recoveryMoves(body)).toEqual(moves);
     const result = applyMove(current, body.dir);
     current = result.state;
     moves.push(body.dir);
@@ -97,8 +111,11 @@ test("game log captures moves, export/replay results, console errors, and suppor
     });
   });
   await page.route("**/api/games/*/export?compact=1", async (route) => {
-    const body = route.request().postDataJSON() as { recoverySnapshot?: { moves?: Dir[] } };
-    expect(body.recoverySnapshot?.moves).toEqual(moves);
+    const body = route.request().postDataJSON() as {
+      recoverySnapshot?: { moves?: Dir[] };
+      compactRecovery?: { checkpoint?: { moves?: Dir[] }; acknowledgedTail?: Dir[] };
+    };
+    expect(recoveryMoves(body)).toEqual([]);
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -142,7 +159,7 @@ test("game log captures moves, export/replay results, console errors, and suppor
   await page.keyboard.press("ArrowLeft");
   await expect(log).toHaveValue(/move_request[\s\S]*dir=left/);
   await expect(log).toHaveValue(/move_response[\s\S]*status=200[\s\S]*recoveryMoves=1/);
-  await expect(log).toHaveValue(/recovery_snapshot_saved[\s\S]*moves=1/);
+  await expect(log).toHaveValue(/prediction_reconciliation[\s\S]*classification=unsupported_hash_version/);
   await expect(log).toHaveValue(
     /state_regression_detected[\s\S]*previousTurn=3[\s\S]*nextTurn=1/
   );
