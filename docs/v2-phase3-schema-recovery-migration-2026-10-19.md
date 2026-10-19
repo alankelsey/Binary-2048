@@ -74,3 +74,10 @@ one stricter measured slice.
 - One production build and one full release matrix were run on the stable
   candidate. A test-only lint cleanup afterward reran its affected route test
   and ESLint check without repeating the production build.
+
+## Release verification
+
+- Runtime commit `46cc609` deployed successfully in Amplify job 411.
+- The watcher used four combined status/commit retrievals over 139 seconds and
+  matched the complete expected SHA.
+- Production smoke checks against `https://www.binary2048.com` passed.
