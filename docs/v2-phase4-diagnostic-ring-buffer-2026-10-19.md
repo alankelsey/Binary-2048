@@ -48,3 +48,9 @@ a comparable 35% reduction. The delivery-efficiency roadmap item remains open.
 - Full unit suite: 168 suites / 618 tests passed.
 - Full local browser suite: 70 tests passed, 1 diagnostics-only test skipped.
 - TypeScript and optimized production build smoke passed.
+
+## Release verification
+
+- Runtime commit `85e6e22` deployed successfully in Amplify job 413.
+- The watcher matched the complete expected SHA and completed in 184 seconds.
+- Production smoke checks against `https://www.binary2048.com` passed.
