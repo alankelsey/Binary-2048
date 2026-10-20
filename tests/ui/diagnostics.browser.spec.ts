@@ -14,15 +14,20 @@ function recoveryMoves(body: {
   ];
 }
 
-test("game log collection and UI are disabled by default", async ({ page }) => {
+test("support mode is off by default while critical diagnostics remain available", async ({ page }) => {
   test.skip(gameLogEnabled, "Runs only against the normal app configuration");
   await page.goto("/");
-  await expect(page.getByRole("region", { name: "Game diagnostics" })).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Game diagnostics" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Enable Support Mode" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Show Log" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Copy Log" })).toHaveCount(0);
   await expect(page.getByRole("textbox", { name: "Game diagnostic log" })).toHaveCount(0);
   await page.evaluate(() => console.error("disabled-game-log-probe"));
-  await expect(page.getByText("disabled-game-log-probe")).toHaveCount(0);
+  await page.getByRole("button", { name: "Enable Support Mode" }).click();
+  await page.getByRole("button", { name: "Show Log" }).click();
+  const log = page.getByRole("textbox", { name: "Game diagnostic log" });
+  await expect(log).toHaveValue(/console_error[\s\S]*disabled-game-log-probe/);
+  await expect(log).not.toHaveValue(/diagnostics_ready/);
 });
 
 test("game log captures moves, export/replay results, console errors, and supports toggle/copy/clear", async ({ page }) => {
@@ -148,12 +153,13 @@ test("game log captures moves, export/replay results, console errors, and suppor
   });
 
   await page.goto("/");
+  await page.getByRole("button", { name: "Enable Support Mode" }).click();
   const log = page.getByRole("textbox", { name: "Game diagnostic log" });
   await expect(log).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Show Log" })).toHaveAttribute("aria-expanded", "false");
   await page.getByRole("button", { name: "Show Log" }).click();
   await expect(log).toBeVisible();
-  await expect(log).toHaveValue(/diagnostics_ready/);
+  await expect(log).toHaveValue(/support_mode_enabled/);
 
   await page.getByRole("button", { name: "Start New Game" }).click();
   await expect(page.locator(".card")).toHaveAttribute("aria-busy", "false");
@@ -167,6 +173,7 @@ test("game log captures moves, export/replay results, console errors, and suppor
   await page.keyboard.press("ArrowLeft");
   await expect(log).toHaveValue(/move_request[\s\S]*dir=left/);
   await expect(log).toHaveValue(/move_response[\s\S]*status=200[\s\S]*recoveryMoves=1/);
+  await expect(log).not.toHaveValue(new RegExp(current.id));
   await expect(log).toHaveValue(/slow_acknowledgement[\s\S]*durationMs=/);
   await expect(log).toHaveValue(/prediction_reconciliation[\s\S]*classification=unsupported_hash_version/);
   await expect(log).toHaveValue(
@@ -196,4 +203,29 @@ test("game log captures moves, export/replay results, console errors, and suppor
   await expect(log).toBeVisible();
   await page.getByRole("button", { name: "Clear Log" }).click();
   await expect(log).toHaveValue("No diagnostics recorded.");
+});
+
+test("support mode persists across reload, disables immediately, and removes expired state", async ({ page }) => {
+  test.skip(!gameLogEnabled, "Requires NEXT_PUBLIC_GAME_LOG_ENABLED=1");
+  await page.goto("/");
+  await page.getByRole("button", { name: "Enable Support Mode" }).click();
+  await expect(page.getByRole("button", { name: "Disable Support Mode" })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.localStorage.getItem("binary2048.supportMode.v1"))).not.toBeNull();
+
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Disable Support Mode" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Game diagnostics" }).getByRole("status"))
+    .toContainText("Detailed success tracing is on.");
+  await page.getByRole("button", { name: "Disable Support Mode" }).click();
+  await expect(page.getByRole("button", { name: "Enable Support Mode" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Show Log" })).toHaveCount(0);
+  expect(await page.evaluate(() => window.localStorage.getItem("binary2048.supportMode.v1"))).toBeNull();
+
+  await page.evaluate(() => window.localStorage.setItem(
+    "binary2048.supportMode.v1",
+    JSON.stringify({ version: 1, expiresAt: Date.now() - 1 })
+  ));
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Enable Support Mode" })).toBeVisible();
+  expect(await page.evaluate(() => window.localStorage.getItem("binary2048.supportMode.v1"))).toBeNull();
 });

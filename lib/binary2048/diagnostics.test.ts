@@ -2,6 +2,7 @@ import {
   createDiagnosticRingBuffer,
   diagnosticValue,
   redactDiagnosticText,
+  sanitizeDiagnosticDetails,
   shouldRetainDiagnostic
 } from "@/lib/binary2048/diagnostics";
 import { formatDiagnosticEntries } from "@/lib/binary2048/diagnostic-format";
@@ -35,6 +36,19 @@ describe("diagnostics", () => {
     expect(shouldRetainDiagnostic("prediction_reconciliation", "info", { classification: "state_hash_mismatch" }, false)).toBe(true);
     expect(shouldRetainDiagnostic("move_response", "info", undefined, false)).toBe(false);
     expect(shouldRetainDiagnostic("move_response", "info", undefined, true)).toBe(true);
+  });
+
+  it("removes identity, hash, credential, and payload fields before retention", () => {
+    expect(sanitizeDiagnosticDetails({
+      gameId: "g_private",
+      sessionId: "s_private",
+      stateHash: "hash_private",
+      token: "secret",
+      payload: "raw",
+      dir: "left",
+      status: 200,
+      recoveryMoves: 4
+    })).toEqual({ dir: "left", status: 200, recoveryMoves: 4 });
   });
 
   it("formats chronological move details for copy and paste", () => {

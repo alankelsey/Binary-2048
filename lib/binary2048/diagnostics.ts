@@ -60,6 +60,15 @@ export function shouldRetainDiagnostic(
   return CRITICAL_EVENTS.has(event) || detailedSuccessTracing;
 }
 
+const PRIVATE_DETAIL_KEY = /(?:^|_)(?:id|gameid|sessionid|userid|accountid|email|hash|token|authorization|signature|secret|password|payload|body)$/i;
+
+export function sanitizeDiagnosticDetails(details?: DiagnosticEntry["details"]): DiagnosticEntry["details"] {
+  if (!details) return undefined;
+  return Object.fromEntries(
+    Object.entries(details).filter(([key]) => !PRIVATE_DETAIL_KEY.test(key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)))
+  );
+}
+
 const SENSITIVE_VALUE = /("?(?:authorization|token|signature|secret|password)"?\s*[:=]\s*)("[^"\s]*"|[^,\s}]+)/gi;
 const BEARER_VALUE = /Bearer\s+[A-Za-z0-9._~+/=-]+/gi;
 

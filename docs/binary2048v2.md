@@ -501,7 +501,8 @@ the common path.
   ([evidence](./v2-phase4-critical-diagnostics-2026-10-19.md)).
 - [x] Lazy-load Import, Export, replay sharing, advanced help, and diagnostics
   ([evidence](./v2-phase4-lazy-optional-tools-2026-10-20.md)).
-- [ ] Allow an explicit support mode to enable detailed success tracing.
+- [x] Allow an explicit support mode to enable detailed success tracing
+  ([evidence](./v2-phase4-support-mode-2026-10-20.md)).
 - [ ] Make the game shell render independently of blocking authentication
   lookup where security permits; hydrate auth controls asynchronously and
   fail closed.

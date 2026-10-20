@@ -41,9 +41,16 @@ import {
   createDiagnosticRingBuffer,
   diagnosticValue,
   shouldRetainDiagnostic,
+  sanitizeDiagnosticDetails,
   type DiagnosticEntry,
   type DiagnosticLevel
 } from "@/lib/binary2048/diagnostics";
+import {
+  SUPPORT_MODE_TTL_MS,
+  disableSupportMode,
+  enableSupportMode,
+  readSupportMode
+} from "@/lib/binary2048/support-mode";
 import {
   exitDocumentFullscreen,
   isFullscreenActive,
@@ -140,7 +147,6 @@ const DIFFICULTY_HELP_TEXT =
   "Difficulty changes wildcard/lock spawn rates: Normal = balanced, LTFG = more wildcards and fewer locks, Death by AI = fewer wildcards and more locks.";
 const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.1.0";
 const APP_COMMIT = process.env.NEXT_PUBLIC_APP_COMMIT ?? "dev";
-const GAME_LOG_ENABLED = process.env.NEXT_PUBLIC_GAME_LOG_ENABLED === "1";
 const SLOW_ACKNOWLEDGEMENT_MS = 750;
 const UI_POLICY = getUiPolicy();
 const FULLSCREEN_TOGGLE_ENABLED = isFullscreenToggleEnabled();
@@ -214,6 +220,8 @@ export default function Home() {
   const [diagnosticRevision, setDiagnosticRevision] = useState(0);
   const [diagnosticText, setDiagnosticText] = useState("");
   const [diagnosticLoadError, setDiagnosticLoadError] = useState("");
+  const [supportModeExpiresAt, setSupportModeExpiresAt] = useState<number | null>(null);
+  const [supportModeReady, setSupportModeReady] = useState(false);
   const [advancedHelpOpen, setAdvancedHelpOpen] = useState(false);
   const [newGameConfirmArmed, setNewGameConfirmArmed] = useState(false);
   const [fullscreenSupported, setFullscreenSupported] = useState(false);
@@ -266,6 +274,7 @@ export default function Home() {
   const diagnosticSequenceRef = useRef(0);
   const diagnosticBufferRef = useRef<ReturnType<typeof createDiagnosticRingBuffer> | null>(null);
   const diagnosticsOpenRef = useRef(false);
+  const supportModeRef = useRef(false);
   const inputDropEntryRef = useRef<DiagnosticEntry | null>(null);
   const authBridgeRef = useRef<ReturnType<typeof createClientAuthBridge> | null>(null);
   const modalTriggerRef = useRef<HTMLElement | null>(null);
@@ -286,20 +295,56 @@ export default function Home() {
       details?: Record<string, string | number | boolean | null>,
       level: DiagnosticLevel = "info"
     ) => {
-      if (!shouldRetainDiagnostic(event, level, details, GAME_LOG_ENABLED)) return;
+      const safeDetails = sanitizeDiagnosticDetails(details);
+      if (!shouldRetainDiagnostic(event, level, safeDetails, supportModeRef.current)) return;
       diagnosticSequenceRef.current += 1;
       const entry: DiagnosticEntry = {
         sequence: diagnosticSequenceRef.current,
         atISO: new Date().toISOString(),
         level,
         event,
-        details
+        details: safeDetails
       };
       diagnosticBufferRef.current?.push(entry);
       if (diagnosticsOpenRef.current) setDiagnosticRevision((revision) => revision + 1);
     },
     []
   );
+
+  useEffect(() => {
+    const restored = readSupportMode(window.localStorage);
+    supportModeRef.current = Boolean(restored);
+    setSupportModeExpiresAt(restored?.expiresAt ?? null);
+    setSupportModeReady(true);
+    if (restored) addDiagnostic("support_mode_restored", { remainingMinutes: Math.ceil((restored.expiresAt - Date.now()) / 60_000) });
+  }, [addDiagnostic]);
+
+  useEffect(() => {
+    if (!supportModeExpiresAt) return;
+    const remaining = supportModeExpiresAt - Date.now();
+    if (remaining <= 0) {
+      supportModeRef.current = false;
+      disableSupportMode(window.localStorage);
+      setSupportModeExpiresAt(null);
+      addDiagnostic("support_mode_expired", undefined, "warn");
+      diagnosticBufferRef.current?.clear();
+      inputDropEntryRef.current = null;
+      diagnosticsOpenRef.current = false;
+      setDiagnosticsOpen(false);
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      supportModeRef.current = false;
+      disableSupportMode(window.localStorage);
+      setSupportModeExpiresAt(null);
+      addDiagnostic("support_mode_expired", undefined, "warn");
+      diagnosticBufferRef.current?.clear();
+      inputDropEntryRef.current = null;
+      diagnosticsOpenRef.current = false;
+      setDiagnosticsOpen(false);
+    }, remaining);
+    return () => window.clearTimeout(timer);
+  }, [addDiagnostic, supportModeExpiresAt]);
 
   const dropMoveInput = useCallback((trace: MovePerformanceTrace, reason: MoveInputDropReason, queueDepth: number) => {
     dropMovePerformanceTrace(trace, reason, queueDepth);
@@ -1784,7 +1829,7 @@ export default function Home() {
       : "https://github.com/alankelsey/Binary-2048/issues/new";
   const socialUrls = buildShareUrls(shareText, shareUrl);
   useEffect(() => {
-    if (!GAME_LOG_ENABLED || !diagnosticsOpen) {
+    if (!diagnosticsOpen) {
       setDiagnosticText("");
       setDiagnosticLoadError("");
       return;
@@ -1864,7 +1909,6 @@ export default function Home() {
   }
 
   async function copyDiagnosticLog() {
-    if (!GAME_LOG_ENABLED) return;
     try {
       const { formatDiagnosticEntries } = await import("@/lib/binary2048/diagnostic-format");
       const copied = await copyTextWithFallback(
@@ -1876,6 +1920,29 @@ export default function Home() {
       setShareMessage("Diagnostic formatting could not be loaded; retry Copy Log.");
       window.setTimeout(() => setShareMessage(""), 2600);
     }
+  }
+
+  function activateSupportMode() {
+    const activated = enableSupportMode(window.localStorage);
+    if (!activated) {
+      setShareMessage("Support mode could not be saved in this browser.");
+      window.setTimeout(() => setShareMessage(""), 2600);
+      return;
+    }
+    supportModeRef.current = true;
+    setSupportModeExpiresAt(activated.expiresAt);
+    addDiagnostic("support_mode_enabled", { durationMinutes: SUPPORT_MODE_TTL_MS / 60_000 });
+  }
+
+  function deactivateSupportMode() {
+    addDiagnostic("support_mode_disabled");
+    supportModeRef.current = false;
+    disableSupportMode(window.localStorage);
+    setSupportModeExpiresAt(null);
+    diagnosticBufferRef.current?.clear();
+    inputDropEntryRef.current = null;
+    diagnosticsOpenRef.current = false;
+    setDiagnosticsOpen(false);
   }
 
   async function fetchGameExport(compact = false) {
@@ -2684,10 +2751,16 @@ export default function Home() {
           />
         </div>
         </div>
-        {GAME_LOG_ENABLED ? <section className="diagnostics-panel" aria-label="Game diagnostics">
+        <section className="diagnostics-panel" aria-label="Game diagnostics">
           <div className="diagnostics-header">
-            <strong>Game Log ({diagnosticBufferRef.current?.size ?? 0})</strong>
+            <strong>Support diagnostics</strong>
             <div className="diagnostics-actions">
+              {supportModeExpiresAt ? (
+                <button type="button" onClick={deactivateSupportMode}>Disable Support Mode</button>
+              ) : (
+                <button type="button" disabled={!supportModeReady} onClick={activateSupportMode}>Enable Support Mode</button>
+              )}
+              {supportModeExpiresAt ? <>
               <button
                 type="button"
                 aria-expanded={diagnosticsOpen}
@@ -2710,14 +2783,20 @@ export default function Home() {
               }}>
                 Clear Log
               </button>
+              </> : null}
             </div>
           </div>
-          {diagnosticsOpen && diagnosticLoadError ? (
+          <p className="support-mode-status" role="status">
+            {supportModeExpiresAt
+              ? `Support mode active until ${new Date(supportModeExpiresAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}. Detailed success tracing is on.`
+              : "Support mode is off. Critical errors remain retained for troubleshooting."}
+          </p>
+          {supportModeExpiresAt && diagnosticsOpen && diagnosticLoadError ? (
             <div role="alert">
               {diagnosticLoadError}
               <button type="button" onClick={() => setDiagnosticRevision((revision) => revision + 1)}>Retry diagnostics</button>
             </div>
-          ) : diagnosticsOpen ? (
+          ) : supportModeExpiresAt && diagnosticsOpen ? (
             <textarea
               id="game-diagnostics-log"
               className="diagnostics-log"
@@ -2727,7 +2806,7 @@ export default function Home() {
               value={diagnosticText}
             />
           ) : null}
-        </section> : null}
+        </section>
         <details className="game-hint" onToggle={(event) => setAdvancedHelpOpen(event.currentTarget.open)}>
           <summary>How to play: Swipe on mobile or use arrow keys/WASD. Keep your strongest chain organized.</summary>
           {advancedHelpOpen ? <AdvancedHelpLoader /> : null}
