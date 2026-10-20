@@ -78,17 +78,3 @@ export function diagnosticValue(value: unknown): string {
     return redactDiagnosticText(String(value));
   }
 }
-
-export function formatDiagnosticEntries(entries: DiagnosticEntry[]): string {
-  if (entries.length === 0) return "No diagnostics recorded.";
-  return entries
-    .map((entry) => {
-      const details = entry.details
-        ? ` ${Object.entries(entry.details)
-            .map(([key, value]) => `${key}=${diagnosticValue(value)}`)
-            .join(" ")}`
-        : "";
-      return `${entry.sequence} ${entry.atISO} ${entry.level.toUpperCase()} ${entry.event}${details}`;
-    })
-    .join("\n");
-}

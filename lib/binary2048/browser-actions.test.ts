@@ -1,4 +1,4 @@
-import { filenameFromDisposition } from "@/lib/binary2048/browser-actions";
+import { filenameFromDisposition } from "@/lib/binary2048/export-actions";
 
 describe("browser actions", () => {
   it("reads a JSON download filename from Content-Disposition", () => {

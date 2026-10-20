@@ -13,13 +13,12 @@ import {
   type SwipeTouchPoint
 } from "@/lib/binary2048/input";
 import { getUiPolicy } from "@/lib/binary2048/ui-policy";
-import { parseReplayExport, replayStateAtStep, type ReplayData } from "@/lib/binary2048/replay";
+import { replayStateAtStep, type ReplayData } from "@/lib/binary2048/replay";
 import { buildShareLandingUrl, buildShareText, buildShareUrls } from "@/lib/binary2048/share";
 import { buildIssueReportUrl } from "@/lib/binary2048/issue-report";
 import { isThemeMode, THEMES, type ThemeMode } from "@/lib/binary2048/theme";
 import { getControlVisibility } from "@/lib/binary2048/control-visibility";
 import { getReplayCodeFromSearch } from "@/lib/binary2048/replay-link";
-import { buildReplayUrl, getReplayShareErrorMessage } from "@/lib/binary2048/replay-share";
 import { replaySpeedToDelayMs } from "@/lib/binary2048/replay-autoplay";
 import { shouldStartNewGameOnReplayExit } from "@/lib/binary2048/replay-exit";
 import { parseReplayStepInput } from "@/lib/binary2048/replay-scrubber";
@@ -37,15 +36,10 @@ import {
 import { gameStateHash, STATE_HASH_VERSION } from "@/lib/binary2048/state-identity";
 import { COMPACT_SYNC_VERSION } from "@/lib/binary2048/compact-sync";
 import { createClientAuthBridge } from "@/lib/binary2048/client-auth-bridge";
-import {
-  copyTextWithFallback,
-  downloadJson,
-  filenameFromDisposition
-} from "@/lib/binary2048/browser-actions";
+import { copyTextWithFallback } from "@/lib/binary2048/browser-actions";
 import {
   createDiagnosticRingBuffer,
   diagnosticValue,
-  formatDiagnosticEntries,
   shouldRetainDiagnostic,
   type DiagnosticEntry,
   type DiagnosticLevel
@@ -58,7 +52,6 @@ import {
 } from "@/lib/binary2048/fullscreen";
 import { isFullscreenToggleEnabled } from "@/lib/binary2048/fullscreen-visibility";
 import { shouldShowImportJson } from "@/lib/binary2048/import-visibility";
-import { getGameImportErrorMessage, toGameImportPayload } from "@/lib/binary2048/game-import";
 import {
   TUTORIAL_LESSONS,
   TUTORIAL_STORAGE_KEY,
@@ -93,6 +86,7 @@ import {
   recordRageTap
 } from "@/lib/binary2048/ux-audit";
 import { GameOverOverlay, NewGameOverlay, WinOverlay } from "@/app/game-overlays";
+import AdvancedHelpLoader from "@/app/advanced-help-loader";
 import { applyUiPolicyOverrides, type UIControlOverrides } from "@/lib/binary2048/ui-policy-override";
 import type { UIControl } from "@/lib/binary2048/ui-policy";
 import { createReferralCode, type MarketingEventType } from "@/lib/binary2048/marketing";
@@ -217,7 +211,10 @@ export default function Home() {
   const [shareMessage, setShareMessage] = useState<string>("");
   const [preparedReplayUrl, setPreparedReplayUrl] = useState<string>("");
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
-  const [, setDiagnosticRevision] = useState(0);
+  const [diagnosticRevision, setDiagnosticRevision] = useState(0);
+  const [diagnosticText, setDiagnosticText] = useState("");
+  const [diagnosticLoadError, setDiagnosticLoadError] = useState("");
+  const [advancedHelpOpen, setAdvancedHelpOpen] = useState(false);
   const [newGameConfirmArmed, setNewGameConfirmArmed] = useState(false);
   const [fullscreenSupported, setFullscreenSupported] = useState(false);
   const [fullscreenActive, setFullscreenActive] = useState(false);
@@ -1252,6 +1249,7 @@ export default function Home() {
     setErrorMessage("");
     try {
       const text = await file.text();
+      const { getGameImportErrorMessage, toGameImportPayload } = await import("@/lib/binary2048/game-import");
       const payload = toGameImportPayload(JSON.parse(text));
       const res = await fetch("/api/games/import", {
         method: "POST",
@@ -1279,6 +1277,7 @@ export default function Home() {
     try {
       const text = await file.text();
       const payload = JSON.parse(text);
+      const { parseReplayExport } = await import("@/lib/binary2048/replay-parse");
       const parsed = parseReplayExport(payload);
       if (!parsed) throw new Error("Replay file is missing required export fields");
       setReplay({ data: parsed, step: 0, sourceName: file.name });
@@ -1321,6 +1320,7 @@ export default function Home() {
             : "Failed to reconstruct replay";
         throw new Error(message);
       }
+      const { parseReplayExport } = await import("@/lib/binary2048/replay-parse");
       const parsed = parseReplayExport(replayExport);
       if (!parsed) throw new Error("Reconstructed replay payload is invalid");
       setReplay({ data: parsed, step: 0, sourceName: "Shared replay" });
@@ -1783,9 +1783,25 @@ export default function Home() {
         })
       : "https://github.com/alankelsey/Binary-2048/issues/new";
   const socialUrls = buildShareUrls(shareText, shareUrl);
-  const diagnosticText = GAME_LOG_ENABLED && diagnosticsOpen
-    ? formatDiagnosticEntries(diagnosticBufferRef.current?.snapshot() ?? [])
-    : "";
+  useEffect(() => {
+    if (!GAME_LOG_ENABLED || !diagnosticsOpen) {
+      setDiagnosticText("");
+      setDiagnosticLoadError("");
+      return;
+    }
+    let cancelled = false;
+    setDiagnosticLoadError("");
+    void import("@/lib/binary2048/diagnostic-format")
+      .then(({ formatDiagnosticEntries }) => {
+        if (!cancelled) setDiagnosticText(formatDiagnosticEntries(diagnosticBufferRef.current?.snapshot() ?? []));
+      })
+      .catch(() => {
+        if (!cancelled) setDiagnosticLoadError("Diagnostic formatting could not be loaded.");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [diagnosticsOpen, diagnosticRevision]);
 
   async function trackMarketing(
     type: MarketingEventType,
@@ -1849,11 +1865,17 @@ export default function Home() {
 
   async function copyDiagnosticLog() {
     if (!GAME_LOG_ENABLED) return;
-    const copied = await copyTextWithFallback(
-      formatDiagnosticEntries(diagnosticBufferRef.current?.snapshot() ?? [])
-    );
-    setShareMessage(copied ? "Diagnostic log copied" : "Unable to copy diagnostic log; select the text manually");
-    window.setTimeout(() => setShareMessage(""), copied ? 1800 : 2600);
+    try {
+      const { formatDiagnosticEntries } = await import("@/lib/binary2048/diagnostic-format");
+      const copied = await copyTextWithFallback(
+        formatDiagnosticEntries(diagnosticBufferRef.current?.snapshot() ?? [])
+      );
+      setShareMessage(copied ? "Diagnostic log copied" : "Unable to copy diagnostic log; select the text manually");
+      window.setTimeout(() => setShareMessage(""), copied ? 1800 : 2600);
+    } catch {
+      setShareMessage("Diagnostic formatting could not be loaded; retry Copy Log.");
+      window.setTimeout(() => setShareMessage(""), 2600);
+    }
   }
 
   async function fetchGameExport(compact = false) {
@@ -1891,6 +1913,7 @@ export default function Home() {
       exportRes.ok ? "info" : "error"
     );
     if (!exportRes.ok) {
+      const { getReplayShareErrorMessage } = await import("@/lib/binary2048/replay-share");
       throw new Error(
         compact
           ? getReplayShareErrorMessage(exportRes.status)
@@ -1906,6 +1929,7 @@ export default function Home() {
     if (busy || !gameId) return;
     try {
       const { exported, response } = await fetchGameExport(false);
+      const { downloadJson, filenameFromDisposition } = await import("@/lib/binary2048/export-actions");
       const filename = filenameFromDisposition(
         response.headers.get("content-disposition"),
         `${gameId}-${new Date().toISOString().replace(/[:.]/g, "-")}.json`
@@ -1931,6 +1955,7 @@ export default function Home() {
         return;
       }
 
+      const { buildReplayUrl } = await import("@/lib/binary2048/replay-share");
       const { exported } = await fetchGameExport(true);
 
       const codeRes = await fetch("/api/replay/code?hosted=1", {
@@ -2687,7 +2712,12 @@ export default function Home() {
               </button>
             </div>
           </div>
-          {diagnosticsOpen ? (
+          {diagnosticsOpen && diagnosticLoadError ? (
+            <div role="alert">
+              {diagnosticLoadError}
+              <button type="button" onClick={() => setDiagnosticRevision((revision) => revision + 1)}>Retry diagnostics</button>
+            </div>
+          ) : diagnosticsOpen ? (
             <textarea
               id="game-diagnostics-log"
               className="diagnostics-log"
@@ -2698,16 +2728,9 @@ export default function Home() {
             />
           ) : null}
         </section> : null}
-        <details className="game-hint">
+        <details className="game-hint" onToggle={(event) => setAdvancedHelpOpen(event.currentTarget.open)}>
           <summary>How to play: Swipe on mobile or use arrow keys/WASD. Keep your strongest chain organized.</summary>
-          <div className="game-hint-body">
-            <p>Basic moves: all tiles slide in one direction per turn.</p>
-            <p>`0` tiles annihilate when they collide with any tile. `0+0` also vanishes.</p>
-            <p>`Lock-0` (`⛓`) blocks one collision turn, then behaves like `0` on the next moved turn.</p>
-            <p>Wildcard tiles (`✦`) double any number tile they collide with, then disappear.</p>
-            <p>Game ends when no empty cells and no valid merges remain.</p>
-            <p>Tip: keep your highest value anchored to one side and avoid breaking the chain.</p>
-          </div>
+          {advancedHelpOpen ? <AdvancedHelpLoader /> : null}
         </details>
         <div className="share-row" aria-label="share actions">
           <span>Share:</span>

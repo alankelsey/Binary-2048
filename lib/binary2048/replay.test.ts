@@ -1,4 +1,5 @@
-import { parseReplayExport, replayStateAtStep } from "@/lib/binary2048/replay";
+import { replayStateAtStep } from "@/lib/binary2048/replay";
+import { parseReplayExport } from "@/lib/binary2048/replay-parse";
 import type { GameExport, GameState } from "@/lib/binary2048/types";
 
 function makeState(turn: number, score: number): GameState {

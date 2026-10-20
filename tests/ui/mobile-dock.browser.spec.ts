@@ -444,6 +444,7 @@ test.describe("mobile action dock", () => {
     await page.getByRole("button", { name: "Start New Game" }).click();
     await page.getByRole("button", { name: "Copy Replay Link" }).click();
 
+    await expect.poll(() => compactRecovery).toBeDefined();
     expect(compactRecovery).toMatchObject({ version: "checkpoint-tail-v1", acknowledgedTail: [] });
     await expect(page.getByText("Replay link ready—tap Copy Replay Link again")).toBeVisible();
     await expect(page.getByRole("link", { name: "Open Replay Link" })).toHaveAttribute(

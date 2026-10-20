@@ -1,10 +1,10 @@
 import {
   createDiagnosticRingBuffer,
   diagnosticValue,
-  formatDiagnosticEntries,
   redactDiagnosticText,
   shouldRetainDiagnostic
 } from "@/lib/binary2048/diagnostics";
+import { formatDiagnosticEntries } from "@/lib/binary2048/diagnostic-format";
 
 describe("diagnostics", () => {
   it("retains the newest entries in chronological order within a fixed capacity", () => {

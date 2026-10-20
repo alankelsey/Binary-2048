@@ -448,6 +448,9 @@ below record work already deployed before V2 formally started.
   - [x] Retain critical diagnostic signals and cumulative input-drop counts
     while omitting routine success traces outside support mode
     ([evidence](./v2-phase4-critical-diagnostics-2026-10-19.md))
+  - [x] Lazy-load import, export, replay sharing, advanced help, and diagnostic
+    formatting outside the active game shell
+    ([evidence](./v2-phase4-lazy-optional-tools-2026-10-20.md))
   - [ ] Pilot and adopt the token- and tool-efficient V2 delivery workflow
     without reducing release gates
     ([plan](./delivery-efficiency-plan-2026-10-18.md))
