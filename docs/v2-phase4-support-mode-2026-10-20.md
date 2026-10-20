@@ -64,3 +64,10 @@ dependency was missed. The comparative 35% target remains open.
   skips.
 - TypeScript, changed-file lint, and optimized production build smoke passed;
   changed-file lint retained two pre-existing hook warnings.
+
+## Production acceptance
+
+- Runtime commit `bf5abc9` deployed successfully in Amplify job 419.
+- The watcher verified the exact full commit SHA with four combined
+  status/commit retrievals over 192 seconds.
+- Production smoke passed against `https://www.binary2048.com` after job 419.
