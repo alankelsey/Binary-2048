@@ -68,3 +68,10 @@ was missed. The 35% comparable-slice target remains open.
 - The full browser matrix found one stale synchronous replay-share assertion;
   it now waits for the observable compact-export request before checking its
   payload, and the repeated full matrix passed.
+
+## Production acceptance
+
+- Runtime commit `afc250c` deployed successfully in Amplify job 417.
+- The watcher verified the exact full commit SHA and used three combined
+  status/commit retrievals over 139 seconds.
+- Production smoke passed against `https://www.binary2048.com` after job 417.
