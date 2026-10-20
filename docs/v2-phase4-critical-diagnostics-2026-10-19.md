@@ -53,3 +53,9 @@ behavior. The final release matrix found and removed two test-only timing races
 before passing. No product dependency was missed. This slice remains smaller
 than the session-compaction baseline, so the comparative 35% workflow target
 remains open.
+
+## Production acceptance
+
+- Runtime commit `4cb8906` deployed successfully in Amplify job 415.
+- The watcher verified the exact full commit before accepting the deployment.
+- Production smoke passed against `https://www.binary2048.com` after job 415.
