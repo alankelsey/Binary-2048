@@ -496,8 +496,9 @@ the common path.
   ([evidence](./v2-phase4-diagnostic-ring-buffer-2026-10-19.md)).
 - [x] Default the support log closed and format it only on open or copy
   ([evidence](./v2-phase4-diagnostic-ring-buffer-2026-10-19.md)).
-- [ ] Always retain errors, state regressions, slow acknowledgements,
-  divergence, recovery fallback, and input-drop counts.
+- [x] Always retain errors, state regressions, slow acknowledgements,
+  divergence, recovery fallback, and input-drop counts
+  ([evidence](./v2-phase4-critical-diagnostics-2026-10-19.md)).
 - [ ] Lazy-load Import, Export, replay sharing, advanced help, and diagnostics.
 - [ ] Allow an explicit support mode to enable detailed success tracing.
 - [ ] Make the game shell render independently of blocking authentication

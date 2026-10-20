@@ -2,7 +2,8 @@ import {
   createDiagnosticRingBuffer,
   diagnosticValue,
   formatDiagnosticEntries,
-  redactDiagnosticText
+  redactDiagnosticText,
+  shouldRetainDiagnostic
 } from "@/lib/binary2048/diagnostics";
 
 describe("diagnostics", () => {
@@ -23,6 +24,17 @@ describe("diagnostics", () => {
   it("rejects invalid capacities", () => {
     expect(() => createDiagnosticRingBuffer(0)).toThrow("Diagnostic capacity must be positive");
     expect(() => createDiagnosticRingBuffer(1.5)).toThrow("Diagnostic capacity must be positive");
+  });
+
+  it("retains critical signals and omits routine successes without detailed tracing", () => {
+    expect(shouldRetainDiagnostic("move_error", "error", undefined, false)).toBe(true);
+    expect(shouldRetainDiagnostic("slow_acknowledgement", "info", undefined, false)).toBe(true);
+    expect(shouldRetainDiagnostic("recovery_fallback", "info", undefined, false)).toBe(true);
+    expect(shouldRetainDiagnostic("input_drop_counts", "info", undefined, false)).toBe(true);
+    expect(shouldRetainDiagnostic("prediction_reconciliation", "info", { classification: "match" }, false)).toBe(false);
+    expect(shouldRetainDiagnostic("prediction_reconciliation", "info", { classification: "state_hash_mismatch" }, false)).toBe(true);
+    expect(shouldRetainDiagnostic("move_response", "info", undefined, false)).toBe(false);
+    expect(shouldRetainDiagnostic("move_response", "info", undefined, true)).toBe(true);
   });
 
   it("formats chronological move details for copy and paste", () => {

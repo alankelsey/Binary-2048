@@ -103,7 +103,7 @@ test("serializes delayed moves and keeps draining after a no-op response", async
     }
   });
 
-  await page.waitForTimeout(75);
+  await expect.poll(() => activeRequests, { timeout: 10_000 }).toBe(1);
   expect(requestDirections).toEqual(["left"]);
   expect(maximumActiveRequests).toBe(1);
   await expect.poll(() => requestDirections.length, { timeout: 10_000 }).toBe(3);

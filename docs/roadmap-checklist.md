@@ -445,6 +445,9 @@ below record work already deployed before V2 formally started.
   - [x] Move diagnostics into a bounded ref-backed ring and format the support
     log only when opened or copied
     ([evidence](./v2-phase4-diagnostic-ring-buffer-2026-10-19.md))
+  - [x] Retain critical diagnostic signals and cumulative input-drop counts
+    while omitting routine success traces outside support mode
+    ([evidence](./v2-phase4-critical-diagnostics-2026-10-19.md))
   - [ ] Pilot and adopt the token- and tool-efficient V2 delivery workflow
     without reducing release gates
     ([plan](./delivery-efficiency-plan-2026-10-18.md))

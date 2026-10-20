@@ -90,6 +90,7 @@ test("game log captures moves, export/replay results, console errors, and suppor
     const result = applyMove(current, body.dir);
     current = result.state;
     moves.push(body.dir);
+    await new Promise((resolve) => setTimeout(resolve, 800));
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -156,9 +157,17 @@ test("game log captures moves, export/replay results, console errors, and suppor
 
   await page.getByRole("button", { name: "Start New Game" }).click();
   await expect(page.locator(".card")).toHaveAttribute("aria-busy", "false");
+  await page.getByRole("button", { name: "New Game" }).click();
+  await page.getByRole("button", { name: "Confirm New Game" }).click();
+  await expect(page.getByRole("dialog", { name: "NEW GAME" })).toBeVisible();
+  await page.keyboard.press("ArrowLeft");
+  await page.keyboard.press("ArrowRight");
+  await expect(log).toHaveValue(/input_drop_counts[\s\S]*modal_open=2[\s\S]*total=2/);
+  await page.keyboard.press("Escape");
   await page.keyboard.press("ArrowLeft");
   await expect(log).toHaveValue(/move_request[\s\S]*dir=left/);
   await expect(log).toHaveValue(/move_response[\s\S]*status=200[\s\S]*recoveryMoves=1/);
+  await expect(log).toHaveValue(/slow_acknowledgement[\s\S]*durationMs=/);
   await expect(log).toHaveValue(/prediction_reconciliation[\s\S]*classification=unsupported_hash_version/);
   await expect(log).toHaveValue(
     /state_regression_detected[\s\S]*previousTurn=3[\s\S]*nextTurn=1/

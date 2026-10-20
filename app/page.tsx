@@ -46,6 +46,7 @@ import {
   createDiagnosticRingBuffer,
   diagnosticValue,
   formatDiagnosticEntries,
+  shouldRetainDiagnostic,
   type DiagnosticEntry,
   type DiagnosticLevel
 } from "@/lib/binary2048/diagnostics";
@@ -146,6 +147,7 @@ const DIFFICULTY_HELP_TEXT =
 const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.1.0";
 const APP_COMMIT = process.env.NEXT_PUBLIC_APP_COMMIT ?? "dev";
 const GAME_LOG_ENABLED = process.env.NEXT_PUBLIC_GAME_LOG_ENABLED === "1";
+const SLOW_ACKNOWLEDGEMENT_MS = 750;
 const UI_POLICY = getUiPolicy();
 const FULLSCREEN_TOGGLE_ENABLED = isFullscreenToggleEnabled();
 const MAX_BUFFERED_MOVES = 8;
@@ -267,6 +269,7 @@ export default function Home() {
   const diagnosticSequenceRef = useRef(0);
   const diagnosticBufferRef = useRef<ReturnType<typeof createDiagnosticRingBuffer> | null>(null);
   const diagnosticsOpenRef = useRef(false);
+  const inputDropEntryRef = useRef<DiagnosticEntry | null>(null);
   const authBridgeRef = useRef<ReturnType<typeof createClientAuthBridge> | null>(null);
   const modalTriggerRef = useRef<HTMLElement | null>(null);
   if (!authBridgeRef.current) {
@@ -286,7 +289,7 @@ export default function Home() {
       details?: Record<string, string | number | boolean | null>,
       level: DiagnosticLevel = "info"
     ) => {
-      if (!GAME_LOG_ENABLED) return;
+      if (!shouldRetainDiagnostic(event, level, details, GAME_LOG_ENABLED)) return;
       diagnosticSequenceRef.current += 1;
       const entry: DiagnosticEntry = {
         sequence: diagnosticSequenceRef.current,
@@ -301,14 +304,39 @@ export default function Home() {
     []
   );
 
-  function clearBufferedMoves(reason: MoveInputDropReason) {
+  const dropMoveInput = useCallback((trace: MovePerformanceTrace, reason: MoveInputDropReason, queueDepth: number) => {
+    dropMovePerformanceTrace(trace, reason, queueDepth);
+    const current = inputDropEntryRef.current;
+    const counts = { ...(current?.details ?? {}) };
+    counts[reason] = typeof counts[reason] === "number" ? counts[reason] + 1 : 1;
+    counts.total = typeof counts.total === "number" ? counts.total + 1 : 1;
+    counts.lastReason = reason;
+    counts.lastAtISO = new Date().toISOString();
+    if (current) {
+      current.details = counts;
+      if (diagnosticsOpenRef.current) setDiagnosticRevision((revision) => revision + 1);
+      return;
+    }
+    diagnosticSequenceRef.current += 1;
+    const entry: DiagnosticEntry = {
+      sequence: diagnosticSequenceRef.current,
+      atISO: new Date().toISOString(),
+      level: "warn",
+      event: "input_drop_counts",
+      details: counts
+    };
+    inputDropEntryRef.current = entry;
+    diagnosticBufferRef.current?.push(entry);
+  }, []);
+
+  const clearBufferedMoves = useCallback((reason: MoveInputDropReason) => {
     swipeGestureRef.current = createSwipeGestureState();
     while (bufferedMovesRef.current.length > 0) {
       const queueDepth = bufferedMovesRef.current.length;
       const buffered = bufferedMovesRef.current.shift();
-      if (buffered) dropMovePerformanceTrace(buffered.trace, reason, queueDepth);
+      if (buffered) dropMoveInput(buffered.trace, reason, queueDepth);
     }
-  }
+  }, [dropMoveInput]);
 
   function persistCompactRecovery(
     id: string,
@@ -401,7 +429,6 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (!GAME_LOG_ENABLED) return;
     addDiagnostic("diagnostics_ready", {
       commit: APP_COMMIT,
       userAgent: navigator.userAgent,
@@ -668,12 +695,12 @@ export default function Home() {
       tutorialLaunchConfirmOpen ||
       tutorialExitConfirmOpen
     ) {
-      dropMovePerformanceTrace(inputTrace, "modal_open", bufferedMovesRef.current.length);
+      dropMoveInput(inputTrace, "modal_open", bufferedMovesRef.current.length);
       return;
     }
     if (tutorial) {
       if (tutorial.phase !== "active") {
-        dropMovePerformanceTrace(inputTrace, "tutorial_unavailable", bufferedMovesRef.current.length);
+        dropMoveInput(inputTrace, "tutorial_unavailable", bufferedMovesRef.current.length);
         return;
       }
       const result = applyTutorialMove(tutorial, dir);
@@ -691,30 +718,30 @@ export default function Home() {
       return;
     }
     if (replay) {
-      dropMovePerformanceTrace(inputTrace, "replay_active", bufferedMovesRef.current.length);
+      dropMoveInput(inputTrace, "replay_active", bufferedMovesRef.current.length);
       return;
     }
     if (predictionBlocked) {
-      dropMovePerformanceTrace(inputTrace, "prediction_blocked", bufferedMovesRef.current.length);
+      dropMoveInput(inputTrace, "prediction_blocked", bufferedMovesRef.current.length);
       setErrorMessage("This game must be reloaded or replaced with a new game before more moves can be sent.");
       return;
     }
     if (sessionClass === "ranked" && !navigator.onLine) {
-      dropMovePerformanceTrace(inputTrace, "ranked_offline", bufferedMovesRef.current.length);
+      dropMoveInput(inputTrace, "ranked_offline", bufferedMovesRef.current.length);
       setErrorMessage("Ranked moves require a connection. Reconnect before continuing.");
       return;
     }
     const currentState = predictionModelRef.current?.predicted ?? state;
     if (!gameId || !currentState) {
-      dropMovePerformanceTrace(inputTrace, "game_unavailable", bufferedMovesRef.current.length);
+      dropMoveInput(inputTrace, "game_unavailable", bufferedMovesRef.current.length);
       return;
     }
     if (currentState.over) {
-      dropMovePerformanceTrace(inputTrace, "game_over", bufferedMovesRef.current.length);
+      dropMoveInput(inputTrace, "game_over", bufferedMovesRef.current.length);
       return;
     }
     if (currentState.won && !continueAfterWin) {
-      dropMovePerformanceTrace(inputTrace, "win_continuation_required", bufferedMovesRef.current.length);
+      dropMoveInput(inputTrace, "win_continuation_required", bufferedMovesRef.current.length);
       return;
     }
     if (moveInFlightRef.current || bufferedMovesRef.current.length > 0) {
@@ -731,13 +758,13 @@ export default function Home() {
         });
       }
       else {
-        dropMovePerformanceTrace(inputTrace, "queue_full", bufferedMovesRef.current.length);
+        dropMoveInput(inputTrace, "queue_full", bufferedMovesRef.current.length);
         showQueueFullFeedback();
       }
       return;
     }
     if (busy) {
-      dropMovePerformanceTrace(inputTrace, "busy", bufferedMovesRef.current.length);
+      dropMoveInput(inputTrace, "busy", bufferedMovesRef.current.length);
       return;
     }
     markMovePerformancePhase(inputTrace, "accepted");
@@ -770,7 +797,7 @@ export default function Home() {
   async function executeMove(command: MoveCommand) {
     const { dir, trace: activeTrace } = command;
     if (!gameId || !state) {
-      dropMovePerformanceTrace(activeTrace, "game_unavailable", bufferedMovesRef.current.length);
+      dropMoveInput(activeTrace, "game_unavailable", bufferedMovesRef.current.length);
       return;
     }
     moveInFlightRef.current = true;
@@ -797,6 +824,14 @@ export default function Home() {
           const authHeaders = await authBridgeRef.current?.authorizationHeader();
           const recoverySnapshot = recoveredSession?.recoverySnapshot;
           const compactRecovery = recoveredSession?.compactRecovery;
+          if (recoveredSession) {
+            addDiagnostic("recovery_fallback", {
+              dir,
+              gameId: sessionId,
+              attempt,
+              recoveryType: compactRecovery ? "checkpoint_tail" : "legacy_snapshot"
+            }, "warn");
+          }
           addDiagnostic("move_request", {
             dir,
             gameId: sessionId,
@@ -809,6 +844,7 @@ export default function Home() {
             recoveryRetry: Boolean(recoveredSession)
           });
           markMovePerformancePhase(activeTrace, "request_start", attempt);
+          const acknowledgementStartedAt = performance.now();
           const requestBody = JSON.stringify({
             dir,
             syncVersion: COMPACT_SYNC_VERSION,
@@ -851,6 +887,16 @@ export default function Home() {
               ? payload.recoverySnapshot.moves.length
               : null
           });
+          const acknowledgementMs = Math.max(0, performance.now() - acknowledgementStartedAt);
+          if (acknowledgementMs >= SLOW_ACKNOWLEDGEMENT_MS) {
+            addDiagnostic("slow_acknowledgement", {
+              dir,
+              gameId: sessionId,
+              attempt,
+              durationMs: Number(acknowledgementMs.toFixed(1)),
+              status: response.status
+            }, "warn");
+          }
           addDiagnostic(
             "move_response",
             {
@@ -1473,7 +1519,7 @@ export default function Home() {
       recordMoveQueueDepth(nextMove.trace, "dequeue", bufferedMovesRef.current.length);
       executeMoveHandlerRef.current(nextMove);
     }
-  }, [busy, gameId, state, replay, continueAfterWin]);
+  }, [busy, clearBufferedMoves, gameId, state, replay, continueAfterWin]);
 
   useEffect(() => {
     if (initializing || busy || !gameId || !state || restoredPendingMovesRef.current.length === 0) return;
@@ -1501,7 +1547,7 @@ export default function Home() {
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [clearBufferedMoves]);
 
   useEffect(() => {
     if (!tutorial || tutorial.phase !== "success") return;
@@ -1561,7 +1607,7 @@ export default function Home() {
       for (const waiter of localPaintWaiters.current.splice(0)) waiter.resolve();
       clearBufferedMoves("component_unmounted");
     };
-  }, []);
+  }, [clearBufferedMoves]);
 
   useEffect(() => {
     if (!replay || !replayPlaying) return;
@@ -2634,6 +2680,7 @@ export default function Home() {
               </button>
               <button type="button" onClick={() => {
                 diagnosticBufferRef.current?.clear();
+                inputDropEntryRef.current = null;
                 if (diagnosticsOpenRef.current) setDiagnosticRevision((revision) => revision + 1);
               }}>
                 Clear Log

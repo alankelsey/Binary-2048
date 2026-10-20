@@ -41,6 +41,25 @@ export function createDiagnosticRingBuffer(capacity = 250): DiagnosticRingBuffer
   };
 }
 
+const CRITICAL_EVENTS = new Set([
+  "state_regression_detected",
+  "slow_acknowledgement",
+  "prediction_reconciliation",
+  "recovery_fallback",
+  "input_drop_counts"
+]);
+
+export function shouldRetainDiagnostic(
+  event: string,
+  level: DiagnosticLevel,
+  details: DiagnosticEntry["details"],
+  detailedSuccessTracing: boolean
+) {
+  if (level === "error" || level === "warn") return true;
+  if (event === "prediction_reconciliation") return details?.classification !== "match";
+  return CRITICAL_EVENTS.has(event) || detailedSuccessTracing;
+}
+
 const SENSITIVE_VALUE = /("?(?:authorization|token|signature|secret|password)"?\s*[:=]\s*)("[^"\s]*"|[^,\s}]+)/gi;
 const BEARER_VALUE = /Bearer\s+[A-Za-z0-9._~+/=-]+/gi;
 

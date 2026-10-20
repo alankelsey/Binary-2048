@@ -92,12 +92,9 @@ test("new game offers tutorial without hiding entry points and persists guest op
   await offer.getByRole("button", { name: "Back" }).click();
   await empty.getByRole("button", { name: "Start New Game" }).click();
   await expect(page.getByRole("grid", { name: "Binary 2048 game board" })).toBeVisible();
+  await expect(page.locator(".card")).toHaveAttribute("aria-busy", "false");
   expect(createRequests).toBe(1);
-  await page.evaluate(() => {
-    window.localStorage.removeItem("binary2048.currentGameId");
-    window.localStorage.removeItem("binary2048.resumeSnapshot");
-  });
-  await page.reload();
+  await page.getByRole("button", { name: "New Game", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "NEW GAME" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Play tutorial" })).toBeVisible();
   await page.getByRole("button", { name: "Start New Game" }).click();
