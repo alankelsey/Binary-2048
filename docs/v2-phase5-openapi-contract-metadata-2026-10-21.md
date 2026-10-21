@@ -60,3 +60,9 @@ request execution was added to the explorer.
 - The optimized production build and smoke passed on the first run.
 - No missed dependency or release defect was found. The next slice must cap the
   combined output of a parallel discovery batch, not only each child command.
+
+## Production acceptance
+
+Runtime commit `f26dd02` deployed successfully in Amplify job 425. The watcher
+enforced the full commit id and reported success after 184 seconds. Production
+smoke passed against `https://www.binary2048.com` after deployment.
