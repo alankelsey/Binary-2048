@@ -18,7 +18,7 @@ const RATE_LIMITED_PARAMETERS = [{
   schema: { type: "string" }
 }] as const;
 
-export const OPENAPI_SPEC = {
+const OPENAPI_BASE_SPEC = {
   openapi: "3.1.0",
   info: {
     title: "Binary-2048 API",
@@ -246,13 +246,22 @@ export const OPENAPI_SPEC = {
         parameters: RATE_LIMITED_PARAMETERS,
         requestBody: {
           required: false,
-          content: { "application/json": { schema: { type: "object" } } }
+          content: { "application/json": { schema: { type: "object", properties: {
+            seeds: { type: "array", maxItems: 100, items: { type: "integer" } },
+            seedStart: { type: "integer" },
+            seedCount: { type: "integer", minimum: 1, maximum: 100 },
+            maxMoves: { type: "integer", minimum: 1, maximum: 2000 },
+            bots: { type: "array", items: { type: "string", enum: ["priority", "random", "alternate", "rollout"] } },
+            includeTraces: { type: "boolean" }
+          } } } }
         },
         responses: {
           "202": { description: "Queued on isolated compute; poll statusUrl until complete or failed", content: { "application/json": { schema: { type: "object", required: ["jobId", "status", "statusUrl"], properties: { jobId: { type: "string" }, status: { const: "queued" }, statusUrl: { type: "string" } } } } } },
           "200": { description: "Tournament result with ranking and run summaries", headers: RATE_LIMIT_HEADERS },
           "400": { description: "Invalid tournament payload" },
-          "429": { description: "Rate limit exceeded", headers: { ...RATE_LIMIT_HEADERS, "Retry-After": { description: "Seconds until retry is allowed", schema: { type: "integer" } } } }
+          "403": { description: "Configured anti-abuse challenge required" },
+          "429": { description: "Rate limit or worker budget exceeded", headers: { ...RATE_LIMIT_HEADERS, "Retry-After": { description: "Seconds until retry is allowed", schema: { type: "integer" } } } },
+          "503": { description: "Endpoint disabled, tournament capacity reached, or queue wait timed out" }
         }
       }
     },
@@ -617,7 +626,8 @@ export const OPENAPI_SPEC = {
         },
         responses: {
           "200": { description: "Imported" },
-          "400": { description: "Invalid import payload" }
+          "400": { description: "Invalid import payload" },
+          "413": { description: "Import body exceeds 256 KiB" }
         }
       }
     },
@@ -630,7 +640,8 @@ export const OPENAPI_SPEC = {
         },
         responses: {
           "200": { description: "Scenario result" },
-          "400": { description: "Invalid scenario payload" }
+          "400": { description: "Invalid scenario payload" },
+          "413": { description: "Scenario body exceeds 128 KiB" }
         }
       }
     },
@@ -645,18 +656,29 @@ export const OPENAPI_SPEC = {
         responses: {
           "200": { description: "Simulation result", headers: RATE_LIMIT_HEADERS },
           "400": { description: "Invalid simulation payload" },
-          "429": { description: "Rate limit exceeded", headers: { ...RATE_LIMIT_HEADERS, "Retry-After": { description: "Seconds until retry is allowed", schema: { type: "integer" } } } }
+          "403": { description: "Configured anti-abuse challenge required" },
+          "413": { description: "Simulation body exceeds 128 KiB" },
+          "429": { description: "Rate limit exceeded", headers: { ...RATE_LIMIT_HEADERS, "Retry-After": { description: "Seconds until retry is allowed", schema: { type: "integer" } } } },
+          "503": { description: "Endpoint temporarily disabled by degrade mode" }
         }
       }
     },
     "/api/training/replays": {
       get: {
         summary: "Generate deterministic bot replay summaries for training",
-        parameters: RATE_LIMITED_PARAMETERS,
+        parameters: [
+          ...RATE_LIMITED_PARAMETERS,
+          { name: "page", in: "query", required: false, schema: { type: "integer", minimum: 1, default: 1 } },
+          { name: "limit", in: "query", required: false, schema: { type: "integer", minimum: 1, maximum: 100, default: 20 } },
+          { name: "bot", in: "query", required: false, schema: { type: "string", enum: ["priority", "random", "alternate", "rollout"], default: "rollout" } },
+          { name: "minScore", in: "query", required: false, schema: { type: "integer", minimum: 0, default: 0 } }
+        ],
         responses: {
           "202": { description: "Queued on isolated compute; poll statusUrl until complete or failed", content: { "application/json": { schema: { type: "object", required: ["jobId", "status", "statusUrl"], properties: { jobId: { type: "string" }, status: { const: "queued" }, statusUrl: { type: "string" } } } } } },
           "200": { description: "Paginated replay summaries", headers: RATE_LIMIT_HEADERS },
+          "403": { description: "Configured anti-abuse challenge required" },
           "429": { description: "Shared training rate limit exceeded", headers: { ...RATE_LIMIT_HEADERS, "Retry-After": { description: "Seconds until retry is allowed", schema: { type: "integer" } } } },
+          "500": { description: "Training replay generation failed" },
           "503": { description: "Training queue full or wait timeout", headers: { "Retry-After": { description: "Seconds before retrying capacity", schema: { type: "integer" } } } }
         }
       }
@@ -664,11 +686,19 @@ export const OPENAPI_SPEC = {
     "/api/training/labels": {
       get: {
         summary: "Generate labeled board states for training",
-        parameters: RATE_LIMITED_PARAMETERS,
+        parameters: [
+          ...RATE_LIMITED_PARAMETERS,
+          { name: "page", in: "query", required: false, schema: { type: "integer", minimum: 1, default: 1 } },
+          { name: "limit", in: "query", required: false, schema: { type: "integer", minimum: 1, maximum: 500, default: 100 } },
+          { name: "strategy", in: "query", required: false, schema: { type: "string", enum: ["score_delta", "rollout"], default: "score_delta" } },
+          { name: "minTile", in: "query", required: false, schema: { type: "integer", minimum: 0, default: 0 } }
+        ],
         responses: {
           "202": { description: "Queued on isolated compute; poll statusUrl until complete or failed", content: { "application/json": { schema: { type: "object", required: ["jobId", "status", "statusUrl"], properties: { jobId: { type: "string" }, status: { const: "queued" }, statusUrl: { type: "string" } } } } } },
           "200": { description: "Paginated labeled board states", headers: RATE_LIMIT_HEADERS },
+          "403": { description: "Configured anti-abuse challenge required" },
           "429": { description: "Shared training rate limit exceeded", headers: { ...RATE_LIMIT_HEADERS, "Retry-After": { description: "Seconds until retry is allowed", schema: { type: "integer" } } } },
+          "500": { description: "Training label generation failed" },
           "503": { description: "Training queue full or wait timeout", headers: { "Retry-After": { description: "Seconds before retrying capacity", schema: { type: "integer" } } } }
         }
       }
@@ -682,7 +712,8 @@ export const OPENAPI_SPEC = {
         },
         responses: {
           "200": { description: "Replay reconstruction result" },
-          "400": { description: "Invalid replay payload" }
+          "400": { description: "Invalid replay payload" },
+          "413": { description: "Replay body exceeds 128 KiB" }
         }
       }
     },
@@ -743,7 +774,8 @@ export const OPENAPI_SPEC = {
         },
         responses: {
           "200": { description: "Replay postmortem result" },
-          "400": { description: "Invalid replay payload" }
+          "400": { description: "Invalid replay payload" },
+          "413": { description: "Replay body exceeds 128 KiB" }
         }
       }
     },
@@ -822,3 +854,123 @@ export const OPENAPI_SPEC = {
     }
   }
 } as const;
+
+type OperationContract = {
+  auth: string;
+  security: ReadonlyArray<Record<string, readonly string[]>>;
+  scopes: readonly string[];
+  rateLimit: string;
+  version: string;
+  examples: { request?: string; response: string };
+};
+
+const PUBLIC: Pick<OperationContract, "auth" | "security" | "scopes"> = {
+  auth: "Public; no credential is required",
+  security: [],
+  scopes: []
+};
+
+const OPTIONAL_API_KEY: Pick<OperationContract, "auth" | "security" | "scopes"> = {
+  auth: "Optional x-api-key; missing or invalid keys use the IP/account quota",
+  security: [{ botApiKey: [] }, {}],
+  scopes: []
+};
+
+const OPERATION_CONTRACTS: Record<string, OperationContract> = {
+  "GET /api/jobs/{id}": { auth: "Opaque 256-bit job id capability", security: [], scopes: [], rateLimit: "game_move: default 600 requests / 5 minutes; API-key counters are shared", version: "job-v1", examples: { response: "{ jobId, status, result?, error?, expiresAt }" } },
+  "POST /api/games": { ...PUBLIC, rateLimit: "No route-local request quota", version: "session-schema-v2", examples: { request: "{ seed?: 42, mode?: 'normal' }", response: "{ id, current, recoverySnapshot, integrity }" } },
+  "GET /api/games/{id}": { ...PUBLIC, rateLimit: "No route-local request quota", version: "session-schema-v2", examples: { response: "{ id, current, recoverySnapshot, integrity }" } },
+  "POST /api/games/{id}/move": { ...OPTIONAL_API_KEY, rateLimit: "game_move: default 600 requests / 5 minutes; API-key counters are shared", version: COMPACT_SYNC_VERSION, examples: { request: "{ dir: 'left', expectTurn, expectStateHashVersion, expectStateHash }", response: "{ current, stateHash, stateHashVersion, sync }" } },
+  "POST /api/games/{id}/undo": { ...PUBLIC, rateLimit: "No route-local request quota", version: "session-schema-v2", examples: { response: "{ current, undo, recoverySnapshot }" } },
+  "GET /api/games/{id}/encoded": { ...PUBLIC, rateLimit: "No route-local request quota", version: "encoded-state-v1", examples: { response: "{ encoded, encodedFlat, actionMask }" } },
+  "GET /api/games/{id}/export": { ...PUBLIC, rateLimit: "No route-local request quota", version: "game-export-v1", examples: { response: "Versioned game export or compact replay" } },
+  "POST /api/games/{id}/export": { ...PUBLIC, rateLimit: "No route-local request quota", version: COMPACT_RECOVERY_VERSION, examples: { request: "{ compactRecovery }", response: "Recovered versioned game export" } },
+  "GET /api/games/{id}/replay": { ...PUBLIC, rateLimit: "No route-local request quota", version: "replay-v1", examples: { response: "{ header, moves, signature? }" } },
+  "POST /api/games/import": { ...PUBLIC, rateLimit: "No route-local request quota; body capped at 256 KiB", version: COMPACT_RECOVERY_VERSION, examples: { request: "Game export, recovery snapshot, or compact recovery", response: "{ id, current, recoverySnapshot, steps, integrity }" } },
+  "POST /api/sim/run": { ...PUBLIC, rateLimit: "No route-local request quota; body capped at 128 KiB", version: "simulation-v1", examples: { request: "{ config, initialGrid, moves }", response: "{ version: 1, final, steps }" } },
+  "POST /api/simulate": { ...OPTIONAL_API_KEY, rateLimit: "simulate: default 60 requests / 5 minutes; maximum 2,000 moves; challenge policy applies", version: "simulation-v1", examples: { request: "{ requests: [{ config, moves }] }", response: "Batch simulation results" } },
+  "POST /api/bots/tournament": { ...OPTIONAL_API_KEY, rateLimit: "bots_tournament: default 10 requests / 5 minutes; maximum 100 seeds and 2,000 moves; challenge policy applies", version: "tournament-v1", examples: { request: "{ seedCount: 3, maxMoves: 250, bots: ['priority', 'rollout'] }", response: "Tournament result or { jobId, status, statusUrl }" } },
+  "GET /api/training/replays": { ...OPTIONAL_API_KEY, rateLimit: "training: shared default 20 requests / 5 minutes; limit 1..100; challenge policy applies", version: "training-replays-v1", examples: { response: "Replay page or { jobId, status, statusUrl }" } },
+  "GET /api/training/labels": { ...OPTIONAL_API_KEY, rateLimit: "training: shared default 20 requests / 5 minutes; limit 1..500; challenge policy applies", version: "training-labels-v1", examples: { response: "Label page or { jobId, status, statusUrl }" } },
+  "GET /api/ops/models": { auth: "Admin bearer token or signed admin auth-bridge token", security: [{ adminBearer: [] }], scopes: ["admin"], rateLimit: "No route-local request quota", version: "model-registry-v1", examples: { response: "{ source, models }" } },
+  "POST /api/replay": { ...PUBLIC, rateLimit: "No route-local request quota; body capped at 128 KiB", version: "replay-v1", examples: { request: "Versioned game export or replay envelope", response: "Deterministically reconstructed replay" } },
+  "POST /api/replay/ingest": { ...PUBLIC, rateLimit: "No route-local request quota or body cap currently enforced", version: "canonical-run-v1", examples: { request: "{ records: [canonicalRunRecord] }", response: "{ ingested, duplicateIds }" } },
+  "POST /api/replay/validate": { ...PUBLIC, rateLimit: "No route-local request quota", version: "replay-v1", examples: { request: "{ payload, signature? }", response: "{ ok, reason, details? }" } },
+  "GET /api/replay/code": { ...PUBLIC, rateLimit: "No route-local request quota", version: "replay-code-v1", examples: { response: "Decoded compact replay payload" } },
+  "POST /api/replay/code": { ...PUBLIC, rateLimit: "No route-local request quota", version: "replay-code-v1", examples: { request: "Compact replay payload", response: "{ code, length, signed, hosted }" } },
+  "POST /api/replay/postmortem": { ...PUBLIC, rateLimit: "No route-local request quota; body capped at 128 KiB", version: "replay-v1", examples: { request: "Versioned game export or replay envelope", response: "Ranked highest-cost move analysis" } },
+  "GET /api/runs/{id}": { ...PUBLIC, rateLimit: "No route-local request quota", version: "canonical-run-v1", examples: { response: "Canonical persisted run record" } },
+  "GET /api/runs/{id}/replay": { ...PUBLIC, rateLimit: "No route-local request quota", version: "replay-v1", examples: { response: "Compact replay envelope for the persisted run" } }
+};
+
+const OPENAPI_COMPONENTS = {
+  securitySchemes: {
+    botApiKey: { type: "apiKey", in: "header", name: "x-api-key", description: "Optional server-issued bot key; routes may fall back to an IP/account quota" },
+    bearerAuth: { type: "http", scheme: "bearer", bearerFormat: "Binary2048 auth-bridge JWT" },
+    adminBearer: { type: "http", scheme: "bearer", bearerFormat: "Admin token or signed admin auth-bridge JWT" },
+    authSession: { type: "apiKey", in: "cookie", name: "next-auth.session-token", description: "Auth.js browser session cookie" }
+  },
+  schemas: {
+    Error: { type: "object", required: ["error"], properties: { error: { type: "string" }, code: { type: "string" }, details: { type: "object" } }, additionalProperties: true },
+    ValidationFailure: { type: "object", required: ["ok", "reason"], properties: { ok: { const: false }, reason: { type: "string" }, details: { type: "object" } }, additionalProperties: true },
+    ApiFailure: { oneOf: [{ "$ref": "#/components/schemas/Error" }, { "$ref": "#/components/schemas/ValidationFailure" }] },
+    RateLimitError: { type: "object", required: ["error"], properties: { error: { type: "string" }, route: { type: "string" }, limit: { type: "integer" }, remaining: { type: "integer" }, retryAfterSeconds: { type: "integer" } } },
+    JobAccepted: { type: "object", required: ["jobId", "status", "statusUrl"], properties: { jobId: { type: "string" }, status: { const: "queued" }, statusUrl: { type: "string" } } },
+    StateIdentity: { type: "object", required: ["stateHash", "stateHashVersion"], properties: { stateHash: { type: "string", pattern: "^[0-9a-f]{8}$" }, stateHashVersion: { type: "string", const: STATE_HASH_VERSION } } },
+    ReplayEnvelope: { type: "object", required: ["header", "moves"], properties: { header: { type: "object" }, moves: { type: "array", items: { type: "string", enum: ["L", "R", "U", "D"] } }, signature: { type: "string" } } }
+  }
+} as const;
+
+function enrichOpenApi<T extends { paths: Record<string, Record<string, unknown>> }>(base: T) {
+  const paths = Object.fromEntries(Object.entries(base.paths).map(([path, item]) => [
+    path,
+    Object.fromEntries(Object.entries(item).map(([method, operation]) => {
+      const policy = OPERATION_CONTRACTS[`${method.toUpperCase()} ${path}`];
+      if (!policy || !operation || typeof operation !== "object") return [method, operation];
+      const operationRecord = operation as Record<string, unknown>;
+      const requestBody = operationRecord.requestBody && typeof operationRecord.requestBody === "object" && policy.examples.request
+        ? (() => {
+            const body = operationRecord.requestBody as Record<string, unknown>;
+            const content = body.content && typeof body.content === "object" ? body.content as Record<string, unknown> : {};
+            const json = content["application/json"] && typeof content["application/json"] === "object" ? content["application/json"] as Record<string, unknown> : {};
+            return { ...body, content: { ...content, "application/json": { ...json, examples: { illustrative: { value: policy.examples.request } } } } };
+          })()
+        : operationRecord.requestBody;
+      const sourceResponses = operationRecord.responses && typeof operationRecord.responses === "object"
+        ? operationRecord.responses as Record<string, unknown>
+        : {};
+      let successExampleApplied = false;
+      const responses = Object.fromEntries(Object.entries(sourceResponses).map(([status, response]) => {
+        if (!response || typeof response !== "object") return [status, response];
+        const responseRecord = response as Record<string, unknown>;
+        if (/^[45]/.test(status)) {
+          const schema = status === "429"
+            ? { "$ref": "#/components/schemas/RateLimitError" }
+            : { "$ref": "#/components/schemas/ApiFailure" };
+          return [status, { ...responseRecord, content: responseRecord.content ?? { "application/json": { schema } } }];
+        }
+        if (!successExampleApplied && /^2/.test(status)) {
+          successExampleApplied = true;
+          const content = responseRecord.content && typeof responseRecord.content === "object" ? responseRecord.content as Record<string, unknown> : {};
+          const json = content["application/json"] && typeof content["application/json"] === "object" ? content["application/json"] as Record<string, unknown> : {};
+          return [status, { ...responseRecord, content: { ...content, "application/json": { ...json, examples: { illustrative: { value: policy.examples.response } } } } }];
+        }
+        return [status, response];
+      }));
+      return [method, {
+        ...operation,
+        requestBody,
+        responses,
+        security: policy.security,
+        "x-auth-description": policy.auth,
+        "x-required-scopes": policy.scopes,
+        "x-rate-limit-policy": policy.rateLimit,
+        "x-api-version": policy.version,
+        "x-safe-examples": policy.examples
+      }];
+    }))
+  ]));
+  return { ...base, paths, components: OPENAPI_COMPONENTS } as T & { paths: typeof paths; components: typeof OPENAPI_COMPONENTS };
+}
+
+export const OPENAPI_SPEC = enrichOpenApi(OPENAPI_BASE_SPEC);

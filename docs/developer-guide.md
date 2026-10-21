@@ -82,11 +82,17 @@ See `/api/openapi` for up-to-date route definitions.
 
 The explorer is generated from the same in-process OpenAPI object as
 `/api/openapi`. It can filter operations and expand their parameters, request
-body status, and documented responses. A route-contract test compares every
+body status, authentication, authorization scopes, rate-limit policy,
+schema/version compatibility, safe examples, and documented responses. A route-contract test compares every
 explicitly exported App Router HTTP handler with the published operations, so
 adding or removing a handler requires updating the contract in the same
 change. The Auth.js catch-all route remains framework-owned and outside this
 application contract.
+
+The canonical contract also publishes reusable `botApiKey`, `bearerAuth`,
+`adminBearer`, and `authSession` security schemes plus shared error,
+rate-limit, job, state-identity, and replay schemas. The explorer is read-only;
+it never sends credentials or executes privileged or mutating operations.
 
 ## Testing
 

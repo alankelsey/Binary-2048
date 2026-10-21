@@ -11,6 +11,9 @@ test("API explorer filters and expands the canonical contract", async ({ page })
   await operation.locator("summary").click();
   await expect(operation).toContainText("Request body: documented");
   await expect(operation).toContainText("400 A non-empty records array is required");
+  await expect(operation).toContainText("Authentication: Public; no credential is required");
+  await expect(operation).toContainText("No route-local request quota or body cap currently enforced");
+  await expect(operation).toContainText("Schema/version: canonical-run-v1");
 
   await page.getByRole("searchbox", { name: "Filter paths and operations" }).fill("no-such-operation");
   await expect(page.getByText("No API operations match this filter.")).toBeVisible();

@@ -192,3 +192,11 @@ caused repeated build output. The 35% reduction is still not claimed; the next
 pilot should cap source reads before execution and run the auth-complete smoke
 harness on the first release build. See the
 [slice evidence](./v2-phase5-openapi-audit-2026-10-21.md).
+
+The third product pilot completed the Phase 5 priority contract metadata on
+2026-10-21. Focused and full gates found no missed dependency, and the release
+build passed on its first run. The initial parallel discovery result still
+exceeded 5,000 combined output tokens even though each child command was
+bounded. The 35% target remains open; future parallel discovery must cap the
+aggregate returned output. See the
+[slice evidence](./v2-phase5-openapi-contract-metadata-2026-10-21.md).

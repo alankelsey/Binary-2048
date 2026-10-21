@@ -21,4 +21,16 @@ describe("getApiDocEntries", () => {
     expect(health?.operations[0]?.requestBody).toBe(false);
     expect(health?.operations[0]?.responses).toEqual([{ status: "200", description: "Service healthy" }]);
   });
+
+  it("exposes audited operation policy metadata without inventing defaults", () => {
+    const entries = getApiDocEntries();
+    const simulate = entries.find((entry) => entry.path === "/api/simulate")?.operations[0];
+    const health = entries.find((entry) => entry.path === "/api/health")?.operations[0];
+
+    expect(simulate?.auth).toContain("Optional x-api-key");
+    expect(simulate?.rateLimit).toContain("60 requests / 5 minutes");
+    expect(simulate?.version).toBe("simulation-v1");
+    expect(simulate?.examples?.request).toContain("requests");
+    expect(health?.auth).toBe("Not yet audited");
+  });
 });

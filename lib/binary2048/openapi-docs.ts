@@ -8,6 +8,11 @@ export type ApiDocOperation = {
   parameters: string[];
   requestBody: boolean;
   responses: Array<{ status: string; description: string }>;
+  auth: string;
+  scopes: string[];
+  rateLimit: string;
+  version: string;
+  examples?: { request?: string; response?: string };
 };
 
 export type ApiDocEntry = {
@@ -27,6 +32,11 @@ export function getApiDocEntries() {
       parameters?: ReadonlyArray<{ name?: string; in?: string; required?: boolean }>;
       requestBody?: unknown;
       responses?: Record<string, { description?: string }>;
+      "x-auth-description"?: string;
+      "x-required-scopes"?: ReadonlyArray<string>;
+      "x-rate-limit-policy"?: string;
+      "x-api-version"?: string;
+      "x-safe-examples"?: { request?: string; response?: string };
     }>>;
     const operations: ApiDocOperation[] = [];
 
@@ -45,7 +55,12 @@ export function getApiDocEntries() {
         responses: Object.entries(operation.responses ?? {}).map(([status, response]) => ({
           status,
           description: response.description ?? "No description"
-        }))
+        })),
+        auth: operation["x-auth-description"] ?? "Not yet audited",
+        scopes: [...(operation["x-required-scopes"] ?? [])],
+        rateLimit: operation["x-rate-limit-policy"] ?? "Not yet audited",
+        version: operation["x-api-version"] ?? "Not yet audited",
+        examples: operation["x-safe-examples"]
       });
     }
 

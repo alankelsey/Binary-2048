@@ -513,17 +513,17 @@ and a closed diagnostic panel performs no full-log formatting per move.
 
 ### Phase 5: isolate research and compute workloads
 
-- [ ] Audit the existing OpenAPI endpoint and developer docs, then prototype
+- [x] Audit the existing OpenAPI endpoint and developer docs, then prototype
   Swagger UI or an equivalent interactive API explorer for V2. The published
   contract must cover every supported gameplay, replay, simulation, job, and
   research endpoint with authentication, authorization scopes, rate limits,
   request/response examples, error shapes, and schema/version compatibility.
   Generate from canonical schemas where practical and add automated coverage
   that fails when implemented routes and the published contract drift.
-  The route audit, exact operation drift gate, and read-only interactive
-  explorer prototype are complete; operation-level security metadata,
-  examples, and canonical schema replacement remain open
-  ([evidence](./v2-phase5-openapi-audit-2026-10-21.md)).
+  The route audit, exact operation drift gate, read-only interactive explorer,
+  and priority operation contract metadata are complete
+  ([audit evidence](./v2-phase5-openapi-audit-2026-10-21.md),
+  [contract evidence](./v2-phase5-openapi-contract-metadata-2026-10-21.md)).
 - [ ] Inventory every simulation, tournament, training, and model-inference
   entry point and its deployed authorization and rate limit.
 - [ ] Apply scoped API keys or research/admin roles and hard request/job caps.

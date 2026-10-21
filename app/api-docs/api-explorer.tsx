@@ -41,6 +41,12 @@ export function ApiExplorer({ entries }: { entries: ApiDocEntry[] }) {
                 <div className="api-op-contract">
                   <p><strong>Request body:</strong> {operation.requestBody ? "documented" : "none"}</p>
                   <p><strong>Parameters:</strong> {operation.parameters.length ? operation.parameters.join(", ") : "none"}</p>
+                  <p><strong>Authentication:</strong> {operation.auth}</p>
+                  <p><strong>Required scopes:</strong> {operation.scopes.length ? operation.scopes.join(", ") : "none"}</p>
+                  <p><strong>Rate limit:</strong> {operation.rateLimit}</p>
+                  <p><strong>Schema/version:</strong> {operation.version}</p>
+                  {operation.examples?.request ? <p><strong>Request example:</strong> <code>{operation.examples.request}</code></p> : null}
+                  {operation.examples?.response ? <p><strong>Response example:</strong> <code>{operation.examples.response}</code></p> : null}
                   <strong>Responses</strong>
                   <ul>
                     {operation.responses.map((response) => <li key={response.status}><code>{response.status}</code> {response.description}</li>)}
