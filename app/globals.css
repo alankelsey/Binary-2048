@@ -1129,6 +1129,36 @@ select:focus-visible {
   margin-top: 0.75rem;
 }
 
+.api-search-label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-weight: 700;
+}
+
+.api-search {
+  width: min(100%, 34rem);
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--hint-border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.api-op-details summary {
+  cursor: pointer;
+}
+
+.api-op-contract {
+  margin: 0.35rem 0 0.7rem 4.35rem;
+  color: var(--hint-text);
+  font-size: 0.78rem;
+}
+
+.api-op-contract p,
+.api-op-contract ul {
+  margin: 0.25rem 0;
+}
+
 .api-doc-card {
   border: 1px solid var(--hint-border);
   background: color-mix(in srgb, var(--hint-bg) 78%, transparent);

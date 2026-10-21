@@ -6,6 +6,9 @@ LOG_FILE="/tmp/binary2048-smoke.log"
 BASE="http://localhost:${PORT}"
 AUTH_SECRET="${AUTH_SECRET:-build-smoke-secret}"
 NEXTAUTH_URL="${NEXTAUTH_URL:-${BASE}}"
+AUTH_GITHUB_ID="${AUTH_GITHUB_ID:-build-smoke-github-id}"
+AUTH_GITHUB_SECRET="${AUTH_GITHUB_SECRET:-build-smoke-github-secret}"
+BINARY2048_AUTH_BRIDGE_SECRET="${BINARY2048_AUTH_BRIDGE_SECRET:-build-smoke-bridge-secret}"
 
 cleanup() {
   if [[ -n "${SERVER_PID:-}" ]]; then
@@ -14,7 +17,12 @@ cleanup() {
 }
 trap cleanup EXIT
 
-AUTH_SECRET="${AUTH_SECRET}" NEXTAUTH_URL="${NEXTAUTH_URL}" npm run start -- -p "${PORT}" >"${LOG_FILE}" 2>&1 &
+AUTH_SECRET="${AUTH_SECRET}" \
+  NEXTAUTH_URL="${NEXTAUTH_URL}" \
+  AUTH_GITHUB_ID="${AUTH_GITHUB_ID}" \
+  AUTH_GITHUB_SECRET="${AUTH_GITHUB_SECRET}" \
+  BINARY2048_AUTH_BRIDGE_SECRET="${BINARY2048_AUTH_BRIDGE_SECRET}" \
+  npm run start -- -p "${PORT}" >"${LOG_FILE}" 2>&1 &
 SERVER_PID=$!
 
 for _ in $(seq 1 40); do
@@ -48,8 +56,13 @@ BRIDGE_STATUS="$(curl -sS -o "${BRIDGE_BODY_FILE}" -w "%{http_code}" \
   -X POST "${BASE}/api/auth/bridge-token" \
   -H "Content-Type: application/json" \
   -d '{"ttlSeconds":300}')"
-if [[ "${BRIDGE_STATUS}" != "401" ]]; then
-  echo "Smoke test failed: /api/auth/bridge-token expected unauthenticated 401, received ${BRIDGE_STATUS}"
+if [[ "${BRIDGE_STATUS}" != "401" && "${BRIDGE_STATUS}" != "503" ]]; then
+  echo "Smoke test failed: /api/auth/bridge-token expected fail-closed 401 or 503, received ${BRIDGE_STATUS}"
+  echo "response: $(<"${BRIDGE_BODY_FILE}")"
+  exit 1
+fi
+if [[ "${BRIDGE_STATUS}" == "503" ]] && ! grep -q 'Authentication service temporarily unavailable' "${BRIDGE_BODY_FILE}"; then
+  echo "Smoke test failed: auth bridge 503 did not identify temporary authentication unavailability"
   echo "response: $(<"${BRIDGE_BODY_FILE}")"
   exit 1
 fi

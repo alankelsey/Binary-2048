@@ -17,5 +17,8 @@ describe("getApiDocEntries", () => {
     expect(games?.operations[0]?.summary).toBe("Create a game session");
     expect(health?.operations.map((operation) => operation.method)).toEqual(["get"]);
     expect(health?.operations[0]?.summary).toBe("Health check");
+    expect(games?.operations[0]?.requestBody).toBe(true);
+    expect(health?.operations[0]?.requestBody).toBe(false);
+    expect(health?.operations[0]?.responses).toEqual([{ status: "200", description: "Service healthy" }]);
   });
 });

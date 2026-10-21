@@ -520,6 +520,10 @@ and a closed diagnostic panel performs no full-log formatting per move.
   request/response examples, error shapes, and schema/version compatibility.
   Generate from canonical schemas where practical and add automated coverage
   that fails when implemented routes and the published contract drift.
+  The route audit, exact operation drift gate, and read-only interactive
+  explorer prototype are complete; operation-level security metadata,
+  examples, and canonical schema replacement remain open
+  ([evidence](./v2-phase5-openapi-audit-2026-10-21.md)).
 - [ ] Inventory every simulation, tournament, training, and model-inference
   entry point and its deployed authorization and rate limit.
 - [ ] Apply scoped API keys or research/admin roles and hard request/job caps.

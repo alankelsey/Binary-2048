@@ -183,3 +183,12 @@ and a compile-error reporting gap before the final matrix. Three combined
 discovery reads exceeded the 5,000-token limit, however, so the 35% reduction is
 not claimed. The next pilot must split all discovery reads at the hard limit;
 see the [slice evidence](./v2-phase3-schema-recovery-migration-2026-10-19.md).
+
+The second product pilot was the Phase 5 OpenAPI audit and explorer prototype
+on 2026-10-21. Exact route drift detection and focused browser coverage shipped
+without a missed production dependency, but one discovery batch exceeded the
+5,000-token target and a pre-existing build-smoke authentication dependency
+caused repeated build output. The 35% reduction is still not claimed; the next
+pilot should cap source reads before execution and run the auth-complete smoke
+harness on the first release build. See the
+[slice evidence](./v2-phase5-openapi-audit-2026-10-21.md).

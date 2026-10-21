@@ -11,7 +11,7 @@ Key local URLs:
 
 - App: `http://localhost:3000`
 - OpenAPI JSON: `http://localhost:3000/api/openapi`
-- API docs UI: `http://localhost:3000/api-docs`
+- Interactive API explorer: `http://localhost:3000/api-docs`
 - Replay viewer (share links): `http://localhost:3000/replay?code=...`
 
 ## Architecture Overview
@@ -79,6 +79,14 @@ Replay storage phases and migration notes are documented in:
   - `GET /api/leaderboard`
 
 See `/api/openapi` for up-to-date route definitions.
+
+The explorer is generated from the same in-process OpenAPI object as
+`/api/openapi`. It can filter operations and expand their parameters, request
+body status, and documented responses. A route-contract test compares every
+explicitly exported App Router HTTP handler with the published operations, so
+adding or removing a handler requires updating the contract in the same
+change. The Auth.js catch-all route remains framework-owned and outside this
+application contract.
 
 ## Testing
 

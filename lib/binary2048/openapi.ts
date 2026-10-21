@@ -123,6 +123,48 @@ export const OPENAPI_SPEC = {
           "200": { description: "Production and sandbox league configuration" },
           "401": { description: "Server-verified admin authority required" }
         }
+      },
+      post: {
+        summary: "Mirror or promote authorized league configuration",
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { type: "object", required: ["action"], properties: { action: { type: "string", enum: ["mirror", "promote"] } } } } }
+        },
+        responses: {
+          "200": { description: "League configuration mirrored or promoted" },
+          "400": { description: "Unsupported configuration action" },
+          "401": { description: "Server-verified admin authority required" }
+        }
+      }
+    },
+    "/api/ops/rate-limit/probe": {
+      post: {
+        summary: "Run an authorized shared rate-limit probe",
+        parameters: [
+          { name: "probeId", in: "query", required: true, schema: { type: "string", pattern: "^[a-f0-9]{32}$" } },
+          ...RATE_LIMITED_PARAMETERS
+        ],
+        responses: {
+          "200": { description: "Shared rate-limit probe result" },
+          "400": { description: "Invalid probe identifier" },
+          "401": { description: "Admin authority and valid bot API key required" },
+          "503": { description: "Shared rate-limit store unavailable" }
+        }
+      }
+    },
+    "/api/ops/storage/leaderboard-probe": {
+      post: {
+        summary: "Run an authorized leaderboard storage probe",
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { type: "object", required: ["action", "probeId"], properties: { action: { type: "string", enum: ["write", "read", "delete"] }, probeId: { type: "string", pattern: "^[a-f0-9]{32}$" } } } } }
+        },
+        responses: {
+          "200": { description: "Leaderboard storage probe result" },
+          "400": { description: "Invalid action or probe identifier" },
+          "401": { description: "Server-verified admin authority required" },
+          "503": { description: "Leaderboard storage probe failed" }
+        }
       }
     },
     "/api/ops/leaderboard": {
@@ -368,6 +410,21 @@ export const OPENAPI_SPEC = {
         }
       }
     },
+    "/api/store/webhook": {
+      post: {
+        summary: "Process a signed Stripe store webhook",
+        parameters: [{ name: "stripe-signature", in: "header", required: true, schema: { type: "string" } }],
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { type: "object" } } }
+        },
+        responses: {
+          "200": { description: "Webhook processed or previously processed" },
+          "400": { description: "Invalid signature or webhook event" },
+          "503": { description: "Store webhook is not configured" }
+        }
+      }
+    },
     "/api/ads/reward": {
       post: {
         summary: "Grant rewarded-ad inventory after server-side signature and anti-fraud checks",
@@ -522,6 +579,23 @@ export const OPENAPI_SPEC = {
           "200": { description: "Export JSON" },
           "404": { description: "Game not found" }
         }
+      },
+      post: {
+        summary: "Recover a missing session and export game JSON",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" } },
+          { name: "compact", in: "query", required: false, schema: { type: "string" } },
+          { name: "audit", in: "query", required: false, schema: { type: "string" } }
+        ],
+        requestBody: {
+          required: false,
+          content: { "application/json": { schema: { type: "object", properties: { recoverySnapshot: { type: "object" }, compactRecovery: { type: "object" } } } } }
+        },
+        responses: {
+          "200": { description: "Recovered export JSON" },
+          "400": { description: "Invalid recovery payload" },
+          "404": { description: "Game not found" }
+        }
       }
     },
     "/api/games/{id}/replay": {
@@ -609,6 +683,19 @@ export const OPENAPI_SPEC = {
         responses: {
           "200": { description: "Replay reconstruction result" },
           "400": { description: "Invalid replay payload" }
+        }
+      }
+    },
+    "/api/replay/ingest": {
+      post: {
+        summary: "Ingest canonical run records for replay research",
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { type: "object", required: ["records"], properties: { records: { type: "array", minItems: 1, items: { type: "object" } } } } } }
+        },
+        responses: {
+          "200": { description: "Canonical run records ingested with duplicate ids reported" },
+          "400": { description: "A non-empty records array is required" }
         }
       }
     },

@@ -1,5 +1,6 @@
 import { OPENAPI_SPEC } from "@/lib/binary2048/openapi";
 import { getApiDocEntries } from "@/lib/binary2048/openapi-docs";
+import { ApiExplorer } from "@/app/api-docs/api-explorer";
 
 export default function ApiDocsPage() {
   const entries = getApiDocEntries();
@@ -19,25 +20,7 @@ export default function ApiDocsPage() {
           <a href="/docs/developer">/docs/developer</a>
         </p>
 
-        <div className="api-doc-grid">
-          {entries.map((entry) => {
-            return (
-              <section key={entry.path} className="api-doc-card">
-                <code className="api-path">{entry.path}</code>
-                {entry.operations.map((operation) => {
-                  return (
-                    <div key={`${entry.path}-${operation.method}`} className="api-op">
-                      <span className={`api-method api-method-${operation.method}`}>
-                        {operation.method.toUpperCase()}
-                      </span>
-                      <span>{operation.summary}</span>
-                    </div>
-                  );
-                })}
-              </section>
-            );
-          })}
-        </div>
+        <ApiExplorer entries={entries} />
       </div>
     </main>
   );

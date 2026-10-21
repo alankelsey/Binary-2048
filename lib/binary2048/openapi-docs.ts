@@ -5,6 +5,9 @@ export type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
 export type ApiDocOperation = {
   method: HttpMethod;
   summary: string;
+  parameters: string[];
+  requestBody: boolean;
+  responses: Array<{ status: string; description: string }>;
 };
 
 export type ApiDocEntry = {
@@ -19,7 +22,12 @@ export function getApiDocEntries() {
   const entries: ApiDocEntry[] = [];
 
   for (const [path, item] of pathEntries) {
-    const itemByMethod = item as Partial<Record<HttpMethod, { summary?: string }>>;
+    const itemByMethod = item as Partial<Record<HttpMethod, {
+      summary?: string;
+      parameters?: ReadonlyArray<{ name?: string; in?: string; required?: boolean }>;
+      requestBody?: unknown;
+      responses?: Record<string, { description?: string }>;
+    }>>;
     const operations: ApiDocOperation[] = [];
 
     for (const method of METHOD_ORDER) {
@@ -27,7 +35,17 @@ export function getApiDocEntries() {
       if (!operation) continue;
       operations.push({
         method,
-        summary: operation.summary ?? "No summary"
+        summary: operation.summary ?? "No summary",
+        parameters: (operation.parameters ?? []).map((parameter) => {
+          const location = parameter.in ? ` (${parameter.in})` : "";
+          const required = parameter.required ? ", required" : "";
+          return `${parameter.name ?? "unnamed"}${location}${required}`;
+        }),
+        requestBody: Boolean(operation.requestBody),
+        responses: Object.entries(operation.responses ?? {}).map(([status, response]) => ({
+          status,
+          description: response.description ?? "No description"
+        }))
       });
     }
 
