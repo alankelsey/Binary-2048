@@ -73,3 +73,10 @@ session fail-closed defect. The 35% comparison remains open.
   changed-file lint retained two pre-existing hook warnings.
 - The optimized build now classifies `/` as static instead of dynamic because
   the root layout no longer performs a request-time session lookup.
+
+## Production acceptance
+
+- Runtime commit `b0c8d1d` deployed successfully in Amplify job 421.
+- The watcher verified the exact full commit SHA with three combined
+  status/commit retrievals over 139 seconds.
+- Production smoke passed against `https://www.binary2048.com` after job 421.
