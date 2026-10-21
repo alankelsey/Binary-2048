@@ -34,6 +34,9 @@ interactive explorer generated from that same object.
   provider or bridge secret. It now supplies disposable local-only values and
   accepts the route's explicit fail-closed 503 when an isolated production
   server cannot complete session lookup; other 503 bodies still fail.
+- Runtime commit `ed7a0c8` deployed successfully in Amplify job 423. The
+  watcher enforced the full commit id and reported success after 185 seconds;
+  the production smoke then passed against `https://www.binary2048.com`.
 
 ## Delivery-efficiency pilot
 
