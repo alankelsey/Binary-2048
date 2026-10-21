@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { DevNav } from "@/app/dev-nav";
 import { AuthShell } from "@/app/auth-shell";
 import { isDevNavEnabled } from "@/lib/binary2048/dev-nav";
+import { authOptions } from "@/auth";
 
 const siteUrl = "https://www.binary2048.com";
 
@@ -36,8 +37,9 @@ export const metadata: Metadata = {
   }
 };
 
-export default async function RootLayout({ children }: { children: ReactNode }) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   const showDevNav = isDevNavEnabled();
+  const providersConfigured = (authOptions.providers?.length ?? 0) > 0;
   const structuredData = {
     "@context": "https://schema.org",
     "@graph": [
@@ -66,7 +68,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
         <div className="top-shell">
           {showDevNav ? <DevNav /> : <div />}
-          <AuthShell />
+          <AuthShell providersConfigured={providersConfigured} />
         </div>
         {children}
       </body>

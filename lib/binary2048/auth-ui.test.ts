@@ -13,6 +13,10 @@ describe("buildAuthUiState", () => {
     });
   });
 
+  it("treats an empty or expired session payload as guest", () => {
+    expect(buildAuthUiState({}, 1)).toMatchObject({ authenticated: false, tier: "guest" });
+  });
+
   it("returns authenticated tiered state from session payload", () => {
     const state = buildAuthUiState(
       {

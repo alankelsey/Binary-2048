@@ -444,10 +444,22 @@ export default function Home() {
   }
 
   useEffect(() => {
-    setAuthenticated(
-      document.querySelector<HTMLElement>(".auth-shell")?.dataset.authenticated === "true"
-    );
-    void authBridgeRef.current?.authorizationHeader();
+    const syncAuthState = () => {
+      setAuthenticated(document.querySelector<HTMLElement>(".auth-shell")?.dataset.authenticated === "true");
+    };
+    syncAuthState();
+    window.addEventListener("binary2048:auth-state", syncAuthState);
+    const shell = document.querySelector<HTMLElement>(".auth-shell");
+    const observer = shell ? new MutationObserver(syncAuthState) : null;
+    if (shell && observer) observer.observe(shell, { attributes: true, attributeFilter: ["data-authenticated", "data-auth-state"] });
+    return () => {
+      window.removeEventListener("binary2048:auth-state", syncAuthState);
+      observer?.disconnect();
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    performance.mark("binary2048:game-shell-ready");
   }, []);
 
   useEffect(() => {

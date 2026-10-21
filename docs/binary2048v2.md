@@ -503,9 +503,10 @@ the common path.
   ([evidence](./v2-phase4-lazy-optional-tools-2026-10-20.md)).
 - [x] Allow an explicit support mode to enable detailed success tracing
   ([evidence](./v2-phase4-support-mode-2026-10-20.md)).
-- [ ] Make the game shell render independently of blocking authentication
+- [x] Make the game shell render independently of blocking authentication
   lookup where security permits; hydrate auth controls asynchronously and
-  fail closed.
+  fail closed
+  ([evidence](./v2-phase4-async-auth-shell-2026-10-20.md)).
 
 Exit criterion: opening or closing optional tools does not alter move latency,
 and a closed diagnostic panel performs no full-log formatting per move.

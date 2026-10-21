@@ -454,6 +454,9 @@ below record work already deployed before V2 formally started.
   - [x] Add an explicit, expiring local support mode for detailed success
     tracing with pre-retention privacy filtering
     ([evidence](./v2-phase4-support-mode-2026-10-20.md))
+  - [x] Render the game shell before client-side authentication hydration while
+    keeping protected controls and bridge tokens fail closed
+    ([evidence](./v2-phase4-async-auth-shell-2026-10-20.md))
   - [ ] Pilot and adopt the token- and tool-efficient V2 delivery workflow
     without reducing release gates
     ([plan](./delivery-efficiency-plan-2026-10-18.md))
