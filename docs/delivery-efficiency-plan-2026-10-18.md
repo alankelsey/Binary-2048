@@ -200,3 +200,14 @@ exceeded 5,000 combined output tokens even though each child command was
 bounded. The 35% target remains open; future parallel discovery must cap the
 aggregate returned output. See the
 [slice evidence](./v2-phase5-openapi-contract-metadata-2026-10-21.md).
+
+The fourth product pilot completed the Phase 5 workload-entry-point inventory
+on 2026-10-22. It added executable-surface and security-boundary drift coverage
+without finding a missed product dependency. One source batch still reported
+more than 5,000 aggregate tokens, the browser gate needed two environment-only
+retries, and the build needed a second compilation after its disposable auth
+environment was absent from the first compile. The standalone smoke then
+needed host permission to bind its local port. The 35% target remains open;
+future runs must start the UI server and supply the build-smoke environment
+before the one-time release gates. See the
+[slice evidence](./v2-phase5-workload-inventory-2026-10-22.md).

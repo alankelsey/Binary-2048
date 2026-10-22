@@ -524,8 +524,9 @@ and a closed diagnostic panel performs no full-log formatting per move.
   and priority operation contract metadata are complete
   ([audit evidence](./v2-phase5-openapi-audit-2026-10-21.md),
   [contract evidence](./v2-phase5-openapi-contract-metadata-2026-10-21.md)).
-- [ ] Inventory every simulation, tournament, training, and model-inference
-  entry point and its deployed authorization and rate limit.
+- [x] Inventory every simulation, tournament, training, and model-inference
+  entry point and its deployed authorization and rate limit
+  ([evidence](./v2-phase5-workload-inventory-2026-10-22.md)).
 - [ ] Apply scoped API keys or research/admin roles and hard request/job caps.
 - [ ] Convert synchronous long-running endpoints into job submission and
   status/result APIs.

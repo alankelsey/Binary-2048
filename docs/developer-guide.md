@@ -94,6 +94,12 @@ The canonical contract also publishes reusable `botApiKey`, `bearerAuth`,
 rate-limit, job, state-identity, and replay schemas. The explorer is read-only;
 it never sends credentials or executes privileged or mutating operations.
 
+The complete research/compute surface, including SQS/Lambda and executable
+scripts that are outside OpenAPI, is inventoried in
+`docs/v2-phase5-workload-inventory-2026-10-22.md`. A machine-readable companion
+and drift test require new workload entry points and the current security
+boundaries to be reviewed deliberately.
+
 ## Testing
 
 ```bash
