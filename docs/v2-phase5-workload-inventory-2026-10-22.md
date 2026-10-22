@@ -122,3 +122,10 @@ inventory and test update.
 
 V2 progress is 36/84 (42.9%), and whole-roadmap progress is 347/374 (93%).
 The delivery-efficiency comparison remains open.
+
+## Production acceptance
+
+Runtime commit `950b804` deployed successfully in Amplify job 427. The watcher
+enforced the full commit id, used four combined status/commit retrievals over
+138 seconds, and reported success. The standard production smoke then passed
+against `https://www.binary2048.com`.
