@@ -105,3 +105,22 @@ comparison remains open; no product dependency was missed, but the repeated
 environment and assertion work does not yet establish the target reduction.
 
 V2 progress is 37/84 (44.0%), and whole-roadmap progress is 347/374 (93%).
+
+## Production acceptance
+
+The existing `botvsbot-primary` quota identity received the explicitly approved
+`simulation:run`, `tournament:run`, `training:read`, `replay:ingest`, and
+`jobs:read` grants in the separate Amplify scope registry. The configurator
+preserved unrelated variables, shared Mongo rate limiting, and SQS worker mode;
+no credential value or hash was printed.
+
+Runtime commit `8f3776092a9cf31ee58d892afdffdd419665c85d` deployed
+successfully in Amplify job 429. The watcher enforced the full commit id and
+reported success after 184 seconds. Production acceptance then verified:
+
+- anonymous simulation is denied with 401;
+- admin-authorized simulation succeeds with the expected ruleset;
+- anonymous polling of a valid new job id is denied with 401;
+- a minimal authorized tournament job completes through authenticated polling;
+- OpenAPI publishes `replay:ingest` and `jobs:read`; and
+- the standard production gameplay smoke passes.
