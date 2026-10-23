@@ -2,15 +2,16 @@
 
 ## Scope and deployed baseline
 
-This inventory closed the second Phase 5 item and was updated with the scoped
-authorization/cap boundary from the third item. It covers all HTTP,
+This inventory closed the second Phase 5 item and was updated through the
+scoped authorization/cap and asynchronous-job boundaries from the third and
+fourth items. It covers all HTTP,
 Lambda/SQS, and package-script entry points that run or prepare simulation,
 tournament, training, model inference, replay ingest, or job-status work. The
 machine-readable surface is `v2-phase5-workload-entrypoints.json`; provisioning,
 report-only, key-generation, and audit commands are not workload entry points.
 
 Production uses the accepted V1 shared-infrastructure baseline: Amplify hosts
-the web routes, tournament and training requests submit to separate encrypted
+the web routes, simulation/tournament and training requests submit to separate encrypted
 SQS queues, and two on-demand 2 GB/60-second Lambda functions consume one
 message per invocation with event-source maximum concurrency two. Jobs expire
 after 24 hours, allow at most two execution attempts, limit serialized input to
@@ -31,13 +32,14 @@ secret is recorded here.
 
 | Entry point | Identification, authentication, and authorization | Quota and challenge | Body/cost and queue limits | Runtime and mutation |
 | --- | --- | --- | --- | --- |
-| `POST /api/simulate` | Requires `simulation:run`, configured research subject, or admin. Key identity and scope grants are separate. | `simulate`, 60/5 minutes by default, configurable with `BINARY2048_RATE_LIMIT_SIMULATE_MAX` and the shared window variable. High-risk challenge policy. | 128 KiB JSON; 1–2,000 moves. No queue. | Amplify; synchronous, deterministic, no application-data write beyond the quota counter. |
+| `POST /api/simulate` | Requires `simulation:run`, configured research subject, or admin. Key identity and scope grants are separate. | `simulate`, 60/5 minutes by default, configurable with `BINARY2048_RATE_LIMIT_SIMULATE_MAX` and the shared window variable. High-risk challenge policy. | 128 KiB JSON; 1–2,000 moves. Production creates a job; the bounded synchronous fallback is local-development only. | Amplify admission, compute Lambda execution. Reserves per-principal daily and shared monthly budget, inserts an owned job, then stores result/status. |
 | `POST /api/bots/tournament` | Requires `tournament:run`, configured research subject, or admin. | `bots_tournament`, 10/5 minutes by default; tournament and window overrides. High-risk challenge policy. | 128 KiB; at most 100 seeds, 2,000 moves/run, 25,000 aggregate decisions, and 2,500 trace decisions. Production creates an SQS job; inline fallback is 2 active + 8 waiting with a 15-second wait. | Amplify admission, tournament Lambda execution. Reserves per-principal daily and shared monthly budget, inserts an owned job, then stores result/status. |
 | `GET /api/training/replays` | Requires `training:read`, configured research subject, or admin. | Shared `training` bucket, 20/5 minutes by default; training and window overrides. High-risk challenge policy. | Query `limit` clamped to 1–100. Production creates an SQS job; inline fallback is 1 active + 2 waiting with a 10-second wait. | Amplify admission, training Lambda execution. Reserves budget and mutates an owned job. |
 | `GET /api/training/labels` | Same as training replays. | Same shared `training` bucket and high-risk challenge policy. | Query `limit` clamped to 1–500. Same training queue/fallback limits. | Same admission/worker placement and owned-job mutations. |
 | `GET /api/ops/models` | Requires either the constant-time `x-admin-token` service credential or verified auth-bridge claims whose subject is in `BINARY2048_ADMIN_SUBJECTS`. This is real admin authorization, unlike the bot API key. | No route-local quota or challenge. | Read capped by the registry implementation at 500 records; no request body or queue. | Amplify; reads shared Mongo model registry without mutation. It lists metadata and does not perform inference. |
 | `POST /api/replay/ingest` | Requires `replay:ingest`, configured research subject, or admin; its shipped caller is the operator batch-import worker. | `replay_ingest`, 10/5 minutes by default. | 1 MiB and 100 canonical records/request; the client chunks at 900 KiB/100. | Amplify; upserts caller-supplied canonical run records into the deployed run store. |
-| `GET /api/jobs/{id}` | Requires `jobs:read` and the submitting principal; admin may inspect any job. Ownerless pre-deployment jobs retain opaque-id access only through their existing 24-hour TTL. | Dedicated `job_status`, 120/5 minutes. | Exact 64-hex id, no body. Polling clients use 2-second intervals and a 12-minute deadline. | Amplify; reads a non-expired Mongo job. Only the quota counter mutates. |
+| `GET /api/jobs/{id}` | Requires `jobs:read` and the submitting principal; admin may inspect any job. Ownerless pre-deployment jobs retain opaque-id access only through their existing 24-hour TTL. | Dedicated `job_status`, shared 120/5 minutes. | Exact 64-hex id, no body. Polling clients use 2-second intervals and a 12-minute deadline. Contract-v2 status is lightweight; unversioned requests retain inline result compatibility. | Amplify; reads a non-expired Mongo job. Only the quota counter mutates. |
+| `GET /api/jobs/{id}/result` | Same scope, owner, admin, and ownerless-job compatibility rules as status. | Shares `job_status`, 120/5 minutes. | Exact 64-hex id; 202 pending, 200 complete, 409 failed; result expires with the 24-hour job TTL and is capped at 12 MiB. | Amplify; reads a non-expired Mongo job. Only the quota counter mutates. |
 
 `BINARY2048_RATE_LIMIT_WINDOW_MS` configures the simulation, tournament,
 training, and move windows; invalid overrides fall back to five minutes. Rate
@@ -46,8 +48,8 @@ limits are request counts, not authorization grants or compute-cost budgets.
 ## Worker and script entry points
 
 The SQS `workers/index.ts` handler accepts only a 64-hex job id, leases the
-corresponding queued Mongo record, and dispatches exactly three task kinds:
-`tournament`, `training-replays`, and `training-labels`. SQS/Lambda invocation
+corresponding queued Mongo record, and dispatches exactly four task kinds:
+`simulation`, `tournament`, `training-replays`, and `training-labels`. SQS/Lambda invocation
 is controlled by AWS IAM, not an application scope. A lease is 90 seconds;
 retry is delegated to SQS, and the handler does not run an unbounded local
 retry loop.
@@ -73,7 +75,7 @@ credential, and filesystem access.
 | `runs:extract:features` | Reads run JSONL and derives features. | Local feature JSONL. |
 | `ml:baseline` | Computes the local baseline from feature JSONL. | Local JSON report. |
 | `replay:ingest:worker` | Reads an operator-selected batch file, requires/forwards the research key, and chunks to 100 records/900 KiB. | Scoped replay-ingest route upserts run records. |
-| `workers:acceptance` | Directly inserts one small job per worker task and sends SQS messages using operator AWS/Mongo credentials. | Production acceptance jobs and queue messages. |
+| `workers:acceptance` | Directly inserts one small job per worker task, including simulation, and sends SQS messages using operator AWS/Mongo credentials. | Production acceptance jobs and queue messages. |
 
 ## Security boundary update
 
@@ -87,7 +89,7 @@ polling credentials. See
 
 ## Drift coverage
 
-`workload-entrypoint-inventory.test.ts` locks the reviewed 22-entry surface,
+`workload-entrypoint-inventory.test.ts` locks the reviewed 23-entry surface,
 verifies every source and HTTP/worker export or package command, checks command
 aliases, and preserves explicit tests for the three security boundaries above.
 Changes to the workload surface or those controls now require a deliberate

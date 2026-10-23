@@ -2,6 +2,7 @@ import { OPENAPI_SPEC } from "@/lib/binary2048/openapi";
 
 const PRIORITY_OPERATIONS = [
   "GET /api/jobs/{id}",
+  "GET /api/jobs/{id}/result",
   "POST /api/games", "GET /api/games/{id}", "POST /api/games/{id}/move",
   "POST /api/games/{id}/undo", "GET /api/games/{id}/encoded",
   "GET /api/games/{id}/export", "POST /api/games/{id}/export",
@@ -45,7 +46,7 @@ describe("priority OpenAPI operation contracts", () => {
     expect(OPENAPI_SPEC.components.securitySchemes.adminBearer.scheme).toBe("bearer");
     expect(OPENAPI_SPEC.components.schemas.Error.required).toContain("error");
     expect(OPENAPI_SPEC.components.schemas.ApiFailure.oneOf).toHaveLength(2);
-    expect(OPENAPI_SPEC.components.schemas.JobAccepted.required).toEqual(["jobId", "status", "statusUrl"]);
+    expect(OPENAPI_SPEC.components.schemas.JobAccepted.required).toEqual(["jobId", "status", "statusUrl", "resultUrl"]);
     expect(OPENAPI_SPEC.components.schemas.StateIdentity.properties.stateHashVersion.const).toBe("fnv1a32-game-state-v2");
     expect(OPENAPI_SPEC.components.schemas.ReplayEnvelope.required).toEqual(["header", "moves"]);
   });
@@ -56,7 +57,7 @@ describe("priority OpenAPI operation contracts", () => {
       responses: Record<string, { content: { "application/json": { schema?: { $ref: string }; examples?: { illustrative: { value: string } } } } }>;
     };
     expect(simulate.requestBody.content["application/json"].examples.illustrative.value).toContain("moves");
-    expect(simulate.responses["200"].content["application/json"].examples?.illustrative.value).toContain("Simulation");
+    expect(simulate.responses["200"].content["application/json"].examples?.illustrative.value).toContain("jobId");
     expect(simulate.responses["429"].content["application/json"].schema?.$ref).toBe("#/components/schemas/RateLimitError");
   });
 
@@ -64,6 +65,7 @@ describe("priority OpenAPI operation contracts", () => {
     expect(operation("POST /api/replay/ingest")?.security).toContainEqual({ botApiKey: [] });
     expect(operation("POST /api/replay/ingest")?.["x-required-scopes"]).toEqual(["replay:ingest"]);
     expect(operation("GET /api/jobs/{id}")?.["x-required-scopes"]).toEqual(["jobs:read"]);
+    expect(operation("GET /api/jobs/{id}/result")?.["x-required-scopes"]).toEqual(["jobs:read"]);
     expect(operation("GET /api/ops/models")?.["x-required-scopes"]).toEqual(["admin"]);
     expect(operation("POST /api/simulate")?.["x-required-scopes"]).toEqual(["simulation:run"]);
   });

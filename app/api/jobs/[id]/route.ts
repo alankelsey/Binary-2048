@@ -13,13 +13,27 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
   if (!quota.allowed) return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429, headers: { ...headers, ...rateLimitHeaders(quota) } });
   try {
     const { jobs } = await workerCollections();
-    const job = await jobs.findOne({ _id: id, expiresAt: { $gt: new Date() } }, { projection: { task: 0 } });
+    const modernContract = req.headers.get("x-binary2048-job-contract") === "2";
+    const job = await jobs.findOne(
+      { _id: id, expiresAt: { $gt: new Date() } },
+      { projection: modernContract ? { task: 0, result: 0 } : { task: 0 } }
+    );
     if (!job) return NextResponse.json({ error: "Job not found" }, { status: 404, headers });
     // Ownerless records are pre-scope compatibility jobs and already expire within 24 hours.
     if (job.owner && job.owner !== authorization.authority.principal && !authorization.authority.admin) {
       return NextResponse.json({ error: "Job not found" }, { status: 404, headers });
     }
     const exhausted = job.status === "running" && job.attempts >= 2 && job.leaseUntil && job.leaseUntil.getTime() < Date.now();
-    return NextResponse.json({ jobId: id, status: exhausted ? "failed" : job.status, result: job.result, error: exhausted ? "Worker execution limit reached" : job.error, createdAt: job.createdAt, expiresAt: job.expiresAt }, { headers: { ...headers, "retry-after": "2" } });
+    const status = exhausted ? "failed" : job.status;
+    return NextResponse.json({
+      jobId: id,
+      status,
+      resultUrl: status === "complete" ? `/api/jobs/${id}/result` : undefined,
+      // Compatibility: unversioned V1 clients may consume the completed result here.
+      result: modernContract ? undefined : job.result,
+      error: exhausted ? "Worker execution limit reached" : job.error,
+      createdAt: job.createdAt,
+      expiresAt: job.expiresAt
+    }, { headers: { ...headers, "retry-after": "2" } });
   } catch { return NextResponse.json({ error: "Worker status unavailable" }, { status: 503, headers }); }
 }

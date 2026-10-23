@@ -211,3 +211,11 @@ needed host permission to bind its local port. The 35% target remains open;
 future runs must start the UI server and supply the build-smoke environment
 before the one-time release gates. See the
 [slice evidence](./v2-phase5-workload-inventory-2026-10-22.md).
+
+The fifth product pilot is the Phase 5 asynchronous research-job conversion.
+Discovery remained split into batches below 5,000 returned tokens, and the
+contract/compatibility behavior was documented before operator polling changed.
+Final test, build, and deployment counts are recorded in the
+[slice evidence](./v2-phase5-async-research-jobs-2026-10-23.md). The measured
+35% reduction remains open until those totals establish a comparable gain with
+unchanged release confidence.

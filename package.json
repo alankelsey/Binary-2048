@@ -42,6 +42,7 @@
     "workers:build": "node ./scripts/build-v1-workers.mjs",
     "workers:deploy": "python3 ./scripts/deploy-v1-workers.py",
     "workers:acceptance": "node ./scripts/v1-worker-acceptance.mjs",
+    "test:worker-job-client": "node --test ./scripts/worker-job-client.test.mjs",
     "bot:key:generate": "node ./scripts/generate-bot-api-key.mjs",
     "league:sandbox:sim": "node ./scripts/league-sandbox-sim.mjs",
     "bot:tourney:dev": "bash ./scripts/bot-tournament-dev.sh",

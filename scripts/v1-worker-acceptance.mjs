@@ -15,6 +15,7 @@ try {
   const jobs = client.db(env.BINARY2048_MONGO_DB ?? "binary2048").collection("worker_jobs");
   const sqs = new SQSClient({ region });
   for (const [kind, args, queue] of [
+    ["simulation", [{ seed: 7, moves: ["L"] }], outputs.TournamentQueueUrl],
     ["tournament", [{ seeds: [100], maxMoves: 3, bots: ["priority"] }], outputs.TournamentQueueUrl],
     ["training-replays", [1, 1, "priority", 0, "v1-acceptance"], outputs.TrainingQueueUrl],
     ["training-labels", [1, 1, "score_delta", 0], outputs.TrainingQueueUrl]
@@ -27,15 +28,15 @@ try {
   while (Date.now() < deadline) {
     const found = await jobs.find({ _id: { $in: ids } }).toArray();
     if (found.some(job => job.status === "failed")) throw new Error("Worker acceptance job failed");
-    if (found.length === 3 && found.every(job => job.status === "complete")) {
+    if (found.length === 4 && found.every(job => job.status === "complete")) {
       if (found.some(job => !job.result)) throw new Error("Worker result missing");
-      console.log(JSON.stringify({ tournament: "passed", trainingReplays: "passed", trainingLabels: "passed", attempts: found.map(job => job.attempts) }));
+      console.log(JSON.stringify({ simulation: "passed", tournament: "passed", trainingReplays: "passed", trainingLabels: "passed", attempts: found.map(job => job.attempts) }));
       break;
     }
     await new Promise(resolve => setTimeout(resolve, 2000));
   }
   const complete = await jobs.countDocuments({ _id: { $in: ids }, status: "complete" });
-  if (complete !== 3) throw new Error("Worker acceptance timed out");
+  if (complete !== 4) throw new Error("Worker acceptance timed out");
 } catch { console.error("Worker acceptance failed; credentials and provider details suppressed."); process.exitCode = 1; }
 finally {
   await client.db(env.BINARY2048_MONGO_DB ?? "binary2048").collection("worker_jobs").deleteMany({ _id: { $in: ids } }).catch(() => undefined);

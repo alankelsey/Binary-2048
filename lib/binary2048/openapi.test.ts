@@ -33,6 +33,7 @@ describe("OPENAPI_SPEC", () => {
     expect(OPENAPI_SPEC.paths["/api/games/{id}/encoded"]?.get?.summary).toBe("Get AI-friendly encoded state");
     expect(OPENAPI_SPEC.paths["/api/games/{id}/replay"]?.get?.summary).toContain("canonical replay payload");
     expect(OPENAPI_SPEC.paths["/api/simulate"]?.post?.summary).toBe("Batch simulation endpoint");
+    expect(OPENAPI_SPEC.paths["/api/jobs/{id}/result"]?.get?.summary).toContain("job result");
     expect(OPENAPI_SPEC.paths["/api/training/replays"]?.get?.summary).toContain("replay summaries");
     expect(OPENAPI_SPEC.paths["/api/training/labels"]?.get?.summary).toContain("labeled board states");
     expect(OPENAPI_SPEC.paths["/api/training/replays"].get.responses["503"].description).toContain("queue");
@@ -62,6 +63,7 @@ describe("OPENAPI_SPEC", () => {
   it("documents quota headers and 429 retry behavior", () => {
     const simulate = OPENAPI_SPEC.paths["/api/simulate"].post;
     expect(simulate.responses["200"].headers["RateLimit-Remaining"].schema.type).toBe("integer");
+    expect(simulate.responses["202"].content["application/json"].schema.$ref).toBe("#/components/schemas/JobAccepted");
     expect(simulate.responses["200"].headers["RateLimit-Scope"].schema.type).toBe("string");
     expect(simulate.responses["200"].headers["RateLimit-Tier"].schema.type).toBe("string");
     expect(simulate.responses["429"].headers["Retry-After"].schema.type).toBe("integer");

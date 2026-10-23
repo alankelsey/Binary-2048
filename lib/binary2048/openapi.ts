@@ -29,9 +29,28 @@ const OPENAPI_BASE_SPEC = {
   paths: {
     "/api/jobs/{id}": {
       get: {
-        summary: "Read a principal-bound research job; results expire after 24 hours",
+        summary: "Read principal-bound research job status; results expire after 24 hours",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string", pattern: "^[a-f0-9]{64}$" } },
+          { name: "x-binary2048-job-contract", in: "header", required: false, description: "Set to 2 to use lightweight status plus the dedicated result API. Omit only for V1 inline-result compatibility.", schema: { type: "string", enum: ["2"] } }
+        ],
+        responses: { "200": { description: "Owned job status; completed jobs include resultUrl and a deprecated inline result compatibility field; Retry-After: 2" }, "401": { description: "Research credential required" }, "403": { description: "Credential lacks jobs:read" }, "404": { description: "Unknown, unowned, or expired job" }, "429": { description: "Polling quota exhausted" }, "503": { description: "Status unavailable" } }
+      }
+    },
+    "/api/jobs/{id}/result": {
+      get: {
+        summary: "Read a completed principal-bound research job result",
         parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", pattern: "^[a-f0-9]{64}$" } }],
-        responses: { "200": { description: "Owned job status and result when complete; Retry-After: 2" }, "401": { description: "Research credential required" }, "403": { description: "Credential lacks jobs:read" }, "404": { description: "Unknown, unowned, or expired job" }, "429": { description: "Polling quota exhausted" }, "503": { description: "Status unavailable" } }
+        responses: {
+          "200": { description: "Completed job result" },
+          "202": { description: "Job is still queued or running; Retry-After: 2" },
+          "401": { description: "Research credential required" },
+          "403": { description: "Credential lacks jobs:read" },
+          "404": { description: "Unknown, unowned, or expired job" },
+          "409": { description: "Job failed and has no result" },
+          "429": { description: "Polling quota exhausted" },
+          "503": { description: "Result unavailable" }
+        }
       }
     },
     "/api/auth/dev-token": {
@@ -256,7 +275,7 @@ const OPENAPI_BASE_SPEC = {
           } } } }
         },
         responses: {
-          "202": { description: "Queued on isolated compute; poll statusUrl until complete or failed", content: { "application/json": { schema: { type: "object", required: ["jobId", "status", "statusUrl"], properties: { jobId: { type: "string" }, status: { const: "queued" }, statusUrl: { type: "string" } } } } } },
+          "202": { description: "Queued on isolated compute; poll statusUrl, then fetch resultUrl", content: { "application/json": { schema: { "$ref": "#/components/schemas/JobAccepted" } } } },
           "200": { description: "Tournament result with ranking and run summaries", headers: RATE_LIMIT_HEADERS },
           "400": { description: "Invalid tournament payload" },
           "401": { description: "Research credential required" },
@@ -656,7 +675,8 @@ const OPENAPI_BASE_SPEC = {
           content: { "application/json": { schema: { type: "object" } } }
         },
         responses: {
-          "200": { description: "Simulation result", headers: RATE_LIMIT_HEADERS },
+          "202": { description: "Queued on isolated compute; poll statusUrl, then fetch resultUrl", content: { "application/json": { schema: { "$ref": "#/components/schemas/JobAccepted" } } } },
+          "200": { description: "Simulation result from the documented local development fallback", headers: RATE_LIMIT_HEADERS },
           "400": { description: "Invalid simulation payload" },
           "401": { description: "Research credential required" },
           "403": { description: "Credential lacks simulation:run or configured anti-abuse challenge required" },
@@ -677,7 +697,7 @@ const OPENAPI_BASE_SPEC = {
           { name: "minScore", in: "query", required: false, schema: { type: "integer", minimum: 0, default: 0 } }
         ],
         responses: {
-          "202": { description: "Queued on isolated compute; poll statusUrl until complete or failed", content: { "application/json": { schema: { type: "object", required: ["jobId", "status", "statusUrl"], properties: { jobId: { type: "string" }, status: { const: "queued" }, statusUrl: { type: "string" } } } } } },
+          "202": { description: "Queued on isolated compute; poll statusUrl, then fetch resultUrl", content: { "application/json": { schema: { "$ref": "#/components/schemas/JobAccepted" } } } },
           "200": { description: "Paginated replay summaries", headers: RATE_LIMIT_HEADERS },
           "401": { description: "Research credential required" },
           "403": { description: "Credential lacks training:read or configured anti-abuse challenge required" },
@@ -698,7 +718,7 @@ const OPENAPI_BASE_SPEC = {
           { name: "minTile", in: "query", required: false, schema: { type: "integer", minimum: 0, default: 0 } }
         ],
         responses: {
-          "202": { description: "Queued on isolated compute; poll statusUrl until complete or failed", content: { "application/json": { schema: { type: "object", required: ["jobId", "status", "statusUrl"], properties: { jobId: { type: "string" }, status: { const: "queued" }, statusUrl: { type: "string" } } } } } },
+          "202": { description: "Queued on isolated compute; poll statusUrl, then fetch resultUrl", content: { "application/json": { schema: { "$ref": "#/components/schemas/JobAccepted" } } } },
           "200": { description: "Paginated labeled board states", headers: RATE_LIMIT_HEADERS },
           "401": { description: "Research credential required" },
           "403": { description: "Credential lacks training:read or configured anti-abuse challenge required" },
@@ -892,7 +912,8 @@ const SCOPED_RESEARCH = (scope: string): Pick<OperationContract, "auth" | "secur
 });
 
 const OPERATION_CONTRACTS: Record<string, OperationContract> = {
-  "GET /api/jobs/{id}": { ...SCOPED_RESEARCH("jobs:read"), auth: "Scoped research/admin credential bound to the submitting principal; ownerless pre-deployment jobs retain opaque-id access until their 24-hour TTL", rateLimit: "job_status: default 120 requests / 5 minutes", version: "job-v1", examples: { response: "{ jobId, status, result?, error?, expiresAt }" } },
+  "GET /api/jobs/{id}": { ...SCOPED_RESEARCH("jobs:read"), auth: "Scoped research/admin credential bound to the submitting principal; ownerless pre-deployment jobs retain opaque-id access until their 24-hour TTL", rateLimit: "job_status: default 120 requests / 5 minutes", version: "job-v2", examples: { response: "{ jobId, status, resultUrl?, result? (deprecated compatibility), error?, expiresAt }" } },
+  "GET /api/jobs/{id}/result": { ...SCOPED_RESEARCH("jobs:read"), auth: "Same principal ownership and bounded ownerless-job compatibility policy as job status", rateLimit: "job_status: shared default 120 requests / 5 minutes", version: "job-v2", examples: { response: "{ jobId, status: 'complete', result }" } },
   "POST /api/games": { ...PUBLIC, rateLimit: "No route-local request quota", version: "session-schema-v2", examples: { request: "{ seed?: 42, mode?: 'normal' }", response: "{ id, current, recoverySnapshot, integrity }" } },
   "GET /api/games/{id}": { ...PUBLIC, rateLimit: "No route-local request quota", version: "session-schema-v2", examples: { response: "{ id, current, recoverySnapshot, integrity }" } },
   "POST /api/games/{id}/move": { ...OPTIONAL_API_KEY, rateLimit: "game_move: default 600 requests / 5 minutes; API-key counters are shared", version: COMPACT_SYNC_VERSION, examples: { request: "{ dir: 'left', expectTurn, expectStateHashVersion, expectStateHash }", response: "{ current, stateHash, stateHashVersion, sync }" } },
@@ -903,10 +924,10 @@ const OPERATION_CONTRACTS: Record<string, OperationContract> = {
   "GET /api/games/{id}/replay": { ...PUBLIC, rateLimit: "No route-local request quota", version: "replay-v1", examples: { response: "{ header, moves, signature? }" } },
   "POST /api/games/import": { ...PUBLIC, rateLimit: "No route-local request quota; body capped at 256 KiB", version: COMPACT_RECOVERY_VERSION, examples: { request: "Game export, recovery snapshot, or compact recovery", response: "{ id, current, recoverySnapshot, steps, integrity }" } },
   "POST /api/sim/run": { ...PUBLIC, rateLimit: "No route-local request quota; body capped at 128 KiB", version: "simulation-v1", examples: { request: "{ config, initialGrid, moves }", response: "{ version: 1, final, steps }" } },
-  "POST /api/simulate": { ...SCOPED_RESEARCH("simulation:run"), rateLimit: "simulate: default 60 requests / 5 minutes; 128 KiB body; maximum 2,000 moves; challenge policy applies", version: "simulation-v1", examples: { request: "{ moves: ['L', 'U'], seed: 42 }", response: "Simulation result" } },
-  "POST /api/bots/tournament": { ...SCOPED_RESEARCH("tournament:run"), rateLimit: "bots_tournament: default 10 requests / 5 minutes; 128 KiB body; maximum 100 seeds, 2,000 moves/run, 25,000 aggregate decisions, and 2,500 trace decisions; challenge policy applies", version: "tournament-v1", examples: { request: "{ seedCount: 3, maxMoves: 250, bots: ['priority', 'rollout'] }", response: "Tournament result or { jobId, status, statusUrl }" } },
-  "GET /api/training/replays": { ...SCOPED_RESEARCH("training:read"), rateLimit: "training: shared default 20 requests / 5 minutes; limit 1..100; challenge policy applies", version: "training-replays-v1", examples: { response: "Replay page or { jobId, status, statusUrl }" } },
-  "GET /api/training/labels": { ...SCOPED_RESEARCH("training:read"), rateLimit: "training: shared default 20 requests / 5 minutes; limit 1..500; challenge policy applies", version: "training-labels-v1", examples: { response: "Label page or { jobId, status, statusUrl }" } },
+  "POST /api/simulate": { ...SCOPED_RESEARCH("simulation:run"), rateLimit: "simulate: default 60 requests / 5 minutes; 128 KiB body; maximum 2,000 moves; challenge policy and queued-job budgets apply", version: "simulation-job-v2", examples: { request: "{ moves: ['L', 'U'], seed: 42 }", response: "{ jobId, status, statusUrl, resultUrl } or local-development simulation result" } },
+  "POST /api/bots/tournament": { ...SCOPED_RESEARCH("tournament:run"), rateLimit: "bots_tournament: default 10 requests / 5 minutes; 128 KiB body; maximum 100 seeds, 2,000 moves/run, 25,000 aggregate decisions, and 2,500 trace decisions; challenge policy applies", version: "tournament-job-v2", examples: { request: "{ seedCount: 3, maxMoves: 250, bots: ['priority', 'rollout'] }", response: "Tournament result or { jobId, status, statusUrl, resultUrl }" } },
+  "GET /api/training/replays": { ...SCOPED_RESEARCH("training:read"), rateLimit: "training: shared default 20 requests / 5 minutes; limit 1..100; challenge policy applies", version: "training-replays-job-v2", examples: { response: "Replay page or { jobId, status, statusUrl, resultUrl }" } },
+  "GET /api/training/labels": { ...SCOPED_RESEARCH("training:read"), rateLimit: "training: shared default 20 requests / 5 minutes; limit 1..500; challenge policy applies", version: "training-labels-job-v2", examples: { response: "Label page or { jobId, status, statusUrl, resultUrl }" } },
   "GET /api/ops/models": { auth: "Admin bearer token or signed admin auth-bridge token", security: [{ adminBearer: [] }], scopes: ["admin"], rateLimit: "No route-local request quota", version: "model-registry-v1", examples: { response: "{ source, models }" } },
   "POST /api/replay": { ...PUBLIC, rateLimit: "No route-local request quota; body capped at 128 KiB", version: "replay-v1", examples: { request: "Versioned game export or replay envelope", response: "Deterministically reconstructed replay" } },
   "POST /api/replay/ingest": { ...SCOPED_RESEARCH("replay:ingest"), rateLimit: "replay_ingest: default 10 requests / 5 minutes; 1 MiB body and 100 records/request", version: "canonical-run-v1", examples: { request: "{ records: [canonicalRunRecord] }", response: "{ ingested, duplicateIds }" } },
@@ -931,7 +952,7 @@ const OPENAPI_COMPONENTS = {
     ValidationFailure: { type: "object", required: ["ok", "reason"], properties: { ok: { const: false }, reason: { type: "string" }, details: { type: "object" } }, additionalProperties: true },
     ApiFailure: { oneOf: [{ "$ref": "#/components/schemas/Error" }, { "$ref": "#/components/schemas/ValidationFailure" }] },
     RateLimitError: { type: "object", required: ["error"], properties: { error: { type: "string" }, route: { type: "string" }, limit: { type: "integer" }, remaining: { type: "integer" }, retryAfterSeconds: { type: "integer" } } },
-    JobAccepted: { type: "object", required: ["jobId", "status", "statusUrl"], properties: { jobId: { type: "string" }, status: { const: "queued" }, statusUrl: { type: "string" } } },
+    JobAccepted: { type: "object", required: ["jobId", "status", "statusUrl", "resultUrl"], properties: { jobId: { type: "string" }, status: { const: "queued" }, statusUrl: { type: "string" }, resultUrl: { type: "string" }, retryAfterSeconds: { type: "integer" } } },
     StateIdentity: { type: "object", required: ["stateHash", "stateHashVersion"], properties: { stateHash: { type: "string", pattern: "^[0-9a-f]{8}$" }, stateHashVersion: { type: "string", const: STATE_HASH_VERSION } } },
     ReplayEnvelope: { type: "object", required: ["header", "moves"], properties: { header: { type: "object" }, moves: { type: "array", items: { type: "string", enum: ["L", "R", "U", "D"] } }, signature: { type: "string" } } }
   }

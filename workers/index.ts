@@ -1,9 +1,11 @@
 import { runBotTournament } from "@/lib/binary2048/bot-orchestrator";
 import { generateTrainingReplays, generateTrainingLabels } from "@/lib/binary2048/training-data";
 import { workerCollections, type WorkerTask } from "@/lib/binary2048/worker-jobs";
+import { simulateBatch } from "@/lib/binary2048/simulate";
 
 export function executeWorkerTask(task: WorkerTask) {
   switch (task.kind) {
+    case "simulation": return simulateBatch(...task.args);
     case "tournament": return runBotTournament(...task.args);
     case "training-replays": return generateTrainingReplays(...task.args);
     case "training-labels": return generateTrainingLabels(...task.args);

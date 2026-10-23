@@ -2,6 +2,13 @@ import { createHash } from "crypto";
 import { POST } from "@/app/api/simulate/route";
 import { resetRateLimitStore } from "@/lib/binary2048/rate-limit";
 
+const mockEnqueueWorkerTask = jest.fn();
+jest.mock("@/lib/binary2048/worker-jobs", () => ({
+  workerJobsEnabled: () => process.env.BINARY2048_WORKER_MODE === "sqs",
+  enqueueWorkerTask: (...args: unknown[]) => mockEnqueueWorkerTask(...args),
+  WorkerBudgetError: class WorkerBudgetError extends Error {}
+}));
+
 const NativeRequest = globalThis.Request;
 const Request = class extends NativeRequest {
   constructor(input: RequestInfo | URL, init?: RequestInit) {
@@ -23,6 +30,8 @@ describe("POST /api/simulate", () => {
     delete process.env.BINARY2048_DEGRADE_MODE;
     delete process.env.BINARY2048_DEGRADE_DISABLE_SIMULATE;
     delete process.env.BINARY2048_BOT_API_KEY_HASHES;
+    delete process.env.BINARY2048_WORKER_MODE;
+    mockEnqueueWorkerTask.mockReset();
   });
 
   it("accepts compact actions and returns final artifacts", async () => {
@@ -50,6 +59,32 @@ describe("POST /api/simulate", () => {
     expect(res.headers.get("ratelimit-limit")).toBe("60");
     expect(res.headers.get("ratelimit-remaining")).toBe("59");
     expect(res.headers.get("ratelimit-reset")).toMatch(/^\d+$/);
+  });
+
+  it("validates and submits simulation work in worker mode", async () => {
+    process.env.BINARY2048_WORKER_MODE = "sqs";
+    mockEnqueueWorkerTask.mockResolvedValue({
+      jobId: "a".repeat(64),
+      status: "queued",
+      statusUrl: `/api/jobs/${"a".repeat(64)}`,
+      resultUrl: `/api/jobs/${"a".repeat(64)}/result`,
+      retryAfterSeconds: 2
+    });
+    const req = new Request("http://localhost/api/simulate", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ seed: 77, moves: ["L", "U", "R"], config: { size: 4 } })
+    });
+
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(202);
+    expect(json.resultUrl).toBe(`/api/jobs/${"a".repeat(64)}/result`);
+    expect(mockEnqueueWorkerTask).toHaveBeenCalledWith(
+      { kind: "simulation", args: [{ seed: 77, moves: ["L", "U", "R"], config: { size: 4 } }] },
+      "admin:service"
+    );
   });
 
   it("returns 400 for invalid direction token", async () => {

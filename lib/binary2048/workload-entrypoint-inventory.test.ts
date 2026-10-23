@@ -23,7 +23,7 @@ const packageJson = JSON.parse(fs.readFileSync(path.join(root, "package.json"), 
 };
 
 const expectedIds = [
-  "http-job-status", "http-model-registry", "http-replay-ingest", "http-simulate",
+  "http-job-result", "http-job-status", "http-model-registry", "http-replay-ingest", "http-simulate",
   "http-tournament", "http-training-labels", "http-training-replays",
   "script-bot-benchmark", "script-bot-smoke", "script-bot-tournament",
   "script-challenge-benchmark", "script-feature-extract", "script-hugging-face",
@@ -34,7 +34,7 @@ const expectedIds = [
 
 describe("Phase 5 workload entry-point inventory", () => {
   it("keeps the reviewed HTTP, worker, and executable script surface exact", () => {
-    expect(inventory.version).toBe(2);
+    expect(inventory.version).toBe(3);
     expect(inventory.entries.map((entry) => entry.id).sort()).toEqual(expectedIds);
     expect(new Set(inventory.entries.map((entry) => entry.id)).size).toBe(inventory.entries.length);
   });
@@ -59,6 +59,7 @@ describe("Phase 5 workload entry-point inventory", () => {
     const rateLimit = fs.readFileSync(path.join(root, "lib/binary2048/rate-limit.ts"), "utf8");
     const replayIngest = fs.readFileSync(path.join(root, "app/api/replay/ingest/route.ts"), "utf8");
     const jobs = fs.readFileSync(path.join(root, "app/api/jobs/[id]/route.ts"), "utf8");
+    const jobResult = fs.readFileSync(path.join(root, "app/api/jobs/[id]/result/route.ts"), "utf8");
     const researchAuth = fs.readFileSync(path.join(root, "lib/binary2048/research-auth.ts"), "utf8");
     expect(rateLimit).toContain("resolveBotApiKey(req.headers.get(\"x-api-key\"))");
     expect(rateLimit).toContain("scope: \"api-key\"");
@@ -70,6 +71,8 @@ describe("Phase 5 workload entry-point inventory", () => {
     expect(jobs).toContain("checkJobStatusRateLimit(req)");
     expect(jobs).toContain('authorizeResearchRequest(req, "jobs:read")');
     expect(jobs).toContain("job.owner !== authorization.authority.principal");
+    expect(jobResult).toContain("job.owner !== authorization.authority.principal");
+    expect(jobResult).toContain('authorizeResearchRequest(req, "jobs:read")');
     expect(jobs).toContain("/^[a-f0-9]{64}$/");
     expect(inventory.entries.find((entry) => entry.id === "http-tournament")?.caps).toContain("128 KiB");
     expect(inventory.entries.find((entry) => entry.id === "http-replay-ingest")?.scope).toBe("replay:ingest");

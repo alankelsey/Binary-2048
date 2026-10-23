@@ -58,7 +58,7 @@ function firstSpawn(events: Array<{ type: string; at?: [number, number]; tile?: 
   return { r: spawn.at[0], c: spawn.at[1], tile: spawn.tile };
 }
 
-export function simulateBatch(req: SimulateBatchRequest): SimulateBatchResult {
+function prepareSimulation(req: SimulateBatchRequest) {
   if (!Array.isArray(req.moves) || req.moves.length === 0) {
     throw new Error("moves must be a non-empty array");
   }
@@ -76,7 +76,16 @@ export function simulateBatch(req: SimulateBatchRequest): SimulateBatchResult {
 
   const config = mergeConfig(req.config, req.seed);
   const created = createGame(config, req.initialGrid);
-  const initial = created.state;
+  return { normalizedMoves, config, initial: created.state };
+}
+
+/** Validate and normalize submission input without executing the move batch. */
+export function validateSimulateBatchRequest(req: SimulateBatchRequest) {
+  prepareSimulation(req);
+}
+
+export function simulateBatch(req: SimulateBatchRequest): SimulateBatchResult {
+  const { normalizedMoves, config, initial } = prepareSimulation(req);
   let current = initial;
   let totalReward = 0;
   const stepSummaries: SimulateStepSummary[] = [];

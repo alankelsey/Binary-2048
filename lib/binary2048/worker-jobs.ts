@@ -3,8 +3,10 @@ import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { sharedMongoDb } from "@/lib/binary2048/shared-mongo";
 import type { runBotTournament } from "@/lib/binary2048/bot-orchestrator";
 import type { generateTrainingLabels, generateTrainingReplays } from "@/lib/binary2048/training-data";
+import type { simulateBatch } from "@/lib/binary2048/simulate";
 
 export type WorkerTask =
+  | { kind: "simulation"; args: Parameters<typeof simulateBatch> }
   | { kind: "tournament"; args: Parameters<typeof runBotTournament> }
   | { kind: "training-replays"; args: Parameters<typeof generateTrainingReplays> }
   | { kind: "training-labels"; args: Parameters<typeof generateTrainingLabels> };
@@ -35,7 +37,9 @@ function positiveInt(raw: string | undefined, fallback: number) {
 export async function enqueueWorkerTask(task: WorkerTask, owner: string) {
   if (Buffer.byteLength(JSON.stringify(task)) > 128 * 1024) throw new Error("Worker payload too large");
   if (!owner || owner.length > 96) throw new Error("Worker owner is required");
-  const queueUrl = task.kind === "tournament" ? process.env.BINARY2048_TOURNAMENT_QUEUE_URL : process.env.BINARY2048_TRAINING_QUEUE_URL;
+  const queueUrl = task.kind === "training-replays" || task.kind === "training-labels"
+    ? process.env.BINARY2048_TRAINING_QUEUE_URL
+    : process.env.BINARY2048_TOURNAMENT_QUEUE_URL;
   if (!queueUrl) throw new Error("Worker queue is not configured");
   const { jobs, budgets } = await workerCollections();
   const now = new Date();
@@ -62,5 +66,11 @@ export async function enqueueWorkerTask(task: WorkerTask, owner: string) {
     await jobs.updateOne({ _id: id }, { $set: { status: "failed", error: "Queue delivery failed" } });
     throw new Error("Worker queue unavailable");
   }
-  return { jobId: id, status: "queued", statusUrl: `/api/jobs/${id}`, retryAfterSeconds: 2 };
+  return {
+    jobId: id,
+    status: "queued",
+    statusUrl: `/api/jobs/${id}`,
+    resultUrl: `/api/jobs/${id}/result`,
+    retryAfterSeconds: 2
+  };
 }

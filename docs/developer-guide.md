@@ -106,7 +106,14 @@ scripts/configure-v1-production.py`; the configurator preserves all unrelated
 Amplify variables.
 
 Operator HTTP clients read `BINARY2048_API_KEY` and optionally
-`BINARY2048_CHALLENGE_TOKEN`; queued-job polling forwards the same headers.
+`BINARY2048_CHALLENGE_TOKEN`; queued-job polling and result retrieval forward
+the same headers. Production simulation, tournament, and training requests
+return `202` with `jobId`, `statusUrl`, and `resultUrl`. Poll `statusUrl` no
+faster than the returned retry interval, then fetch `resultUrl` after status is
+`complete`. Send `x-binary2048-job-contract: 2` for lightweight status. An
+unversioned status request temporarily retains the completed inline `result`
+field for older clients; new clients use the dedicated result API. Local development
+without SQS keeps the bounded synchronous fallback for deterministic testing.
 Replay ingestion is specifically an operator batch-import contract: the worker
 splits its selected file into requests of at most 100 records and 900 KiB.
 
@@ -115,7 +122,8 @@ seeds, 2,000 moves/run, 25,000 aggregate decisions, and 2,500 trace decisions fo
 rows or 500 label rows per training request; and 1 MiB/100 records for replay
 ingestion. Queued work also has a 25-job daily allowance per principal, the
 existing 250-job shared monthly allowance, two execution attempts, and a
-24-hour TTL. Job polling has its own 120 requests per five-minute quota.
+24-hour TTL and 12 MiB stored-result cap. Job status and result reads share the
+120 requests per five-minute polling quota.
 
 New queued jobs are bound to the submitting principal. Admins may inspect any
 job. Ownerless jobs created before this boundary was deployed retain the old

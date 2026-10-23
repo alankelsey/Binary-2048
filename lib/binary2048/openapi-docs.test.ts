@@ -29,7 +29,7 @@ describe("getApiDocEntries", () => {
 
     expect(simulate?.auth).toContain("Scoped x-api-key");
     expect(simulate?.rateLimit).toContain("60 requests / 5 minutes");
-    expect(simulate?.version).toBe("simulation-v1");
+    expect(simulate?.version).toBe("simulation-job-v2");
     expect(simulate?.examples?.request).toContain("moves");
     expect(health?.auth).toBe("Not yet audited");
   });

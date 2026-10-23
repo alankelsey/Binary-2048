@@ -23,6 +23,7 @@ afterAll(() => { delete process.env.BINARY2048_TOURNAMENT_QUEUE_URL; });
 it("reserves the shared allowance before dispatch and queues only an opaque id", async () => {
   const result = await enqueueWorkerTask({ kind: "tournament", args: [{ seeds: [1], maxMoves: 1, bots: ["priority"] }] }, "api-key:test");
   expect(result.jobId).toMatch(/^[a-f0-9]{64}$/);
+  expect(result.resultUrl).toBe(`/api/jobs/${result.jobId}/result`);
   expect(budgetUpdate.mock.calls[1][0]).toMatchObject({ admitted: { $lt: 25 } });
   expect(budgetUpdate.mock.calls[3][0]).toMatchObject({ admitted: { $lt: 250 } });
   expect(jobInsert.mock.calls[0][0]).toMatchObject({ owner: "api-key:test" });
@@ -52,4 +53,10 @@ it("computes a claimed deterministic job and conditionally commits its result", 
   expect(await handler({ Records: [{ messageId: "one", body: JSON.stringify({ jobId: "b".repeat(64) }) }] })).toEqual({ batchItemFailures: [] });
   expect(jobUpdate.mock.calls[0][0]).toEqual({ _id: "b".repeat(64), attempts: 1, status: "running" });
   expect(jobUpdate.mock.calls[0][1].$set.status).toBe("complete");
+});
+
+it("executes a claimed simulation outside the web request", async () => {
+  claim.mockResolvedValue({ status: "running", attempts: 1, task: { kind: "simulation", args: [{ seed: 7, moves: ["L"] }] } });
+  expect(await handler({ Records: [{ messageId: "sim", body: JSON.stringify({ jobId: "c".repeat(64) }) }] })).toEqual({ batchItemFailures: [] });
+  expect(jobUpdate.mock.calls[0][1].$set.result).toMatchObject({ rulesetId: "binary2048-v1", seed: 7 });
 });

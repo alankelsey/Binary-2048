@@ -69,4 +69,23 @@ describe("GET /api/jobs/{id}", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ jobId, status: "complete", result: { ok: true } });
   });
+
+  it("keeps contract-v2 status lightweight and points to the result API", async () => {
+    findOne.mockResolvedValue({
+      _id: jobId,
+      owner: "admin:service",
+      status: "complete",
+      attempts: 1,
+      createdAt: new Date(),
+      expiresAt: new Date(Date.now() + 60_000)
+    });
+    const response = await GET(new Request(`http://localhost/api/jobs/${jobId}`, {
+      headers: { "x-admin-token": "job-admin", "x-binary2048-job-contract": "2" }
+    }), context);
+    const json = await response.json();
+    expect(response.status).toBe(200);
+    expect(json).toMatchObject({ jobId, status: "complete", resultUrl: `/api/jobs/${jobId}/result` });
+    expect(json).not.toHaveProperty("result");
+    expect(findOne.mock.calls[0][1]).toEqual({ projection: { task: 0, result: 0 } });
+  });
 });
