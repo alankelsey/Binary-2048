@@ -78,7 +78,22 @@ V2 progress is 38/84 (45.2%), and whole-roadmap progress remains 347/374 (93%).
 
 ## Production acceptance
 
-Pending the exact worker and Amplify deployments for the final commit. The
-acceptance sequence must deploy the worker bundle, pass all four task kinds,
-verify the exact Amplify commit/job, exercise scoped simulation submission plus
-status/result ownership, and rerun the standard production gameplay smoke.
+Worker artifact
+`8f6516ee0172dbef4e139fc84448f2b2b03dd1b980805af7804af55e33b00a21`
+updated the `binary2048-v1-workers` stack successfully. Production worker
+acceptance then completed simulation, tournament, training-replay, and
+training-label jobs on the first attempt and removed its temporary records.
+
+Runtime commit `1cf07b348b7c4f09377f497a6096323db595865f` deployed
+successfully in Amplify job 431. The watcher enforced the full commit id and
+reported success after 183 seconds. The standard production gameplay smoke
+passed. A credential-safe live acceptance then verified:
+
+- anonymous simulation is denied with 401;
+- authorized simulation returns `202` with status and result URLs;
+- contract-v2 status completes without an inline result;
+- the dedicated result route returns the expected `binary2048-v1` artifact;
+- anonymous reads of both the owned status and result are denied with 401; and
+- production OpenAPI publishes the simulation `202` and job-result operation.
+
+The final evidence deployment is recorded after its exact Amplify job passes.
