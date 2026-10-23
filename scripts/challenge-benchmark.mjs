@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { resolveWorkerJob } from "./worker-job-client.mjs";
+import { researchRequestHeaders } from "./research-client-auth.mjs";
 
 import { performance } from "node:perf_hooks";
 import { readFile, writeFile } from "node:fs/promises";
@@ -130,7 +131,7 @@ async function runApiPolicy(scenario, pickAction) {
 }
 
 async function runRollout(scenario) {
-  const result = await requestJson(`${BASE}/api/bots/tournament`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ seeds: [scenario.config.seed], maxMoves: scenario.maxMoves, bots: ["rollout"], config: scenario.config, initialGrid: scenario.initialGrid, includeTraces: true }) });
+  const result = await requestJson(`${BASE}/api/bots/tournament`, { method: "POST", headers: researchRequestHeaders({ "content-type": "application/json" }), body: JSON.stringify({ seeds: [scenario.config.seed], maxMoves: scenario.maxMoves, bots: ["rollout"], config: scenario.config, initialGrid: scenario.initialGrid, includeTraces: true }) });
   const run = result.runs?.[0];
   if (!run?.trace?.complete) throw new Error(`${scenario.scenarioId}: rollout trace missing`);
   return run;

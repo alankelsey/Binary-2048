@@ -2,8 +2,19 @@ import { createHash } from "crypto";
 import { POST } from "@/app/api/simulate/route";
 import { resetRateLimitStore } from "@/lib/binary2048/rate-limit";
 
+const NativeRequest = globalThis.Request;
+const Request = class extends NativeRequest {
+  constructor(input: RequestInfo | URL, init?: RequestInit) {
+    const headers = new Headers(init?.headers);
+    headers.set("x-admin-token", "research-test-admin");
+    super(input, { ...init, headers });
+  }
+};
+
 describe("POST /api/simulate", () => {
+  afterAll(() => { delete process.env.BINARY2048_ADMIN_TOKEN; });
   beforeEach(() => {
+    process.env.BINARY2048_ADMIN_TOKEN = "research-test-admin";
     resetRateLimitStore();
     delete process.env.BINARY2048_RATE_LIMIT_SIMULATE_MAX;
     delete process.env.BINARY2048_RATE_LIMIT_WINDOW_MS;

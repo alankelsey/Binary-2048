@@ -21,16 +21,22 @@ beforeEach(() => {
 afterAll(() => { delete process.env.BINARY2048_TOURNAMENT_QUEUE_URL; });
 
 it("reserves the shared allowance before dispatch and queues only an opaque id", async () => {
-  const result = await enqueueWorkerTask({ kind: "tournament", args: [{ seeds: [1], maxMoves: 1, bots: ["priority"] }] });
+  const result = await enqueueWorkerTask({ kind: "tournament", args: [{ seeds: [1], maxMoves: 1, bots: ["priority"] }] }, "api-key:test");
   expect(result.jobId).toMatch(/^[a-f0-9]{64}$/);
-  expect(budgetUpdate.mock.calls[1][0]).toMatchObject({ admitted: { $lt: 250 } });
+  expect(budgetUpdate.mock.calls[1][0]).toMatchObject({ admitted: { $lt: 25 } });
+  expect(budgetUpdate.mock.calls[3][0]).toMatchObject({ admitted: { $lt: 250 } });
+  expect(jobInsert.mock.calls[0][0]).toMatchObject({ owner: "api-key:test" });
   expect(JSON.parse(send.mock.calls[0][0].MessageBody)).toEqual({ jobId: result.jobId });
   expect(jobInsert.mock.invocationCallOrder[0]).toBeLessThan(send.mock.invocationCallOrder[0]);
 });
 
 it("refuses dispatch when the monthly allowance is exhausted", async () => {
-  budgetUpdate.mockResolvedValue({ modifiedCount: 0 });
-  await expect(enqueueWorkerTask({ kind: "tournament", args: [{ seeds: [1], maxMoves: 1, bots: ["priority"] }] })).rejects.toBeInstanceOf(WorkerBudgetError);
+  budgetUpdate
+    .mockResolvedValueOnce({ modifiedCount: 0 })
+    .mockResolvedValueOnce({ modifiedCount: 1 })
+    .mockResolvedValueOnce({ modifiedCount: 0 })
+    .mockResolvedValueOnce({ modifiedCount: 0 });
+  await expect(enqueueWorkerTask({ kind: "tournament", args: [{ seeds: [1], maxMoves: 1, bots: ["priority"] }] }, "api-key:test")).rejects.toBeInstanceOf(WorkerBudgetError);
   expect(send).not.toHaveBeenCalled();
   expect(jobInsert).not.toHaveBeenCalled();
 });

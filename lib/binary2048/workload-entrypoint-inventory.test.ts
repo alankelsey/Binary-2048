@@ -10,6 +10,8 @@ type Entry = {
   aliases?: string[];
   runtime: string;
   mutation: string;
+  scope?: string;
+  caps?: string;
 };
 
 const root = process.cwd();
@@ -32,7 +34,7 @@ const expectedIds = [
 
 describe("Phase 5 workload entry-point inventory", () => {
   it("keeps the reviewed HTTP, worker, and executable script surface exact", () => {
-    expect(inventory.version).toBe(1);
+    expect(inventory.version).toBe(2);
     expect(inventory.entries.map((entry) => entry.id).sort()).toEqual(expectedIds);
     expect(new Set(inventory.entries.map((entry) => entry.id)).size).toBe(inventory.entries.length);
   });
@@ -53,14 +55,23 @@ describe("Phase 5 workload entry-point inventory", () => {
     }
   });
 
-  it("locks the audited security boundaries that later Phase 5 work must change deliberately", () => {
+  it("locks the scoped authorization, owner binding, and hard-cap boundaries", () => {
     const rateLimit = fs.readFileSync(path.join(root, "lib/binary2048/rate-limit.ts"), "utf8");
     const replayIngest = fs.readFileSync(path.join(root, "app/api/replay/ingest/route.ts"), "utf8");
     const jobs = fs.readFileSync(path.join(root, "app/api/jobs/[id]/route.ts"), "utf8");
+    const researchAuth = fs.readFileSync(path.join(root, "lib/binary2048/research-auth.ts"), "utf8");
     expect(rateLimit).toContain("resolveBotApiKey(req.headers.get(\"x-api-key\"))");
     expect(rateLimit).toContain("scope: \"api-key\"");
-    expect(replayIngest).not.toMatch(/checkRateLimit|isAdminRequest|getVerifiedAuthClaims|parseJsonWithLimit/);
-    expect(jobs).toContain("checkMoveRateLimit(req)");
+    expect(researchAuth).toContain("BINARY2048_BOT_API_KEY_SCOPES");
+    expect(researchAuth).toContain("resolveBotApiKey(presentedKey)");
+    expect(replayIngest).toContain('authorizeResearchRequest(req, "replay:ingest")');
+    expect(replayIngest).toContain("MAX_INGEST_RECORDS = 100");
+    expect(replayIngest).toContain("parseJsonWithLimit");
+    expect(jobs).toContain("checkJobStatusRateLimit(req)");
+    expect(jobs).toContain('authorizeResearchRequest(req, "jobs:read")');
+    expect(jobs).toContain("job.owner !== authorization.authority.principal");
     expect(jobs).toContain("/^[a-f0-9]{64}$/");
+    expect(inventory.entries.find((entry) => entry.id === "http-tournament")?.caps).toContain("128 KiB");
+    expect(inventory.entries.find((entry) => entry.id === "http-replay-ingest")?.scope).toBe("replay:ingest");
   });
 });

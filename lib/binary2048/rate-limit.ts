@@ -254,6 +254,24 @@ export async function checkTrainingRateLimit(req: Request) {
   });
 }
 
+export async function checkReplayIngestRateLimit(req: Request) {
+  return checkRateLimit({
+    req,
+    route: "replay_ingest",
+    max: parsePositiveInt(process.env.BINARY2048_RATE_LIMIT_REPLAY_INGEST_MAX, 10),
+    windowMs: parsePositiveInt(process.env.BINARY2048_RATE_LIMIT_WINDOW_MS, 5 * 60 * 1000)
+  });
+}
+
+export async function checkJobStatusRateLimit(req: Request) {
+  return checkRateLimit({
+    req,
+    route: "job_status",
+    max: parsePositiveInt(process.env.BINARY2048_RATE_LIMIT_JOB_STATUS_MAX, 120),
+    windowMs: parsePositiveInt(process.env.BINARY2048_RATE_LIMIT_WINDOW_MS, 5 * 60 * 1000)
+  });
+}
+
 export function resetRateLimitStore() {
   buckets.clear();
   delete globalStore.__binary2048_rate_limit_mongo_collection;

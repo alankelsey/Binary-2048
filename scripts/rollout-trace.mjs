@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { resolveWorkerJob } from "./worker-job-client.mjs";
+import { researchRequestHeaders } from "./research-client-auth.mjs";
 
 import { upsertBenchmarkRecord } from "./hf-benchmark-ledger.mjs";
 
@@ -32,7 +33,7 @@ async function main() {
 
   const tournament = await requestJson(`${BASE}/api/bots/tournament`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: researchRequestHeaders({ "content-type": "application/json" }),
     body: JSON.stringify({ seeds: SEEDS, maxMoves: MAX_MOVES, bots: ["rollout"], includeTraces: true })
   });
   const summaries = [];

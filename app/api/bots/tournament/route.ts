@@ -2,10 +2,12 @@ import { workerJobsEnabled, enqueueWorkerTask, WorkerBudgetError } from "@/lib/b
 import { NextResponse } from "next/server";
 import { runBotTournament, type BotId } from "@/lib/binary2048/bot-orchestrator";
 import { evaluateChallenge } from "@/lib/binary2048/challenge-policy";
-import { EndpointCostCapError, TOURNAMENT_MAX_MOVES, TOURNAMENT_MAX_SEEDS } from "@/lib/binary2048/cost-caps";
+import { EndpointCostCapError, TOURNAMENT_MAX_DECISIONS, TOURNAMENT_MAX_MOVES, TOURNAMENT_MAX_SEEDS } from "@/lib/binary2048/cost-caps";
 import { getDegradeState } from "@/lib/binary2048/degrade-mode";
 import { recordRouteTelemetry } from "@/lib/binary2048/ops-telemetry";
 import { checkTournamentRateLimit, rateLimitHeaders, type RateLimitResult } from "@/lib/binary2048/rate-limit";
+import { parseJsonWithLimit, RequestBodyTooLargeError } from "@/lib/binary2048/request-body-limit";
+import { authorizeResearchRequest } from "@/lib/binary2048/research-auth";
 import {
   acquireTournamentSlot,
   getTournamentQueueStats,
@@ -31,6 +33,7 @@ const DEFAULT_SEED_COUNT = 3;
 const DEFAULT_MAX_MOVES = 250;
 const DEFAULT_BOTS: BotId[] = ["priority", "random", "alternate", "rollout"];
 const MAX_TRACE_DECISIONS = 2_500;
+const MAX_TOURNAMENT_BODY_BYTES = 128 * 1024;
 
 function parseSeedList(body: TournamentBody) {
   if (Array.isArray(body.seeds) && body.seeds.length > 0) {
@@ -63,6 +66,11 @@ export async function POST(req: Request) {
   let slot: Awaited<ReturnType<typeof acquireTournamentSlot>> | null = null;
   let quota: RateLimitResult | null = null;
   try {
+    const authorization = authorizeResearchRequest(req, "tournament:run");
+    if (!authorization.allowed) {
+      statusCode = authorization.status;
+      return NextResponse.json({ error: authorization.error }, { status: authorization.status });
+    }
     const degrade = getDegradeState("bots_tournament");
     if (degrade.disabled) {
       statusCode = 503;
@@ -104,7 +112,7 @@ export async function POST(req: Request) {
       );
     }
     if (!workerJobsEnabled()) slot = await acquireTournamentSlot(resolveTournamentQueueOptions());
-    const body = ((await req.json().catch(() => ({}))) as TournamentBody);
+    const body = await parseJsonWithLimit<TournamentBody>(req, MAX_TOURNAMENT_BODY_BYTES);
     const seeds = parseSeedList(body);
     if (seeds.length === 0) {
       return NextResponse.json({ error: "No valid seeds provided" }, { status: 400, headers: rateLimitHeaders(quota) });
@@ -115,11 +123,17 @@ export async function POST(req: Request) {
     }
     const bots = parseBots(body.bots);
     const requestedTraceDecisions = seeds.length * bots.length * maxMoves;
+    if (requestedTraceDecisions > TOURNAMENT_MAX_DECISIONS) {
+      throw new EndpointCostCapError("decisions", TOURNAMENT_MAX_DECISIONS, requestedTraceDecisions);
+    }
     if (body.includeTraces === true && requestedTraceDecisions > MAX_TRACE_DECISIONS) {
       throw new EndpointCostCapError("traceDecisions", MAX_TRACE_DECISIONS, requestedTraceDecisions);
     }
     if (workerJobsEnabled()) {
-      const job = await enqueueWorkerTask({ kind: "tournament", args: [{ seeds, maxMoves, bots, config: body.config, initialGrid: body.initialGrid, includeTraces: body.includeTraces === true }] });
+      const job = await enqueueWorkerTask(
+        { kind: "tournament", args: [{ seeds, maxMoves, bots, config: body.config, initialGrid: body.initialGrid, includeTraces: body.includeTraces === true }] },
+        authorization.authority.principal
+      );
       statusCode = 202;
       return NextResponse.json(job, { status: 202, headers: { ...rateLimitHeaders(quota), "retry-after": "2", "cache-control": "no-store" } });
     }
@@ -140,6 +154,10 @@ export async function POST(req: Request) {
     );
   } catch (error) {
     const headers = quota ? rateLimitHeaders(quota) : undefined;
+    if (error instanceof RequestBodyTooLargeError) {
+      statusCode = 413;
+      return NextResponse.json({ error: error.message }, { status: 413, headers });
+    }
     if (error instanceof WorkerBudgetError) { statusCode = 429; return NextResponse.json({ error: error.message, code: "worker_budget_exhausted" }, { status: 429, headers }); }
     if (error instanceof EndpointCostCapError) {
       statusCode = 400;

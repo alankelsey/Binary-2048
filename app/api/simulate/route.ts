@@ -4,6 +4,7 @@ import { checkSimulateRateLimit, rateLimitHeaders, type RateLimitResult } from "
 import { EndpointCostCapError } from "@/lib/binary2048/cost-caps";
 import { getDegradeState } from "@/lib/binary2048/degrade-mode";
 import { parseJsonWithLimit, RequestBodyTooLargeError } from "@/lib/binary2048/request-body-limit";
+import { authorizeResearchRequest } from "@/lib/binary2048/research-auth";
 import { simulateBatch, type SimulateBatchRequest } from "@/lib/binary2048/simulate";
 
 const MAX_SIMULATE_BODY_BYTES = 128 * 1024;
@@ -11,6 +12,8 @@ const MAX_SIMULATE_BODY_BYTES = 128 * 1024;
 export async function POST(req: Request) {
   let quota: RateLimitResult | null = null;
   try {
+    const authorization = authorizeResearchRequest(req, "simulation:run");
+    if (!authorization.allowed) return NextResponse.json({ error: authorization.error }, { status: authorization.status });
     const degrade = getDegradeState("simulate");
     if (degrade.disabled) {
       return NextResponse.json(

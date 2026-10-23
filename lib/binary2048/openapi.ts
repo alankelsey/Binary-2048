@@ -29,9 +29,9 @@ const OPENAPI_BASE_SPEC = {
   paths: {
     "/api/jobs/{id}": {
       get: {
-        summary: "Read an opaque research job capability; results expire after 24 hours",
+        summary: "Read a principal-bound research job; results expire after 24 hours",
         parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", pattern: "^[a-f0-9]{64}$" } }],
-        responses: { "200": { description: "Job status and result when complete; Retry-After: 2" }, "404": { description: "Unknown or expired job" }, "429": { description: "Polling quota exhausted" }, "503": { description: "Status unavailable" } }
+        responses: { "200": { description: "Owned job status and result when complete; Retry-After: 2" }, "401": { description: "Research credential required" }, "403": { description: "Credential lacks jobs:read" }, "404": { description: "Unknown, unowned, or expired job" }, "429": { description: "Polling quota exhausted" }, "503": { description: "Status unavailable" } }
       }
     },
     "/api/auth/dev-token": {
@@ -259,7 +259,9 @@ const OPENAPI_BASE_SPEC = {
           "202": { description: "Queued on isolated compute; poll statusUrl until complete or failed", content: { "application/json": { schema: { type: "object", required: ["jobId", "status", "statusUrl"], properties: { jobId: { type: "string" }, status: { const: "queued" }, statusUrl: { type: "string" } } } } } },
           "200": { description: "Tournament result with ranking and run summaries", headers: RATE_LIMIT_HEADERS },
           "400": { description: "Invalid tournament payload" },
-          "403": { description: "Configured anti-abuse challenge required" },
+          "401": { description: "Research credential required" },
+          "403": { description: "Credential lacks tournament:run or configured anti-abuse challenge required" },
+          "413": { description: "Tournament body exceeds 128 KiB" },
           "429": { description: "Rate limit or worker budget exceeded", headers: { ...RATE_LIMIT_HEADERS, "Retry-After": { description: "Seconds until retry is allowed", schema: { type: "integer" } } } },
           "503": { description: "Endpoint disabled, tournament capacity reached, or queue wait timed out" }
         }
@@ -656,7 +658,8 @@ const OPENAPI_BASE_SPEC = {
         responses: {
           "200": { description: "Simulation result", headers: RATE_LIMIT_HEADERS },
           "400": { description: "Invalid simulation payload" },
-          "403": { description: "Configured anti-abuse challenge required" },
+          "401": { description: "Research credential required" },
+          "403": { description: "Credential lacks simulation:run or configured anti-abuse challenge required" },
           "413": { description: "Simulation body exceeds 128 KiB" },
           "429": { description: "Rate limit exceeded", headers: { ...RATE_LIMIT_HEADERS, "Retry-After": { description: "Seconds until retry is allowed", schema: { type: "integer" } } } },
           "503": { description: "Endpoint temporarily disabled by degrade mode" }
@@ -676,7 +679,8 @@ const OPENAPI_BASE_SPEC = {
         responses: {
           "202": { description: "Queued on isolated compute; poll statusUrl until complete or failed", content: { "application/json": { schema: { type: "object", required: ["jobId", "status", "statusUrl"], properties: { jobId: { type: "string" }, status: { const: "queued" }, statusUrl: { type: "string" } } } } } },
           "200": { description: "Paginated replay summaries", headers: RATE_LIMIT_HEADERS },
-          "403": { description: "Configured anti-abuse challenge required" },
+          "401": { description: "Research credential required" },
+          "403": { description: "Credential lacks training:read or configured anti-abuse challenge required" },
           "429": { description: "Shared training rate limit exceeded", headers: { ...RATE_LIMIT_HEADERS, "Retry-After": { description: "Seconds until retry is allowed", schema: { type: "integer" } } } },
           "500": { description: "Training replay generation failed" },
           "503": { description: "Training queue full or wait timeout", headers: { "Retry-After": { description: "Seconds before retrying capacity", schema: { type: "integer" } } } }
@@ -696,7 +700,8 @@ const OPENAPI_BASE_SPEC = {
         responses: {
           "202": { description: "Queued on isolated compute; poll statusUrl until complete or failed", content: { "application/json": { schema: { type: "object", required: ["jobId", "status", "statusUrl"], properties: { jobId: { type: "string" }, status: { const: "queued" }, statusUrl: { type: "string" } } } } } },
           "200": { description: "Paginated labeled board states", headers: RATE_LIMIT_HEADERS },
-          "403": { description: "Configured anti-abuse challenge required" },
+          "401": { description: "Research credential required" },
+          "403": { description: "Credential lacks training:read or configured anti-abuse challenge required" },
           "429": { description: "Shared training rate limit exceeded", headers: { ...RATE_LIMIT_HEADERS, "Retry-After": { description: "Seconds until retry is allowed", schema: { type: "integer" } } } },
           "500": { description: "Training label generation failed" },
           "503": { description: "Training queue full or wait timeout", headers: { "Retry-After": { description: "Seconds before retrying capacity", schema: { type: "integer" } } } }
@@ -722,11 +727,15 @@ const OPENAPI_BASE_SPEC = {
         summary: "Ingest canonical run records for replay research",
         requestBody: {
           required: true,
-          content: { "application/json": { schema: { type: "object", required: ["records"], properties: { records: { type: "array", minItems: 1, items: { type: "object" } } } } } }
+          content: { "application/json": { schema: { type: "object", required: ["records"], properties: { records: { type: "array", minItems: 1, maxItems: 100, items: { type: "object" } } } } } }
         },
         responses: {
           "200": { description: "Canonical run records ingested with duplicate ids reported" },
-          "400": { description: "A non-empty records array is required" }
+          "400": { description: "A valid 1..100 canonical-record array is required" },
+          "401": { description: "Research credential required" },
+          "403": { description: "Credential lacks replay:ingest" },
+          "413": { description: "Request exceeds 1 MiB" },
+          "429": { description: "Replay-ingest quota exhausted" }
         }
       }
     },
@@ -876,8 +885,14 @@ const OPTIONAL_API_KEY: Pick<OperationContract, "auth" | "security" | "scopes"> 
   scopes: []
 };
 
+const SCOPED_RESEARCH = (scope: string): Pick<OperationContract, "auth" | "security" | "scopes"> => ({
+  auth: `Scoped x-api-key (${scope}), configured research subject, or admin authority required`,
+  security: [{ botApiKey: [] }, { bearerAuth: [] }, { adminServiceToken: [] }],
+  scopes: [scope]
+});
+
 const OPERATION_CONTRACTS: Record<string, OperationContract> = {
-  "GET /api/jobs/{id}": { auth: "Opaque 256-bit job id capability", security: [], scopes: [], rateLimit: "game_move: default 600 requests / 5 minutes; API-key counters are shared", version: "job-v1", examples: { response: "{ jobId, status, result?, error?, expiresAt }" } },
+  "GET /api/jobs/{id}": { ...SCOPED_RESEARCH("jobs:read"), auth: "Scoped research/admin credential bound to the submitting principal; ownerless pre-deployment jobs retain opaque-id access until their 24-hour TTL", rateLimit: "job_status: default 120 requests / 5 minutes", version: "job-v1", examples: { response: "{ jobId, status, result?, error?, expiresAt }" } },
   "POST /api/games": { ...PUBLIC, rateLimit: "No route-local request quota", version: "session-schema-v2", examples: { request: "{ seed?: 42, mode?: 'normal' }", response: "{ id, current, recoverySnapshot, integrity }" } },
   "GET /api/games/{id}": { ...PUBLIC, rateLimit: "No route-local request quota", version: "session-schema-v2", examples: { response: "{ id, current, recoverySnapshot, integrity }" } },
   "POST /api/games/{id}/move": { ...OPTIONAL_API_KEY, rateLimit: "game_move: default 600 requests / 5 minutes; API-key counters are shared", version: COMPACT_SYNC_VERSION, examples: { request: "{ dir: 'left', expectTurn, expectStateHashVersion, expectStateHash }", response: "{ current, stateHash, stateHashVersion, sync }" } },
@@ -888,13 +903,13 @@ const OPERATION_CONTRACTS: Record<string, OperationContract> = {
   "GET /api/games/{id}/replay": { ...PUBLIC, rateLimit: "No route-local request quota", version: "replay-v1", examples: { response: "{ header, moves, signature? }" } },
   "POST /api/games/import": { ...PUBLIC, rateLimit: "No route-local request quota; body capped at 256 KiB", version: COMPACT_RECOVERY_VERSION, examples: { request: "Game export, recovery snapshot, or compact recovery", response: "{ id, current, recoverySnapshot, steps, integrity }" } },
   "POST /api/sim/run": { ...PUBLIC, rateLimit: "No route-local request quota; body capped at 128 KiB", version: "simulation-v1", examples: { request: "{ config, initialGrid, moves }", response: "{ version: 1, final, steps }" } },
-  "POST /api/simulate": { ...OPTIONAL_API_KEY, rateLimit: "simulate: default 60 requests / 5 minutes; maximum 2,000 moves; challenge policy applies", version: "simulation-v1", examples: { request: "{ requests: [{ config, moves }] }", response: "Batch simulation results" } },
-  "POST /api/bots/tournament": { ...OPTIONAL_API_KEY, rateLimit: "bots_tournament: default 10 requests / 5 minutes; maximum 100 seeds and 2,000 moves; challenge policy applies", version: "tournament-v1", examples: { request: "{ seedCount: 3, maxMoves: 250, bots: ['priority', 'rollout'] }", response: "Tournament result or { jobId, status, statusUrl }" } },
-  "GET /api/training/replays": { ...OPTIONAL_API_KEY, rateLimit: "training: shared default 20 requests / 5 minutes; limit 1..100; challenge policy applies", version: "training-replays-v1", examples: { response: "Replay page or { jobId, status, statusUrl }" } },
-  "GET /api/training/labels": { ...OPTIONAL_API_KEY, rateLimit: "training: shared default 20 requests / 5 minutes; limit 1..500; challenge policy applies", version: "training-labels-v1", examples: { response: "Label page or { jobId, status, statusUrl }" } },
+  "POST /api/simulate": { ...SCOPED_RESEARCH("simulation:run"), rateLimit: "simulate: default 60 requests / 5 minutes; 128 KiB body; maximum 2,000 moves; challenge policy applies", version: "simulation-v1", examples: { request: "{ moves: ['L', 'U'], seed: 42 }", response: "Simulation result" } },
+  "POST /api/bots/tournament": { ...SCOPED_RESEARCH("tournament:run"), rateLimit: "bots_tournament: default 10 requests / 5 minutes; 128 KiB body; maximum 100 seeds, 2,000 moves/run, 25,000 aggregate decisions, and 2,500 trace decisions; challenge policy applies", version: "tournament-v1", examples: { request: "{ seedCount: 3, maxMoves: 250, bots: ['priority', 'rollout'] }", response: "Tournament result or { jobId, status, statusUrl }" } },
+  "GET /api/training/replays": { ...SCOPED_RESEARCH("training:read"), rateLimit: "training: shared default 20 requests / 5 minutes; limit 1..100; challenge policy applies", version: "training-replays-v1", examples: { response: "Replay page or { jobId, status, statusUrl }" } },
+  "GET /api/training/labels": { ...SCOPED_RESEARCH("training:read"), rateLimit: "training: shared default 20 requests / 5 minutes; limit 1..500; challenge policy applies", version: "training-labels-v1", examples: { response: "Label page or { jobId, status, statusUrl }" } },
   "GET /api/ops/models": { auth: "Admin bearer token or signed admin auth-bridge token", security: [{ adminBearer: [] }], scopes: ["admin"], rateLimit: "No route-local request quota", version: "model-registry-v1", examples: { response: "{ source, models }" } },
   "POST /api/replay": { ...PUBLIC, rateLimit: "No route-local request quota; body capped at 128 KiB", version: "replay-v1", examples: { request: "Versioned game export or replay envelope", response: "Deterministically reconstructed replay" } },
-  "POST /api/replay/ingest": { ...PUBLIC, rateLimit: "No route-local request quota or body cap currently enforced", version: "canonical-run-v1", examples: { request: "{ records: [canonicalRunRecord] }", response: "{ ingested, duplicateIds }" } },
+  "POST /api/replay/ingest": { ...SCOPED_RESEARCH("replay:ingest"), rateLimit: "replay_ingest: default 10 requests / 5 minutes; 1 MiB body and 100 records/request", version: "canonical-run-v1", examples: { request: "{ records: [canonicalRunRecord] }", response: "{ ingested, duplicateIds }" } },
   "POST /api/replay/validate": { ...PUBLIC, rateLimit: "No route-local request quota", version: "replay-v1", examples: { request: "{ payload, signature? }", response: "{ ok, reason, details? }" } },
   "GET /api/replay/code": { ...PUBLIC, rateLimit: "No route-local request quota", version: "replay-code-v1", examples: { response: "Decoded compact replay payload" } },
   "POST /api/replay/code": { ...PUBLIC, rateLimit: "No route-local request quota", version: "replay-code-v1", examples: { request: "Compact replay payload", response: "{ code, length, signed, hosted }" } },
@@ -905,9 +920,10 @@ const OPERATION_CONTRACTS: Record<string, OperationContract> = {
 
 const OPENAPI_COMPONENTS = {
   securitySchemes: {
-    botApiKey: { type: "apiKey", in: "header", name: "x-api-key", description: "Optional server-issued bot key; routes may fall back to an IP/account quota" },
+    botApiKey: { type: "apiKey", in: "header", name: "x-api-key", description: "Server-issued bot key. Quota identity and configured authorization scopes are evaluated separately." },
     bearerAuth: { type: "http", scheme: "bearer", bearerFormat: "Binary2048 auth-bridge JWT" },
     adminBearer: { type: "http", scheme: "bearer", bearerFormat: "Admin token or signed admin auth-bridge JWT" },
+    adminServiceToken: { type: "apiKey", in: "header", name: "x-admin-token", description: "Operator-only admin service credential" },
     authSession: { type: "apiKey", in: "cookie", name: "next-auth.session-token", description: "Auth.js browser session cookie" }
   },
   schemas: {

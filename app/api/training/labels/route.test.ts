@@ -2,8 +2,19 @@ import { GET } from "@/app/api/training/labels/route";
 import { resetRateLimitStore } from "@/lib/binary2048/rate-limit";
 import { resetTrainingQueue } from "@/lib/binary2048/training-queue";
 
+const NativeRequest = globalThis.Request;
+const Request = class extends NativeRequest {
+  constructor(input: RequestInfo | URL, init?: RequestInit) {
+    const headers = new Headers(init?.headers);
+    headers.set("x-admin-token", "research-test-admin");
+    super(input, { ...init, headers });
+  }
+};
+
 describe("GET /api/training/labels", () => {
+  afterAll(() => { delete process.env.BINARY2048_ADMIN_TOKEN; });
   beforeEach(() => {
+    process.env.BINARY2048_ADMIN_TOKEN = "research-test-admin";
     resetRateLimitStore();
     resetTrainingQueue();
     delete process.env.BINARY2048_CHALLENGE_MODE;

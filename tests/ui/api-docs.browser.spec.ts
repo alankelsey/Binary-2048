@@ -10,9 +10,11 @@ test("API explorer filters and expands the canonical contract", async ({ page })
   const operation = page.locator("details").filter({ hasText: "Ingest canonical run records" });
   await operation.locator("summary").click();
   await expect(operation).toContainText("Request body: documented");
-  await expect(operation).toContainText("400 A non-empty records array is required");
-  await expect(operation).toContainText("Authentication: Public; no credential is required");
-  await expect(operation).toContainText("No route-local request quota or body cap currently enforced");
+  await expect(operation).toContainText("400 A valid 1..100 canonical-record array is required");
+  await expect(operation).toContainText("Authentication: Scoped x-api-key (replay:ingest)");
+  await expect(operation).toContainText("Required scopes: replay:ingest");
+  await expect(operation).toContainText("1 MiB body and 100 records/request");
+  await expect(operation).toContainText("413 Request exceeds 1 MiB");
   await expect(operation).toContainText("Schema/version: canonical-run-v1");
 
   await page.getByRole("searchbox", { name: "Filter paths and operations" }).fill("no-such-operation");

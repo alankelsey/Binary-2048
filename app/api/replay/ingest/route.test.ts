@@ -1,6 +1,15 @@
 import { POST } from "@/app/api/replay/ingest/route";
 import { getRunStore, resetRunStoreForTests } from "@/lib/binary2048/run-store";
 
+const NativeRequest = globalThis.Request;
+const Request = class extends NativeRequest {
+  constructor(input: RequestInfo | URL, init?: RequestInit) {
+    const headers = new Headers(init?.headers);
+    headers.set("x-admin-token", "research-test-admin");
+    super(input, { ...init, headers });
+  }
+};
+
 const baseRecord = {
   id: "run_ingest_1",
   playerId: "u_ingest",
@@ -38,6 +47,10 @@ const baseRecord = {
 };
 
 describe("POST /api/replay/ingest", () => {
+  afterAll(() => { delete process.env.BINARY2048_ADMIN_TOKEN; });
+  beforeEach(() => {
+    process.env.BINARY2048_ADMIN_TOKEN = "research-test-admin";
+  });
   afterEach(() => {
     resetRunStoreForTests();
   });
@@ -50,6 +63,25 @@ describe("POST /api/replay/ingest", () => {
     });
     const res = await POST(req);
     expect(res.status).toBe(400);
+  });
+
+  it("rejects a public write and caps record count", async () => {
+    delete process.env.BINARY2048_ADMIN_TOKEN;
+    const unauthorized = await POST(new NativeRequest("http://localhost/api/replay/ingest", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ records: [baseRecord] })
+    }));
+    expect(unauthorized.status).toBe(401);
+
+    process.env.BINARY2048_ADMIN_TOKEN = "research-test-admin";
+    const capped = await POST(new Request("http://localhost/api/replay/ingest", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ records: Array.from({ length: 101 }, (_, index) => ({ ...baseRecord, id: `run_${index}` })) })
+    }));
+    expect(capped.status).toBe(400);
+    expect(await capped.json()).toMatchObject({ code: "cost_cap_exceeded", field: "records", limit: 100, value: 101 });
   });
 
   it("upserts deduped records and reports duplicate ids", async () => {
@@ -73,4 +105,3 @@ describe("POST /api/replay/ingest", () => {
     expect(second?.gameId).toBe("g_ingest_2");
   });
 });
-

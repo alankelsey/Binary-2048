@@ -16,3 +16,4 @@ export class EndpointCostCapError extends Error {
 export const SIMULATE_MAX_MOVES = 2_000;
 export const TOURNAMENT_MAX_MOVES = 2_000;
 export const TOURNAMENT_MAX_SEEDS = 100;
+export const TOURNAMENT_MAX_DECISIONS = 25_000;

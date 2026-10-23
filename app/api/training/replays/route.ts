@@ -22,6 +22,7 @@ import { NextResponse } from "next/server";
 import { evaluateChallenge } from "@/lib/binary2048/challenge-policy";
 import { recordRouteTelemetry } from "@/lib/binary2048/ops-telemetry";
 import { checkTrainingRateLimit, rateLimitHeaders, type RateLimitResult } from "@/lib/binary2048/rate-limit";
+import { authorizeResearchRequest } from "@/lib/binary2048/research-auth";
 import { generateTrainingReplays } from "@/lib/binary2048/training-data";
 import {
   acquireTrainingSlot,
@@ -42,6 +43,11 @@ export async function GET(req: Request) {
   let quota: RateLimitResult | null = null;
   let slot: TrainingQueueSlot | null = null;
   try {
+    const authorization = authorizeResearchRequest(req, "training:read");
+    if (!authorization.allowed) {
+      statusCode = authorization.status;
+      return NextResponse.json({ error: authorization.error }, { status: authorization.status });
+    }
     const challenge = evaluateChallenge({ req, route: "/api/training/replays", risk: "high", userTier: "guest" });
     if (!challenge.allowed) {
       statusCode = 403;
@@ -71,7 +77,10 @@ export async function GET(req: Request) {
     const bot: BotId = ALLOWED_BOTS.includes(rawBot as BotId) ? (rawBot as BotId) : "rollout";
 
     if (workerJobsEnabled()) {
-      const job = await enqueueWorkerTask({ kind: "training-replays", args: [page, limit, bot, minScore, ENGINE_VERSION] });
+      const job = await enqueueWorkerTask(
+        { kind: "training-replays", args: [page, limit, bot, minScore, ENGINE_VERSION] },
+        authorization.authority.principal
+      );
       statusCode = 202;
       return NextResponse.json(job, { status: 202, headers: { ...rateLimitHeaders(quota), "retry-after": "2", "cache-control": "no-store" } });
     }

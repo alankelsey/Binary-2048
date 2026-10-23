@@ -55,15 +55,16 @@ describe("priority OpenAPI operation contracts", () => {
       requestBody: { content: { "application/json": { examples: { illustrative: { value: string } } } } };
       responses: Record<string, { content: { "application/json": { schema?: { $ref: string }; examples?: { illustrative: { value: string } } } } }>;
     };
-    expect(simulate.requestBody.content["application/json"].examples.illustrative.value).toContain("requests");
-    expect(simulate.responses["200"].content["application/json"].examples?.illustrative.value).toContain("simulation");
+    expect(simulate.requestBody.content["application/json"].examples.illustrative.value).toContain("moves");
+    expect(simulate.responses["200"].content["application/json"].examples?.illustrative.value).toContain("Simulation");
     expect(simulate.responses["429"].content["application/json"].schema?.$ref).toBe("#/components/schemas/RateLimitError");
   });
 
-  it("does not overstate current research authorization", () => {
-    expect(operation("POST /api/replay/ingest")?.security).toEqual([]);
-    expect(operation("POST /api/replay/ingest")?.["x-auth-description"]).toContain("Public");
+  it("publishes enforced research authorization and keeps admin metadata", () => {
+    expect(operation("POST /api/replay/ingest")?.security).toContainEqual({ botApiKey: [] });
+    expect(operation("POST /api/replay/ingest")?.["x-required-scopes"]).toEqual(["replay:ingest"]);
+    expect(operation("GET /api/jobs/{id}")?.["x-required-scopes"]).toEqual(["jobs:read"]);
     expect(operation("GET /api/ops/models")?.["x-required-scopes"]).toEqual(["admin"]);
-    expect(operation("POST /api/simulate")?.security).toEqual([{ botApiKey: [] }, {}]);
+    expect(operation("POST /api/simulate")?.["x-required-scopes"]).toEqual(["simulation:run"]);
   });
 });

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { resolveWorkerJob } from "./worker-job-client.mjs";
+import { researchRequestHeaders } from "./research-client-auth.mjs";
 
 const BASE = process.env.BASE ?? "http://localhost:3000";
 const SEEDS = Number(process.env.SEEDS ?? "3");
@@ -25,7 +26,7 @@ async function requestJson(path, init = {}) {
 async function main() {
   const result = await requestJson("/api/bots/tournament", {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: researchRequestHeaders({ "content-type": "application/json" }),
     body: JSON.stringify({
       seedStart: SEED_START,
       seedCount: SEEDS,

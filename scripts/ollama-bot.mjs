@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { resolveWorkerJob } from "./worker-job-client.mjs";
+import { researchRequestHeaders } from "./research-client-auth.mjs";
 
 import { performance } from "node:perf_hooks";
 import { buildMovePrompt, parseOllamaAction } from "./ollama-bot-lib.mjs";
@@ -150,7 +151,7 @@ async function play() {
     try {
       const comparison = await requestJson(BASE, "/api/bots/tournament", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: researchRequestHeaders({ "content-type": "application/json" }),
         body: JSON.stringify({ seeds: [SEED], maxMoves: MAX_MOVES, bots: ["rollout"] })
       });
       const run = comparison?.runs?.find((entry) => entry?.bot === "rollout" && entry?.seed === SEED);

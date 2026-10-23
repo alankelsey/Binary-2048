@@ -2,7 +2,8 @@
 """Activate approved V1 shared stores and on-demand workers in Amplify.
 
 Existing branch variables are preserved and no values are printed. A confirmed
-operator subject can be supplied through BINARY2048_OPERATOR_SUBJECT.
+operator subject can be supplied through BINARY2048_OPERATOR_SUBJECT. Explicit
+research key-id scope grants can be supplied through BINARY2048_BOT_SCOPE_GRANTS.
 """
 import json
 import os
@@ -52,6 +53,9 @@ def main():
         }
         existing_subjects.add(operator_subject)
         environment["BINARY2048_ADMIN_SUBJECTS"] = ",".join(sorted(existing_subjects))
+    scope_grants = os.environ.get("BINARY2048_BOT_SCOPE_GRANTS", "").strip()
+    if scope_grants:
+        environment["BINARY2048_BOT_API_KEY_SCOPES"] = scope_grants
     aws(
         "amplify",
         "update-branch",
@@ -71,6 +75,7 @@ def main():
                 "ops": "mongo",
                 "workers": "sqs",
                 "operatorSubjectChanged": bool(operator_subject),
+                "researchScopeGrantsChanged": bool(scope_grants),
             }
         )
     )

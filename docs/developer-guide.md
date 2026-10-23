@@ -80,6 +80,49 @@ Replay storage phases and migration notes are documented in:
 
 See `/api/openapi` for up-to-date route definitions.
 
+## Research API authorization and caps
+
+Simulation, tournament, training, replay ingestion, and queued-job status are
+not public APIs. They require one of the following:
+
+- an `x-api-key` whose key id is present in `BINARY2048_BOT_API_KEY_SCOPES`
+  with the operation's exact scope;
+- a verified auth-bridge subject listed in `BINARY2048_RESEARCH_SUBJECTS`; or
+- existing admin authority (`x-admin-token` or an allowed verified admin
+  subject).
+
+`BINARY2048_BOT_API_KEY_HASHES` identifies a key for quota accounting only. It
+does not grant access. Authorization is configured separately as comma-separated
+`id=scope|scope` entries in `BINARY2048_BOT_API_KEY_SCOPES`. Generate a new key
+and both configuration entries with:
+
+```bash
+npm run bot:key:generate -- operator-id 'tournament:run|jobs:read'
+```
+
+Production scope grants are applied without printing credential material via
+`BINARY2048_BOT_SCOPE_GRANTS='id=scope|scope' python3
+scripts/configure-v1-production.py`; the configurator preserves all unrelated
+Amplify variables.
+
+Operator HTTP clients read `BINARY2048_API_KEY` and optionally
+`BINARY2048_CHALLENGE_TOKEN`; queued-job polling forwards the same headers.
+Replay ingestion is specifically an operator batch-import contract: the worker
+splits its selected file into requests of at most 100 records and 900 KiB.
+
+Hard server limits are 128 KiB and 2,000 moves for simulation; 128 KiB, 100
+seeds, 2,000 moves/run, 25,000 aggregate decisions, and 2,500 trace decisions for tournament; 100 replay
+rows or 500 label rows per training request; and 1 MiB/100 records for replay
+ingestion. Queued work also has a 25-job daily allowance per principal, the
+existing 250-job shared monthly allowance, two execution attempts, and a
+24-hour TTL. Job polling has its own 120 requests per five-minute quota.
+
+New queued jobs are bound to the submitting principal. Admins may inspect any
+job. Ownerless jobs created before this boundary was deployed retain the old
+opaque-id capability only until their existing 24-hour expiry, avoiding a
+mid-flight rollout break without keeping opaque capability semantics for new
+work.
+
 The explorer is generated from the same in-process OpenAPI object as
 `/api/openapi`. It can filter operations and expand their parameters, request
 body status, authentication, authorization scopes, rate-limit policy,

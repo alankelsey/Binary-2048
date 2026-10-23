@@ -2,8 +2,19 @@ import { POST } from "@/app/api/bots/tournament/route";
 import { resetRateLimitStore } from "@/lib/binary2048/rate-limit";
 import { acquireTournamentSlot, resetTournamentQueue } from "@/lib/binary2048/tournament-queue";
 
+const NativeRequest = globalThis.Request;
+const Request = class extends NativeRequest {
+  constructor(input: RequestInfo | URL, init?: RequestInit) {
+    const headers = new Headers(init?.headers);
+    headers.set("x-admin-token", "research-test-admin");
+    super(input, { ...init, headers });
+  }
+};
+
 describe("POST /api/bots/tournament", () => {
+  afterAll(() => { delete process.env.BINARY2048_ADMIN_TOKEN; });
   beforeEach(() => {
+    process.env.BINARY2048_ADMIN_TOKEN = "research-test-admin";
     resetRateLimitStore();
     resetTournamentQueue();
     delete process.env.BINARY2048_RATE_LIMIT_TOURNAMENT_MAX;
@@ -198,6 +209,28 @@ describe("POST /api/bots/tournament", () => {
     expect(json.code).toBe("cost_cap_exceeded");
     expect(json.field).toBe("maxMoves");
     expect(json.limit).toBe(2000);
+  });
+
+  it("caps aggregate seed, bot, and move decisions", async () => {
+    const req = new Request("http://localhost/api/bots/tournament", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ seedCount: 100, maxMoves: 100, bots: ["priority", "random", "alternate"] })
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ code: "cost_cap_exceeded", field: "decisions", limit: 25000, value: 30000 });
+  });
+
+  it("returns 413 when the request body exceeds 128 KiB", async () => {
+    const req = new Request("http://localhost/api/bots/tournament", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ ignored: "x".repeat(128 * 1024) })
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(413);
+    expect(await res.json()).toMatchObject({ error: "Request body too large" });
   });
 
   it("returns 503 when degrade mode disables tournament endpoint", async () => {
