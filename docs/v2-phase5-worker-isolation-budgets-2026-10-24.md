@@ -124,5 +124,18 @@ aggregate ceiling, one focused expansion, one full unit run, one full UI run,
 and one successful final build after the build gate identified and the focused
 test confirmed a type-only lint correction.
 
-Worker deployment, exact web deployment, and production acceptance are
-recorded below after those operations complete.
+## Deployment and production acceptance
+
+Runtime commit `5f1f39381be1ea126ae5152509dd464ecd18eeaf` was deployed worker-first.
+The `binary2048-v1-workers` stack reached `UPDATE_COMPLETE` with artifact SHA-256
+`24c146c95321a4b0cd64fca249ce28c4ec3ba50408de6e27ae145ab747b9bf40`.
+The deployed acceptance re-read both function and event-source controls,
+verified all twelve actionable alarms, and completed simulation, tournament,
+replay, and label jobs on their first attempts.
+
+Amplify job 433 then deployed that exact runtime commit successfully. The
+standard production smoke passed on its first attempt. A credential-safe live
+acceptance submitted a simulation and received `202`, polled the owned job to
+`complete` with the V2 status contract, and retrieved the completed result from
+the dedicated result endpoint. No production credential was printed or stored
+in this evidence.
