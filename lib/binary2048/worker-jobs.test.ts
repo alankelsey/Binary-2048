@@ -13,19 +13,29 @@ jest.mock("./shared-mongo", () => ({ sharedMongoDb: jest.fn(async () => ({ colle
 beforeEach(() => {
   jest.clearAllMocks();
   process.env.BINARY2048_TOURNAMENT_QUEUE_URL = "https://sqs.us-east-2.amazonaws.com/test/tournament";
+  process.env.BINARY2048_TRAINING_QUEUE_URL = "https://sqs.us-east-2.amazonaws.com/test/training";
+  delete process.env.BINARY2048_WORKER_MONTHLY_COMPUTE_JOBS;
+  delete process.env.BINARY2048_WORKER_MONTHLY_TRAINING_JOBS;
   budgetUpdate.mockResolvedValue({ modifiedCount: 1 });
   send.mockResolvedValue({});
   jobInsert.mockResolvedValue({});
   jobUpdate.mockResolvedValue({ modifiedCount: 1 });
 });
-afterAll(() => { delete process.env.BINARY2048_TOURNAMENT_QUEUE_URL; });
+afterAll(() => {
+  delete process.env.BINARY2048_TOURNAMENT_QUEUE_URL;
+  delete process.env.BINARY2048_TRAINING_QUEUE_URL;
+  delete process.env.BINARY2048_WORKER_MONTHLY_COMPUTE_JOBS;
+  delete process.env.BINARY2048_WORKER_MONTHLY_TRAINING_JOBS;
+});
 
 it("reserves the shared allowance before dispatch and queues only an opaque id", async () => {
   const result = await enqueueWorkerTask({ kind: "tournament", args: [{ seeds: [1], maxMoves: 1, bots: ["priority"] }] }, "api-key:test");
   expect(result.jobId).toMatch(/^[a-f0-9]{64}$/);
   expect(result.resultUrl).toBe(`/api/jobs/${result.jobId}/result`);
   expect(budgetUpdate.mock.calls[1][0]).toMatchObject({ admitted: { $lt: 25 } });
-  expect(budgetUpdate.mock.calls[3][0]).toMatchObject({ admitted: { $lt: 250 } });
+  expect(budgetUpdate.mock.calls[2][0]._id).toMatch(/^class:compute:/);
+  expect(budgetUpdate.mock.calls[3][0]).toMatchObject({ admitted: { $lt: 150 } });
+  expect(budgetUpdate.mock.calls[5][0]).toMatchObject({ admitted: { $lt: 250 } });
   expect(jobInsert.mock.calls[0][0]).toMatchObject({ owner: "api-key:test" });
   expect(JSON.parse(send.mock.calls[0][0].MessageBody)).toEqual({ jobId: result.jobId });
   expect(jobInsert.mock.invocationCallOrder[0]).toBeLessThan(send.mock.invocationCallOrder[0]);
@@ -36,10 +46,32 @@ it("refuses dispatch when the monthly allowance is exhausted", async () => {
     .mockResolvedValueOnce({ modifiedCount: 0 })
     .mockResolvedValueOnce({ modifiedCount: 1 })
     .mockResolvedValueOnce({ modifiedCount: 0 })
+    .mockResolvedValueOnce({ modifiedCount: 1 })
+    .mockResolvedValueOnce({ modifiedCount: 0 })
     .mockResolvedValueOnce({ modifiedCount: 0 });
   await expect(enqueueWorkerTask({ kind: "tournament", args: [{ seeds: [1], maxMoves: 1, bots: ["priority"] }] }, "api-key:test")).rejects.toBeInstanceOf(WorkerBudgetError);
   expect(send).not.toHaveBeenCalled();
   expect(jobInsert).not.toHaveBeenCalled();
+});
+
+it("enforces a separate configurable training allowance", async () => {
+  process.env.BINARY2048_WORKER_MONTHLY_TRAINING_JOBS = "7";
+  await enqueueWorkerTask({ kind: "training-replays", args: [1, 1, "priority", 0, "test"] }, "api-key:trainer");
+  expect(budgetUpdate.mock.calls[2][0]._id).toMatch(/^class:training:/);
+  expect(budgetUpdate.mock.calls[3][0]).toMatchObject({ admitted: { $lt: 7 } });
+  expect(send.mock.calls[0][0].QueueUrl).toContain("/training");
+});
+
+it("stops before global reservation and dispatch when a class allowance is exhausted", async () => {
+  budgetUpdate
+    .mockResolvedValueOnce({ modifiedCount: 0 })
+    .mockResolvedValueOnce({ modifiedCount: 1 })
+    .mockResolvedValueOnce({ modifiedCount: 0 })
+    .mockResolvedValueOnce({ modifiedCount: 0 });
+  await expect(enqueueWorkerTask({ kind: "simulation", args: [{ seed: 1, moves: ["L"] }] }, "api-key:test"))
+    .rejects.toBeInstanceOf(WorkerBudgetError);
+  expect(budgetUpdate).toHaveBeenCalledTimes(4);
+  expect(send).not.toHaveBeenCalled();
 });
 
 it("does not execute an already completed duplicate delivery", async () => {

@@ -1,6 +1,6 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "Binary2048 V1 on-demand workers and bounded telemetry; no VPC or provisioned concurrency.",
+  "Description": "Binary2048 isolated on-demand worker pools, hard admission budgets, pool alarms, and bounded telemetry; no VPC or provisioned concurrency.",
   "Parameters": {
     "MongoUri": {
       "Type": "String",
@@ -88,7 +88,11 @@
       "Properties": {
         "QueueName": "binary2048-v1-tournament-dlq",
         "MessageRetentionPeriod": 1209600,
-        "SqsManagedSseEnabled": true
+        "SqsManagedSseEnabled": true,
+        "Tags": [
+          { "Key": "Project", "Value": "Binary2048" },
+          { "Key": "WorkloadClass", "Value": "research-compute" }
+        ]
       }
     },
     "TournamentQueue": {
@@ -99,6 +103,10 @@
         "MessageRetentionPeriod": 86400,
         "ReceiveMessageWaitTimeSeconds": 20,
         "SqsManagedSseEnabled": true,
+        "Tags": [
+          { "Key": "Project", "Value": "Binary2048" },
+          { "Key": "WorkloadClass", "Value": "research-compute" }
+        ],
         "RedrivePolicy": {
           "deadLetterTargetArn": {
             "Fn::GetAtt": [
@@ -142,6 +150,10 @@
         },
         "MemorySize": 2048,
         "Timeout": 60,
+        "Tags": [
+          { "Key": "Project", "Value": "Binary2048" },
+          { "Key": "WorkloadClass", "Value": "research-compute" }
+        ],
         "Environment": {
           "Variables": {
             "BINARY2048_MONGO_URI": {
@@ -183,7 +195,11 @@
       "Properties": {
         "QueueName": "binary2048-v1-training-dlq",
         "MessageRetentionPeriod": 1209600,
-        "SqsManagedSseEnabled": true
+        "SqsManagedSseEnabled": true,
+        "Tags": [
+          { "Key": "Project", "Value": "Binary2048" },
+          { "Key": "WorkloadClass", "Value": "training" }
+        ]
       }
     },
     "TrainingQueue": {
@@ -194,6 +210,10 @@
         "MessageRetentionPeriod": 86400,
         "ReceiveMessageWaitTimeSeconds": 20,
         "SqsManagedSseEnabled": true,
+        "Tags": [
+          { "Key": "Project", "Value": "Binary2048" },
+          { "Key": "WorkloadClass", "Value": "training" }
+        ],
         "RedrivePolicy": {
           "deadLetterTargetArn": {
             "Fn::GetAtt": [
@@ -237,6 +257,10 @@
         },
         "MemorySize": 2048,
         "Timeout": 60,
+        "Tags": [
+          { "Key": "Project", "Value": "Binary2048" },
+          { "Key": "WorkloadClass", "Value": "training" }
+        ],
         "Environment": {
           "Variables": {
             "BINARY2048_MONGO_URI": {
@@ -271,6 +295,138 @@
         "ScalingConfig": {
           "MaximumConcurrency": 2
         }
+      }
+    },
+    "ComputeErrorsAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmName": "binary2048-v1-compute-errors",
+        "Namespace": "AWS/Lambda", "MetricName": "Errors", "Statistic": "Sum",
+        "Dimensions": [{ "Name": "FunctionName", "Value": { "Ref": "TournamentFunction" } }],
+        "Period": 60, "EvaluationPeriods": 1, "DatapointsToAlarm": 1, "Threshold": 1,
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold", "TreatMissingData": "notBreaching",
+        "AlarmActions": [{ "Fn::Sub": "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:Default_CloudWatch_Alarms_Topic" }]
+      }
+    },
+    "ComputeThrottlesAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmName": "binary2048-v1-compute-throttles",
+        "Namespace": "AWS/Lambda", "MetricName": "Throttles", "Statistic": "Sum",
+        "Dimensions": [{ "Name": "FunctionName", "Value": { "Ref": "TournamentFunction" } }],
+        "Period": 60, "EvaluationPeriods": 1, "DatapointsToAlarm": 1, "Threshold": 1,
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold", "TreatMissingData": "notBreaching",
+        "AlarmActions": [{ "Fn::Sub": "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:Default_CloudWatch_Alarms_Topic" }]
+      }
+    },
+    "ComputeDurationAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmName": "binary2048-v1-compute-duration",
+        "Namespace": "AWS/Lambda", "MetricName": "Duration", "ExtendedStatistic": "p95",
+        "Dimensions": [{ "Name": "FunctionName", "Value": { "Ref": "TournamentFunction" } }],
+        "Period": 60, "EvaluationPeriods": 1, "DatapointsToAlarm": 1, "Threshold": 55000,
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold", "TreatMissingData": "notBreaching",
+        "AlarmActions": [{ "Fn::Sub": "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:Default_CloudWatch_Alarms_Topic" }]
+      }
+    },
+    "ComputeConcurrencyAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmName": "binary2048-v1-compute-concurrency",
+        "Namespace": "AWS/Lambda", "MetricName": "ConcurrentExecutions", "Statistic": "Maximum",
+        "Dimensions": [{ "Name": "FunctionName", "Value": { "Ref": "TournamentFunction" } }],
+        "Period": 60, "EvaluationPeriods": 3, "DatapointsToAlarm": 3, "Threshold": 2,
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold", "TreatMissingData": "notBreaching",
+        "AlarmActions": [{ "Fn::Sub": "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:Default_CloudWatch_Alarms_Topic" }]
+      }
+    },
+    "ComputeQueueAgeAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmName": "binary2048-v1-compute-queue-age",
+        "Namespace": "AWS/SQS", "MetricName": "ApproximateAgeOfOldestMessage", "Statistic": "Maximum",
+        "Dimensions": [{ "Name": "QueueName", "Value": { "Fn::GetAtt": ["TournamentQueue", "QueueName"] } }],
+        "Period": 60, "EvaluationPeriods": 2, "DatapointsToAlarm": 2, "Threshold": 300,
+        "ComparisonOperator": "GreaterThanThreshold", "TreatMissingData": "notBreaching",
+        "AlarmActions": [{ "Fn::Sub": "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:Default_CloudWatch_Alarms_Topic" }]
+      }
+    },
+    "ComputeDeadLetterAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmName": "binary2048-v1-compute-dlq",
+        "Namespace": "AWS/SQS", "MetricName": "ApproximateNumberOfMessagesVisible", "Statistic": "Maximum",
+        "Dimensions": [{ "Name": "QueueName", "Value": { "Fn::GetAtt": ["TournamentDLQ", "QueueName"] } }],
+        "Period": 60, "EvaluationPeriods": 1, "DatapointsToAlarm": 1, "Threshold": 1,
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold", "TreatMissingData": "notBreaching",
+        "AlarmActions": [{ "Fn::Sub": "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:Default_CloudWatch_Alarms_Topic" }]
+      }
+    },
+    "TrainingErrorsAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmName": "binary2048-v1-training-errors",
+        "Namespace": "AWS/Lambda", "MetricName": "Errors", "Statistic": "Sum",
+        "Dimensions": [{ "Name": "FunctionName", "Value": { "Ref": "TrainingFunction" } }],
+        "Period": 60, "EvaluationPeriods": 1, "DatapointsToAlarm": 1, "Threshold": 1,
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold", "TreatMissingData": "notBreaching",
+        "AlarmActions": [{ "Fn::Sub": "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:Default_CloudWatch_Alarms_Topic" }]
+      }
+    },
+    "TrainingThrottlesAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmName": "binary2048-v1-training-throttles",
+        "Namespace": "AWS/Lambda", "MetricName": "Throttles", "Statistic": "Sum",
+        "Dimensions": [{ "Name": "FunctionName", "Value": { "Ref": "TrainingFunction" } }],
+        "Period": 60, "EvaluationPeriods": 1, "DatapointsToAlarm": 1, "Threshold": 1,
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold", "TreatMissingData": "notBreaching",
+        "AlarmActions": [{ "Fn::Sub": "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:Default_CloudWatch_Alarms_Topic" }]
+      }
+    },
+    "TrainingDurationAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmName": "binary2048-v1-training-duration",
+        "Namespace": "AWS/Lambda", "MetricName": "Duration", "ExtendedStatistic": "p95",
+        "Dimensions": [{ "Name": "FunctionName", "Value": { "Ref": "TrainingFunction" } }],
+        "Period": 60, "EvaluationPeriods": 1, "DatapointsToAlarm": 1, "Threshold": 55000,
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold", "TreatMissingData": "notBreaching",
+        "AlarmActions": [{ "Fn::Sub": "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:Default_CloudWatch_Alarms_Topic" }]
+      }
+    },
+    "TrainingConcurrencyAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmName": "binary2048-v1-training-concurrency",
+        "Namespace": "AWS/Lambda", "MetricName": "ConcurrentExecutions", "Statistic": "Maximum",
+        "Dimensions": [{ "Name": "FunctionName", "Value": { "Ref": "TrainingFunction" } }],
+        "Period": 60, "EvaluationPeriods": 3, "DatapointsToAlarm": 3, "Threshold": 2,
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold", "TreatMissingData": "notBreaching",
+        "AlarmActions": [{ "Fn::Sub": "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:Default_CloudWatch_Alarms_Topic" }]
+      }
+    },
+    "TrainingQueueAgeAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmName": "binary2048-v1-training-queue-age",
+        "Namespace": "AWS/SQS", "MetricName": "ApproximateAgeOfOldestMessage", "Statistic": "Maximum",
+        "Dimensions": [{ "Name": "QueueName", "Value": { "Fn::GetAtt": ["TrainingQueue", "QueueName"] } }],
+        "Period": 60, "EvaluationPeriods": 2, "DatapointsToAlarm": 2, "Threshold": 300,
+        "ComparisonOperator": "GreaterThanThreshold", "TreatMissingData": "notBreaching",
+        "AlarmActions": [{ "Fn::Sub": "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:Default_CloudWatch_Alarms_Topic" }]
+      }
+    },
+    "TrainingDeadLetterAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmName": "binary2048-v1-training-dlq",
+        "Namespace": "AWS/SQS", "MetricName": "ApproximateNumberOfMessagesVisible", "Statistic": "Maximum",
+        "Dimensions": [{ "Name": "QueueName", "Value": { "Fn::GetAtt": ["TrainingDLQ", "QueueName"] } }],
+        "Period": 60, "EvaluationPeriods": 1, "DatapointsToAlarm": 1, "Threshold": 1,
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold", "TreatMissingData": "notBreaching",
+        "AlarmActions": [{ "Fn::Sub": "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:Default_CloudWatch_Alarms_Topic" }]
       }
     },
     "AmplifyQueuePolicy": {

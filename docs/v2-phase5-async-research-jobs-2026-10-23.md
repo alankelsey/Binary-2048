@@ -96,4 +96,6 @@ passed. A credential-safe live acceptance then verified:
 - anonymous reads of both the owned status and result are denied with 401; and
 - production OpenAPI publishes the simulation `202` and job-result operation.
 
-The final evidence deployment is recorded after its exact Amplify job passes.
+Final evidence commit `42411e51a84c328853620d1004bf964daca85566`
+deployed successfully in Amplify job 432, and the final production gameplay
+smoke passed again.

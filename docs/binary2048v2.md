@@ -532,8 +532,9 @@ and a closed diagnostic panel performs no full-log formatting per move.
 - [x] Convert synchronous long-running endpoints into job submission and
   status/result APIs
   ([evidence](./v2-phase5-async-research-jobs-2026-10-23.md)).
-- [ ] Run jobs outside gameplay capacity with separate concurrency, CPU, and
-  cost budgets.
+- [x] Run jobs outside gameplay capacity with separate concurrency, CPU, and
+  cost budgets
+  ([evidence](./v2-phase5-worker-isolation-budgets-2026-10-24.md)).
 - [ ] Store generated artifacts rather than rebuilding them in web requests.
 - [ ] Load-test gameplay while controlled training/tournament jobs run.
 

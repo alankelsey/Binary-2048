@@ -3,8 +3,8 @@
 ## Scope and deployed baseline
 
 This inventory closed the second Phase 5 item and was updated through the
-scoped authorization/cap and asynchronous-job boundaries from the third and
-fourth items. It covers all HTTP,
+scoped authorization/cap, asynchronous-job, and worker-isolation boundaries
+from the third through fifth items. It covers all HTTP,
 Lambda/SQS, and package-script entry points that run or prepare simulation,
 tournament, training, model inference, replay ingest, or job-status work. The
 machine-readable surface is `v2-phase5-workload-entrypoints.json`; provisioning,
@@ -19,7 +19,12 @@ after 24 hours, allow at most two execution attempts, limit serialized input to
 budget, and cap each submitting principal at 25 jobs per UTC day. Each SQS
 queue retains messages for one day and moves a message to its
 14-day dead-letter queue after three receives. There is no reserved or
-provisioned worker concurrency.
+provisioned worker concurrency because the audited regional concurrency quota
+cannot retain AWS's required unreserved pool after a reservation. The SQS
+event-source mappings independently cap each pool at two concurrent
+invocations. Compute admits at most 150 jobs/month and training 100/month under
+the unchanged 250-job global cap. Twelve pool-specific alarms cover Lambda
+errors, throttles, duration, concurrency plus queue age and DLQ depth.
 
 The rate-limit store is the deployed shared Mongo store where the route opts
 into it. Unless an environment override is present, the audited application
@@ -32,10 +37,10 @@ secret is recorded here.
 
 | Entry point | Identification, authentication, and authorization | Quota and challenge | Body/cost and queue limits | Runtime and mutation |
 | --- | --- | --- | --- | --- |
-| `POST /api/simulate` | Requires `simulation:run`, configured research subject, or admin. Key identity and scope grants are separate. | `simulate`, 60/5 minutes by default, configurable with `BINARY2048_RATE_LIMIT_SIMULATE_MAX` and the shared window variable. High-risk challenge policy. | 128 KiB JSON; 1–2,000 moves. Production creates a job; the bounded synchronous fallback is local-development only. | Amplify admission, compute Lambda execution. Reserves per-principal daily and shared monthly budget, inserts an owned job, then stores result/status. |
-| `POST /api/bots/tournament` | Requires `tournament:run`, configured research subject, or admin. | `bots_tournament`, 10/5 minutes by default; tournament and window overrides. High-risk challenge policy. | 128 KiB; at most 100 seeds, 2,000 moves/run, 25,000 aggregate decisions, and 2,500 trace decisions. Production creates an SQS job; inline fallback is 2 active + 8 waiting with a 15-second wait. | Amplify admission, tournament Lambda execution. Reserves per-principal daily and shared monthly budget, inserts an owned job, then stores result/status. |
-| `GET /api/training/replays` | Requires `training:read`, configured research subject, or admin. | Shared `training` bucket, 20/5 minutes by default; training and window overrides. High-risk challenge policy. | Query `limit` clamped to 1–100. Production creates an SQS job; inline fallback is 1 active + 2 waiting with a 10-second wait. | Amplify admission, training Lambda execution. Reserves budget and mutates an owned job. |
-| `GET /api/training/labels` | Same as training replays. | Same shared `training` bucket and high-risk challenge policy. | Query `limit` clamped to 1–500. Same training queue/fallback limits. | Same admission/worker placement and owned-job mutations. |
+| `POST /api/simulate` | Requires `simulation:run`, configured research subject, or admin. Key identity and scope grants are separate. | `simulate`, 60/5 minutes by default, configurable with `BINARY2048_RATE_LIMIT_SIMULATE_MAX` and the shared window variable. High-risk challenge policy. | 128 KiB JSON; 1–2,000 moves. Production creates a job; compute class 150/month; bounded synchronous fallback is local-development only. | Amplify admission, isolated compute Lambda execution. Reserves principal, class, and global budgets, inserts an owned job, then stores result/status. |
+| `POST /api/bots/tournament` | Requires `tournament:run`, configured research subject, or admin. | `bots_tournament`, 10/5 minutes by default; tournament and window overrides. High-risk challenge policy. | 128 KiB; at most 100 seeds, 2,000 moves/run, 25,000 aggregate decisions, and 2,500 trace decisions; compute class 150/month. Production creates an SQS job; inline fallback is 2 active + 8 waiting with a 15-second wait. | Amplify admission, isolated compute Lambda execution. Reserves principal, class, and global budgets, inserts an owned job, then stores result/status. |
+| `GET /api/training/replays` | Requires `training:read`, configured research subject, or admin. | Shared `training` bucket, 20/5 minutes by default; training and window overrides. High-risk challenge policy. | Query `limit` clamped to 1–100; training class 100/month. Production creates an SQS job; inline fallback is 1 active + 2 waiting with a 10-second wait. | Amplify admission, isolated training Lambda execution. Reserves principal, class, and global budgets and mutates an owned job. |
+| `GET /api/training/labels` | Same as training replays. | Same shared `training` bucket and high-risk challenge policy. | Query `limit` clamped to 1–500; training class 100/month. Same training queue/fallback limits. | Same isolated training placement and owned-job mutations. |
 | `GET /api/ops/models` | Requires either the constant-time `x-admin-token` service credential or verified auth-bridge claims whose subject is in `BINARY2048_ADMIN_SUBJECTS`. This is real admin authorization, unlike the bot API key. | No route-local quota or challenge. | Read capped by the registry implementation at 500 records; no request body or queue. | Amplify; reads shared Mongo model registry without mutation. It lists metadata and does not perform inference. |
 | `POST /api/replay/ingest` | Requires `replay:ingest`, configured research subject, or admin; its shipped caller is the operator batch-import worker. | `replay_ingest`, 10/5 minutes by default. | 1 MiB and 100 canonical records/request; the client chunks at 900 KiB/100. | Amplify; upserts caller-supplied canonical run records into the deployed run store. |
 | `GET /api/jobs/{id}` | Requires `jobs:read` and the submitting principal; admin may inspect any job. Ownerless pre-deployment jobs retain opaque-id access only through their existing 24-hour TTL. | Dedicated `job_status`, shared 120/5 minutes. | Exact 64-hex id, no body. Polling clients use 2-second intervals and a 12-minute deadline. Contract-v2 status is lightweight; unversioned requests retain inline result compatibility. | Amplify; reads a non-expired Mongo job. Only the quota counter mutates. |
@@ -53,6 +58,12 @@ corresponding queued Mongo record, and dispatches exactly four task kinds:
 is controlled by AWS IAM, not an application scope. A lease is 90 seconds;
 retry is delegated to SQS, and the handler does not run an unbounded local
 retry loop.
+
+The deployed isolation and alarm decisions are maintained in
+`v2-phase5-worker-isolation-budgets-2026-10-24.md`. Amplify gameplay and the
+worker Lambda functions use different compute planes. Mongo remains a shared
+downstream dependency, so gameplay-under-worker-load proof is intentionally
+left to the later Phase 5 load-test item.
 
 The following operator commands have no independent route-local authorization
 or quota. Commands that call Binary 2048 inherit the target HTTP route's

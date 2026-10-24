@@ -34,6 +34,10 @@ function positiveInt(raw: string | undefined, fallback: number) {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+function workloadClass(task: WorkerTask) {
+  return task.kind === "training-replays" || task.kind === "training-labels" ? "training" : "compute";
+}
+
 export async function enqueueWorkerTask(task: WorkerTask, owner: string) {
   if (Buffer.byteLength(JSON.stringify(task)) > 128 * 1024) throw new Error("Worker payload too large");
   if (!owner || owner.length > 96) throw new Error("Worker owner is required");
@@ -45,18 +49,28 @@ export async function enqueueWorkerTask(task: WorkerTask, owner: string) {
   const now = new Date();
   const month = now.toISOString().slice(0, 7);
   const day = now.toISOString().slice(0, 10);
+  const taskClass = workloadClass(task);
   const ownerDailyBudget = `owner:${owner}:${day}`;
   const ownerDailyLimit = positiveInt(process.env.BINARY2048_WORKER_DAILY_JOBS_PER_PRINCIPAL, 25);
-  // A fixed combined allowance: 250 jobs, each at most two 60s/2GB attempts.
+  const classMonthlyBudget = `class:${taskClass}:${month}`;
+  const classMonthlyLimit = taskClass === "compute"
+    ? positiveInt(process.env.BINARY2048_WORKER_MONTHLY_COMPUTE_JOBS, 150)
+    : positiveInt(process.env.BINARY2048_WORKER_MONTHLY_TRAINING_JOBS, 100);
+  const monthlyExpiry = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 2, 1));
+  // Fixed class and combined allowances; each job permits at most two 60s/2GB attempts.
   // Reserve before enqueue; failures are conservatively charged to the allowance.
   try { await budgets.updateOne({ _id: ownerDailyBudget }, { $setOnInsert: { admitted: 0, expiresAt: new Date(now.getTime() + 2 * 86400000) } }, { upsert: true }); }
   catch (error) { if ((error as { code?: number }).code !== 11000) throw error; }
   const ownerReserved = await budgets.updateOne({ _id: ownerDailyBudget, admitted: { $lt: ownerDailyLimit } }, { $inc: { admitted: 1 } });
   if (!ownerReserved.modifiedCount) throw new WorkerBudgetError();
-  try { await budgets.updateOne({ _id: month }, { $setOnInsert: { admitted: 0, expiresAt: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 2, 1)) } }, { upsert: true }); }
+  try { await budgets.updateOne({ _id: classMonthlyBudget }, { $setOnInsert: { admitted: 0, expiresAt: monthlyExpiry } }, { upsert: true }); }
   catch (error) { if ((error as { code?: number }).code !== 11000) throw error; }
-  const reserved = await budgets.updateOne({ _id: month, admitted: { $lt: 250 } }, { $inc: { admitted: 1 } });
-  if (!reserved.modifiedCount) throw new WorkerBudgetError();
+  const classReserved = await budgets.updateOne({ _id: classMonthlyBudget, admitted: { $lt: classMonthlyLimit } }, { $inc: { admitted: 1 } });
+  if (!classReserved.modifiedCount) throw new WorkerBudgetError();
+  try { await budgets.updateOne({ _id: month }, { $setOnInsert: { admitted: 0, expiresAt: monthlyExpiry } }, { upsert: true }); }
+  catch (error) { if ((error as { code?: number }).code !== 11000) throw error; }
+  const globallyReserved = await budgets.updateOne({ _id: month, admitted: { $lt: 250 } }, { $inc: { admitted: 1 } });
+  if (!globallyReserved.modifiedCount) throw new WorkerBudgetError();
   const id = randomBytes(32).toString("hex");
   await jobs.insertOne({ _id: id, task, owner, status: "queued", attempts: 0, createdAt: now, expiresAt: new Date(now.getTime() + 86400000) });
   try {

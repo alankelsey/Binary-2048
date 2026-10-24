@@ -34,7 +34,7 @@ const expectedIds = [
 
 describe("Phase 5 workload entry-point inventory", () => {
   it("keeps the reviewed HTTP, worker, and executable script surface exact", () => {
-    expect(inventory.version).toBe(3);
+    expect(inventory.version).toBe(4);
     expect(inventory.entries.map((entry) => entry.id).sort()).toEqual(expectedIds);
     expect(new Set(inventory.entries.map((entry) => entry.id)).size).toBe(inventory.entries.length);
   });
@@ -75,6 +75,8 @@ describe("Phase 5 workload entry-point inventory", () => {
     expect(jobResult).toContain('authorizeResearchRequest(req, "jobs:read")');
     expect(jobs).toContain("/^[a-f0-9]{64}$/");
     expect(inventory.entries.find((entry) => entry.id === "http-tournament")?.caps).toContain("128 KiB");
+    expect(inventory.entries.find((entry) => entry.id === "http-tournament")?.caps).toContain("150/month");
+    expect(inventory.entries.find((entry) => entry.id === "http-training-labels")?.caps).toContain("100/month");
     expect(inventory.entries.find((entry) => entry.id === "http-replay-ingest")?.scope).toBe("replay:ingest");
   });
 });

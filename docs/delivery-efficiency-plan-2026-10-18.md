@@ -219,3 +219,11 @@ Final test, build, and deployment counts are recorded in the
 [slice evidence](./v2-phase5-async-research-jobs-2026-10-23.md). The measured
 35% reduction remains open until those totals establish a comparable gain with
 unchanged release confidence.
+
+The sixth product pilot is the Phase 5 worker-isolation and budget slice. It
+uses bounded repository discovery, one compact deployed-state audit, focused
+infrastructure/worker tests, and a worker-first release sequence. Final command
+counts and any retries are recorded in the
+[slice evidence](./v2-phase5-worker-isolation-budgets-2026-10-24.md). The 35%
+comparison remains open until the final measurements show a comparable gain
+without reducing release confidence.

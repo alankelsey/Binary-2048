@@ -121,9 +121,21 @@ Hard server limits are 128 KiB and 2,000 moves for simulation; 128 KiB, 100
 seeds, 2,000 moves/run, 25,000 aggregate decisions, and 2,500 trace decisions for tournament; 100 replay
 rows or 500 label rows per training request; and 1 MiB/100 records for replay
 ingestion. Queued work also has a 25-job daily allowance per principal, the
-existing 250-job shared monthly allowance, two execution attempts, and a
+existing 250-job shared monthly allowance, a 150-job monthly research-compute
+allowance, a 100-job monthly training allowance, two execution attempts, and a
 24-hour TTL and 12 MiB stored-result cap. Job status and result reads share the
 120 requests per five-minute polling quota.
+
+Production research work uses two separately tagged and alarmed SQS/Lambda
+pools outside Amplify gameplay compute. Simulation and tournament share the
+research-compute pool; replay and label generation share the training pool.
+Each consumes one message per invocation with event-source maximum concurrency
+two, 2,048 MiB memory, and a 60-second timeout. CloudWatch alarms cover errors,
+throttles, p95 duration, sustained concurrency saturation, queue age, and DLQ
+depth for each pool. The regional Lambda concurrency quota is currently too low
+to add function reserved concurrency while retaining the required unreserved
+pool, so the event-source limits are the enforced per-pool concurrency caps.
+See `docs/v2-phase5-worker-isolation-budgets-2026-10-24.md`.
 
 New queued jobs are bound to the submitting principal. Admins may inspect any
 job. Ownerless jobs created before this boundary was deployed retain the old
