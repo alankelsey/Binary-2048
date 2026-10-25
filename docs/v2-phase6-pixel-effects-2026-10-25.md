@@ -5,6 +5,16 @@ Date: 2026-10-25 America/Boise
 Status: protocol and static inventory complete; physical Pixel capture pending.
 No visual CSS has been changed.
 
+## Current continuation state
+
+The profiling tool and protocol are deployed at commit `46de7d0`. Amplify job
+441 succeeded for that exact SHA, and the standard production smoke passed.
+The target Pixel is not currently exposed at the forwarded CDP endpoint, so the
+next action is to connect and approve the device, open the deployed production
+game in portrait, and perform the two standard-motion captures plus the
+reduced-motion check below. Do not change visual CSS before that evidence is
+recorded.
+
 ## Objective
 
 Measure the paint, raster, layer-update, composite, and frame-pipeline cost of
@@ -107,10 +117,12 @@ without speculative CSS churn.
 
 ## Evidence available now
 
-The source inventory above was verified at commit `c8c600e`. The measurement
-tool passes syntax validation and its help/refusal path can be exercised without
-a device. No CDP endpoint is listening at `127.0.0.1:9222` in the current
-workspace, and device enumeration was not authorized, so there is no physical
-Pixel result to report yet. The Phase 6 checklist deliberately remains open
-until two valid target-device captures and the reduced-motion check are added
-to this document.
+The source inventory above was verified at commit `c8c600e`; no visual source
+changed in the profiling checkpoint. The measurement tool passes syntax
+validation and its help/refusal path can be exercised without a device. Commit
+`46de7d0` was pushed to `main`, deployed successfully by Amplify job 441, and
+passed the standard production smoke on 2026-10-25. No CDP endpoint is listening
+at `127.0.0.1:9222` in the current workspace, and device enumeration was not
+authorized, so there is no physical Pixel result to report yet. The Phase 6
+checklist deliberately remains open until two valid target-device captures and
+the reduced-motion check are added to this document.
