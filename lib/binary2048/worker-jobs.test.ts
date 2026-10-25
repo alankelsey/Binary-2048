@@ -1,4 +1,5 @@
-import { enqueueWorkerTask, WorkerBudgetError } from "./worker-jobs";
+import { createHash } from "crypto";
+import { enqueueWorkerTask, loadWorkerArtifact, persistWorkerArtifact, WorkerBudgetError } from "./worker-jobs";
 import { handler } from "../../workers/index";
 
 const send = jest.fn();
@@ -7,8 +8,14 @@ const jobInsert = jest.fn();
 const jobUpdate = jest.fn();
 const claim = jest.fn();
 const jobRead = jest.fn();
+const artifactRead = jest.fn();
+const artifactReplace = jest.fn();
 jest.mock("@aws-sdk/client-sqs", () => ({ SQSClient: jest.fn().mockImplementation(() => ({ send })), SendMessageCommand: jest.fn().mockImplementation(input => input) }));
-jest.mock("./shared-mongo", () => ({ sharedMongoDb: jest.fn(async () => ({ collection: (name: string) => name === "worker_budgets" ? { createIndex: jest.fn(), updateOne: budgetUpdate } : { createIndex: jest.fn(), insertOne: jobInsert, updateOne: jobUpdate, findOneAndUpdate: claim, findOne: jobRead } })) }));
+jest.mock("./shared-mongo", () => ({ sharedMongoDb: jest.fn(async () => ({ collection: (name: string) => {
+  if (name === "worker_budgets") return { createIndex: jest.fn(), updateOne: budgetUpdate };
+  if (name === "worker_artifacts") return { createIndex: jest.fn(), replaceOne: artifactReplace, findOne: artifactRead };
+  return { createIndex: jest.fn(), insertOne: jobInsert, updateOne: jobUpdate, findOneAndUpdate: claim, findOne: jobRead };
+} })) }));
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -20,6 +27,7 @@ beforeEach(() => {
   send.mockResolvedValue({});
   jobInsert.mockResolvedValue({});
   jobUpdate.mockResolvedValue({ modifiedCount: 1 });
+  artifactReplace.mockResolvedValue({ modifiedCount: 1 });
 });
 afterAll(() => {
   delete process.env.BINARY2048_TOURNAMENT_QUEUE_URL;
@@ -80,15 +88,51 @@ it("does not execute an already completed duplicate delivery", async () => {
   expect(jobUpdate).not.toHaveBeenCalled();
 });
 
-it("computes a claimed deterministic job and conditionally commits its result", async () => {
-  claim.mockResolvedValue({ status: "running", attempts: 1, task: { kind: "tournament", args: [{ seeds: [1], maxMoves: 1, bots: ["priority"] }] } });
+it("persists a claimed deterministic job artifact before conditionally completing it", async () => {
+  claim.mockResolvedValue({ _id: "b".repeat(64), owner: "api-key:test", createdAt: new Date(), expiresAt: new Date(Date.now() + 60_000), status: "running", attempts: 1, task: { kind: "tournament", args: [{ seeds: [1], maxMoves: 1, bots: ["priority"] }] } });
   expect(await handler({ Records: [{ messageId: "one", body: JSON.stringify({ jobId: "b".repeat(64) }) }] })).toEqual({ batchItemFailures: [] });
+  expect(artifactReplace).toHaveBeenCalledTimes(1);
+  expect(artifactReplace.mock.invocationCallOrder[0]).toBeLessThan(jobUpdate.mock.invocationCallOrder[0]);
   expect(jobUpdate.mock.calls[0][0]).toEqual({ _id: "b".repeat(64), attempts: 1, status: "running" });
   expect(jobUpdate.mock.calls[0][1].$set.status).toBe("complete");
+  expect(jobUpdate.mock.calls[0][1].$set.artifact).toMatchObject({ id: "b".repeat(64), schema: "worker-result-v1" });
+  expect(jobUpdate.mock.calls[0][1].$set).not.toHaveProperty("result");
 });
 
 it("executes a claimed simulation outside the web request", async () => {
-  claim.mockResolvedValue({ status: "running", attempts: 1, task: { kind: "simulation", args: [{ seed: 7, moves: ["L"] }] } });
+  claim.mockResolvedValue({ _id: "c".repeat(64), owner: "api-key:test", createdAt: new Date(), expiresAt: new Date(Date.now() + 60_000), status: "running", attempts: 1, task: { kind: "simulation", args: [{ seed: 7, moves: ["L"] }] } });
   expect(await handler({ Records: [{ messageId: "sim", body: JSON.stringify({ jobId: "c".repeat(64) }) }] })).toEqual({ batchItemFailures: [] });
-  expect(jobUpdate.mock.calls[0][1].$set.result).toMatchObject({ rulesetId: "binary2048-v1", seed: 7 });
+  const stored = artifactReplace.mock.calls[0][1];
+  expect(JSON.parse(stored.payload)).toMatchObject({ rulesetId: "binary2048-v1", seed: 7 });
+  expect(stored.checksumSha256).toBe(createHash("sha256").update(stored.payload).digest("hex"));
+});
+
+it("loads a stored artifact only when its identity, owner, size, and digest match", async () => {
+  const expiresAt = new Date(Date.now() + 60_000);
+  const artifactCollection = { replaceOne: artifactReplace, findOne: artifactRead } as never;
+  const ref = await persistWorkerArtifact(artifactCollection, {
+    _id: "d".repeat(64), owner: "api-key:test", createdAt: new Date(), expiresAt
+  }, { ok: true });
+  artifactRead.mockResolvedValue(artifactReplace.mock.calls[0][1]);
+  await expect(loadWorkerArtifact(artifactCollection, {
+    _id: "d".repeat(64), owner: "api-key:test", artifact: ref
+  })).resolves.toEqual({ ok: true });
+
+  artifactRead.mockResolvedValue({ ...artifactReplace.mock.calls[0][1], payload: "{}" });
+  await expect(loadWorkerArtifact(artifactCollection, {
+    _id: "d".repeat(64), owner: "api-key:test", artifact: ref
+  })).rejects.toThrow("integrity");
+
+  artifactRead.mockResolvedValue({ ...artifactReplace.mock.calls[0][1], owner: "api-key:other" });
+  await expect(loadWorkerArtifact(artifactCollection, {
+    _id: "d".repeat(64), owner: "api-key:test", artifact: ref
+  })).rejects.toThrow("unavailable");
+});
+
+it("rejects an oversized artifact before storage", async () => {
+  const artifactCollection = { replaceOne: artifactReplace, findOne: artifactRead } as never;
+  await expect(persistWorkerArtifact(artifactCollection, {
+    _id: "e".repeat(64), owner: "api-key:test", createdAt: new Date(), expiresAt: new Date(Date.now() + 60_000)
+  }, { value: "x".repeat(12 * 1024 * 1024) })).rejects.toThrow("storage limit");
+  expect(artifactReplace).not.toHaveBeenCalled();
 });

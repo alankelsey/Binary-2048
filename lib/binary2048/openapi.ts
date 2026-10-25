@@ -29,20 +29,20 @@ const OPENAPI_BASE_SPEC = {
   paths: {
     "/api/jobs/{id}": {
       get: {
-        summary: "Read principal-bound research job status; results expire after 24 hours",
+        summary: "Read principal-bound research job status; stored artifacts expire after 24 hours",
         parameters: [
           { name: "id", in: "path", required: true, schema: { type: "string", pattern: "^[a-f0-9]{64}$" } },
           { name: "x-binary2048-job-contract", in: "header", required: false, description: "Set to 2 to use lightweight status plus the dedicated result API. Omit only for V1 inline-result compatibility.", schema: { type: "string", enum: ["2"] } }
         ],
-        responses: { "200": { description: "Owned job status; completed jobs include resultUrl and a deprecated inline result compatibility field; Retry-After: 2" }, "401": { description: "Research credential required" }, "403": { description: "Credential lacks jobs:read" }, "404": { description: "Unknown, unowned, or expired job" }, "429": { description: "Polling quota exhausted" }, "503": { description: "Status unavailable" } }
+        responses: { "200": { description: "Owned job status; contract v2 reads metadata only, while unversioned requests load the verified stored artifact into a deprecated inline result field; Retry-After: 2" }, "401": { description: "Research credential required" }, "403": { description: "Credential lacks jobs:read" }, "404": { description: "Unknown, unowned, or expired job" }, "429": { description: "Polling quota exhausted" }, "503": { description: "Status or compatibility artifact unavailable" } }
       }
     },
     "/api/jobs/{id}/result": {
       get: {
-        summary: "Read a completed principal-bound research job result",
+        summary: "Read and integrity-check a persisted principal-bound research job result artifact",
         parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", pattern: "^[a-f0-9]{64}$" } }],
         responses: {
-          "200": { description: "Completed job result" },
+          "200": { description: "Completed worker-result-v1 artifact, verified by owner, byte length, and SHA-256" },
           "202": { description: "Job is still queued or running; Retry-After: 2" },
           "401": { description: "Research credential required" },
           "403": { description: "Credential lacks jobs:read" },
@@ -912,8 +912,8 @@ const SCOPED_RESEARCH = (scope: string): Pick<OperationContract, "auth" | "secur
 });
 
 const OPERATION_CONTRACTS: Record<string, OperationContract> = {
-  "GET /api/jobs/{id}": { ...SCOPED_RESEARCH("jobs:read"), auth: "Scoped research/admin credential bound to the submitting principal; ownerless pre-deployment jobs retain opaque-id access until their 24-hour TTL", rateLimit: "job_status: default 120 requests / 5 minutes", version: "job-v2", examples: { response: "{ jobId, status, resultUrl?, result? (deprecated compatibility), error?, expiresAt }" } },
-  "GET /api/jobs/{id}/result": { ...SCOPED_RESEARCH("jobs:read"), auth: "Same principal ownership and bounded ownerless-job compatibility policy as job status", rateLimit: "job_status: shared default 120 requests / 5 minutes", version: "job-v2", examples: { response: "{ jobId, status: 'complete', result }" } },
+  "GET /api/jobs/{id}": { ...SCOPED_RESEARCH("jobs:read"), auth: "Scoped research/admin credential bound to the submitting principal; ownerless pre-deployment jobs retain opaque-id access until their 24-hour TTL", rateLimit: "job_status: default 120 requests / 5 minutes; contract v2 reads bounded metadata only; stored artifacts expire after 24 hours", version: "job-v2", examples: { response: "{ jobId, status, resultUrl?, result? (deprecated stored-artifact compatibility), error?, expiresAt }" } },
+  "GET /api/jobs/{id}/result": { ...SCOPED_RESEARCH("jobs:read"), auth: "Same principal ownership and bounded ownerless-job compatibility policy as job status; artifacts are verified before parsing", rateLimit: "job_status: shared default 120 requests / 5 minutes; worker-result-v1 artifact capped at 12 MiB and retained for 24 hours", version: "worker-result-v1", examples: { response: "{ jobId, status: 'complete', result }" } },
   "POST /api/games": { ...PUBLIC, rateLimit: "No route-local request quota", version: "session-schema-v2", examples: { request: "{ seed?: 42, mode?: 'normal' }", response: "{ id, current, recoverySnapshot, integrity }" } },
   "GET /api/games/{id}": { ...PUBLIC, rateLimit: "No route-local request quota", version: "session-schema-v2", examples: { response: "{ id, current, recoverySnapshot, integrity }" } },
   "POST /api/games/{id}/move": { ...OPTIONAL_API_KEY, rateLimit: "game_move: default 600 requests / 5 minutes; API-key counters are shared", version: COMPACT_SYNC_VERSION, examples: { request: "{ dir: 'left', expectTurn, expectStateHashVersion, expectStateHash }", response: "{ current, stateHash, stateHashVersion, sync }" } },

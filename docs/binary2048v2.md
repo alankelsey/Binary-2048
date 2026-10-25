@@ -535,7 +535,8 @@ and a closed diagnostic panel performs no full-log formatting per move.
 - [x] Run jobs outside gameplay capacity with separate concurrency, CPU, and
   cost budgets
   ([evidence](./v2-phase5-worker-isolation-budgets-2026-10-24.md)).
-- [ ] Store generated artifacts rather than rebuilding them in web requests.
+- [x] Store generated artifacts rather than rebuilding them in web requests
+  ([evidence](./v2-phase5-generated-artifacts-2026-10-24.md)).
 - [ ] Load-test gameplay while controlled training/tournament jobs run.
 
 Exit criterion: developers can discover and exercise authorized V2 APIs from

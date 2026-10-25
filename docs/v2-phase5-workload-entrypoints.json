@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "authorizationPolicy": {
     "quotaIdentity": "BINARY2048_BOT_API_KEY_HASHES",
     "scopeGrants": "BINARY2048_BOT_API_KEY_SCOPES",
@@ -12,6 +12,13 @@
     "training": "replays+labels; SQS maximum concurrency 2; 2,048 MiB; 60 seconds; 100 jobs/UTC month",
     "global": "250 jobs/UTC month; 25 jobs/principal/UTC day; two attempts/job; 12 alarms across both pools"
   },
+  "artifactPolicy": {
+    "identity": "worker-result-v1 keyed by 64-hex job id and submitting principal",
+    "storage": "separate worker_artifacts Mongo collection; exact JSON payload plus SHA-256 and byte length",
+    "retention": "same absolute 24-hour expiry as owning job; TTL indexed",
+    "compatibility": "pre-change inline results remain readable; unversioned status loads stored artifact; contract-v2 status remains metadata-only",
+    "failure": "missing, mismatched, oversized, or corrupt artifacts fail closed and are never regenerated in web requests"
+  },
   "entries": [
     { "id": "http-simulate", "category": "simulation", "kind": "http", "source": "app/api/simulate/route.ts", "entrypoint": "POST", "runtime": "Amplify admission; production submits to the isolated research-compute pool", "mutation": "creates owned worker job and reserves principal, compute-class, and global budget", "scope": "simulation:run", "caps": "60/5m; 128 KiB; 2,000 moves; compute class 150/month" },
     { "id": "http-tournament", "category": "tournament", "kind": "http", "source": "app/api/bots/tournament/route.ts", "entrypoint": "POST", "runtime": "Amplify admission; production submits to the isolated research-compute pool", "mutation": "creates owned worker job and reserves principal, compute-class, and global budget", "scope": "tournament:run", "caps": "10/5m; 128 KiB; 100 seeds; 2,000 moves/run; 25,000 decisions; 2,500 trace decisions; compute class 150/month" },
@@ -19,9 +26,9 @@
     { "id": "http-training-labels", "category": "training", "kind": "http", "source": "app/api/training/labels/route.ts", "entrypoint": "GET", "runtime": "Amplify admission; production submits to the isolated training pool", "mutation": "creates owned worker job and reserves principal, training-class, and global budget", "scope": "training:read", "caps": "shared 20/5m; 500 rows; training class 100/month" },
     { "id": "http-model-registry", "category": "model", "kind": "http", "source": "app/api/ops/models/route.ts", "entrypoint": "GET", "runtime": "Amplify web runtime", "mutation": "none" },
     { "id": "http-replay-ingest", "category": "replay-ingest", "kind": "http", "source": "app/api/replay/ingest/route.ts", "entrypoint": "POST", "runtime": "Amplify web runtime", "mutation": "upserts canonical runs", "scope": "replay:ingest", "caps": "10/5m; 1 MiB; 100 records" },
-    { "id": "http-job-status", "category": "job-status", "kind": "http", "source": "app/api/jobs/[id]/route.ts", "entrypoint": "GET", "runtime": "Amplify web runtime", "mutation": "consumes quota counter only", "scope": "jobs:read plus job owner binding", "caps": "shared 120/5m; 2-second client interval; 12-minute client deadline" },
-    { "id": "http-job-result", "category": "job-result", "kind": "http", "source": "app/api/jobs/[id]/result/route.ts", "entrypoint": "GET", "runtime": "Amplify web runtime", "mutation": "consumes quota counter only", "scope": "jobs:read plus job owner binding", "caps": "shared 120/5m; 24-hour job TTL; 12 MiB stored result" },
-    { "id": "worker-sqs-handler", "category": "worker", "kind": "worker", "source": "workers/index.ts", "entrypoint": "handler", "runtime": "separately tagged and alarmed research-compute and training Lambda pools", "mutation": "leases and completes or fails worker jobs" },
+    { "id": "http-job-status", "category": "job-status", "kind": "http", "source": "app/api/jobs/[id]/route.ts", "entrypoint": "GET", "runtime": "Amplify web runtime; contract v2 reads bounded job metadata only", "mutation": "consumes quota counter only", "scope": "jobs:read plus job owner binding", "caps": "shared 120/5m; 2-second client interval; 12-minute client deadline; legacy status may read verified stored artifact" },
+    { "id": "http-job-result", "category": "job-result", "kind": "http", "source": "app/api/jobs/[id]/result/route.ts", "entrypoint": "GET", "runtime": "Amplify web runtime; reads and verifies worker-result-v1 without regeneration", "mutation": "consumes quota counter only", "scope": "jobs:read plus job owner binding", "caps": "shared 120/5m; 24-hour artifact TTL; 12 MiB exact JSON artifact" },
+    { "id": "worker-sqs-handler", "category": "worker", "kind": "worker", "source": "workers/index.ts", "entrypoint": "handler", "runtime": "separately tagged and alarmed research-compute and training Lambda pools", "mutation": "leases jobs, persists checksummed worker artifacts, then completes or fails jobs" },
     { "id": "script-bot-smoke", "category": "simulation", "kind": "script", "source": "scripts/bot-smoke.mjs", "entrypoint": "bot:smoke", "aliases": ["bot:smoke:dev"], "runtime": "operator Node process plus selected web runtime", "mutation": "creates and advances a game" },
     { "id": "script-bot-tournament", "category": "tournament", "kind": "script", "source": "scripts/bot-tournament.mjs", "entrypoint": "bot:tourney", "aliases": ["bot:tourney:dev"], "runtime": "operator Node process plus selected web/worker runtime", "mutation": "remote worker job when production queueing is enabled", "scope": "tournament:run|jobs:read" },
     { "id": "script-bot-benchmark", "category": "tournament", "kind": "script", "source": "scripts/bot-benchmark.mjs", "entrypoint": "bot:benchmark", "runtime": "operator Node process plus selected web/worker runtime", "mutation": "writes benchmark report and may create remote worker job", "scope": "tournament:run|jobs:read" },

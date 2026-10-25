@@ -1,6 +1,6 @@
 import { runBotTournament } from "@/lib/binary2048/bot-orchestrator";
 import { generateTrainingReplays, generateTrainingLabels } from "@/lib/binary2048/training-data";
-import { workerCollections, type WorkerTask } from "@/lib/binary2048/worker-jobs";
+import { persistWorkerArtifact, workerCollections, type WorkerTask } from "@/lib/binary2048/worker-jobs";
 import { simulateBatch } from "@/lib/binary2048/simulate";
 
 export function executeWorkerTask(task: WorkerTask) {
@@ -14,7 +14,7 @@ export function executeWorkerTask(task: WorkerTask) {
 
 export async function handler(event: { Records: Array<{ messageId: string; body: string }> }) {
   const failures: Array<{ itemIdentifier: string }> = [];
-  const { jobs } = await workerCollections();
+  const { jobs, artifacts } = await workerCollections();
   for (const record of event.Records) {
     let jobId: string | undefined;
     try {
@@ -32,8 +32,12 @@ export async function handler(event: { Records: Array<{ messageId: string; body:
         continue;
       }
       const result = executeWorkerTask(job.task);
-      if (Buffer.byteLength(JSON.stringify(result)) > 12 * 1024 * 1024) throw new Error("Result exceeds storage limit");
-      await jobs.updateOne({ _id: jobId, attempts: job.attempts, status: "running" }, { $set: { status: "complete", result }, $unset: { task: "", leaseUntil: "" } });
+      const artifact = await persistWorkerArtifact(artifacts, job, result);
+      const committed = await jobs.updateOne(
+        { _id: jobId, attempts: job.attempts, status: "running" },
+        { $set: { status: "complete", artifact }, $unset: { task: "", leaseUntil: "", result: "" } }
+      );
+      if (!committed.modifiedCount) throw new Error("Worker artifact commit lost");
     } catch {
       // Retry only via SQS, never an unbounded local loop. Timeouts expire the lease.
       failures.push({ itemIdentifier: record.messageId });

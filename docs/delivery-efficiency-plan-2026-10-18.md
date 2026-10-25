@@ -227,3 +227,11 @@ counts and any retries are recorded in the
 [slice evidence](./v2-phase5-worker-isolation-budgets-2026-10-24.md). The 35%
 comparison remains open until the final measurements show a comparable gain
 without reducing release confidence.
+
+The seventh product pilot is the Phase 5 generated-artifact slice. Its
+contract was fixed before implementation, discovery stayed in bounded batches,
+and focused validation covers worker persistence, integrity failure, legacy
+inline compatibility, and V2 metadata-only polling. Final command counts and
+any retries are recorded in the
+[slice evidence](./v2-phase5-generated-artifacts-2026-10-24.md). The measured
+35% comparison remains open pending the final totals.

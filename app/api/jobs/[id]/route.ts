@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { workerCollections, workerJobsEnabled } from "@/lib/binary2048/worker-jobs";
+import { loadWorkerArtifact, workerCollections, workerJobsEnabled } from "@/lib/binary2048/worker-jobs";
 import { checkJobStatusRateLimit, rateLimitHeaders } from "@/lib/binary2048/rate-limit";
 import { authorizeResearchRequest } from "@/lib/binary2048/research-auth";
 
@@ -12,7 +12,7 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
   const quota = await checkJobStatusRateLimit(req);
   if (!quota.allowed) return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429, headers: { ...headers, ...rateLimitHeaders(quota) } });
   try {
-    const { jobs } = await workerCollections();
+    const { jobs, artifacts } = await workerCollections();
     const modernContract = req.headers.get("x-binary2048-job-contract") === "2";
     const job = await jobs.findOne(
       { _id: id, expiresAt: { $gt: new Date() } },
@@ -25,12 +25,15 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
     }
     const exhausted = job.status === "running" && job.attempts >= 2 && job.leaseUntil && job.leaseUntil.getTime() < Date.now();
     const status = exhausted ? "failed" : job.status;
+    const result = !modernContract && status === "complete"
+      ? await loadWorkerArtifact(artifacts, job)
+      : undefined;
     return NextResponse.json({
       jobId: id,
       status,
       resultUrl: status === "complete" ? `/api/jobs/${id}/result` : undefined,
       // Compatibility: unversioned V1 clients may consume the completed result here.
-      result: modernContract ? undefined : job.result,
+      result,
       error: exhausted ? "Worker execution limit reached" : job.error,
       createdAt: job.createdAt,
       expiresAt: job.expiresAt

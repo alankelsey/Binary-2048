@@ -3,9 +3,11 @@ import { resetRateLimitStore } from "@/lib/binary2048/rate-limit";
 import { createHash } from "crypto";
 
 const findOne = jest.fn();
+const findArtifact = jest.fn();
 jest.mock("@/lib/binary2048/worker-jobs", () => ({
+  ...jest.requireActual("@/lib/binary2048/worker-jobs"),
   workerJobsEnabled: () => true,
-  workerCollections: async () => ({ jobs: { findOne } })
+  workerCollections: async () => ({ jobs: { findOne }, artifacts: { findOne: findArtifact } })
 }));
 
 const jobId = "a".repeat(64);
@@ -87,5 +89,23 @@ describe("GET /api/jobs/{id}", () => {
     expect(json).toMatchObject({ jobId, status: "complete", resultUrl: `/api/jobs/${jobId}/result` });
     expect(json).not.toHaveProperty("result");
     expect(findOne.mock.calls[0][1]).toEqual({ projection: { task: 0, result: 0 } });
+    expect(findArtifact).not.toHaveBeenCalled();
+  });
+
+  it("loads a persisted artifact only for unversioned result compatibility", async () => {
+    const payload = JSON.stringify({ ok: "stored" });
+    const checksumSha256 = createHash("sha256").update(payload).digest("hex");
+    const artifact = { id: jobId, schema: "worker-result-v1" as const, contentType: "application/json" as const, checksumSha256, byteLength: Buffer.byteLength(payload) };
+    findOne.mockResolvedValue({
+      _id: jobId, owner: "admin:service", status: "complete", attempts: 1, artifact,
+      createdAt: new Date(), expiresAt: new Date(Date.now() + 60_000)
+    });
+    findArtifact.mockResolvedValue({ _id: jobId, owner: "admin:service", payload, createdAt: new Date(), expiresAt: new Date(Date.now() + 60_000), ...artifact });
+    const response = await GET(new Request(`http://localhost/api/jobs/${jobId}`, {
+      headers: { "x-admin-token": "job-admin" }
+    }), context);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ result: { ok: "stored" } });
+    expect(findArtifact).toHaveBeenCalledTimes(1);
   });
 });

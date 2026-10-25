@@ -3,8 +3,8 @@
 ## Scope and deployed baseline
 
 This inventory closed the second Phase 5 item and was updated through the
-scoped authorization/cap, asynchronous-job, and worker-isolation boundaries
-from the third through fifth items. It covers all HTTP,
+scoped authorization/cap, asynchronous-job, worker-isolation, and generated-
+artifact boundaries from the third through sixth items. It covers all HTTP,
 Lambda/SQS, and package-script entry points that run or prepare simulation,
 tournament, training, model inference, replay ingest, or job-status work. The
 machine-readable surface is `v2-phase5-workload-entrypoints.json`; provisioning,
@@ -15,7 +15,7 @@ the web routes, simulation/tournament and training requests submit to separate e
 SQS queues, and two on-demand 2 GB/60-second Lambda functions consume one
 message per invocation with event-source maximum concurrency two. Jobs expire
 after 24 hours, allow at most two execution attempts, limit serialized input to
-128 KiB and stored result to 12 MiB, share a 250-job UTC-month admission
+128 KiB and stored artifact to 12 MiB, share a 250-job UTC-month admission
 budget, and cap each submitting principal at 25 jobs per UTC day. Each SQS
 queue retains messages for one day and moves a message to its
 14-day dead-letter queue after three receives. There is no reserved or
@@ -43,8 +43,8 @@ secret is recorded here.
 | `GET /api/training/labels` | Same as training replays. | Same shared `training` bucket and high-risk challenge policy. | Query `limit` clamped to 1–500; training class 100/month. Same training queue/fallback limits. | Same isolated training placement and owned-job mutations. |
 | `GET /api/ops/models` | Requires either the constant-time `x-admin-token` service credential or verified auth-bridge claims whose subject is in `BINARY2048_ADMIN_SUBJECTS`. This is real admin authorization, unlike the bot API key. | No route-local quota or challenge. | Read capped by the registry implementation at 500 records; no request body or queue. | Amplify; reads shared Mongo model registry without mutation. It lists metadata and does not perform inference. |
 | `POST /api/replay/ingest` | Requires `replay:ingest`, configured research subject, or admin; its shipped caller is the operator batch-import worker. | `replay_ingest`, 10/5 minutes by default. | 1 MiB and 100 canonical records/request; the client chunks at 900 KiB/100. | Amplify; upserts caller-supplied canonical run records into the deployed run store. |
-| `GET /api/jobs/{id}` | Requires `jobs:read` and the submitting principal; admin may inspect any job. Ownerless pre-deployment jobs retain opaque-id access only through their existing 24-hour TTL. | Dedicated `job_status`, shared 120/5 minutes. | Exact 64-hex id, no body. Polling clients use 2-second intervals and a 12-minute deadline. Contract-v2 status is lightweight; unversioned requests retain inline result compatibility. | Amplify; reads a non-expired Mongo job. Only the quota counter mutates. |
-| `GET /api/jobs/{id}/result` | Same scope, owner, admin, and ownerless-job compatibility rules as status. | Shares `job_status`, 120/5 minutes. | Exact 64-hex id; 202 pending, 200 complete, 409 failed; result expires with the 24-hour job TTL and is capped at 12 MiB. | Amplify; reads a non-expired Mongo job. Only the quota counter mutates. |
+| `GET /api/jobs/{id}` | Requires `jobs:read` and the submitting principal; admin may inspect any job. Ownerless pre-deployment jobs retain opaque-id access only through their existing 24-hour TTL. | Dedicated `job_status`, shared 120/5 minutes. | Exact 64-hex id, no body. Polling clients use 2-second intervals and a 12-minute deadline. Contract-v2 status reads bounded metadata only; unversioned requests retain inline response compatibility by loading the stored artifact. | Amplify; reads a non-expired Mongo job and only reads a verified artifact for legacy compatibility. Only the quota counter mutates. |
+| `GET /api/jobs/{id}/result` | Same scope, owner, admin, and ownerless-job compatibility rules as status. | Shares `job_status`, 120/5 minutes. | Exact 64-hex id; 202 pending, 200 complete, 409 failed; `worker-result-v1` expires with the 24-hour job TTL and is capped at 12 MiB. | Amplify; authorizes the job, then reads and verifies its separate Mongo artifact without regeneration. Only the quota counter mutates. |
 
 `BINARY2048_RATE_LIMIT_WINDOW_MS` configures the simulation, tournament,
 training, and move windows; invalid overrides fall back to five minutes. Rate
@@ -57,7 +57,13 @@ corresponding queued Mongo record, and dispatches exactly four task kinds:
 `simulation`, `tournament`, `training-replays`, and `training-labels`. SQS/Lambda invocation
 is controlled by AWS IAM, not an application scope. A lease is 90 seconds;
 retry is delegated to SQS, and the handler does not run an unbounded local
-retry loop.
+retry loop. Each successful worker serializes its result once, enforces the
+12 MiB ceiling, persists an owner-bound checksummed record in
+`worker_artifacts`, and only then marks the job complete with bounded artifact
+metadata. Both collections share the same absolute expiry through TTL indexes.
+Missing or corrupt artifacts fail closed; the web runtime does not rebuild
+them. Pre-change inline results retain their existing 24-hour compatibility
+window. See `v2-phase5-generated-artifacts-2026-10-24.md`.
 
 The deployed isolation and alarm decisions are maintained in
 `v2-phase5-worker-isolation-budgets-2026-10-24.md`. Amplify gameplay and the

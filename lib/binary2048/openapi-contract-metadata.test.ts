@@ -66,6 +66,7 @@ describe("priority OpenAPI operation contracts", () => {
     expect(operation("POST /api/replay/ingest")?.["x-required-scopes"]).toEqual(["replay:ingest"]);
     expect(operation("GET /api/jobs/{id}")?.["x-required-scopes"]).toEqual(["jobs:read"]);
     expect(operation("GET /api/jobs/{id}/result")?.["x-required-scopes"]).toEqual(["jobs:read"]);
+    expect(operation("GET /api/jobs/{id}/result")?.["x-api-version"]).toBe("worker-result-v1");
     expect(operation("GET /api/ops/models")?.["x-required-scopes"]).toEqual(["admin"]);
     expect(operation("POST /api/simulate")?.["x-required-scopes"]).toEqual(["simulation:run"]);
   });

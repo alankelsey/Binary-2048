@@ -32,6 +32,9 @@ describe("getApiDocEntries", () => {
     expect(simulate?.rateLimit).toContain("150 jobs/month");
     expect(simulate?.version).toBe("simulation-job-v2");
     expect(simulate?.examples?.request).toContain("moves");
+    const result = entries.find((entry) => entry.path === "/api/jobs/{id}/result")?.operations[0];
+    expect(result?.version).toBe("worker-result-v1");
+    expect(result?.rateLimit).toContain("12 MiB");
     expect(health?.auth).toBe("Not yet audited");
   });
 });

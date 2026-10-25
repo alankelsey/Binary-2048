@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { workerCollections, workerJobsEnabled } from "@/lib/binary2048/worker-jobs";
+import { loadWorkerArtifact, workerCollections, workerJobsEnabled } from "@/lib/binary2048/worker-jobs";
 import { checkJobStatusRateLimit, rateLimitHeaders } from "@/lib/binary2048/rate-limit";
 import { authorizeResearchRequest } from "@/lib/binary2048/research-auth";
 
@@ -18,7 +18,7 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
     return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429, headers: { ...headers, ...rateLimitHeaders(quota) } });
   }
   try {
-    const { jobs } = await workerCollections();
+    const { jobs, artifacts } = await workerCollections();
     const job = await jobs.findOne({ _id: id, expiresAt: { $gt: new Date() } }, { projection: { task: 0 } });
     if (!job || (job.owner && job.owner !== authorization.authority.principal && !authorization.authority.admin)) {
       return NextResponse.json({ error: "Job not found" }, { status: 404, headers });
@@ -36,7 +36,8 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
         { status: 202, headers: { ...headers, "retry-after": "2" } }
       );
     }
-    return NextResponse.json({ jobId: id, status: "complete", result: job.result }, { headers });
+    const result = await loadWorkerArtifact(artifacts, job);
+    return NextResponse.json({ jobId: id, status: "complete", result }, { headers });
   } catch {
     return NextResponse.json({ error: "Worker result unavailable" }, { status: 503, headers });
   }

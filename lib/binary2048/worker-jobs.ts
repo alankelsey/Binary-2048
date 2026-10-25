@@ -1,5 +1,6 @@
-import { randomBytes } from "crypto";
+import { createHash, randomBytes } from "crypto";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
+import type { Collection } from "mongodb";
 import { sharedMongoDb } from "@/lib/binary2048/shared-mongo";
 import type { runBotTournament } from "@/lib/binary2048/bot-orchestrator";
 import type { generateTrainingLabels, generateTrainingReplays } from "@/lib/binary2048/training-data";
@@ -12,21 +13,89 @@ export type WorkerTask =
   | { kind: "training-labels"; args: Parameters<typeof generateTrainingLabels> };
 export type WorkerJob = {
   _id: string; task: WorkerTask; status: "queued" | "running" | "complete" | "failed";
-  owner?: string; attempts: number; createdAt: Date; expiresAt: Date; leaseUntil?: Date; result?: unknown; error?: string;
+  owner?: string; attempts: number; createdAt: Date; expiresAt: Date; leaseUntil?: Date;
+  artifact?: WorkerArtifactRef; result?: unknown; error?: string;
 };
+export type WorkerArtifactRef = {
+  id: string;
+  schema: "worker-result-v1";
+  contentType: "application/json";
+  checksumSha256: string;
+  byteLength: number;
+};
+export type WorkerArtifact = WorkerArtifactRef & {
+  _id: string;
+  owner?: string;
+  payload: string;
+  createdAt: Date;
+  expiresAt: Date;
+};
+export const MAX_WORKER_ARTIFACT_BYTES = 12 * 1024 * 1024;
 export const workerJobsEnabled = () => process.env.BINARY2048_WORKER_MODE === "sqs";
 export class WorkerBudgetError extends Error { constructor() { super("Research compute allowance reached"); } }
 let ready: Promise<void> | undefined;
 export async function workerCollections() {
   const db = await sharedMongoDb();
   const jobs = db.collection<WorkerJob>("worker_jobs");
+  const artifacts = db.collection<WorkerArtifact>("worker_artifacts");
   const budgets = db.collection<{ _id: string; admitted: number; expiresAt: Date }>("worker_budgets");
   if (!ready) ready = Promise.all([
     jobs.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+    artifacts.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
     budgets.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 })
   ]).then(() => undefined).catch(() => { ready = undefined; throw new Error("Worker storage unavailable"); });
   await ready;
-  return { jobs, budgets };
+  return { jobs, artifacts, budgets };
+}
+
+type ArtifactCollection = Pick<Collection<WorkerArtifact>, "findOne" | "replaceOne">;
+
+export async function persistWorkerArtifact(
+  artifacts: ArtifactCollection,
+  job: Pick<WorkerJob, "_id" | "owner" | "createdAt" | "expiresAt">,
+  result: unknown
+): Promise<WorkerArtifactRef> {
+  const payload = JSON.stringify(result);
+  if (typeof payload !== "string") throw new Error("Result is not JSON serializable");
+  const byteLength = Buffer.byteLength(payload);
+  if (byteLength > MAX_WORKER_ARTIFACT_BYTES) throw new Error("Result exceeds storage limit");
+  const ref: WorkerArtifactRef = {
+    id: job._id,
+    schema: "worker-result-v1",
+    contentType: "application/json",
+    checksumSha256: createHash("sha256").update(payload).digest("hex"),
+    byteLength
+  };
+  await artifacts.replaceOne(
+    { _id: job._id },
+    { owner: job.owner, payload, createdAt: job.createdAt, expiresAt: job.expiresAt, ...ref },
+    { upsert: true }
+  );
+  return ref;
+}
+
+export async function loadWorkerArtifact(
+  artifacts: ArtifactCollection,
+  job: Pick<WorkerJob, "_id" | "owner" | "artifact" | "result">
+): Promise<unknown> {
+  // Compatibility for jobs completed before worker-result-v1 was deployed.
+  if (job.result !== undefined) return job.result;
+  const ref = job.artifact;
+  if (!ref || ref.id !== job._id || ref.schema !== "worker-result-v1" || ref.contentType !== "application/json") {
+    throw new Error("Worker artifact reference is invalid");
+  }
+  const artifact = await artifacts.findOne({ _id: ref.id, expiresAt: { $gt: new Date() } });
+  if (!artifact || artifact.id !== ref.id || artifact.owner !== job.owner ||
+      artifact.schema !== ref.schema || artifact.contentType !== ref.contentType) {
+    throw new Error("Worker artifact is unavailable");
+  }
+  const byteLength = Buffer.byteLength(artifact.payload);
+  const checksumSha256 = createHash("sha256").update(artifact.payload).digest("hex");
+  if (byteLength !== ref.byteLength || byteLength !== artifact.byteLength ||
+      checksumSha256 !== ref.checksumSha256 || checksumSha256 !== artifact.checksumSha256) {
+    throw new Error("Worker artifact integrity check failed");
+  }
+  return JSON.parse(artifact.payload) as unknown;
 }
 
 function positiveInt(raw: string | undefined, fallback: number) {

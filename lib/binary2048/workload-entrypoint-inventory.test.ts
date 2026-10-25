@@ -17,7 +17,7 @@ type Entry = {
 const root = process.cwd();
 const inventory = JSON.parse(
   fs.readFileSync(path.join(root, "docs/v2-phase5-workload-entrypoints.json"), "utf8")
-) as { version: number; entries: Entry[] };
+) as { version: number; artifactPolicy: Record<string, string>; entries: Entry[] };
 const packageJson = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8")) as {
   scripts: Record<string, string>;
 };
@@ -34,7 +34,7 @@ const expectedIds = [
 
 describe("Phase 5 workload entry-point inventory", () => {
   it("keeps the reviewed HTTP, worker, and executable script surface exact", () => {
-    expect(inventory.version).toBe(4);
+    expect(inventory.version).toBe(5);
     expect(inventory.entries.map((entry) => entry.id).sort()).toEqual(expectedIds);
     expect(new Set(inventory.entries.map((entry) => entry.id)).size).toBe(inventory.entries.length);
   });
@@ -78,5 +78,8 @@ describe("Phase 5 workload entry-point inventory", () => {
     expect(inventory.entries.find((entry) => entry.id === "http-tournament")?.caps).toContain("150/month");
     expect(inventory.entries.find((entry) => entry.id === "http-training-labels")?.caps).toContain("100/month");
     expect(inventory.entries.find((entry) => entry.id === "http-replay-ingest")?.scope).toBe("replay:ingest");
+    expect(inventory.artifactPolicy.identity).toContain("worker-result-v1");
+    expect(inventory.artifactPolicy.failure).toContain("never regenerated");
+    expect(inventory.entries.find((entry) => entry.id === "http-job-result")?.runtime).toContain("without regeneration");
   });
 });

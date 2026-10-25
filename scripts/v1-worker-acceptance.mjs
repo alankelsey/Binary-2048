@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { MongoClient } from "mongodb";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 const region = "us-east-2";
 const aws = args => JSON.parse(execFileSync("aws", [...args, "--region", region, "--output", "json"], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }));
 const app = aws(["amplify", "get-app", "--app-id", "dzxvs1esr22z9"]).app;
@@ -30,6 +30,7 @@ const ids = [];
 try {
   await client.connect();
   const jobs = client.db(env.BINARY2048_MONGO_DB ?? "binary2048").collection("worker_jobs");
+  const artifacts = client.db(env.BINARY2048_MONGO_DB ?? "binary2048").collection("worker_artifacts");
   const sqs = new SQSClient({ region });
   for (const [kind, args, queue] of [
     ["simulation", [{ seed: 7, moves: ["L"] }], outputs.TournamentQueueUrl],
@@ -38,7 +39,7 @@ try {
     ["training-labels", [1, 1, "score_delta", 0], outputs.TrainingQueueUrl]
   ]) {
     const id = randomBytes(32).toString("hex"); ids.push(id);
-    await jobs.insertOne({ _id: id, task: { kind, args }, status: "queued", attempts: 0, createdAt: new Date(), expiresAt: new Date(Date.now() + 3600000) });
+    await jobs.insertOne({ _id: id, owner: "admin:worker-acceptance", task: { kind, args }, status: "queued", attempts: 0, createdAt: new Date(), expiresAt: new Date(Date.now() + 3600000) });
     await sqs.send(new SendMessageCommand({ QueueUrl: queue, MessageBody: JSON.stringify({ jobId: id }) }));
   }
   const deadline = Date.now() + 120000;
@@ -46,8 +47,14 @@ try {
     const found = await jobs.find({ _id: { $in: ids } }).toArray();
     if (found.some(job => job.status === "failed")) throw new Error("Worker acceptance job failed");
     if (found.length === 4 && found.every(job => job.status === "complete")) {
-      if (found.some(job => !job.result)) throw new Error("Worker result missing");
-      console.log(JSON.stringify({ controls: "passed", alarms: expectedAlarms.length, simulation: "passed", tournament: "passed", trainingReplays: "passed", trainingLabels: "passed", attempts: found.map(job => job.attempts) }));
+      if (found.some(job => Object.hasOwn(job, "result") || job.artifact?.schema !== "worker-result-v1")) throw new Error("Worker artifact metadata missing");
+      const stored = await artifacts.find({ _id: { $in: ids } }).toArray();
+      if (stored.length !== 4 || stored.some(artifact => artifact.owner !== "admin:worker-acceptance" ||
+        artifact.byteLength !== Buffer.byteLength(artifact.payload) ||
+        artifact.checksumSha256 !== createHash("sha256").update(artifact.payload).digest("hex"))) {
+        throw new Error("Worker artifact integrity verification failed");
+      }
+      console.log(JSON.stringify({ controls: "passed", alarms: expectedAlarms.length, artifacts: "passed", simulation: "passed", tournament: "passed", trainingReplays: "passed", trainingLabels: "passed", attempts: found.map(job => job.attempts) }));
       break;
     }
     await new Promise(resolve => setTimeout(resolve, 2000));
@@ -57,5 +64,6 @@ try {
 } catch { console.error("Worker acceptance failed; credentials and provider details suppressed."); process.exitCode = 1; }
 finally {
   await client.db(env.BINARY2048_MONGO_DB ?? "binary2048").collection("worker_jobs").deleteMany({ _id: { $in: ids } }).catch(() => undefined);
+  await client.db(env.BINARY2048_MONGO_DB ?? "binary2048").collection("worker_artifacts").deleteMany({ _id: { $in: ids } }).catch(() => undefined);
   await client.close();
 }
