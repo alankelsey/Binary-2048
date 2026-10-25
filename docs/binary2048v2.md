@@ -2,7 +2,21 @@
 
 Status: active delivery plan; V1 completed 2026-10-05
 Created: 2026-09-17  
-Implementation status: Phases 0, 1, and 2 complete
+Implementation status: Phases 0 through 5 complete
+
+## Repository source of truth
+
+GitHub is the source of truth during implementation, validation, deployment,
+and continuation. Google Drive material is ideation and planning input only.
+When a planning pass accepts an idea, requirement, constraint, or decision from
+Drive, record the actionable information in this repository before delivery
+starts, normally in this plan or a linked decision/evidence document.
+
+Do not query Drive to reconstruct context during an active project slice or a
+later `continue`. Resume from the checked-in plan, evidence, code, and tests. If
+required planning information has not been captured here, treat that as a
+planning gap: return to an explicit planning pass, capture the resulting
+decision in GitHub, and only then resume implementation.
 
 ## Purpose
 
