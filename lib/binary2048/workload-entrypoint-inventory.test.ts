@@ -29,12 +29,12 @@ const expectedIds = [
   "script-challenge-benchmark", "script-feature-extract", "script-hugging-face",
   "script-league-sandbox", "script-ml-baseline", "script-model-dataset-export",
   "script-ollama", "script-replay-ingest", "script-rollout-trace", "script-run-export",
-  "script-worker-acceptance", "worker-sqs-handler"
+  "script-worker-acceptance", "script-worker-isolation-load", "worker-sqs-handler"
 ].sort();
 
 describe("Phase 5 workload entry-point inventory", () => {
   it("keeps the reviewed HTTP, worker, and executable script surface exact", () => {
-    expect(inventory.version).toBe(5);
+    expect(inventory.version).toBe(6);
     expect(inventory.entries.map((entry) => entry.id).sort()).toEqual(expectedIds);
     expect(new Set(inventory.entries.map((entry) => entry.id)).size).toBe(inventory.entries.length);
   });
@@ -81,5 +81,23 @@ describe("Phase 5 workload entry-point inventory", () => {
     expect(inventory.artifactPolicy.identity).toContain("worker-result-v1");
     expect(inventory.artifactPolicy.failure).toContain("never regenerated");
     expect(inventory.entries.find((entry) => entry.id === "http-job-result")?.runtime).toContain("without regeneration");
+  });
+
+  it("locks the controlled worker-isolation load envelope and acceptance gates", () => {
+    const orchestrator = fs.readFileSync(path.join(root, "scripts/load/worker-isolation-load.mjs"), "utf8");
+    const helpers = fs.readFileSync(path.join(root, "scripts/load/worker-isolation-load-lib.mjs"), "utf8");
+    const entry = inventory.entries.find((item) => item.id === "script-worker-isolation-load");
+    expect(entry?.caps).toContain("2 jobs/class");
+    expect(orchestrator).toContain('process.env.ALLOW_PRODUCTION_LOAD !== "1"');
+    expect(orchestrator).toContain('new URL(baseURL).host !== "www.binary2048.com"');
+    expect(orchestrator).toContain('max: 4');
+    expect(orchestrator).toContain('max: 25');
+    expect(orchestrator).toContain('max: 2');
+    expect(helpers).toContain('length: 25');
+    expect(helpers).toContain('maxMoves: 500');
+    expect(helpers).toContain('bots: ["rollout", "priority"]');
+    expect(helpers).toContain('absoluteLimitMs: 100');
+    expect(helpers).toContain('absoluteLimitMs: 200');
+    expect(helpers).toContain('absoluteLimitMs: 400');
   });
 });

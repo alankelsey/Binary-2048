@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 6,
   "authorizationPolicy": {
     "quotaIdentity": "BINARY2048_BOT_API_KEY_HASHES",
     "scopeGrants": "BINARY2048_BOT_API_KEY_SCOPES",
@@ -42,6 +42,7 @@
     { "id": "script-feature-extract", "category": "training", "kind": "script", "source": "scripts/extract-ml-features.mjs", "entrypoint": "runs:extract:features", "runtime": "operator Node process", "mutation": "writes local feature JSONL" },
     { "id": "script-ml-baseline", "category": "training", "kind": "script", "source": "scripts/ml-baseline.mjs", "entrypoint": "ml:baseline", "runtime": "operator Node process", "mutation": "writes local baseline report" },
     { "id": "script-replay-ingest", "category": "replay-ingest", "kind": "script", "source": "scripts/replay-ingest-worker.mjs", "entrypoint": "replay:ingest:worker", "runtime": "operator Node process plus selected web runtime", "mutation": "upserts canonical runs through scoped HTTP route", "scope": "replay:ingest", "caps": "chunks to 100 records and 900 KiB" },
-    { "id": "script-worker-acceptance", "category": "worker", "kind": "script", "source": "scripts/v1-worker-acceptance.mjs", "entrypoint": "workers:acceptance", "runtime": "operator Node process plus production SQS and MongoDB", "mutation": "inserts acceptance jobs and sends queue messages" }
+    { "id": "script-worker-acceptance", "category": "worker", "kind": "script", "source": "scripts/v1-worker-acceptance.mjs", "entrypoint": "workers:acceptance", "runtime": "operator Node process plus production SQS and MongoDB", "mutation": "inserts acceptance jobs and sends queue messages" },
+    { "id": "script-worker-isolation-load", "category": "worker", "kind": "script", "source": "scripts/load/worker-isolation-load.mjs", "entrypoint": "load:worker-isolation", "runtime": "operator Node/browser process plus production gameplay, SQS, Lambda, and MongoDB", "mutation": "creates bounded gameplay sessions and temporary controlled worker jobs/artifacts; removes known job/artifact ids after the run", "caps": "explicit external-target opt-in; production host pin; 4 gameplay clients; 25 HTTP moves/client; 42 browser moves; 2 jobs/class; tournament 25,000 decisions; training 500 labels" }
   ]
 }

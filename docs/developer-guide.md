@@ -146,6 +146,17 @@ See `docs/v2-phase5-worker-isolation-budgets-2026-10-24.md`.
 The artifact identity, integrity, compatibility, and path inventory are in
 `docs/v2-phase5-generated-artifacts-2026-10-24.md`.
 
+The operator-only `npm run load:worker-isolation` command performs the paired
+gameplay isolation check. Validate its envelope first with
+`WORKER_ISOLATION_VALIDATE_ONLY=1`. Any external target requires explicit
+`ALLOW_PRODUCTION_LOAD=1`, and the deployed protocol is pinned to
+`www.binary2048.com`. It runs a baseline and a loaded stage, limits the latter
+to two capped jobs per worker class, proves both classes were running, compares
+local-prediction-paint, warm acknowledgement, and HTTP move p95, then removes
+its job and artifact records. It never prints credentials or generated worker
+artifacts. See `docs/load-test-runbook.md` and
+`docs/v2-phase5-gameplay-worker-load-2026-10-25.md`.
+
 New queued jobs are bound to the submitting principal. Admins may inspect any
 job. Ownerless jobs created before this boundary was deployed retain the old
 opaque-id capability only until their existing 24-hour expiry, avoiding a

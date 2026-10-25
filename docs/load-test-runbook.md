@@ -37,6 +37,30 @@ No-k6 staged heavy abuse check (invalid/oversized payload mix):
 BASE_URL=http://localhost:3000 npm run load:stage:abuse
 ```
 
+Validate the paired gameplay/worker-isolation envelope without sending load:
+
+```bash
+WORKER_ISOLATION_VALIDATE_ONLY=1 npm run load:worker-isolation
+```
+
+The deployed paired test is operator-only. It refuses every external target
+unless `ALLOW_PRODUCTION_LOAD=1` is explicit, caps gameplay at four clients and
+25 moves per client plus 42 fixed browser warmup/sample moves, and caps workers
+at two jobs in each isolated class. Run it only in an approved quiet window and
+keep its summarized result:
+
+```bash
+BASE_URL=https://www.binary2048.com \
+ALLOW_PRODUCTION_LOAD=1 \
+WORKER_ISOLATION_OUTPUT=docs/load-results/gameplay-worker-isolation-latest.json \
+npm run load:worker-isolation
+```
+
+The operator must have read/write access to the deployed worker queues and job
+store. The script uses fixed task shapes at the public aggregate-compute caps,
+records no credential or generated artifact, and deletes its job/artifact
+records in a `finally` cleanup.
+
 ## Profiles
 
 - `load:baseline`
@@ -85,6 +109,11 @@ Staged heavy abuse script writes:
 
 - `docs/load-results/heavy-abuse-latest.json`
 - `docs/load-results/heavy-abuse-latest.md`
+
+The paired worker-isolation script writes only when
+`WORKER_ISOLATION_OUTPUT` is set, and only below `docs/load-results/`. Its
+summary includes the baseline/loaded browser p95 values, HTTP move p95 values,
+worker-overlap observation, attempt counts, and predeclared gate results.
 
 ## Notes
 

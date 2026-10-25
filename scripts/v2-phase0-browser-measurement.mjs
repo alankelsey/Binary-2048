@@ -18,8 +18,7 @@ const serverTimingNames = new Set([
 ]);
 const requiredServerTimingNames = [
   "rate_limit_identity", "rate_limit_counter", "request_parse", "session_lookup",
-  "engine_move", "session_persist", "snapshot_build", "snapshot_sign",
-  "response_encode", "total"
+  "engine_move", "session_persist", "response_encode", "total"
 ];
 
 const round = (value) => Number(Math.max(0, Number(value) || 0).toFixed(2));
@@ -64,8 +63,8 @@ function percentile(values, percent) {
   return sorted[Math.max(0, Math.ceil(sorted.length * percent / 100) - 1)];
 }
 
-function summarizeSamples(samples) {
-  const timings = samples.map((sample) => sample.inputToNextFrameMs);
+function summarizeSamples(samples, field = "inputToNextFrameMs") {
+  const timings = samples.map((sample) => sample[field]);
   return {
     count: samples.length,
     medianMs: percentile(timings, 50),
@@ -92,8 +91,9 @@ async function readTraceProjection(page) {
       return {
         source: ["keyboard", "touch", "control"].includes(detail.source) ? detail.source : "unknown",
         disposition: phases.some((item) => item.phase === "queued") ? "queued" : "accepted",
-        localEngineStatus: detail.localEngineStatus === "not_run" ? "not_run" : "unknown",
+        localEngineStatus: detail.localEngineStatus === "completed" ? "completed" : "unknown",
         inputToNextFrameMs: Math.max(0, Number(entry.duration.toFixed(2))),
+        inputToLocalPredictionPaintMs: delta(phases, "input_capture", "local_prediction_paint"),
         captureToRequestMs: delta(phases, "input_capture", "request_start"),
         requestToHeadersMs: delta(phases, "request_start", "response_headers"),
         headersToParseEndMs: delta(phases, "response_headers", "response_parse_end"),
@@ -156,11 +156,11 @@ async function waitForCount(page, count) {
 }
 
 function validateCompletedTrace(sample) {
-  if (sample.source !== "keyboard" || sample.localEngineStatus !== "not_run") {
+  if (sample.source !== "keyboard" || sample.localEngineStatus !== "completed") {
     throw new Error("Completed trace source or local-engine status is invalid");
   }
   for (const name of [
-    "inputToNextFrameMs", "captureToRequestMs", "requestToHeadersMs",
+    "inputToNextFrameMs", "inputToLocalPredictionPaintMs", "captureToRequestMs", "requestToHeadersMs",
     "headersToParseEndMs", "parseEndToCommitMs", "commitToNextFrameMs"
   ]) {
     if (!Number.isFinite(sample[name]) || sample[name] < 0) {
@@ -243,10 +243,20 @@ try {
 
   await clearEntries(page);
   responseTimings.length = 0;
+  const warmupKeys = Array.from({ length: 3 }, () => ["ArrowLeft", "ArrowDown", "ArrowRight", "ArrowUp"]).flat();
+  for (let index = 0; index < warmupKeys.length; index += 1) {
+    await page.keyboard.press(warmupKeys[index]);
+    await waitForCount(page, index + 1);
+    await page.waitForFunction(() => document.querySelector(".card")?.getAttribute("aria-busy") === "false");
+  }
+
+  await clearEntries(page);
+  responseTimings.length = 0;
   const deliberateKeys = Array.from({ length: 5 }, () => ["ArrowLeft", "ArrowDown", "ArrowRight", "ArrowUp"]).flat();
   for (let index = 0; index < deliberateKeys.length; index += 1) {
     await page.keyboard.press(deliberateKeys[index]);
     await waitForCount(page, index + 1);
+    await page.waitForFunction(() => document.querySelector(".card")?.getAttribute("aria-busy") === "false");
   }
   await page.waitForFunction(() => document.querySelector(".card")?.getAttribute("aria-busy") === "false");
   const deliberate = await readTraceProjection(page);
@@ -254,6 +264,9 @@ try {
     throw new Error("Deliberate run did not produce exactly 20 completed traces");
   }
   deliberate.completed.forEach(validateCompletedTrace);
+  if (deliberate.completed.some((sample) => sample.disposition !== "accepted")) {
+    throw new Error("Deliberate run queued an input instead of pacing one move at a time");
+  }
   if (responseTimings.length !== deliberate.completed.length || responseTimings.some((item) => item.status !== 200)) {
     throw new Error("Deliberate client/server sample counts or HTTP statuses did not match");
   }
@@ -305,12 +318,14 @@ try {
     platform: process.platform,
     viewport: { width: 1440, height: 900, devicePixelRatio: await page.evaluate(() => devicePixelRatio) },
     authenticated,
+    warmupMoves: warmupKeys.length,
     metricLimit: "input capture through the next animation-frame callback; not presented-pixel proof",
     rejectedBeforeGame: rejectedBeforeGame.dropped[0],
     deliberate: {
       intendedInputs: deliberateKeys.length,
       classifiedInputs: deliberate.completed.length,
       summary: summarizeSamples(deliberateSamples),
+      localPredictionSummary: summarizeSamples(deliberateSamples, "inputToLocalPredictionPaintMs"),
       samples: deliberateSamples
     },
     rapid: {

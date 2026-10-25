@@ -68,8 +68,10 @@ window. See `v2-phase5-generated-artifacts-2026-10-24.md`.
 The deployed isolation and alarm decisions are maintained in
 `v2-phase5-worker-isolation-budgets-2026-10-24.md`. Amplify gameplay and the
 worker Lambda functions use different compute planes. Mongo remains a shared
-downstream dependency, so gameplay-under-worker-load proof is intentionally
-left to the later Phase 5 load-test item.
+downstream dependency. The later controlled production observation has now
+passed and is recorded in
+`v2-phase5-gameplay-worker-load-2026-10-25.md`; this supersedes the original
+deferred-proof note without changing the inventory's authorization findings.
 
 The following operator commands have no independent route-local authorization
 or quota. Commands that call Binary 2048 inherit the target HTTP route's
@@ -93,6 +95,7 @@ credential, and filesystem access.
 | `ml:baseline` | Computes the local baseline from feature JSONL. | Local JSON report. |
 | `replay:ingest:worker` | Reads an operator-selected batch file, requires/forwards the research key, and chunks to 100 records/900 KiB. | Scoped replay-ingest route upserts run records. |
 | `workers:acceptance` | Directly inserts one small job per worker task, including simulation, and sends SQS messages using operator AWS/Mongo credentials. | Production acceptance jobs and queue messages. |
+| `load:worker-isolation` | Operator-only paired baseline/load measurement; at most two route-cap tournament and two route-cap label jobs, four gameplay clients, and 25 HTTP moves/client plus 42 fixed browser moves. External targets require explicit opt-in and are pinned to production. | Temporary production acceptance jobs, queue messages, and game sessions; controlled job/artifact records are removed after the run. |
 
 ## Security boundary update
 
@@ -106,9 +109,10 @@ polling credentials. See
 
 ## Drift coverage
 
-`workload-entrypoint-inventory.test.ts` locks the reviewed 23-entry surface,
+`workload-entrypoint-inventory.test.ts` locks the reviewed 24-entry surface,
 verifies every source and HTTP/worker export or package command, checks command
-aliases, and preserves explicit tests for the three security boundaries above.
+aliases, and preserves explicit tests for the security boundaries above plus
+the controlled worker-isolation load envelope and acceptance thresholds.
 Changes to the workload surface or those controls now require a deliberate
 inventory and test update.
 

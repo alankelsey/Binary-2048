@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-25T17:46:42.386Z",
+  "targetHost": "www.binary2048.com",
+  "config": {
+    "baseURL": "https://www.binary2048.com",
+    "production": true,
+    "httpClients": 4,
+    "movesPerClient": 10,
+    "jobsPerClass": 2,
+    "maximumGameplayMovesPerStage": 82,
+    "workerPayloads": {
+      "tournament": "25 seeds x 2 bots x 500 moves = 25,000 decisions (public hard cap)",
+      "training": "500 rollout labels (public hard cap)"
+    }
+  },
+  "workerOverlap": {
+    "tournament": true,
+    "training": true,
+    "observedAt": "2026-10-25T17:45:56.920Z"
+  },
+  "baseline": {
+    "startedAt": "2026-10-25T17:45:14.526Z",
+    "finishedAt": "2026-10-25T17:45:51.355Z",
+    "durationMs": 36829,
+    "browser": {
+      "inputToPaintP95Ms": 109.3,
+      "inputToNextFrameP95Ms": 355.5,
+      "warmAcknowledgementP95Ms": 50.86,
+      "intendedInputs": 20,
+      "classifiedInputs": 20,
+      "droppedInputs": 0,
+      "queuedInputs": 0,
+      "deployedCommit": "f48c731",
+      "browser": "Google Chrome 156.0.8078.47",
+      "metricLimit": "input capture through the next animation-frame callback; not presented-pixel proof"
+    },
+    "http": {
+      "requests": 40,
+      "successfulMoves": 40,
+      "errors": 0,
+      "moveP50Ms": 157.4,
+      "moveP95Ms": 262.74
+    }
+  },
+  "loaded": {
+    "startedAt": "2026-10-25T17:45:56.920Z",
+    "finishedAt": "2026-10-25T17:46:34.574Z",
+    "durationMs": 37654,
+    "browser": {
+      "inputToPaintP95Ms": 82.2,
+      "inputToNextFrameP95Ms": 368.1,
+      "warmAcknowledgementP95Ms": 46.2,
+      "intendedInputs": 20,
+      "classifiedInputs": 20,
+      "droppedInputs": 0,
+      "queuedInputs": 0,
+      "deployedCommit": "f48c731",
+      "browser": "Google Chrome 156.0.8078.47",
+      "metricLimit": "input capture through the next animation-frame callback; not presented-pixel proof"
+    },
+    "http": {
+      "requests": 40,
+      "successfulMoves": 40,
+      "errors": 0,
+      "moveP50Ms": 154.27,
+      "moveP95Ms": 291.07
+    }
+  },
+  "jobs": {
+    "count": 4,
+    "completed": 4,
+    "attempts": [
+      1,
+      1,
+      1,
+      1
+    ]
+  },
+  "passed": true,
+  "comparisons": {
+    "inputToPaint": {
+      "baselineMs": 109.3,
+      "loadedMs": 82.2,
+      "deltaMs": -27.099999999999994,
+      "allowanceMs": 21.86,
+      "absoluteLimitMs": 100,
+      "passed": true
+    },
+    "warmAcknowledgement": {
+      "baselineMs": 50.86,
+      "loadedMs": 46.2,
+      "deltaMs": -4.659999999999997,
+      "allowanceMs": 20,
+      "absoluteLimitMs": 200,
+      "passed": true
+    },
+    "httpGameplay": {
+      "baselineMs": 262.74,
+      "loadedMs": 291.07,
+      "deltaMs": 28.329999999999984,
+      "allowanceMs": 52.548,
+      "absoluteLimitMs": 400,
+      "passed": true
+    }
+  },
+  "gates": {
+    "inputsPassed": true,
+    "httpPassed": true,
+    "jobsPassed": true,
+    "overlapPassed": true
+  }
+}

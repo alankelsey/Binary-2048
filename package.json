@@ -96,6 +96,8 @@
     "load:soak": "k6 run ./scripts/load/k6-soak.js",
     "load:stage:gameplay": "node ./scripts/load/staged-gameplay.mjs",
     "load:stage:abuse": "node ./scripts/load/staged-heavy-abuse.mjs",
+    "load:worker-isolation": "node ./scripts/load/worker-isolation-load.mjs",
+    "test:worker-isolation-load": "node --test ./scripts/load/worker-isolation-load-lib.test.mjs",
     "roadmap:status": "node ./scripts/roadmap-progress.mjs",
     "test:delivery-tools": "node --test ./scripts/delivery-tools.test.mjs",
     "lint": "next lint",
