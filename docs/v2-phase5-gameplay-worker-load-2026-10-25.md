@@ -54,11 +54,13 @@ source-code separation alone proves runtime isolation.
 ## Current continuation state
 
 The bounded paired production observation and the complete stable-candidate
-matrix passed, so the final Phase 5 plan item is checked. The next action is to
-commit and push this candidate, verify its exact Amplify job and production
-smoke, then update this record with the release identifiers and advance to the
-first Phase 6 item. This section is maintained as gates change so a later
-`continue` resumes from repository state without a generated prompt.
+matrix passed, so the final Phase 5 plan item is checked. Implementation commit
+`7c334b0cd7364ce3cda3788fcec3a4b38422e5fc` deployed successfully in Amplify
+job 437, and the standard production smoke passed. The next action is to commit
+and push this final release record, verify that evidence-only commit's exact
+Amplify job and production smoke, then advance to the first Phase 6 item. This
+section is maintained as gates change so a later `continue` resumes from
+repository state without a generated prompt.
 
 ## Production result
 
@@ -120,6 +122,14 @@ value at build time. The compile passed again with the full disposable auth
 environment; its in-sandbox smoke could not bind port 4110, and the already
 built package passed the identical smoke outside the sandbox. These were
 environment/precondition failures rather than product-test failures.
+
+## Deployment and production acceptance
+
+Commit `7c334b0cd7364ce3cda3788fcec3a4b38422e5fc` contains the completed harness,
+drift coverage, paired production result, documentation, and Phase 5 checklist
+update. It was pushed to `main` and deployed by Amplify job 437. The exact-SHA
+watcher observed `SUCCEED` after 155 seconds, and the standard production smoke
+then passed against `https://www.binary2048.com` on its first attempt.
 
 ## Delivery-efficiency log
 
