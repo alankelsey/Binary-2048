@@ -71,14 +71,20 @@ behavior do not change.
 ## Current continuation state
 
 The stable candidate is implemented and the Phase 5 checklist points to this
-record. Runtime code is committed locally. Remaining gates are the exact
-Amplify deployment, production smoke, worker deployment, live artifact
-acceptance, and final evidence synchronization. The web reader deploys before
-the worker writer as an expand/contract migration: the new web code reads both
-legacy inline results and `worker-result-v1`, while the old web code cannot
-read a new artifact-only job. This section is maintained as those gates change
-so a continuation can resume from repository state without a generated
-handoff prompt.
+record. Amplify job 435 deployed compatibility-reader commit
+`34edbaf4696919fff1f3f3c7066cc599cecefed8`, and its first-attempt production
+smoke passed. Worker artifact
+`c7f85fc485d59b96e53aea2ba27ecfc5941c3471ddf408b9907cea272575204f`
+then reached `UPDATE_COMPLETE`, and live artifact acceptance passed. The only
+remaining release rule is that any commit carrying this final evidence must
+itself pass the exact Amplify deployment, production smoke, and clean-sync
+checks before work advances. The web reader deployed before the worker writer
+as an expand/contract migration: the new web code reads both legacy inline
+results and `worker-result-v1`, while the old web code cannot read a new
+artifact-only job. The next unchecked V2 plan item is the controlled
+gameplay-under-worker-load test. This section is maintained as gates change so
+a continuation can resume from repository state without a generated handoff
+prompt.
 
 ## Candidate validation
 
@@ -103,3 +109,28 @@ returned a 15,767-token structured response before truncation, exceeding the
 implementation stabilized, apart from the single failed OpenAPI wording
 assertion and its one-suite correction. The full unit, UI, TypeScript, worker,
 and production-build gates each ran once against the stable candidate.
+
+## Deployment and production acceptance
+
+Implementation commit `5959b74` and the compatibility rollout record were
+deployed together at
+`34edbaf4696919fff1f3f3c7066cc599cecefed8` in Amplify job 435. The exact-SHA
+watcher reported success after 147 seconds, and the standard production smoke
+passed on its first attempt before the worker writer changed.
+
+Worker artifact
+`c7f85fc485d59b96e53aea2ba27ecfc5941c3471ddf408b9907cea272575204f`
+then updated `binary2048-v1-workers` successfully. Direct worker acceptance
+verified the existing isolation controls and twelve alarms, then verified that
+simulation, tournament, training replay, and training label jobs each:
+
+- completed on the first attempt;
+- stored `worker-result-v1` outside the job document;
+- retained the submitting owner; and
+- matched their recorded byte length and SHA-256.
+
+A credential-safe production HTTP acceptance received `202` for simulation,
+observed a completed contract-v2 status with no inline result, retrieved the
+stored `binary2048-v1` result through the dedicated result route, and confirmed
+that an unversioned status request loaded the same stored result for legacy
+compatibility. No credential or raw artifact was printed or committed.
