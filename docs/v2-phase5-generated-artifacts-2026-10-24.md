@@ -71,11 +71,14 @@ behavior do not change.
 ## Current continuation state
 
 The stable candidate is implemented and the Phase 5 checklist points to this
-record. Remaining gates are runtime commit, worker-first deployment, live
-artifact acceptance, exact Amplify deployment, production smoke, and final
-evidence synchronization. This section is maintained as those gates change so
-a continuation can resume from repository state without a generated handoff
-prompt.
+record. Runtime code is committed locally. Remaining gates are the exact
+Amplify deployment, production smoke, worker deployment, live artifact
+acceptance, and final evidence synchronization. The web reader deploys before
+the worker writer as an expand/contract migration: the new web code reads both
+legacy inline results and `worker-result-v1`, while the old web code cannot
+read a new artifact-only job. This section is maintained as those gates change
+so a continuation can resume from repository state without a generated
+handoff prompt.
 
 ## Candidate validation
 
