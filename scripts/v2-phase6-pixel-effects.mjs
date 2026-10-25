@@ -9,10 +9,16 @@ const endpoint = process.env.BINARY2048_CDP_ENDPOINT ?? "http://127.0.0.1:9222";
 const targetUrl = process.env.BINARY2048_PIXEL_URL ?? "https://www.binary2048.com/";
 const repeats = Number(process.env.BINARY2048_EFFECT_REPEATS ?? 8);
 const requestedCase = process.argv[2] ?? "all";
-const caseNames = ["baseline", "merge-number", "merge-wild", "zero-bust", "spawn", "wild-shadow", "lock-shadow"];
+const standardCaseNames = ["baseline", "merge-number", "merge-wild", "zero-bust", "spawn", "wild-shadow", "lock-shadow"];
+const diagnosticCaseNames = ["merge-number-no-shadow", "merge-wild-no-filter", "merge-wild-no-shadow", "zero-bust-no-shadow", "spawn-no-shadow"];
+const compositorCaseNames = ["merge-number-compositor", "merge-wild-compositor", "zero-bust-compositor"];
+const caseNames = [...standardCaseNames, ...diagnosticCaseNames, ...compositorCaseNames];
+const reducedMotionCheck = requestedCase === "reduced-motion-check";
+const diagnosticRun = requestedCase === "diagnostics";
+const compositorRun = requestedCase === "compositor-diagnostics";
 
 if (process.argv.includes("--help")) {
-  console.log(`Usage: node scripts/v2-phase6-pixel-effects.mjs [all|${caseNames.join("|")}]
+  console.log(`Usage: node scripts/v2-phase6-pixel-effects.mjs [all|diagnostics|compositor-diagnostics|reduced-motion-check|${caseNames.join("|")}]
 
 Attach to an already-open Binary 2048 Pixel Chrome tab through an adb-forwarded
 CDP endpoint and print a privacy-safe aggregate paint/composite profile.
@@ -27,8 +33,8 @@ Environment:
 if (!Number.isInteger(repeats) || repeats < 5 || repeats > 20) {
   throw new Error("BINARY2048_EFFECT_REPEATS must be an integer from 5 through 20");
 }
-if (requestedCase !== "all" && !caseNames.includes(requestedCase)) {
-  throw new Error(`Unknown case ${JSON.stringify(requestedCase)}; expected all or one of ${caseNames.join(", ")}`);
+if (requestedCase !== "all" && !diagnosticRun && !compositorRun && !reducedMotionCheck && !caseNames.includes(requestedCase)) {
+  throw new Error(`Unknown case ${JSON.stringify(requestedCase)}; expected all, diagnostics, compositor-diagnostics, reduced-motion-check, or one of ${caseNames.join(", ")}`);
 }
 
 function getJson(path) {
@@ -198,11 +204,66 @@ const status = pageStatus.result?.value;
 if (!status?.board || status.cells < 1 || !status.portrait || status.visibility !== "visible") {
   throw new Error(`Pixel tab is not ready for profiling: ${JSON.stringify(status)}`);
 }
+if (reducedMotionCheck) {
+  if (!status.reducedMotion) {
+    throw new Error("Enable Android Remove animations/reduced motion before running the reduced-motion check");
+  }
+  const check = await command("Runtime.evaluate", {
+    expression: `(async () => {
+      const cell = document.querySelector('[aria-label="Binary 2048 game board"] .cell');
+      if (!(cell instanceof HTMLElement)) throw new Error('No check cell');
+      const saved = { className: cell.className, style: cell.getAttribute('style'), html: cell.innerHTML, label: cell.getAttribute('aria-label') };
+      const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+      const cases = [
+        ['merge-number', 'cell filled tile-number fx-merge-number', '4'],
+        ['merge-wild', 'cell filled tile-wild fx-merge-wild', '<span class="wild-icon">✦<small>2×</small></span>'],
+        ['zero-bust', 'cell filled tile-zero fx-zero-bust', '0'],
+        ['spawn', 'cell filled tile-number fx-spawn', '2']
+      ];
+      const result = [];
+      try {
+        cell.removeAttribute('style');
+        cell.setAttribute('aria-label', 'temporary reduced-motion check cell');
+        for (const [name, className, html] of cases) {
+          cell.className = 'cell filled tile-number';
+          cell.textContent = '4';
+          void cell.offsetWidth;
+          cell.className = className;
+          cell.innerHTML = html;
+          const style = getComputedStyle(cell);
+          result.push({ name, animationName: style.animationName, animationDuration: style.animationDuration });
+          await wait(900);
+        }
+        return result;
+      } finally {
+        cell.getAnimations().forEach(animation => animation.cancel());
+        cell.className = saved.className;
+        cell.innerHTML = saved.html;
+        if (saved.style === null) cell.removeAttribute('style'); else cell.setAttribute('style', saved.style);
+        if (saved.label === null) cell.removeAttribute('aria-label'); else cell.setAttribute('aria-label', saved.label);
+      }
+    })()`,
+    returnByValue: true,
+    awaitPromise: true
+  }, sessionId);
+  if (check.exceptionDetails) throw new Error(check.exceptionDetails.exception?.description ?? "Reduced-motion check failed");
+  output = {
+    schemaVersion: 1,
+    context: { target: "Binary 2048 production root", orientation: "portrait", reducedMotion: true },
+    cases: check.result?.value
+  };
+} else {
 if (status.reducedMotion) {
   throw new Error("Disable Android Remove animations/reduced motion for the standard-effects profile; test reduced motion separately");
 }
 
-const selectedCases = requestedCase === "all" ? caseNames : [requestedCase];
+const selectedCases = requestedCase === "all"
+  ? standardCaseNames
+  : diagnosticRun
+    ? diagnosticCaseNames
+    : compositorRun
+      ? compositorCaseNames
+      : [requestedCase];
 const results = {};
 const traceCategories = "blink.user_timing,devtools.timeline,disabled-by-default-devtools.timeline,disabled-by-default-devtools.timeline.frame,cc,benchmark";
 
@@ -231,17 +292,46 @@ for (const caseName of selectedCases) {
       const variants = {
         baseline: ['cell filled tile-number', '4'],
         'merge-number': ['cell filled tile-number', '4'],
+        'merge-number-no-shadow': ['cell filled tile-number', '4'],
+        'merge-number-compositor': ['cell filled tile-number', '4'],
         'merge-wild': ['cell filled tile-wild', '<span class="wild-icon">✦<small>2×</small></span>'],
+        'merge-wild-no-filter': ['cell filled tile-wild', '<span class="wild-icon">✦<small>2×</small></span>'],
+        'merge-wild-no-shadow': ['cell filled tile-wild', '<span class="wild-icon">✦<small>2×</small></span>'],
+        'merge-wild-compositor': ['cell filled tile-wild', '<span class="wild-icon">✦<small>2×</small></span>'],
         'zero-bust': ['cell filled tile-zero', '0'],
+        'zero-bust-no-shadow': ['cell filled tile-zero', '0'],
+        'zero-bust-compositor': ['cell filled tile-zero', '0'],
         spawn: ['cell filled tile-number', '2'],
+        'spawn-no-shadow': ['cell filled tile-number', '2'],
         'wild-shadow': ['cell filled tile-wild', '<span class="wild-icon">✦<small>2×</small></span>'],
         'lock-shadow': ['cell filled tile-lock', '<span class="lock-icon">⛓<small>Lock</small></span>']
       };
-      const effects = { 'merge-number': 'fx-merge-number', 'merge-wild': 'fx-merge-wild', 'zero-bust': 'fx-zero-bust', spawn: 'fx-spawn' };
+      const effects = {
+        'merge-number': 'fx-merge-number',
+        'merge-number-no-shadow': 'fx-merge-number',
+        'merge-number-compositor': 'fx-merge-number',
+        'merge-wild': 'fx-merge-wild',
+        'merge-wild-no-filter': 'fx-merge-wild',
+        'merge-wild-no-shadow': 'fx-merge-wild',
+        'merge-wild-compositor': 'fx-merge-wild',
+        'zero-bust': 'fx-zero-bust',
+        'zero-bust-no-shadow': 'fx-zero-bust',
+        'zero-bust-compositor': 'fx-zero-bust',
+        spawn: 'fx-spawn',
+        'spawn-no-shadow': 'fx-spawn'
+      };
       try {
         cell.className = variants[${JSON.stringify(caseName)}][0];
         cell.innerHTML = variants[${JSON.stringify(caseName)}][1];
         cell.removeAttribute('style');
+        if (${JSON.stringify(caseName)}.endsWith('-no-shadow')) cell.style.setProperty('box-shadow', 'none', 'important');
+        if (${JSON.stringify(caseName)} === 'merge-wild-no-filter') cell.style.setProperty('filter', 'none', 'important');
+        if (${JSON.stringify(caseName)}.endsWith('-compositor')) {
+          cell.style.setProperty('box-shadow', 'none', 'important');
+          cell.style.setProperty('will-change', 'transform, opacity', 'important');
+        }
+        if (${JSON.stringify(caseName)} === 'merge-wild-compositor') cell.style.setProperty('filter', 'none', 'important');
+        if (${JSON.stringify(caseName)} === 'zero-bust-compositor') cell.style.setProperty('border-color', 'currentColor', 'important');
         cell.setAttribute('aria-label', 'temporary profiling cell');
         await frames(3);
         performance.clearMarks(${JSON.stringify(startName)});
@@ -303,6 +393,7 @@ output = {
   },
   cases: results
 };
+}
 } finally {
   if (activeTrace?.tracing) {
     try {

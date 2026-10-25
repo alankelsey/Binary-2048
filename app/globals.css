@@ -28,9 +28,6 @@
   --wild-glow-a: rgba(121, 212, 255, 0.3);
   --wild-glow-b: rgba(121, 212, 255, 0.22);
   --wild-glow-c: rgba(56, 189, 248, 0.25);
-  --wild-anim-a: rgba(74, 222, 128, 0.36);
-  --wild-anim-b: rgba(74, 222, 128, 0.62);
-  --wild-anim-c: rgba(74, 222, 128, 0);
   --lock-top: #5f2a34;
   --lock-bottom: #3c1c23;
   --lock-border: #ff8aa3;
@@ -38,13 +35,6 @@
   --lock-glow-a: rgba(255, 138, 163, 0.33);
   --lock-glow-b: rgba(255, 138, 163, 0.24);
   --lock-glow-c: rgba(244, 63, 94, 0.3);
-  --zero-bust-a: rgba(250, 204, 21, 0.5);
-  --zero-bust-b: rgba(234, 179, 8, 0.95);
-  --zero-bust-c: rgba(250, 204, 21, 0.56);
-  --zero-bust-d: rgba(234, 179, 8, 0.64);
-  --zero-bust-e: rgba(253, 224, 71, 0.96);
-  --zero-bust-f: rgba(234, 179, 8, 0.28);
-  --zero-bust-g: rgba(234, 179, 8, 0.55);
   --bg-glow: #162238;
   --bg-base: #0d1117;
 }
@@ -149,16 +139,6 @@
   --wild-glow-a: rgba(134, 240, 234, 0.34);
   --wild-glow-b: rgba(134, 240, 234, 0.24);
   --wild-glow-c: rgba(45, 212, 191, 0.3);
-  --wild-anim-a: rgba(45, 212, 191, 0.42);
-  --wild-anim-b: rgba(45, 212, 191, 0.68);
-  --wild-anim-c: rgba(45, 212, 191, 0);
-  --zero-bust-a: rgba(250, 204, 21, 0.55);
-  --zero-bust-b: rgba(234, 179, 8, 0.94);
-  --zero-bust-c: rgba(250, 204, 21, 0.62);
-  --zero-bust-d: rgba(234, 179, 8, 0.62);
-  --zero-bust-e: rgba(254, 240, 138, 0.96);
-  --zero-bust-f: rgba(234, 179, 8, 0.28);
-  --zero-bust-g: rgba(234, 179, 8, 0.52);
   --bg-glow: #0f2a2e;
   --bg-base: #0b1718;
 }
@@ -171,16 +151,6 @@
   --wild-glow-a: rgba(169, 188, 255, 0.34);
   --wild-glow-b: rgba(169, 188, 255, 0.24);
   --wild-glow-c: rgba(96, 165, 250, 0.32);
-  --wild-anim-a: rgba(96, 165, 250, 0.44);
-  --wild-anim-b: rgba(96, 165, 250, 0.7);
-  --wild-anim-c: rgba(96, 165, 250, 0);
-  --zero-bust-a: rgba(244, 114, 182, 0.58);
-  --zero-bust-b: rgba(236, 72, 153, 0.92);
-  --zero-bust-c: rgba(244, 114, 182, 0.62);
-  --zero-bust-d: rgba(236, 72, 153, 0.62);
-  --zero-bust-e: rgba(251, 182, 206, 0.96);
-  --zero-bust-f: rgba(236, 72, 153, 0.28);
-  --zero-bust-g: rgba(236, 72, 153, 0.52);
   --bg-glow: #1c2340;
   --bg-base: #0f1121;
 }
@@ -193,16 +163,6 @@
   --wild-glow-a: rgba(145, 222, 255, 0.33);
   --wild-glow-b: rgba(145, 222, 255, 0.22);
   --wild-glow-c: rgba(56, 189, 248, 0.3);
-  --wild-anim-a: rgba(45, 212, 191, 0.4);
-  --wild-anim-b: rgba(45, 212, 191, 0.65);
-  --wild-anim-c: rgba(45, 212, 191, 0);
-  --zero-bust-a: rgba(249, 115, 22, 0.52);
-  --zero-bust-b: rgba(234, 88, 12, 0.95);
-  --zero-bust-c: rgba(249, 115, 22, 0.62);
-  --zero-bust-d: rgba(234, 88, 12, 0.62);
-  --zero-bust-e: rgba(255, 193, 113, 0.96);
-  --zero-bust-f: rgba(234, 88, 12, 0.28);
-  --zero-bust-g: rgba(234, 88, 12, 0.54);
   --bg-glow: #1a2e30;
   --bg-base: #0f191b;
 }
@@ -534,21 +494,23 @@ main {
 
 .cell.fx-merge-number {
   animation: mergeNumber 260ms ease-out;
+  will-change: transform, opacity;
 }
 
 .cell.fx-merge-wild {
   animation: mergeWild 340ms ease-out;
+  will-change: transform, opacity;
 }
 
 .cell.fx-zero-bust {
   color: #ffd3db;
   animation: zeroBust 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
-  will-change: transform, opacity, box-shadow, border-color;
+  will-change: transform, opacity;
 }
 
 .cell.fx-spawn {
   animation: spawnPulse 210ms ease-out;
-  will-change: transform, opacity, box-shadow;
+  will-change: transform, opacity;
 }
 
 .actions {
@@ -1611,34 +1573,30 @@ select:focus-visible {
 @keyframes mergeNumber {
   0% {
     transform: scale(0.9);
-    box-shadow: 0 0 0 rgba(60, 180, 255, 0);
+    opacity: 0.82;
   }
   60% {
     transform: scale(1.06);
-    box-shadow: 0 0 14px rgba(60, 180, 255, 0.35);
+    opacity: 1;
   }
   100% {
     transform: scale(1);
-    box-shadow: 0 0 0 rgba(60, 180, 255, 0);
+    opacity: 1;
   }
 }
 
 @keyframes mergeWild {
   0% {
     transform: scale(0.92);
-    filter: saturate(1) hue-rotate(0deg);
+    opacity: 0.78;
   }
   50% {
     transform: scale(1.08);
-    filter: saturate(1.7) hue-rotate(-38deg);
-    box-shadow:
-      0 0 0 2px var(--wild-anim-a),
-      0 0 18px var(--wild-anim-b);
+    opacity: 1;
   }
   100% {
     transform: scale(1);
-    filter: saturate(1) hue-rotate(0deg);
-    box-shadow: 0 0 0 var(--wild-anim-c);
+    opacity: 1;
   }
 }
 
@@ -1646,30 +1604,18 @@ select:focus-visible {
   0% {
     transform: scale(1);
     opacity: 1;
-    border-color: var(--zero-bust-a);
-    box-shadow: 0 0 0 var(--zero-bust-a);
   }
   35% {
     transform: translateY(2px) scale(0.78);
     opacity: 0.58;
-    border-color: var(--zero-bust-b);
-    box-shadow:
-      0 0 0 2px var(--zero-bust-c),
-      0 0 18px var(--zero-bust-d);
   }
   62% {
     transform: translateY(-1px) scale(1.06);
     opacity: 0.92;
-    border-color: var(--zero-bust-e);
-    box-shadow:
-      0 0 0 4px var(--zero-bust-f),
-      0 0 20px var(--zero-bust-g);
   }
   100% {
     transform: translateY(0) scale(1);
     opacity: 1;
-    border-color: var(--zero-bust-a);
-    box-shadow: 0 0 0 var(--zero-bust-a);
   }
 }
 
@@ -1692,17 +1638,14 @@ select:focus-visible {
   0% {
     transform: scale(0.86);
     opacity: 0.82;
-    box-shadow: 0 0 0 rgba(147, 197, 253, 0);
   }
   65% {
     transform: scale(1.03);
     opacity: 1;
-    box-shadow: 0 0 10px rgba(147, 197, 253, 0.35);
   }
   100% {
     transform: scale(1);
     opacity: 1;
-    box-shadow: 0 0 0 rgba(147, 197, 253, 0);
   }
 }
 

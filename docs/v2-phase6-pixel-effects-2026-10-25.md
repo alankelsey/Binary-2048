@@ -2,18 +2,21 @@
 
 Date: 2026-10-25 America/Boise
 
-Status: protocol and static inventory complete; physical Pixel capture pending.
-No visual CSS has been changed.
+Status: baseline, property isolation, and reduced-motion capture complete. A
+measured compositor-only candidate is implemented locally; post-deployment
+Pixel comparison remains pending.
 
 ## Current continuation state
 
-The profiling tool and protocol are deployed at commit `46de7d0`. Amplify job
+The profiling tool and protocol were deployed at commit `46de7d0`. Amplify job
 441 succeeded for that exact SHA, and the standard production smoke passed.
-The target Pixel is not currently exposed at the forwarded CDP endpoint, so the
-next action is to connect and approve the device, open the deployed production
-game in portrait, and perform the two standard-motion captures plus the
-reduced-motion check below. Do not change visual CSS before that evidence is
-recorded.
+Two standard-motion captures, two property-isolation captures, two
+compositor-only probes, and the reduced-motion check then completed on the
+target Pixel against deployed commit `2e9d55f`. The source candidate removes
+only the repainting transient properties identified below and retains the
+effect timing, scale/opacity feedback, persistent special-tile styling, and
+reduced-motion contract. The next action is candidate validation, deployment,
+and the identical two-run Pixel comparison.
 
 ## Objective
 
@@ -65,6 +68,70 @@ fixed public target label.
 
 Chrome trace events establish browser paint/composite pipeline work, not actual
 physical display presentation. The report must preserve that limitation.
+
+## Physical Pixel result
+
+Target: `https://www.binary2048.com/`, deployed commit `2e9d55f`, Pixel 10 Pro
+XL, Android 17, Chrome 156, portrait on Wi-Fi, guest state. Captures completed
+2026-10-25 UTC. No serial, full user agent, identity, SSID, IP, cookie, token,
+storage value, screenshot, HAR, or raw trace was retained.
+
+The table reports aggregate `Paint` plus raster duration divided by eight
+effect activations. Values are not elapsed animation durations.
+
+| Case | Run 1 paint / raster / combined | Run 2 paint / raster / combined |
+| --- | ---: | ---: |
+| Baseline transform/opacity | 2.36 / 3.66 / 6.02 ms | 3.07 / 2.12 / 5.19 ms |
+| Number merge | 10.07 / 21.55 / 31.62 ms | 9.90 / 22.61 / 32.51 ms |
+| Wild merge | 8.26 / 72.19 / 80.45 ms | 8.38 / 78.68 / 87.06 ms |
+| Zero bust | 16.61 / 35.79 / 52.40 ms | 16.82 / 42.03 / 58.85 ms |
+| Spawn | 8.61 / 17.14 / 25.75 ms | 8.18 / 15.16 / 23.34 ms |
+| Persistent wildcard styling | 2.50 / 5.56 / 8.06 ms | 4.74 / 4.72 / 9.46 ms |
+| Persistent Lock-0 styling | 3.17 / 3.89 / 7.06 ms | 2.88 / 4.25 / 7.13 ms |
+
+Every case in both runs had zero main-thread tasks over 50 ms. Chrome 156 did
+not emit `CompositeLayers` or `UpdateLayerTree` duration events in these
+captures. Draw-frame gaps are retained only as diagnostic output: the harness
+waits 480 ms between activations, so effects shorter than 420 ms intentionally
+produce idle gaps and their gap p95 is not a frame-stall comparison.
+
+All four transient cases exceeded the declared paint-plus-raster investigation
+gate in both runs. Persistent wildcard styling also exceeded it, but by only
+2.04 and 4.27 ms over baseline; Lock-0 did not exceed the percentage gate in
+both runs. The transient effects were therefore isolated first without changing
+the persistent special-tile appearance.
+
+## Property isolation and candidate probe
+
+Each diagnostic used the production class and suppressed only the named CSS
+property with an inline `!important` override. Removing spawn's animated shadow
+reduced combined work to 3.88 and 2.84 ms per activation. Removing wildcard
+shadow reduced wild merge to 68.73 and 49.63 ms; removing its filter alone did
+not produce a stable improvement. Removing zero-bust shadow reduced it to 47.27
+and 44.21 ms. Number merge without shadow remained 26.65 and 28.64 ms. These
+results show that removing a single property is insufficient when the remaining
+animation still causes per-frame rasterization.
+
+The final probe fixed repainting shadow/filter/border color and added short-lived
+`will-change: transform, opacity`, matching a compositor-only source candidate:
+
+| Candidate probe | Run 1 combined | Run 2 combined | Baseline range |
+| --- | ---: | ---: | ---: |
+| Number merge | 0.00 ms | 0.00 ms | 5.19–6.02 ms |
+| Wild merge | 3.53 ms | 3.45 ms | 5.19–6.02 ms |
+| Zero bust | 2.10 ms | 1.92 ms | 5.19–6.02 ms |
+
+The source candidate consequently keeps each effect's existing duration and
+transform curve, adds opacity feedback where a glow was removed, limits
+`will-change` to transform/opacity, and removes animated `box-shadow`, wildcard
+`filter`, and zero-bust `border-color`. Persistent wildcard and Lock-0 shadows
+and icon text shadows remain unchanged. Spawn uses its already-declared
+transform/opacity promotion without its animated shadow.
+
+With Android Remove animations enabled, Chrome reported
+`prefers-reduced-motion: reduce`; number merge, wild merge, zero bust, and spawn
+each computed to a 0.001-second animation. The visible sequence produced no
+reported sustained pulse, and the original cell was restored after the check.
 
 ## Physical Pixel protocol
 
@@ -118,11 +185,11 @@ without speculative CSS churn.
 ## Evidence available now
 
 The source inventory above was verified at commit `c8c600e`; no visual source
-changed in the profiling checkpoint. The measurement tool passes syntax
-validation and its help/refusal path can be exercised without a device. Commit
-`46de7d0` was pushed to `main`, deployed successfully by Amplify job 441, and
-passed the standard production smoke on 2026-10-25. No CDP endpoint is listening
-at `127.0.0.1:9222` in the current workspace, and device enumeration was not
-authorized, so there is no physical Pixel result to report yet. The Phase 6
-checklist deliberately remains open until two valid target-device captures and
-the reduced-motion check are added to this document.
+changed in the initial profiling checkpoint. Commit `46de7d0` was pushed to
+`main`, deployed successfully by Amplify job 441, and passed the standard
+production smoke on 2026-10-25. The documentation-only continuation commit
+`2e9d55f` deployed successfully in Amplify job 442 and also passed the standard
+production smoke. The physical results and candidate rationale above are now
+captured, but the Phase 6 checklist remains open until the candidate passes
+local validation, exact-SHA deployment, two post-change Pixel captures, and a
+repeat reduced-motion check.
