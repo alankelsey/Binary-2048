@@ -1,8 +1,12 @@
 import {
   createEmptyScenarioGrid,
+  commitScenarioGrid,
+  createScenarioGridHistory,
   createScenarioBuilderState,
   placeScenarioTile,
   scenarioTileLabel,
+  redoScenarioGrid,
+  undoScenarioGrid,
   resizeScenarioGrid
 } from "@/lib/binary2048/scenario-builder";
 import type { Cell } from "@/lib/binary2048/types";
@@ -54,5 +58,20 @@ describe("scenario builder state", () => {
       scenarioTileLabel({ t: "w", m: 4 }),
       scenarioTileLabel({ t: "i" })
     ]).toEqual(["Empty", "Number 8", "Zero", "Wildcard times 4", "Lock-0"]);
+  });
+
+  it("supports commit, undo, redo, and clearing redo after a new edit", () => {
+    const empty = createEmptyScenarioGrid(2, 2);
+    const first = placeScenarioTile(empty, 0, 0, { t: "n", v: 2 });
+    const second = placeScenarioTile(first, 1, 1, { t: "z" });
+    const committed = commitScenarioGrid(commitScenarioGrid(createScenarioGridHistory(empty), first), second);
+
+    const undone = undoScenarioGrid(committed);
+    expect(undone.present).toEqual(first);
+    expect(redoScenarioGrid(undone).present).toEqual(second);
+
+    const replacement = placeScenarioTile(first, 0, 1, { t: "i" });
+    expect(commitScenarioGrid(undone, replacement).future).toEqual([]);
+    expect(commitScenarioGrid(committed, second)).toBe(committed);
   });
 });

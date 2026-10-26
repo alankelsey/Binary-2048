@@ -590,7 +590,7 @@ accessibility or correctness.
   zero behavior.
 - [x] Provide a tile palette containing empty/erase, number tiles, zero,
   supported wildcard multipliers, and Lock-0.
-- [ ] Let the user choose a palette tile and then place it in any board cell;
+- [x] Let the user choose a palette tile and then place it in any board cell;
   also support replacing, clearing, dragging/painting where appropriate, undo,
   redo, and reset.
 - [ ] Make placement fully usable with touch, mouse, keyboard, and screen

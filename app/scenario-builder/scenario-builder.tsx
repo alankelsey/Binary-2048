@@ -1,11 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import {
+  commitScenarioGrid,
+  createEmptyScenarioGrid,
+  createScenarioGridHistory,
   createScenarioBuilderState,
   placeScenarioTile,
+  redoScenarioGrid,
   resizeScenarioGrid,
   scenarioTileLabel,
+  undoScenarioGrid,
   type ScenarioGameMode
 } from "@/lib/binary2048/scenario-builder";
 import type { Cell, GameConfig } from "@/lib/binary2048/types";
@@ -14,9 +19,12 @@ const MIN_BOARD_SIZE = 2;
 const MAX_BOARD_SIZE = 8;
 
 export function ScenarioBuilder() {
-  const [scenario, setScenario] = useState(createScenarioBuilderState);
+  const initialScenario = useMemo(createScenarioBuilderState, []);
+  const [scenario, setScenario] = useState(initialScenario);
+  const [history, setHistory] = useState(() => createScenarioGridHistory(initialScenario.grid));
   const [selectedTile, setSelectedTile] = useState<Cell>(null);
   const [announcement, setAnnouncement] = useState("Empty tile selected");
+  const painting = useRef(false);
   const palette = useMemo<Cell[]>(
     () => [
       null,
@@ -36,10 +44,12 @@ export function ScenarioBuilder() {
     const next = Math.max(MIN_BOARD_SIZE, Math.min(MAX_BOARD_SIZE, value || MIN_BOARD_SIZE));
     setScenario((current) => {
       const config = { ...current.config, [key]: next };
+      const grid = resizeScenarioGrid(current.grid, config.height, config.width);
+      setHistory(createScenarioGridHistory(grid));
       return {
         ...current,
         config,
-        grid: resizeScenarioGrid(current.grid, config.height, config.width)
+        grid
       };
     });
   }
@@ -57,13 +67,41 @@ export function ScenarioBuilder() {
   }
 
   function placeTile(row: number, column: number) {
-    setScenario((current) => ({
-      ...current,
-      grid: placeScenarioTile(current.grid, row, column, selectedTile)
-    }));
+    setScenario((current) => {
+      const grid = placeScenarioTile(current.grid, row, column, selectedTile);
+      setHistory((currentHistory) => commitScenarioGrid(currentHistory, grid));
+      return { ...current, grid };
+    });
     setAnnouncement(
       `Row ${row + 1}, column ${column + 1} changed to ${scenarioTileLabel(selectedTile)}`
     );
+  }
+
+  function applyHistory(nextHistory: typeof history, message: string) {
+    setHistory(nextHistory);
+    setScenario((current) => ({ ...current, grid: nextHistory.present }));
+    setAnnouncement(message);
+  }
+
+  function undo() {
+    applyHistory(undoScenarioGrid(history), "Last board change undone");
+  }
+
+  function redo() {
+    applyHistory(redoScenarioGrid(history), "Last board change redone");
+  }
+
+  function reset() {
+    const grid = createEmptyScenarioGrid(scenario.config.height, scenario.config.width);
+    const nextHistory = commitScenarioGrid(history, grid);
+    applyHistory(nextHistory, "Board reset to empty");
+  }
+
+  function paintFromPointer(event: ReactPointerEvent<HTMLDivElement>) {
+    if (!painting.current) return;
+    const target = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>("[data-scenario-cell]");
+    if (!target) return;
+    placeTile(Number(target.dataset.row), Number(target.dataset.column));
   }
 
   return (
@@ -148,11 +186,21 @@ export function ScenarioBuilder() {
               })}
             </div>
             <p className="scenario-selection">Selected: {scenarioTileLabel(selectedTile)}</p>
+            <div className="scenario-history-actions" role="group" aria-label="Board editing history">
+              <button type="button" onClick={undo} disabled={history.past.length === 0}>Undo</button>
+              <button type="button" onClick={redo} disabled={history.future.length === 0}>Redo</button>
+              <button type="button" onClick={reset}>Reset board</button>
+            </div>
             <div
               className="scenario-board"
               role="grid"
               aria-label={`${scenario.config.width} by ${scenario.config.height} scenario board`}
               style={{ gridTemplateColumns: `repeat(${scenario.config.width}, minmax(0, 1fr))` }}
+              onPointerDown={() => { painting.current = true; }}
+              onPointerMove={paintFromPointer}
+              onPointerUp={() => { painting.current = false; }}
+              onPointerCancel={() => { painting.current = false; }}
+              onPointerLeave={() => { painting.current = false; }}
             >
               {scenario.grid.flatMap((row, rowIndex) =>
                 row.map((cell, columnIndex) => (
@@ -161,6 +209,9 @@ export function ScenarioBuilder() {
                     key={`${rowIndex}-${columnIndex}`}
                     className="scenario-cell"
                     role="gridcell"
+                    data-scenario-cell
+                    data-row={rowIndex}
+                    data-column={columnIndex}
                     aria-label={`Row ${rowIndex + 1}, column ${columnIndex + 1}, ${scenarioTileLabel(cell)}`}
                     onClick={() => placeTile(rowIndex, columnIndex)}
                   >
@@ -169,7 +220,7 @@ export function ScenarioBuilder() {
                 ))
               )}
             </div>
-            <p className="game-hint">Choose a tile, then activate any cell to place, replace, or erase it.</p>
+            <p className="game-hint">Choose a tile, then activate a cell or drag across cells to paint. Undo, redo, and reset are available above the board.</p>
             <p className="sr-only" aria-live="polite" aria-atomic="true">{announcement}</p>
           </section>
         </div>

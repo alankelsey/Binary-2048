@@ -2117,12 +2117,24 @@ select:focus-visible {
   font-size: 0.88rem;
 }
 
+.scenario-history-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.scenario-history-actions button {
+  padding: 0.42rem 0.7rem;
+}
+
 .scenario-board {
   display: grid;
   gap: 0.42rem;
   width: min(100%, 32rem);
   aspect-ratio: 1;
   margin: 1rem auto;
+  touch-action: none;
+  user-select: none;
 }
 
 .scenario-cell {
