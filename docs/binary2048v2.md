@@ -566,7 +566,8 @@ acknowledgement p95.
 - [ ] Add transform-based tile travel with stable identities if user testing
   shows it improves comprehension and feel.
 - [ ] Memoize or split the board only if React profiling shows material work.
-- [ ] Measure guest shell startup before and after asynchronous auth hydration.
+- [x] Measure guest shell startup before and after asynchronous auth hydration
+  ([evidence](./v2-phase6-guest-startup-2026-10-26.md)).
 - [ ] Validate accessibility, reduced motion, safe areas, background/resume,
   and screen-reader behavior after animation changes.
 
