@@ -561,9 +561,8 @@ acknowledgement p95.
 
 ### Phase 6: perceived-motion and startup polish
 
-- [ ] Profile special-tile filters, shadows, and effects on the target Pixel
-  ([protocol and static inventory](./v2-phase6-pixel-effects-2026-10-25.md);
-  physical capture pending).
+- [x] Profile special-tile filters, shadows, and effects on the target Pixel
+  ([protocol, physical captures, and optimization evidence](./v2-phase6-pixel-effects-2026-10-25.md)).
 - [ ] Add transform-based tile travel with stable identities if user testing
   shows it improves comprehension and feel.
 - [ ] Memoize or split the board only if React profiling shows material work.

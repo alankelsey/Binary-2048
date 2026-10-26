@@ -2,21 +2,22 @@
 
 Date: 2026-10-25 America/Boise
 
-Status: baseline, property isolation, and reduced-motion capture complete. A
-measured compositor-only candidate is implemented locally; post-deployment
-Pixel comparison remains pending.
+Status: complete. The measured compositor-only candidate passed local
+validation, exact-SHA deployment, two post-change Pixel captures, and the
+repeat reduced-motion check.
 
 ## Current continuation state
 
 The profiling tool and protocol were deployed at commit `46de7d0`. Amplify job
 441 succeeded for that exact SHA, and the standard production smoke passed.
 Two standard-motion captures, two property-isolation captures, two
-compositor-only probes, and the reduced-motion check then completed on the
-target Pixel against deployed commit `2e9d55f`. The source candidate removes
-only the repainting transient properties identified below and retains the
-effect timing, scale/opacity feedback, persistent special-tile styling, and
-reduced-motion contract. The next action is candidate validation, deployment,
-and the identical two-run Pixel comparison.
+compositor-only probes, and the initial reduced-motion check then completed on
+the target Pixel against deployed commit `2e9d55f`. The candidate at
+`09ca5ed` removed only the measured repainting transient properties while
+retaining effect timing, scale/opacity feedback, persistent special-tile
+styling, and the reduced-motion contract. Amplify job 443 deployed that exact
+SHA successfully. Two repeat production captures and the final reduced-motion
+check passed on the target Pixel, closing this profiling item.
 
 ## Objective
 
@@ -133,6 +134,40 @@ With Android Remove animations enabled, Chrome reported
 each computed to a 0.001-second animation. The visible sequence produced no
 reported sustained pulse, and the original cell was restored after the check.
 
+## Post-change physical Pixel result
+
+Target: `https://www.binary2048.com/`, deployed commit `09ca5ed`, Pixel 10 Pro
+XL, Android 17, Chrome 156, portrait on Wi-Fi, guest state. Captures completed
+2026-10-26 UTC. The same privacy limits and trace interpretation used for the
+baseline apply.
+
+The table reports aggregate `Paint` plus raster duration divided by eight
+effect activations and compares each run with its corresponding pre-change
+run. Values are Chrome trace pipeline timing, not elapsed animation durations
+or direct physical-display measurements.
+
+| Case | Run 1 combined / reduction | Run 2 combined / reduction |
+| --- | ---: | ---: |
+| Baseline transform/opacity | 6.47 ms / reference | 7.71 ms / reference |
+| Number merge | 3.02 ms / 90.4% | 2.89 ms / 91.1% |
+| Wild merge | 2.87 ms / 96.4% | 3.18 ms / 96.3% |
+| Zero bust | 2.78 ms / 94.7% | 3.28 ms / 94.4% |
+| Spawn | 2.21 ms / 91.4% | 2.33 ms / 90.0% |
+| Persistent wildcard styling | 6.19 ms / unchanged presentation | 10.01 ms / unchanged presentation |
+| Persistent Lock-0 styling | 7.78 ms / unchanged presentation | 7.68 ms / unchanged presentation |
+
+All cases in both post-change runs again had zero main-thread tasks over 50 ms.
+The four transient effects no longer exceed the paint-plus-raster investigation
+gate; each is below the same-run transform/opacity baseline. Persistent
+wildcard and Lock-0 styling was intentionally retained, and no persistent-style
+regression was observed.
+
+For the final four-second accessibility verification, Android Remove
+animations was enabled and Chrome again reported
+`prefers-reduced-motion: reduce`. Number merge, wild merge, zero bust, and
+spawn each computed to a 0.001-second animation. Remove animations was then
+returned to its original off state.
+
 ## Physical Pixel protocol
 
 Record only Pixel family, Android major, Chrome major, portrait orientation,
@@ -189,7 +224,8 @@ changed in the initial profiling checkpoint. Commit `46de7d0` was pushed to
 `main`, deployed successfully by Amplify job 441, and passed the standard
 production smoke on 2026-10-25. The documentation-only continuation commit
 `2e9d55f` deployed successfully in Amplify job 442 and also passed the standard
-production smoke. The physical results and candidate rationale above are now
-captured, but the Phase 6 checklist remains open until the candidate passes
-local validation, exact-SHA deployment, two post-change Pixel captures, and a
-repeat reduced-motion check.
+production smoke. Candidate commit `09ca5ed` passed the focused style tests,
+full unit suite, production build, Amplify job 443 exact-SHA deployment, two
+post-change Pixel captures, and the repeat reduced-motion check. The measured
+90.0-96.4% transient paint/raster reductions, zero long tasks, and retained
+persistent styling complete the Phase 6 profiling item.
