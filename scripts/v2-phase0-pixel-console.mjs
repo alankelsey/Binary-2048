@@ -10,6 +10,10 @@ const endpoint = process.env.BINARY2048_CDP_ENDPOINT ?? "http://127.0.0.1:9222";
 const action = process.argv[2];
 
 const expressions = {
+  reload: `(() => {
+    setTimeout(() => location.reload(), 100);
+    return { scheduled: true };
+  })()`,
   status: `(() => {
     const meta = [...document.querySelectorAll('.meta span')].map(node => node.textContent?.trim() ?? '');
     const moves = Number(meta.find(text => text.startsWith('Moves:'))?.slice(6).trim() ?? NaN);
@@ -94,7 +98,7 @@ const expressions = {
 };
 
 if (!(action in expressions)) {
-  console.error("Usage: node scripts/v2-phase0-pixel-console.mjs <status|clear|counts|extract>");
+  console.error("Usage: node scripts/v2-phase0-pixel-console.mjs <reload|status|clear|counts|extract>");
   process.exit(2);
 }
 
