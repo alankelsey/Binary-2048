@@ -561,11 +561,17 @@ acknowledgement p95.
 
 ### Phase 6: perceived-motion and startup polish
 
+Status: complete. Conditional rendering changes were evaluated and deferred
+where their evidence gates were not met.
+
 - [x] Profile special-tile filters, shadows, and effects on the target Pixel
   ([protocol, physical captures, and optimization evidence](./v2-phase6-pixel-effects-2026-10-25.md)).
-- [ ] Add transform-based tile travel with stable identities if user testing
-  shows it improves comprehension and feel.
-- [ ] Memoize or split the board only if React profiling shows material work.
+- [x] Evaluate transform-based tile travel with stable identities; defer it
+  because no user-testing evidence shows improved comprehension and feel
+  ([decision](./v2-phase6-rendering-decisions-2026-10-26.md)).
+- [x] Evaluate board memoization or splitting; retain the current 16-cell DOM
+  grid because no React profile shows material work
+  ([decision](./v2-phase6-rendering-decisions-2026-10-26.md)).
 - [x] Measure guest shell startup before and after asynchronous auth hydration
   ([evidence](./v2-phase6-guest-startup-2026-10-26.md)).
 - [x] Validate accessibility, reduced motion, safe areas, background/resume,
