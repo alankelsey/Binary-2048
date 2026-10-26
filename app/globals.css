@@ -2022,6 +2022,102 @@ select:focus-visible {
   }
 }
 
+.scenario-builder-card {
+  width: min(72rem, 100%);
+}
+
+.scenario-builder-layout {
+  display: grid;
+  grid-template-columns: minmax(18rem, 0.9fr) minmax(18rem, 1.1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.scenario-controls,
+.scenario-board-panel {
+  border: 1px solid var(--card-border);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  background: var(--panel);
+}
+
+.scenario-controls h2,
+.scenario-board-panel h2 {
+  margin-top: 0;
+}
+
+.scenario-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.scenario-controls label {
+  display: grid;
+  gap: 0.3rem;
+  color: var(--meta-text);
+  font-size: 0.88rem;
+}
+
+.scenario-controls input,
+.scenario-controls select {
+  min-width: 0;
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--card-border);
+  border-radius: 0.4rem;
+  background: var(--tile);
+  color: var(--text);
+}
+
+.scenario-controls fieldset {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 1rem;
+  border: 1px solid var(--card-border);
+  border-radius: 0.55rem;
+}
+
+.scenario-controls .scenario-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.scenario-checkbox input {
+  width: auto;
+}
+
+.scenario-status {
+  color: var(--meta-text);
+}
+
+.scenario-board {
+  display: grid;
+  gap: 0.42rem;
+  width: min(100%, 32rem);
+  aspect-ratio: 1;
+  margin: 1rem auto;
+}
+
+.scenario-cell {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+  border: 1px dashed var(--cell-filled-border);
+  border-radius: 0.45rem;
+  background: var(--tile);
+  color: var(--subtitle);
+  font-size: clamp(0.9rem, 3vw, 1.4rem);
+}
+
+@media (max-width: 760px) {
+  .scenario-builder-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 560px) and (max-height: 700px) {
   .tutorial-card .board {
     width: min(100%, 79vw);
