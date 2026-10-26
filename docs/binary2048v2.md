@@ -568,10 +568,12 @@ where their evidence gates were not met.
   ([protocol, physical captures, and optimization evidence](./v2-phase6-pixel-effects-2026-10-25.md)).
 - [x] Evaluate transform-based tile travel with stable identities; defer it
   because no user-testing evidence shows improved comprehension and feel
-  ([decision](./v2-phase6-rendering-decisions-2026-10-26.md)).
+  ([decision](./v2-phase6-rendering-decisions-2026-10-26.md); retained for
+  [end-of-V2 review](#conditional-rendering-reviews-retained-after-v2)).
 - [x] Evaluate board memoization or splitting; retain the current 16-cell DOM
   grid because no React profile shows material work
-  ([decision](./v2-phase6-rendering-decisions-2026-10-26.md)).
+  ([decision](./v2-phase6-rendering-decisions-2026-10-26.md); retained for
+  [end-of-V2 review](#conditional-rendering-reviews-retained-after-v2)).
 - [x] Measure guest shell startup before and after asynchronous auth hydration
   ([evidence](./v2-phase6-guest-startup-2026-10-26.md)).
 - [x] Validate accessibility, reduced motion, safe areas, background/resume,
@@ -750,7 +752,6 @@ Each phase should cover:
 - Whether Mongo, another shared store, or an append-only service owns live
   session synchronization.
 - Whether export remains available to guests.
-- Whether the board needs FLIP animation, further memoization, or canvas.
 - Worker/runtime provider and associated fixed-egress or networking cost.
 - Scenario JSON versioning details, server-side draft quotas, and whether
   public scenario sharing is permitted.
@@ -821,3 +822,34 @@ V1 completed on 2026-10-05. These are V2 carryover infrastructure obligations;
 the accepted V1 baseline uses on-demand workers, shared inventory/session and
 ops data, and the existing database and logging without NAT, always-on workers,
 another paid database, or paid analytics.
+
+## Conditional rendering reviews retained after V2
+
+The following Phase 6 evaluations resulted in intentional no-change decisions.
+They are kept at the end of the plan so they can be revisited without reopening
+completed Phase 6 work. Neither item is required for V2 completion unless its
+evidence gate is met. The full rationale and 2026-10-26 baseline are in the
+[Phase 6 rendering decision record](./v2-phase6-rendering-decisions-2026-10-26.md).
+
+### Transform-based tile travel with stable identities
+
+Current decision: retain the immediate board-state update and destination
+feedback. Do not add FLIP-style tile travel based only on implementation
+preference.
+
+Revisit only if user testing shows that source-to-destination travel improves
+comprehension and feel on a physical phone. A bounded prototype must define
+tasks and success criteria, compare the current and candidate behaviors, and
+include reduced-motion and screen-reader participants or an equivalent
+accessibility review.
+
+### Board memoization or splitting
+
+Current decision: retain the accessible 16-cell DOM grid without additional
+memoization boundaries or component splitting.
+
+Revisit only if a representative production React profile shows material board
+work during normal moves, special-tile effects, long histories, or support-UI
+state changes. Any proposed change must define a before/after acceptance metric
+and demonstrate enough improvement to justify the added component and
+prop-comparison complexity.
