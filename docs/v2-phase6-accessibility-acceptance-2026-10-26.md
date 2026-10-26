@@ -113,3 +113,28 @@ before testing. Complete a short human pass with TalkBack enabled:
 After that physical speech/interaction pass, record the result and close the
 parent Phase 6 accessibility item. VoiceOver and iPhone safe-area behavior
 remain separate roadmap gates and must not be inferred from this Pixel result.
+
+## Continuation checkpoint
+
+Checkpoint commit `19dac14` was pushed to `main`, deployed successfully by
+Amplify job 446 for the exact full SHA, and passed the production smoke on the
+first attempt. The Pixel footer then reported `19dac14`. The checked-in Pixel
+accessibility harness was rerun against that deployment and again passed with
+the dock inside the viewport, no board overlap, 16 named grid cells, and four
+live regions.
+
+Repository validation at this checkpoint:
+
+- script syntax, diff whitespace, spellcheck, and TypeScript passed;
+- focused unit suites passed 11 tests;
+- focused mobile/accessibility browser suites passed 34 tests;
+- the corrected full production browser suite passed 9 tests;
+- the physical reduced-motion and background/resume checks passed.
+
+Exact next step: with the user's awareness, briefly enable TalkBack on the
+connected Pixel, perform the five-item human speech/interaction pass above,
+restore TalkBack to its original disabled state, record the result here, mark
+the parent Phase 6 accessibility checklist item complete only if it passes,
+then commit, push, and verify the final exact-SHA deployment. Do not include the
+pre-existing uncommitted `scripts/v2-phase0-pixel-console.mjs` change unless
+the user separately authorizes it.
