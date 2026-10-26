@@ -4,9 +4,9 @@
 
 Date: 2026-10-26 America/Boise
 
-Status: automated checks, reduced motion, physical Pixel safe-area geometry,
-and physical background/resume passed. Manual TalkBack spoken-announcement
-behavior remains pending, so the parent Phase 6 checklist item stays open.
+Status: complete for the target Pixel. Automated checks, reduced motion,
+physical safe-area geometry, background/resume, and the human TalkBack
+speech/interaction pass succeeded.
 
 ## Scope and limits
 
@@ -95,10 +95,11 @@ existing task was then brought to the foreground. The same production tab
 returned active at move 1 with one completed input, zero dropped inputs, no
 busy state, no rollback, and no duplicate move.
 
-## Remaining gate
+## TalkBack result
 
-TalkBack 17.1 is installed on the target Pixel and was confirmed disabled
-before testing. Complete a short human pass with TalkBack enabled:
+TalkBack 17.1 was confirmed disabled before testing, enabled briefly for the
+human pass, and restored to its original disabled state afterward. The user
+confirmed all five checks passed:
 
 1. Traverse the game heading, status, 16-cell board, New Game, and More
    controls in a sensible order.
@@ -110,9 +111,9 @@ before testing. Complete a short human pass with TalkBack enabled:
 5. Background and resume Chrome; confirm focus returns predictably and the
    current game status is not repeated excessively.
 
-After that physical speech/interaction pass, record the result and close the
-parent Phase 6 accessibility item. VoiceOver and iPhone safe-area behavior
-remain separate roadmap gates and must not be inferred from this Pixel result.
+The parent Phase 6 accessibility item is therefore complete for the target
+Pixel. VoiceOver and iPhone safe-area behavior remain separate roadmap gates
+and must not be inferred from this Pixel result.
 
 ## Continuation checkpoint
 
@@ -131,10 +132,10 @@ Repository validation at this checkpoint:
 - the corrected full production browser suite passed 9 tests;
 - the physical reduced-motion and background/resume checks passed.
 
-Exact next step: with the user's awareness, briefly enable TalkBack on the
-connected Pixel, perform the five-item human speech/interaction pass above,
-restore TalkBack to its original disabled state, record the result here, mark
-the parent Phase 6 accessibility checklist item complete only if it passes,
-then commit, push, and verify the final exact-SHA deployment. Do not include the
-pre-existing uncommitted `scripts/v2-phase0-pixel-console.mjs` change unless
-the user separately authorizes it.
+TalkBack was subsequently enabled with the user's awareness, all five human
+speech/interaction checks passed, and Android accessibility settings were
+restored to `accessibility_enabled=0` with no enabled accessibility service.
+The remaining action is to commit, push, and verify this final evidence update.
+Do not include the pre-existing uncommitted
+`scripts/v2-phase0-pixel-console.mjs` change unless the user separately
+authorizes it.
