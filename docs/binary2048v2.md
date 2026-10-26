@@ -569,7 +569,9 @@ acknowledgement p95.
 - [x] Measure guest shell startup before and after asynchronous auth hydration
   ([evidence](./v2-phase6-guest-startup-2026-10-26.md)).
 - [ ] Validate accessibility, reduced motion, safe areas, background/resume,
-  and screen-reader behavior after animation changes.
+  and screen-reader behavior after animation changes
+  ([automated and physical Pixel evidence](./v2-phase6-accessibility-acceptance-2026-10-26.md);
+  manual TalkBack speech/interaction check pending).
 
 Exit criterion: improvements meet the targets below without reducing
 accessibility or correctness.

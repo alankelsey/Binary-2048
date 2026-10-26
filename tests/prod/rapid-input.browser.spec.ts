@@ -64,10 +64,14 @@ test("rapid arrow keys stay ordered across instance recovery", async ({ page }) 
     requestCount += 1;
     activeRequests += 1;
     maximumActiveRequests = Math.max(maximumActiveRequests, activeRequests);
-    const body = route.request().postDataJSON() as { dir: Dir; recoverySnapshot?: unknown };
+    const body = route.request().postDataJSON() as {
+      dir: Dir;
+      recoverySnapshot?: unknown;
+      compactRecovery?: unknown;
+    };
     await new Promise((resolve) => setTimeout(resolve, 60));
 
-    if (!body.recoverySnapshot) {
+    if (!body.recoverySnapshot && !body.compactRecovery) {
       activeRequests -= 1;
       await route.fulfill({ status: 404, contentType: "application/json", body: '{"error":"Game not found"}' });
       return;
@@ -104,6 +108,7 @@ test("rapid arrow keys stay ordered across instance recovery", async ({ page }) 
   await page.goto("/");
   await page.getByRole("button", { name: "Start New Game" }).click();
   await expect(page.locator(".card")).toHaveAttribute("aria-busy", "false");
+  await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent("pagehide")));
   await page.evaluate(() => {
     const seen: string[] = [];
     (window as typeof window & { __binary2048Errors?: string[] }).__binary2048Errors = seen;
@@ -120,7 +125,7 @@ test("rapid arrow keys stay ordered across instance recovery", async ({ page }) 
 
   await expect.poll(() => completedMoves.length, { timeout: 10_000 }).toBe(expectedMoves.length);
   expect(completedMoves).toEqual(expectedMoves);
-  expect(requestCount).toBe(expectedMoves.length);
+  expect(requestCount).toBe(expectedMoves.length * 2);
   expect(maximumActiveRequests).toBe(1);
   await expect(page.getByText(`Moves: ${expectedMoves.length}`)).toBeVisible();
   expect(

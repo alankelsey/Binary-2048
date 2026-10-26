@@ -90,6 +90,7 @@
     "ops:v2:browser-measurement": "node ./scripts/v2-phase0-browser-measurement.mjs",
     "ops:v2:pixel-effects": "node ./scripts/v2-phase6-pixel-effects.mjs",
     "ops:v2:pixel-startup": "node ./scripts/v2-phase6-pixel-startup.mjs",
+    "ops:v2:pixel-accessibility": "node ./scripts/v2-phase6-pixel-accessibility.mjs",
     "ops:egress:readiness": "bash ./scripts/fixed-egress-readiness.sh",
     "ops:egress:preflight": "bash ./scripts/fixed-egress-preflight.sh",
     "load:baseline": "k6 run ./scripts/load/k6-baseline.js",

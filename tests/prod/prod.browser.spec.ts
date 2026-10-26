@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { applyMove, createGame, DEFAULT_CONFIG, generateBitstormInitialGrid } from "@/lib/binary2048/engine";
-import type { Dir, GameConfig, GameState } from "@/lib/binary2048/types";
+import type { Cell, Dir, GameConfig, GameState } from "@/lib/binary2048/types";
 import { gameStateHash, STATE_HASH_VERSION } from "@/lib/binary2048/state-identity";
 
 test.beforeEach(async ({ page }) => {
@@ -77,14 +77,15 @@ test("the empty mobile board shows a start overlay after recovery finishes", asy
 test("a stale instance-local session is recovered and moved atomically", async ({ page }) => {
   let staleMoveRequests = 0;
   let restoredMoveRequests = 0;
-  const grid = [
+  const grid: Cell[][] = [
     [null, { t: "n", v: 1 }, null, null],
     [null, null, null, null],
     [null, null, { t: "n", v: 1 }, null],
     [null, null, null, null]
   ];
-  const state = (id: string, turn = 0, movedGrid = grid) => ({
+  const state = (id: string, turn = 0, movedGrid: Cell[][] = grid): GameState => ({
     id,
+    config: { ...DEFAULT_CONFIG, seed: 456 },
     width: 4,
     height: 4,
     seed: 456,
@@ -106,23 +107,29 @@ test("a stale instance-local session is recovered and moved atomically", async (
   });
   await page.route("**/api/games/g_before_sleep/move", async (route) => {
     staleMoveRequests += 1;
-    const body = route.request().postDataJSON();
-    if (!body.recoverySnapshot) {
+    const body = route.request().postDataJSON() as {
+      recoverySnapshot?: unknown;
+      compactRecovery?: unknown;
+    };
+    if (!body.recoverySnapshot && !body.compactRecovery) {
       await route.fulfill({ status: 404, contentType: "application/json", body: '{"error":"not found"}' });
       return;
     }
     restoredMoveRequests += 1;
+    const moved = state("g_after_resume", 1, [
+      [{ t: "n", v: 2 }, null, null, null],
+      [null, null, null, null],
+      [null, null, null, null],
+      [null, null, null, null]
+    ]);
     await route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
         id: "g_after_resume",
-        current: state("g_after_resume", 1, [
-          [{ t: "n", v: 2 }, null, null, null],
-          [null, null, null, null],
-          [null, null, null, null],
-          [null, null, null, null]
-        ]),
+        current: moved,
+        stateHash: gameStateHash(moved),
+        stateHashVersion: STATE_HASH_VERSION,
         recoverySnapshot: body.recoverySnapshot
       })
     });
@@ -144,7 +151,7 @@ test("a stale instance-local session is recovered and moved atomically", async (
 
   await page.keyboard.press("ArrowLeft");
   await expect(page.getByRole("gridcell", { name: /number 2$/ })).toHaveCount(1);
-  expect(staleMoveRequests).toBe(1);
+  expect(staleMoveRequests).toBe(2);
   expect(restoredMoveRequests).toBe(1);
 });
 
