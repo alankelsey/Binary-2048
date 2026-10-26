@@ -19,6 +19,31 @@ export function resizeScenarioGrid(grid: Cell[][], height: number, width: number
   );
 }
 
+export function placeScenarioTile(
+  grid: Cell[][],
+  row: number,
+  column: number,
+  tile: Cell
+): Cell[][] {
+  return grid.map((currentRow, rowIndex) =>
+    currentRow.map((cell, columnIndex) =>
+      rowIndex === row && columnIndex === column ? cloneCell(tile) : cell
+    )
+  );
+}
+
+export function scenarioTileLabel(tile: Cell): string {
+  if (tile === null) return "Empty";
+  if (tile.t === "n") return `Number ${tile.v}`;
+  if (tile.t === "z") return "Zero";
+  if (tile.t === "w") return `Wildcard times ${tile.m}`;
+  return "Lock-0";
+}
+
+function cloneCell(cell: Cell): Cell {
+  return cell === null ? null : { ...cell };
+}
+
 export function createScenarioBuilderState(initialGrid?: Cell[][]): ScenarioBuilderState {
   const config: GameConfig = {
     ...DEFAULT_CONFIG,

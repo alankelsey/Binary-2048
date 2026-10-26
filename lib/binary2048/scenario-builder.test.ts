@@ -1,6 +1,8 @@
 import {
   createEmptyScenarioGrid,
   createScenarioBuilderState,
+  placeScenarioTile,
+  scenarioTileLabel,
   resizeScenarioGrid
 } from "@/lib/binary2048/scenario-builder";
 import type { Cell } from "@/lib/binary2048/types";
@@ -30,5 +32,27 @@ describe("scenario builder state", () => {
       [null, null, null]
     ]);
     expect(resizeScenarioGrid(grid, 1, 1)).toEqual([[{ t: "n", v: 2 }]]);
+  });
+
+  it("places, replaces, and erases a cell without mutating the source grid", () => {
+    const source = createEmptyScenarioGrid(2, 2);
+    const placed = placeScenarioTile(source, 0, 1, { t: "w", m: 4 });
+    const replaced = placeScenarioTile(placed, 0, 1, { t: "i" });
+    const erased = placeScenarioTile(replaced, 0, 1, null);
+
+    expect(source[0][1]).toBeNull();
+    expect(placed[0][1]).toEqual({ t: "w", m: 4 });
+    expect(replaced[0][1]).toEqual({ t: "i" });
+    expect(erased[0][1]).toBeNull();
+  });
+
+  it("provides screen-reader labels for every supported tile kind", () => {
+    expect([
+      scenarioTileLabel(null),
+      scenarioTileLabel({ t: "n", v: 8 }),
+      scenarioTileLabel({ t: "z" }),
+      scenarioTileLabel({ t: "w", m: 4 }),
+      scenarioTileLabel({ t: "i" })
+    ]).toEqual(["Empty", "Number 8", "Zero", "Wildcard times 4", "Lock-0"]);
   });
 });

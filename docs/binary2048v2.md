@@ -588,7 +588,7 @@ accessibility or correctness.
 - [ ] Add a dedicated scenario-builder view with an empty or existing board,
   board-size controls, seed, win tile, spawn configuration, game mode, and
   zero behavior.
-- [ ] Provide a tile palette containing empty/erase, number tiles, zero,
+- [x] Provide a tile palette containing empty/erase, number tiles, zero,
   supported wildcard multipliers, and Lock-0.
 - [ ] Let the user choose a palette tile and then place it in any board cell;
   also support replacing, clearing, dragging/painting where appropriate, undo,

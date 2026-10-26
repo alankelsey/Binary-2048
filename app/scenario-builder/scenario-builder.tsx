@@ -1,18 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   createScenarioBuilderState,
+  placeScenarioTile,
   resizeScenarioGrid,
+  scenarioTileLabel,
   type ScenarioGameMode
 } from "@/lib/binary2048/scenario-builder";
-import type { GameConfig } from "@/lib/binary2048/types";
+import type { Cell, GameConfig } from "@/lib/binary2048/types";
 
 const MIN_BOARD_SIZE = 2;
 const MAX_BOARD_SIZE = 8;
 
 export function ScenarioBuilder() {
   const [scenario, setScenario] = useState(createScenarioBuilderState);
+  const [selectedTile, setSelectedTile] = useState<Cell>(null);
+  const [announcement, setAnnouncement] = useState("Empty tile selected");
+  const palette = useMemo<Cell[]>(
+    () => [
+      null,
+      ...[1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048].map((value) => ({ t: "n" as const, v: value })),
+      { t: "z" },
+      ...scenario.config.spawn.wildcardMultipliers.map((multiplier) => ({ t: "w" as const, m: multiplier })),
+      { t: "i" }
+    ],
+    [scenario.config.spawn.wildcardMultipliers]
+  );
 
   function updateConfig<K extends keyof GameConfig>(key: K, value: GameConfig[K]) {
     setScenario((current) => ({ ...current, config: { ...current.config, [key]: value } }));
@@ -35,6 +49,21 @@ export function ScenarioBuilder() {
       ...current,
       config: { ...current.config, spawn: { ...current.config.spawn, [key]: value } }
     }));
+  }
+
+  function selectTile(tile: Cell) {
+    setSelectedTile(tile);
+    setAnnouncement(`${scenarioTileLabel(tile)} selected`);
+  }
+
+  function placeTile(row: number, column: number) {
+    setScenario((current) => ({
+      ...current,
+      grid: placeScenarioTile(current.grid, row, column, selectedTile)
+    }));
+    setAnnouncement(
+      `Row ${row + 1}, column ${column + 1} changed to ${scenarioTileLabel(selectedTile)}`
+    );
   }
 
   return (
@@ -98,8 +127,27 @@ export function ScenarioBuilder() {
           <section className="scenario-board-panel" aria-labelledby="scenario-board-heading">
             <h2 id="scenario-board-heading">Board</h2>
             <p className="scenario-status" role="status">
-              Empty {scenario.config.width} × {scenario.config.height} {scenario.gameMode} board
+              {scenario.config.width} × {scenario.config.height} {scenario.gameMode} board
             </p>
+            <div className="scenario-palette" role="toolbar" aria-label="Tile palette">
+              {palette.map((tile, index) => {
+                const label = scenarioTileLabel(tile);
+                const selected = label === scenarioTileLabel(selectedTile);
+                return (
+                  <button
+                    key={`${label}-${index}`}
+                    type="button"
+                    className={selected ? "selected" : undefined}
+                    aria-pressed={selected}
+                    onClick={() => selectTile(tile)}
+                  >
+                    {tileSymbol(tile)}
+                    <span className="sr-only">{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="scenario-selection">Selected: {scenarioTileLabel(selectedTile)}</p>
             <div
               className="scenario-board"
               role="grid"
@@ -107,19 +155,35 @@ export function ScenarioBuilder() {
               style={{ gridTemplateColumns: `repeat(${scenario.config.width}, minmax(0, 1fr))` }}
             >
               {scenario.grid.flatMap((row, rowIndex) =>
-                row.map((_cell, columnIndex) => (
-                  <div key={`${rowIndex}-${columnIndex}`} className="scenario-cell" role="gridcell" aria-label={`Row ${rowIndex + 1}, column ${columnIndex + 1}, empty`}>
-                    <span aria-hidden="true">+</span>
-                  </div>
+                row.map((cell, columnIndex) => (
+                  <button
+                    type="button"
+                    key={`${rowIndex}-${columnIndex}`}
+                    className="scenario-cell"
+                    role="gridcell"
+                    aria-label={`Row ${rowIndex + 1}, column ${columnIndex + 1}, ${scenarioTileLabel(cell)}`}
+                    onClick={() => placeTile(rowIndex, columnIndex)}
+                  >
+                    <span aria-hidden="true">{tileSymbol(cell)}</span>
+                  </button>
                 ))
               )}
             </div>
-            <p className="game-hint">Tile palette and placement controls arrive in the next checkpoint.</p>
+            <p className="game-hint">Choose a tile, then activate any cell to place, replace, or erase it.</p>
+            <p className="sr-only" aria-live="polite" aria-atomic="true">{announcement}</p>
           </section>
         </div>
       </div>
     </main>
   );
+}
+
+function tileSymbol(tile: Cell): string {
+  if (tile === null) return "Erase";
+  if (tile.t === "n") return String(tile.v);
+  if (tile.t === "z") return "0";
+  if (tile.t === "w") return `×${tile.m}`;
+  return "Lock-0";
 }
 
 function NumberField({ label, value, onChange, ...inputProps }: { label: string; value: number; onChange: (value: number) => void; min?: number; max?: number; step?: number }) {
