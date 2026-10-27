@@ -595,7 +595,7 @@ accessibility or correctness.
   redo, and reset.
 - [x] Make placement fully usable with touch, mouse, keyboard, and screen
   readers. Announce the selected tile and each cell change.
-- [ ] Add symmetry tools for horizontal mirror, vertical mirror, 180-degree
+- [x] Add symmetry tools for horizontal mirror, vertical mirror, 180-degree
   rotation, and four-way symmetry so tournament boards can be constructed
   without manual transcription errors.
 - [ ] Validate dimensions, tile values, wildcard multipliers, configuration,

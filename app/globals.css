@@ -2118,6 +2118,23 @@ select:focus-visible {
   font-size: 0.88rem;
 }
 
+.scenario-symmetry {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.65rem;
+}
+
+.scenario-symmetry button {
+  min-height: 2.75rem;
+  padding: 0.42rem 0.7rem;
+}
+
+.scenario-symmetry button.selected {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .scenario-history-actions {
   display: flex;
   flex-wrap: wrap;

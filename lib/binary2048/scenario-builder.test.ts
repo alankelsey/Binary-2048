@@ -4,6 +4,7 @@ import {
   createScenarioGridHistory,
   createScenarioBuilderState,
   placeScenarioTile,
+  scenarioSymmetryCoordinates,
   scenarioTileLabel,
   redoScenarioGrid,
   undoScenarioGrid,
@@ -17,6 +18,7 @@ describe("scenario builder state", () => {
     const second = createScenarioBuilderState();
 
     expect(first.gameMode).toBe("classic");
+    expect(first.symmetry).toBe("none");
     expect(first.config).toMatchObject({ width: 4, height: 4, seed: 42, winTile: 2048 });
     expect(first.grid).toEqual(createEmptyScenarioGrid(4, 4));
 
@@ -58,6 +60,36 @@ describe("scenario builder state", () => {
       scenarioTileLabel({ t: "w", m: 4 }),
       scenarioTileLabel({ t: "i" })
     ]).toEqual(["Empty", "Number 8", "Zero", "Wildcard times 4", "Lock-0"]);
+  });
+
+  it("places tiles with horizontal, vertical, rotational, and four-way symmetry", () => {
+    const empty = createEmptyScenarioGrid(3, 4);
+
+    expect(placeScenarioTile(empty, 0, 0, { t: "n", v: 2 }, "horizontal")).toEqual([
+      [{ t: "n", v: 2 }, null, null, { t: "n", v: 2 }],
+      [null, null, null, null],
+      [null, null, null, null]
+    ]);
+    expect(placeScenarioTile(empty, 0, 1, { t: "z" }, "vertical")).toEqual([
+      [null, { t: "z" }, null, null],
+      [null, null, null, null],
+      [null, { t: "z" }, null, null]
+    ]);
+    expect(placeScenarioTile(empty, 0, 0, { t: "i" }, "rotational")).toEqual([
+      [{ t: "i" }, null, null, null],
+      [null, null, null, null],
+      [null, null, null, { t: "i" }]
+    ]);
+    expect(placeScenarioTile(empty, 0, 0, { t: "w", m: 4 }, "four-way")).toEqual([
+      [{ t: "w", m: 4 }, null, null, { t: "w", m: 4 }],
+      [null, null, null, null],
+      [{ t: "w", m: 4 }, null, null, { t: "w", m: 4 }]
+    ]);
+  });
+
+  it("deduplicates symmetry coordinates on center axes", () => {
+    expect(scenarioSymmetryCoordinates(3, 3, 1, 1, "four-way")).toEqual([[1, 1]]);
+    expect(scenarioSymmetryCoordinates(3, 4, 1, 0, "four-way")).toEqual([[1, 0], [1, 3]]);
   });
 
   it("supports commit, undo, redo, and clearing redo after a new edit", () => {

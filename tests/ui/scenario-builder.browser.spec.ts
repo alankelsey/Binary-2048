@@ -48,6 +48,59 @@ test("paints across cells with a pointer drag", async ({ page }) => {
   await expect(page.getByRole("gridcell", { name: "Row 1, column 2, Zero" })).toBeVisible();
 });
 
+test("applies every symmetry mode as one announced, undoable board edit", async ({ page }) => {
+  await page.goto("/scenario-builder");
+
+  const palette = page.getByRole("toolbar", { name: "Tile palette" });
+  const symmetry = page.getByRole("toolbar", { name: "Placement symmetry" });
+  const announcement = page.locator(".scenario-announcement");
+
+  await palette.getByRole("button", { name: "Number 2", exact: true }).click();
+  await symmetry.getByRole("button", { name: "Horizontal mirror, left and right", exact: true }).click();
+  await page.getByRole("gridcell", { name: "Row 1, column 1, Empty" }).click();
+  await expect(page.getByRole("gridcell", { name: "Row 1, column 4, Number 2" })).toBeVisible();
+  await expect(announcement).toHaveText(
+    "Row 1, column 1; row 1, column 4 changed to Number 2"
+  );
+
+  await palette.getByRole("button", { name: "Number 4", exact: true }).click();
+  await symmetry.getByRole("button", { name: "Vertical mirror, top and bottom", exact: true }).click();
+  await page.getByRole("gridcell", { name: "Row 1, column 2, Empty" }).click();
+  await expect(page.getByRole("gridcell", { name: "Row 4, column 2, Number 4" })).toBeVisible();
+
+  await palette.getByRole("button", { name: "Zero", exact: true }).click();
+  await symmetry.getByRole("button", { name: "180 degree rotation", exact: true }).click();
+  await page.getByRole("gridcell", { name: "Row 2, column 1, Empty" }).click();
+  await expect(page.getByRole("gridcell", { name: "Row 3, column 4, Zero" })).toBeVisible();
+
+  await palette.getByRole("button", { name: "Lock-0", exact: true }).click();
+  const fourWay = symmetry.getByRole("button", { name: "Four-way symmetry", exact: true });
+  await fourWay.click();
+  await expect(fourWay).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("gridcell", { name: "Row 2, column 2, Empty" }).click();
+  for (const name of [
+    "Row 2, column 2, Lock-0",
+    "Row 2, column 3, Lock-0",
+    "Row 3, column 2, Lock-0",
+    "Row 3, column 3, Lock-0"
+  ]) {
+    await expect(page.getByRole("gridcell", { name })).toBeVisible();
+  }
+  await expect(announcement).toHaveText(
+    "Row 2, column 2; row 2, column 3; row 3, column 2; row 3, column 3 changed to Lock-0"
+  );
+
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  for (const name of [
+    "Row 2, column 2, Empty",
+    "Row 2, column 3, Empty",
+    "Row 3, column 2, Empty",
+    "Row 3, column 3, Empty"
+  ]) {
+    await expect(page.getByRole("gridcell", { name })).toBeVisible();
+  }
+});
+
 test.describe("mobile touch and screen-reader announcements", () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
@@ -77,6 +130,7 @@ test.describe("mobile touch and screen-reader announcements", () => {
 
     const first = page.getByRole("gridcell", { name: "Row 1, column 1, Empty" });
     const second = page.getByRole("gridcell", { name: "Row 1, column 2, Empty" });
+    await first.scrollIntoViewIfNeeded();
     const firstBox = await first.boundingBox();
     const secondBox = await second.boundingBox();
     if (!firstBox || !secondBox) throw new Error("Scenario cells must be visible");

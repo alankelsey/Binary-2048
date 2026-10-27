@@ -9,14 +9,23 @@ import {
   placeScenarioTile,
   redoScenarioGrid,
   resizeScenarioGrid,
+  scenarioSymmetryCoordinates,
   scenarioTileLabel,
   undoScenarioGrid,
-  type ScenarioGameMode
+  type ScenarioGameMode,
+  type ScenarioSymmetry
 } from "@/lib/binary2048/scenario-builder";
 import type { Cell, GameConfig } from "@/lib/binary2048/types";
 
 const MIN_BOARD_SIZE = 2;
 const MAX_BOARD_SIZE = 8;
+const SYMMETRY_OPTIONS: Array<{ value: ScenarioSymmetry; label: string; accessibleLabel: string }> = [
+  { value: "none", label: "None", accessibleLabel: "No symmetry" },
+  { value: "horizontal", label: "Horizontal mirror", accessibleLabel: "Horizontal mirror, left and right" },
+  { value: "vertical", label: "Vertical mirror", accessibleLabel: "Vertical mirror, top and bottom" },
+  { value: "rotational", label: "Rotate 180°", accessibleLabel: "180 degree rotation" },
+  { value: "four-way", label: "Four-way", accessibleLabel: "Four-way symmetry" }
+];
 
 export function ScenarioBuilder() {
   const initialScenario = useMemo(createScenarioBuilderState, []);
@@ -69,14 +78,24 @@ export function ScenarioBuilder() {
   }
 
   function placeTile(row: number, column: number) {
+    const coordinates = scenarioSymmetryCoordinates(
+      scenario.config.height,
+      scenario.config.width,
+      row,
+      column,
+      scenario.symmetry
+    );
     setScenario((current) => {
-      const grid = placeScenarioTile(current.grid, row, column, selectedTile);
+      const grid = placeScenarioTile(current.grid, row, column, selectedTile, current.symmetry);
       setHistory((currentHistory) => commitScenarioGrid(currentHistory, grid));
       return { ...current, grid };
     });
-    setAnnouncement(
-      `Row ${row + 1}, column ${column + 1} changed to ${scenarioTileLabel(selectedTile)}`
-    );
+    const changedCells = coordinates
+      .map(([targetRow, targetColumn], index) =>
+        `${index === 0 ? "Row" : "row"} ${targetRow + 1}, column ${targetColumn + 1}`
+      )
+      .join("; ");
+    setAnnouncement(`${changedCells} changed to ${scenarioTileLabel(selectedTile)}`);
   }
 
   function applyHistory(nextHistory: typeof history, message: string) {
@@ -215,6 +234,23 @@ export function ScenarioBuilder() {
               })}
             </div>
             <p className="scenario-selection">Selected: {scenarioTileLabel(selectedTile)}</p>
+            <div className="scenario-symmetry" role="toolbar" aria-label="Placement symmetry">
+              {SYMMETRY_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={scenario.symmetry === option.value ? "selected" : undefined}
+                  aria-label={option.accessibleLabel}
+                  aria-pressed={scenario.symmetry === option.value}
+                  onClick={() => {
+                    setScenario((current) => ({ ...current, symmetry: option.value }));
+                    setAnnouncement(`${option.accessibleLabel} selected`);
+                  }}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
             <div className="scenario-history-actions" role="group" aria-label="Board editing history">
               <button type="button" onClick={undo} disabled={history.past.length === 0}>Undo</button>
               <button type="button" onClick={redo} disabled={history.future.length === 0}>Redo</button>

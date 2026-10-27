@@ -2,10 +2,12 @@ import { DEFAULT_CONFIG } from "@/lib/binary2048/engine";
 import type { Cell, GameConfig } from "@/lib/binary2048/types";
 
 export type ScenarioGameMode = "classic" | "bitstorm";
+export type ScenarioSymmetry = "none" | "horizontal" | "vertical" | "rotational" | "four-way";
 
 export type ScenarioBuilderState = {
   config: GameConfig;
   gameMode: ScenarioGameMode;
+  symmetry: ScenarioSymmetry;
   grid: Cell[][];
 };
 
@@ -29,12 +31,40 @@ export function placeScenarioTile(
   grid: Cell[][],
   row: number,
   column: number,
-  tile: Cell
+  tile: Cell,
+  symmetry: ScenarioSymmetry = "none"
 ): Cell[][] {
+  const coordinates = new Set(
+    scenarioSymmetryCoordinates(grid.length, grid[0]?.length ?? 0, row, column, symmetry)
+      .map(([targetRow, targetColumn]) => `${targetRow}:${targetColumn}`)
+  );
   return grid.map((currentRow, rowIndex) =>
     currentRow.map((cell, columnIndex) =>
-      rowIndex === row && columnIndex === column ? cloneCell(tile) : cell
+      coordinates.has(`${rowIndex}:${columnIndex}`) ? cloneCell(tile) : cell
     )
+  );
+}
+
+export function scenarioSymmetryCoordinates(
+  height: number,
+  width: number,
+  row: number,
+  column: number,
+  symmetry: ScenarioSymmetry
+): Array<[number, number]> {
+  const horizontal: [number, number] = [row, width - column - 1];
+  const vertical: [number, number] = [height - row - 1, column];
+  const rotational: [number, number] = [height - row - 1, width - column - 1];
+  const candidates: Array<[number, number]> = [[row, column]];
+  if (symmetry === "horizontal" || symmetry === "four-way") candidates.push(horizontal);
+  if (symmetry === "vertical" || symmetry === "four-way") candidates.push(vertical);
+  if (symmetry === "rotational" || symmetry === "four-way") candidates.push(rotational);
+
+  return candidates.filter(
+    ([candidateRow, candidateColumn], index) =>
+      candidates.findIndex(([seenRow, seenColumn]) =>
+        seenRow === candidateRow && seenColumn === candidateColumn
+      ) === index
   );
 }
 
@@ -106,6 +136,7 @@ export function createScenarioBuilderState(initialGrid?: Cell[][]): ScenarioBuil
   return {
     config,
     gameMode: "classic",
+    symmetry: "none",
     grid: initialGrid
       ? resizeScenarioGrid(initialGrid, config.height, config.width)
       : createEmptyScenarioGrid(config.height, config.width)
