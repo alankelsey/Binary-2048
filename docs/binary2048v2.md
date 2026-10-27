@@ -600,6 +600,13 @@ accessibility or correctness.
   without manual transcription errors.
 - [x] Validate dimensions, tile values, wildcard multipliers, configuration,
   and whether the board has at least one legal move before play or export.
+- [ ] Run a bounded visual-theme viability experiment using the user-owned
+  cherry-blossom artwork as the source for a clean responsive board background
+  with separately rendered opaque tiles. Compare it with the current theme at
+  4 × 4 and supported custom dimensions; verify number and special-tile
+  readability, contrast, focus states, mobile cropping, reduced-transparency
+  behavior, and rendering cost before deciding whether to ship it as an
+  optional theme.
 - [ ] Preview legal moves and resulting boards through the same deterministic
   engine used by gameplay and API simulation.
 - [ ] Save named drafts locally and, for authenticated users, optionally save
