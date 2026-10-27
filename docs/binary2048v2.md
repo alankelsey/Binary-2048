@@ -613,9 +613,10 @@ accessibility or correctness.
 - [x] Save named drafts locally and, for authenticated users, optionally save
   private server-side scenario records with version and ownership metadata
   ([evidence](./v2-phase7-named-scenario-drafts-2026-10-27.md)).
-- [ ] Export and import a versioned scenario JSON containing configuration,
+- [x] Export and import a versioned scenario JSON containing configuration,
   initial grid, seed, authoring metadata, and symmetry information without
-  pretending it is a completed replay.
+  pretending it is a completed replay
+  ([evidence](./v2-phase7-scenario-json-roundtrip-2026-10-27.md)).
 - [ ] Launch the scenario as an explicitly unranked practice game, or submit it
   to authorized tournament/training workflows through the existing simulation
   APIs.

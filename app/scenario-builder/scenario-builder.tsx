@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type PointerEvent as ReactPointerEvent } from "react";
 import {
   commitScenarioGrid,
   createEmptyScenarioGrid,
@@ -27,6 +27,7 @@ import {
   upsertScenarioDraft,
   type ScenarioDraft
 } from "@/lib/binary2048/scenario-draft";
+import { createScenarioFile, parseScenarioJson, scenarioFilename } from "@/lib/binary2048/scenario-format";
 
 const MIN_BOARD_SIZE = 2;
 const MAX_BOARD_SIZE = 8;
@@ -50,6 +51,7 @@ export function ScenarioBuilder() {
   const [accountDrafts, setAccountDrafts] = useState<ScenarioDraft[]>([]);
   const [draftMessage, setDraftMessage] = useState("");
   const [draftBusy, setDraftBusy] = useState(false);
+  const [fileMessage, setFileMessage] = useState("");
   const painting = useRef(false);
   const paintedCells = useRef(new Set<string>());
   const suppressPointerClick = useRef(false);
@@ -247,6 +249,41 @@ export function ScenarioBuilder() {
     }
   }
 
+  async function exportScenarioJson() {
+    try {
+      const existing = [...localDrafts, ...accountDrafts].find((draft) => draft.id === selectedDraftId);
+      const file = createScenarioFile({
+        scenario,
+        name: draftName,
+        createdAtISO: existing?.createdAtISO
+      });
+      const { downloadJson } = await import("@/lib/binary2048/export-actions");
+      downloadJson(file, scenarioFilename(file.authoring.name, file.authoring.exportedAtISO));
+      setFileMessage(`${file.authoring.name} scenario JSON downloaded.`);
+    } catch (error) {
+      setFileMessage(error instanceof Error ? error.message : "Unable to export scenario JSON.");
+    }
+  }
+
+  async function importScenarioJson(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    try {
+      if (file.size > 256 * 1024) throw new Error("Scenario JSON must be 256 KB or smaller.");
+      const imported = parseScenarioJson(await file.text());
+      setScenario(imported.scenario);
+      setHistory(createScenarioGridHistory(imported.scenario.grid));
+      setSelectedTile(null);
+      setSelectedDraftId("");
+      setDraftName(imported.file.authoring.name);
+      setFileMessage(`${imported.file.authoring.name} imported as an editable scenario.`);
+      setAnnouncement(`${imported.file.authoring.name} scenario imported`);
+    } catch (error) {
+      setFileMessage(error instanceof Error ? error.message : "Unable to import scenario JSON.");
+    }
+  }
+
   function paintTarget(target: EventTarget | null) {
     const cell = target instanceof Element
       ? target.closest<HTMLElement>("[data-scenario-cell]")
@@ -373,6 +410,18 @@ export function ScenarioBuilder() {
                   ))}
                 </ul>
               )}
+            </section>
+            <section className="scenario-files" aria-labelledby="scenario-files-heading">
+              <h3 id="scenario-files-heading">Scenario JSON</h3>
+              <p>Portable scenario files contain authoring state, not replay moves or results.</p>
+              <div className="scenario-file-actions">
+                <button type="button" onClick={exportScenarioJson}>Export scenario</button>
+                <label>
+                  <span>Import scenario JSON</span>
+                  <input type="file" accept="application/json,.json" onChange={importScenarioJson} />
+                </label>
+              </div>
+              <p className="scenario-file-message" role="status" aria-live="polite">{fileMessage}</p>
             </section>
           </section>
 

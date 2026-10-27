@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 
 test("places, replaces, erases, undoes, redoes, and resets with accessible controls", async ({ page }) => {
   await page.goto("/scenario-builder");
@@ -153,6 +154,44 @@ test("saves, reloads, restores, and deletes a named local draft", async ({ page 
 
   await page.getByRole("button", { name: "Delete local draft Corner opening" }).click();
   await expect(page.getByText("No local drafts.", { exact: true })).toBeVisible();
+});
+
+test("exports and imports a versioned scenario without replay fields", async ({ page }) => {
+  await page.goto("/scenario-builder");
+  const board = page.getByRole("grid", { name: "4 by 4 scenario board" });
+  await page.getByRole("textbox", { name: "Draft name" }).fill("Round trip opening");
+  await page.getByRole("toolbar", { name: "Placement symmetry" })
+    .getByRole("button", { name: "180 degree rotation", exact: true })
+    .click();
+  await page.getByRole("toolbar", { name: "Tile palette" })
+    .getByRole("button", { name: "Number 8", exact: true })
+    .click();
+  await board.getByRole("gridcell", { name: "Row 1, column 1, Empty" }).click();
+
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("button", { name: "Export scenario" }).click()
+  ]);
+  expect(download.suggestedFilename()).toMatch(/^round-trip-opening-.+\.scenario\.json$/);
+  const path = await download.path();
+  if (!path) throw new Error("Scenario download path unavailable");
+  const exported = JSON.parse(await readFile(path, "utf8"));
+  expect(exported).toMatchObject({
+    format: "binary2048-scenario",
+    version: 1,
+    seed: 42,
+    symmetry: "rotational",
+    authoring: { name: "Round trip opening", tool: "binary2048-scenario-builder" }
+  });
+  expect(exported).not.toHaveProperty("moves");
+  expect(exported).not.toHaveProperty("final");
+
+  await page.getByRole("button", { name: "Reset board" }).click();
+  await page.getByLabel("Import scenario JSON").setInputFiles(path);
+  await expect(page.getByRole("status").filter({ hasText: "Round trip opening imported as an editable scenario." })).toBeVisible();
+  await expect(page.getByRole("button", { name: "180 degree rotation" })).toHaveAttribute("aria-pressed", "true");
+  await expect(board.getByRole("gridcell", { name: "Row 1, column 1, Number 8" })).toBeVisible();
+  await expect(board.getByRole("gridcell", { name: "Row 4, column 4, Number 8" })).toBeVisible();
 });
 
 test.describe("mobile touch and screen-reader announcements", () => {

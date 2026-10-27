@@ -2295,6 +2295,39 @@ select:focus-visible {
   white-space: nowrap;
 }
 
+.scenario-files {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 1rem;
+  padding: 0.75rem;
+  border: 1px solid var(--card-border);
+  border-radius: 0.55rem;
+}
+
+.scenario-files h3,
+.scenario-files p {
+  margin-block: 0;
+}
+
+.scenario-files > p {
+  color: var(--meta-text);
+  font-size: 0.82rem;
+}
+
+.scenario-file-actions {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.scenario-file-actions button,
+.scenario-file-actions input[type="file"] {
+  min-height: 2.75rem;
+}
+
+.scenario-file-message:empty {
+  display: none;
+}
+
 .scenario-status {
   color: var(--meta-text);
 }

@@ -55,16 +55,21 @@ export function upsertScenarioDraft(drafts: ScenarioDraft[], draft: ScenarioDraf
 export function isScenarioDraft(value: unknown): value is ScenarioDraft {
   if (!value || typeof value !== "object") return false;
   const draft = value as Partial<ScenarioDraft>;
-  const scenario = draft.scenario as Partial<ScenarioBuilderState> | undefined;
-  const config = scenario?.config;
   return draft.draftVersion === SCENARIO_DRAFT_VERSION &&
     typeof draft.id === "string" && /^[a-zA-Z0-9_-]{8,80}$/.test(draft.id) &&
     typeof draft.name === "string" && draft.name.trim().length > 0 && draft.name.length <= 80 &&
     isIsoDate(draft.createdAtISO) && isIsoDate(draft.updatedAtISO) &&
-    isDraftConfig(config) &&
-    (scenario?.gameMode === "classic" || scenario?.gameMode === "bitstorm") &&
-    ["none", "horizontal", "vertical", "rotational", "four-way"].includes(String(scenario?.symmetry)) &&
-    Array.isArray(scenario?.grid) && scenario.grid.length === config.height &&
+    isScenarioBuilderState(draft.scenario);
+}
+
+export function isScenarioBuilderState(value: unknown): value is ScenarioBuilderState {
+  if (!value || typeof value !== "object") return false;
+  const scenario = value as Partial<ScenarioBuilderState>;
+  const config = scenario.config;
+  return isDraftConfig(config) &&
+    (scenario.gameMode === "classic" || scenario.gameMode === "bitstorm") &&
+    ["none", "horizontal", "vertical", "rotational", "four-way"].includes(String(scenario.symmetry)) &&
+    Array.isArray(scenario.grid) && scenario.grid.length === config.height &&
     scenario.grid.every((row) => Array.isArray(row) && row.length === config.width && row.every(isDraftCell));
 }
 
