@@ -23,8 +23,10 @@ export function ScenarioBuilder() {
   const [scenario, setScenario] = useState(initialScenario);
   const [history, setHistory] = useState(() => createScenarioGridHistory(initialScenario.grid));
   const [selectedTile, setSelectedTile] = useState<Cell>(null);
-  const [announcement, setAnnouncement] = useState("Empty tile selected");
+  const [announcement, setAnnouncement] = useState("");
   const painting = useRef(false);
+  const paintedCells = useRef(new Set<string>());
+  const suppressPointerClick = useRef(false);
   const palette = useMemo<Cell[]>(
     () => [
       null,
@@ -97,11 +99,38 @@ export function ScenarioBuilder() {
     applyHistory(nextHistory, "Board reset to empty");
   }
 
+  function paintTarget(target: EventTarget | null) {
+    const cell = target instanceof Element
+      ? target.closest<HTMLElement>("[data-scenario-cell]")
+      : null;
+    if (!cell) return;
+    const row = Number(cell.dataset.row);
+    const column = Number(cell.dataset.column);
+    const key = `${row}:${column}`;
+    if (paintedCells.current.has(key)) return;
+    paintedCells.current.add(key);
+    placeTile(row, column);
+  }
+
+  function startPainting(event: ReactPointerEvent<HTMLDivElement>) {
+    if (event.button !== 0) return;
+    painting.current = true;
+    paintedCells.current.clear();
+    suppressPointerClick.current = true;
+    paintTarget(event.target);
+  }
+
   function paintFromPointer(event: ReactPointerEvent<HTMLDivElement>) {
     if (!painting.current) return;
-    const target = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>("[data-scenario-cell]");
-    if (!target) return;
-    placeTile(Number(target.dataset.row), Number(target.dataset.column));
+    paintTarget(document.elementFromPoint(event.clientX, event.clientY));
+  }
+
+  function stopPainting() {
+    painting.current = false;
+    paintedCells.current.clear();
+    window.setTimeout(() => {
+      suppressPointerClick.current = false;
+    }, 0);
   }
 
   return (
@@ -176,11 +205,11 @@ export function ScenarioBuilder() {
                     key={`${label}-${index}`}
                     type="button"
                     className={selected ? "selected" : undefined}
+                    aria-label={label}
                     aria-pressed={selected}
                     onClick={() => selectTile(tile)}
                   >
-                    {tileSymbol(tile)}
-                    <span className="sr-only">{label}</span>
+                    <span aria-hidden="true">{tileSymbol(tile)}</span>
                   </button>
                 );
               })}
@@ -196,11 +225,11 @@ export function ScenarioBuilder() {
               role="grid"
               aria-label={`${scenario.config.width} by ${scenario.config.height} scenario board`}
               style={{ gridTemplateColumns: `repeat(${scenario.config.width}, minmax(0, 1fr))` }}
-              onPointerDown={() => { painting.current = true; }}
+              onPointerDown={startPainting}
               onPointerMove={paintFromPointer}
-              onPointerUp={() => { painting.current = false; }}
-              onPointerCancel={() => { painting.current = false; }}
-              onPointerLeave={() => { painting.current = false; }}
+              onPointerUp={stopPainting}
+              onPointerCancel={stopPainting}
+              onPointerLeave={stopPainting}
             >
               {scenario.grid.flatMap((row, rowIndex) =>
                 row.map((cell, columnIndex) => (
@@ -213,7 +242,13 @@ export function ScenarioBuilder() {
                     data-row={rowIndex}
                     data-column={columnIndex}
                     aria-label={`Row ${rowIndex + 1}, column ${columnIndex + 1}, ${scenarioTileLabel(cell)}`}
-                    onClick={() => placeTile(rowIndex, columnIndex)}
+                    onClick={() => {
+                      if (suppressPointerClick.current) {
+                        suppressPointerClick.current = false;
+                        return;
+                      }
+                      placeTile(rowIndex, columnIndex);
+                    }}
                   >
                     <span aria-hidden="true">{tileSymbol(cell)}</span>
                   </button>
@@ -221,7 +256,7 @@ export function ScenarioBuilder() {
               )}
             </div>
             <p className="game-hint">Choose a tile, then activate a cell or drag across cells to paint. Undo, redo, and reset are available above the board.</p>
-            <p className="sr-only" aria-live="polite" aria-atomic="true">{announcement}</p>
+            <p className="sr-only scenario-announcement" role="status" aria-live="polite" aria-atomic="true">{announcement}</p>
           </section>
         </div>
       </div>

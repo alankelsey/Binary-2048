@@ -593,7 +593,7 @@ accessibility or correctness.
 - [x] Let the user choose a palette tile and then place it in any board cell;
   also support replacing, clearing, dragging/painting where appropriate, undo,
   redo, and reset.
-- [ ] Make placement fully usable with touch, mouse, keyboard, and screen
+- [x] Make placement fully usable with touch, mouse, keyboard, and screen
   readers. Announce the selected tile and each cell change.
 - [ ] Add symmetry tools for horizontal mirror, vertical mirror, 180-degree
   rotation, and four-way symmetry so tournament boards can be constructed

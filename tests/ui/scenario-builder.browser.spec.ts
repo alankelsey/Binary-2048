@@ -5,11 +5,11 @@ test("places, replaces, erases, undoes, redoes, and resets with accessible contr
 
   const palette = page.getByRole("toolbar", { name: "Tile palette" });
   const firstCell = page.getByRole("gridcell", { name: "Row 1, column 1, Empty" });
-  await palette.getByRole("button", { name: "2 Number 2" }).click();
+  await palette.getByRole("button", { name: "Number 2", exact: true }).click();
   await firstCell.click();
   await expect(page.getByRole("gridcell", { name: "Row 1, column 1, Number 2" })).toBeVisible();
 
-  await palette.getByRole("button", { name: "Lock-0 Lock-0" }).click();
+  await palette.getByRole("button", { name: "Lock-0", exact: true }).click();
   await page.getByRole("gridcell", { name: "Row 1, column 1, Number 2" }).press("Enter");
   await expect(page.getByRole("gridcell", { name: "Row 1, column 1, Lock-0" })).toBeVisible();
 
@@ -18,11 +18,11 @@ test("places, replaces, erases, undoes, redoes, and resets with accessible contr
   await page.getByRole("button", { name: "Redo" }).click();
   await expect(page.getByRole("gridcell", { name: "Row 1, column 1, Lock-0" })).toBeVisible();
 
-  await palette.getByRole("button", { name: "Erase Empty" }).click();
+  await palette.getByRole("button", { name: "Empty", exact: true }).click();
   await page.getByRole("gridcell", { name: "Row 1, column 1, Lock-0" }).click();
   await expect(page.getByRole("gridcell", { name: "Row 1, column 1, Empty" })).toBeVisible();
 
-  await palette.getByRole("button", { name: "4 Number 4" }).click();
+  await palette.getByRole("button", { name: "Number 4", exact: true }).click();
   await page.getByRole("gridcell", { name: "Row 2, column 2, Empty" }).click();
   await page.getByRole("button", { name: "Reset board" }).click();
   await expect(page.getByRole("gridcell", { name: "Row 2, column 2, Empty" })).toBeVisible();
@@ -31,7 +31,7 @@ test("places, replaces, erases, undoes, redoes, and resets with accessible contr
 
 test("paints across cells with a pointer drag", async ({ page }) => {
   await page.goto("/scenario-builder");
-  await page.getByRole("toolbar", { name: "Tile palette" }).getByRole("button", { name: "0 Zero" }).click();
+  await page.getByRole("toolbar", { name: "Tile palette" }).getByRole("button", { name: "Zero", exact: true }).click();
 
   const first = page.getByRole("gridcell", { name: "Row 1, column 1, Empty" });
   const second = page.getByRole("gridcell", { name: "Row 1, column 2, Empty" });
@@ -46,4 +46,114 @@ test("paints across cells with a pointer drag", async ({ page }) => {
 
   await expect(page.getByRole("gridcell", { name: "Row 1, column 1, Zero" })).toBeVisible();
   await expect(page.getByRole("gridcell", { name: "Row 1, column 2, Zero" })).toBeVisible();
+});
+
+test.describe("mobile touch and screen-reader announcements", () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test("announces palette selection and each cell changed by a touch drag", async ({ page }) => {
+    await page.goto("/scenario-builder");
+
+    const palette = page.getByRole("toolbar", { name: "Tile palette" });
+    const announcement = page.locator(".scenario-announcement");
+    await expect(announcement).toHaveAttribute("role", "status");
+    await expect(announcement).toHaveAttribute("aria-live", "polite");
+    await expect(announcement).toHaveAttribute("aria-atomic", "true");
+    await announcement.evaluate((node) => {
+      const observed: string[] = [];
+      new MutationObserver(() => {
+        if (node.textContent) observed.push(node.textContent);
+      }).observe(node, { childList: true, characterData: true, subtree: true });
+      (window as Window & { __scenarioAnnouncements?: string[] }).__scenarioAnnouncements = observed;
+    });
+
+    const numberEight = palette.getByRole("button", { name: "Number 8", exact: true });
+    await numberEight.tap();
+    await expect(numberEight).toHaveAttribute("aria-pressed", "true");
+    await expect(announcement).toHaveText("Number 8 selected");
+    const paletteTarget = await numberEight.boundingBox();
+    expect(paletteTarget?.width).toBeGreaterThanOrEqual(44);
+    expect(paletteTarget?.height).toBeGreaterThanOrEqual(44);
+
+    const first = page.getByRole("gridcell", { name: "Row 1, column 1, Empty" });
+    const second = page.getByRole("gridcell", { name: "Row 1, column 2, Empty" });
+    const firstBox = await first.boundingBox();
+    const secondBox = await second.boundingBox();
+    if (!firstBox || !secondBox) throw new Error("Scenario cells must be visible");
+
+    const client = await page.context().newCDPSession(page);
+    const firstPoint = { x: firstBox.x + firstBox.width / 2, y: firstBox.y + firstBox.height / 2 };
+    const secondPoint = { x: secondBox.x + secondBox.width / 2, y: secondBox.y + secondBox.height / 2 };
+    await client.send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: [{ ...firstPoint, id: 1 }]
+    });
+    await page.waitForTimeout(50);
+    await client.send("Input.dispatchTouchEvent", {
+      type: "touchMove",
+      touchPoints: [{ ...secondPoint, id: 1 }]
+    });
+    await page.waitForTimeout(50);
+    await client.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+
+    await expect(page.getByRole("gridcell", { name: "Row 1, column 1, Number 8" })).toBeVisible();
+    await expect(page.getByRole("gridcell", { name: "Row 1, column 2, Number 8" })).toBeVisible();
+    await expect(announcement).toHaveText("Row 1, column 2 changed to Number 8");
+    const observedAnnouncements = await page.evaluate(() =>
+      (window as Window & { __scenarioAnnouncements?: string[] }).__scenarioAnnouncements
+    );
+    expect(observedAnnouncements).toEqual([
+      "Number 8 selected",
+      "Row 1, column 1 changed to Number 8",
+      "Row 1, column 2 changed to Number 8"
+    ]);
+
+    const accessibilityTree = await client.send("Accessibility.getFullAXTree");
+    const announcementTextNode = accessibilityTree.nodes.find((node) =>
+      node.name?.value === "Row 1, column 2 changed to Number 8"
+    );
+    const liveAnnouncement = accessibilityTree.nodes.find((node) =>
+      node.role?.value === "status" && (
+        node.name?.value === "Row 1, column 2 changed to Number 8" ||
+        node.childIds?.includes(announcementTextNode?.nodeId ?? "")
+      )
+    );
+    expect(liveAnnouncement).toBeDefined();
+    expect(liveAnnouncement?.properties?.some((property) =>
+      property.name === "live" && property.value.value === "polite"
+    )).toBe(true);
+    expect(liveAnnouncement?.properties?.some((property) =>
+      property.name === "atomic" && property.value.value === true
+    )).toBe(true);
+  });
+
+  test("keeps concise names and announces keyboard editing history", async ({ page }) => {
+    await page.goto("/scenario-builder");
+
+    const announcement = page.locator(".scenario-announcement");
+    const wildcard = page.getByRole("toolbar", { name: "Tile palette" })
+      .getByRole("button", { name: "Wildcard times 2", exact: true });
+    await wildcard.focus();
+    await wildcard.press("Enter");
+    await expect(announcement).toHaveText("Wildcard times 2 selected");
+
+    const cell = page.getByRole("gridcell", { name: "Row 1, column 1, Empty" });
+    await cell.focus();
+    await cell.press("Enter");
+    await expect(announcement).toHaveText("Row 1, column 1 changed to Wildcard times 2");
+
+    await page.getByRole("button", { name: "Undo", exact: true }).click();
+    await expect(announcement).toHaveText("Last board change undone");
+    await page.getByRole("button", { name: "Redo", exact: true }).click();
+    await expect(announcement).toHaveText("Last board change redone");
+
+    const paletteNames = await page.getByRole("toolbar", { name: "Tile palette" })
+      .getByRole("button")
+      .evaluateAll((buttons) => buttons.map((button) => button.getAttribute("aria-label")));
+    expect(paletteNames).toContain("Empty");
+    expect(paletteNames).toContain("Number 2");
+    expect(paletteNames).toContain("Zero");
+    expect(paletteNames).toContain("Wildcard times 2");
+    expect(paletteNames).toContain("Lock-0");
+  });
 });
