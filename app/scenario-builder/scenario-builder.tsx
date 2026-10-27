@@ -7,6 +7,7 @@ import {
   createScenarioGridHistory,
   createScenarioBuilderState,
   placeScenarioTile,
+  previewScenarioMoves,
   redoScenarioGrid,
   resizeScenarioGrid,
   scenarioSymmetryCoordinates,
@@ -14,6 +15,7 @@ import {
   undoScenarioGrid,
   validateScenario,
   type ScenarioGameMode,
+  type ScenarioMovePreview,
   type ScenarioSymmetry
 } from "@/lib/binary2048/scenario-builder";
 import type { Cell, GameConfig } from "@/lib/binary2048/types";
@@ -50,6 +52,10 @@ export function ScenarioBuilder() {
   const validation = useMemo(
     () => validateScenario(scenario.config, scenario.grid),
     [scenario.config, scenario.grid]
+  );
+  const movePreviews = useMemo(
+    () => validation.valid ? previewScenarioMoves(scenario.config, scenario.grid) : [],
+    [scenario.config, scenario.grid, validation.valid]
   );
 
   function updateConfig<K extends keyof GameConfig>(key: K, value: GameConfig[K]) {
@@ -307,6 +313,46 @@ export function ScenarioBuilder() {
               )}
             </div>
             <p className="game-hint">Choose a tile, then activate a cell or drag across cells to paint. Undo, redo, and reset are available above the board.</p>
+            <section className="scenario-previews" aria-labelledby="scenario-previews-heading">
+              <h3 id="scenario-previews-heading">Move previews</h3>
+              <p className="scenario-preview-status" role="status" aria-live="polite">
+                {validation.valid
+                  ? `${movePreviews.length} deterministic legal move ${movePreviews.length === 1 ? "preview" : "previews"}. Each board includes its seeded spawn.`
+                  : "Resolve validation errors to preview legal moves."}
+              </p>
+              {validation.valid && (
+                <div className="scenario-preview-list">
+                  {movePreviews.map((preview) => (
+                    <article className="scenario-preview" key={preview.direction} aria-label={`${directionLabel(preview.direction)} move preview`}>
+                      <h4>{directionLabel(preview.direction)}</h4>
+                      <p>{previewSummary(preview)}</p>
+                      <div
+                        className="scenario-preview-board"
+                        role="grid"
+                        aria-label={`Board after ${preview.direction} move`}
+                        style={{
+                          gridTemplateColumns: `repeat(${scenario.config.width}, minmax(0, 1fr))`,
+                          aspectRatio: `${scenario.config.width} / ${scenario.config.height}`
+                        }}
+                      >
+                        {preview.grid.flatMap((row, rowIndex) =>
+                          row.map((cell, columnIndex) => (
+                            <div
+                              className="scenario-preview-cell"
+                              role="gridcell"
+                              key={`${rowIndex}-${columnIndex}`}
+                              aria-label={`Row ${rowIndex + 1}, column ${columnIndex + 1}, ${scenarioTileLabel(cell)}`}
+                            >
+                              <span aria-hidden="true">{previewTileSymbol(cell)}</span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </section>
             <p className="sr-only scenario-announcement" role="status" aria-live="polite" aria-atomic="true">{announcement}</p>
           </section>
         </div>
@@ -321,6 +367,21 @@ function tileSymbol(tile: Cell): string {
   if (tile.t === "z") return "0";
   if (tile.t === "w") return `×${tile.m}`;
   return "Lock-0";
+}
+
+function previewTileSymbol(tile: Cell): string {
+  return tile === null ? "" : tileSymbol(tile);
+}
+
+function directionLabel(direction: ScenarioMovePreview["direction"]): string {
+  return direction[0].toUpperCase() + direction.slice(1);
+}
+
+function previewSummary(preview: ScenarioMovePreview): string {
+  const spawn = preview.events.find((event) => event.type === "spawn");
+  const score = `Score +${preview.scoreGained}`;
+  if (!spawn || spawn.type !== "spawn") return `${score}; no spawn`;
+  return `${score}; ${scenarioTileLabel(spawn.tile)} spawns at row ${spawn.at[0] + 1}, column ${spawn.at[1] + 1}`;
 }
 
 function NumberField({ label, value, onChange, ...inputProps }: { label: string; value: number; onChange: (value: number) => void; min?: number; max?: number; step?: number }) {

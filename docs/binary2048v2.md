@@ -607,8 +607,9 @@ accessibility or correctness.
   readability, contrast, focus states, mobile cropping, reduced-transparency
   behavior, and rendering cost before deciding whether to ship it as an
   optional theme ([spike evidence](./v2-phase7-cherry-blossom-theme-spike-2026-10-27.md)).
-- [ ] Preview legal moves and resulting boards through the same deterministic
-  engine used by gameplay and API simulation.
+- [x] Preview legal moves and resulting boards through the same deterministic
+  engine used by gameplay and API simulation
+  ([evidence](./v2-phase7-deterministic-move-previews-2026-10-27.md)).
 - [ ] Save named drafts locally and, for authenticated users, optionally save
   private server-side scenario records with version and ownership metadata.
 - [ ] Export and import a versioned scenario JSON containing configuration,

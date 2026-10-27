@@ -4,6 +4,7 @@ import {
   createScenarioGridHistory,
   createScenarioBuilderState,
   placeScenarioTile,
+  previewScenarioMoves,
   scenarioSymmetryCoordinates,
   scenarioTileLabel,
   validateScenario,
@@ -133,6 +134,21 @@ describe("scenario builder state", () => {
       [{ t: "n", v: 4 }, { t: "n", v: 8 }]
     ];
     expect(validateScenario(blockedConfig, blocked).errors).toContain("Board must have at least one legal move.");
+  });
+
+  it("previews every legal move with deterministic spawned boards without mutating the scenario", () => {
+    const scenario = createScenarioBuilderState();
+    const grid = placeScenarioTile(scenario.grid, 0, 0, { t: "n", v: 2 });
+    const snapshot = JSON.stringify(grid);
+
+    const first = previewScenarioMoves(scenario.config, grid);
+    const second = previewScenarioMoves(scenario.config, grid);
+
+    expect(first.map((preview) => preview.direction)).toEqual(["down", "right"]);
+    expect(first).toEqual(second);
+    expect(first.every((preview) => preview.events.some((event) => event.type === "spawn"))).toBe(true);
+    expect(first.every((preview) => preview.rngStep > 0)).toBe(true);
+    expect(JSON.stringify(grid)).toBe(snapshot);
   });
 
   it("supports commit, undo, redo, and clearing redo after a new edit", () => {

@@ -1,5 +1,5 @@
 import { applyMove, DEFAULT_CONFIG } from "@/lib/binary2048/engine";
-import type { Cell, Dir, GameConfig, GameState } from "@/lib/binary2048/types";
+import type { Cell, Dir, GameConfig, GameEvent, GameState } from "@/lib/binary2048/types";
 
 export type ScenarioGameMode = "classic" | "bitstorm";
 export type ScenarioSymmetry = "none" | "horizontal" | "vertical" | "rotational" | "four-way";
@@ -21,6 +21,14 @@ export type ScenarioValidation = {
   valid: boolean;
   errors: string[];
   legalMoves: Dir[];
+};
+
+export type ScenarioMovePreview = {
+  direction: Dir;
+  grid: Cell[][];
+  scoreGained: number;
+  events: GameEvent[];
+  rngStep: number;
 };
 
 const DIRECTIONS: Dir[] = ["up", "down", "left", "right"];
@@ -173,24 +181,27 @@ export function validateScenario(config: GameConfig, grid: Cell[][]): ScenarioVa
 
   let legalMoves: Dir[] = [];
   if (errors.length === 0) {
-    const state: GameState = {
-      id: "scenario-validation",
-      config,
-      width: config.width,
-      height: config.height,
-      seed: config.seed,
-      rngStep: 0,
-      score: 0,
-      turn: 0,
-      won: false,
-      over: false,
-      grid
-    };
+    const state = scenarioGameState(config, grid, "scenario-validation");
     legalMoves = DIRECTIONS.filter((direction) => applyMove(state, direction).moved);
     if (legalMoves.length === 0) errors.push("Board must have at least one legal move.");
   }
 
   return { valid: errors.length === 0, errors, legalMoves };
+}
+
+export function previewScenarioMoves(config: GameConfig, grid: Cell[][]): ScenarioMovePreview[] {
+  const state = scenarioGameState(config, grid, "scenario-preview");
+  return DIRECTIONS.flatMap((direction) => {
+    const result = applyMove(state, direction);
+    if (!result.moved) return [];
+    return [{
+      direction,
+      grid: cloneGrid(result.state.grid),
+      scoreGained: result.state.score - state.score,
+      events: result.events.map(cloneEvent),
+      rngStep: result.state.rngStep
+    }];
+  });
 }
 
 function isPowerOfTwo(value: number): boolean {
@@ -203,6 +214,30 @@ function cloneCell(cell: Cell): Cell {
 
 function cloneGrid(grid: Cell[][]): Cell[][] {
   return grid.map((row) => row.map(cloneCell));
+}
+
+function cloneEvent(event: GameEvent): GameEvent {
+  if (event.type === "spawn") return { ...event, at: [...event.at], tile: { ...event.tile } };
+  if (event.type === "merge") return { ...event, at: [...event.at], into: { ...event.into } };
+  if (event.type === "game_won") return { ...event, at: [...event.at], tile: { ...event.tile } };
+  if (event.type === "lock_block" || event.type === "lock_break") return { ...event, at: [...event.at] };
+  return { ...event };
+}
+
+function scenarioGameState(config: GameConfig, grid: Cell[][], id: string): GameState {
+  return {
+    id,
+    config,
+    width: config.width,
+    height: config.height,
+    seed: config.seed,
+    rngStep: 0,
+    score: 0,
+    turn: 0,
+    won: false,
+    over: false,
+    grid: cloneGrid(grid)
+  };
 }
 
 export function createScenarioBuilderState(initialGrid?: Cell[][]): ScenarioBuilderState {
