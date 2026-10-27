@@ -3,7 +3,8 @@ export const THEMES = {
   midnight: { label: "Deep Midnight" },
   aurora: { label: "Aurora" },
   ember: { label: "Ember" },
-  light: { label: "Light" }
+  light: { label: "Light" },
+  cherryBlossom: { label: "Cherry Blossom (Experimental)" }
 } as const;
 
 export type ThemeMode = keyof typeof THEMES;

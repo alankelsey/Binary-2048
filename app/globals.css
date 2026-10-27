@@ -131,6 +131,39 @@
   --status-ok: #1f7a41;
 }
 
+:root[data-theme="cherryBlossom"] {
+  --panel: #fffaf8;
+  --tile: #fffdf8;
+  --text: #3f2929;
+  --subtitle: #745456;
+  --meta-text: #68484b;
+  --card-border: #d9b9b4;
+  --button-bg: #f8e5e2;
+  --button-bg-hover: #f1d4d0;
+  --button-border: #b87978;
+  --button-text: #4f2e32;
+  --button-disabled-bg: #eadfdb;
+  --button-disabled-border: #cbbab5;
+  --button-disabled-text: #806f6c;
+  --cell-filled-top: #f4d6cf;
+  --cell-filled-bottom: #e8bdb5;
+  --cell-filled-border: #a86567;
+  --hint-bg: #fff3ef;
+  --hint-border: #d8b5ad;
+  --hint-text: #644348;
+  --status-ok: #326c49;
+  --wild-top: #dce8ca;
+  --wild-bottom: #bdcf9f;
+  --wild-border: #667d4f;
+  --wild-icon: #263d22;
+  --lock-top: #efc1b7;
+  --lock-bottom: #d99083;
+  --lock-border: #884c4e;
+  --lock-icon: #48272d;
+  --bg-glow: #fae8e4;
+  --bg-base: #f5ddd8;
+}
+
 :root[data-color-mode="cb-protanopia"] {
   --wild-top: #106d6d;
   --wild-bottom: #0a4b50;
@@ -374,6 +407,42 @@ main {
   margin: 0.7rem auto;
   width: min(100%, clamp(240px, 56vmin, 430px));
   touch-action: none;
+}
+
+:root[data-theme="cherryBlossom"] .board {
+  padding: 0.55rem;
+  border: 1px solid rgba(118, 78, 70, 0.52);
+  border-radius: 1rem;
+  background:
+    linear-gradient(rgba(255, 250, 246, 0.18), rgba(255, 250, 246, 0.18)),
+    url("/themes/cherry-blossom/board-background.jpg") center / cover no-repeat;
+  box-shadow: 0 0.7rem 1.8rem rgba(92, 54, 50, 0.2);
+}
+
+:root[data-theme="cherryBlossom"] .cell {
+  border-color: #c8aaa2;
+  box-shadow: 0 0.18rem 0.45rem rgba(91, 59, 54, 0.2);
+}
+
+:root[data-theme="cherryBlossom"] .cell.filled {
+  color: #44292d;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+:root[data-theme="cherryBlossom"] .tile-zero {
+  color: #7c263d;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root[data-theme="cherryBlossom"] .board {
+    background: #f7e4df;
+  }
+}
+
+@media (forced-colors: active) {
+  :root[data-theme="cherryBlossom"] .board {
+    background: Canvas;
+  }
 }
 
 .board-shell {

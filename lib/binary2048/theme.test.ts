@@ -2,7 +2,7 @@ import { isThemeMode, THEMES } from "@/lib/binary2048/theme";
 
 describe("theme helpers", () => {
   it("exposes the expected theme key set and order", () => {
-    expect(Object.keys(THEMES)).toEqual(["classic", "midnight", "aurora", "ember", "light"]);
+    expect(Object.keys(THEMES)).toEqual(["classic", "midnight", "aurora", "ember", "light", "cherryBlossom"]);
   });
 
   it("keeps Original as the first/default theme option", () => {
@@ -17,6 +17,7 @@ describe("theme helpers", () => {
     expect(THEMES.aurora.label).toBe("Aurora");
     expect(THEMES.ember.label).toBe("Ember");
     expect(THEMES.light.label).toBe("Light");
+    expect(THEMES.cherryBlossom.label).toBe("Cherry Blossom (Experimental)");
   });
 
   it("supports all declared themes", () => {
