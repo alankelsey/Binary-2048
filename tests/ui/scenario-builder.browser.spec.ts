@@ -194,6 +194,58 @@ test("exports and imports a versioned scenario without replay fields", async ({ 
   await expect(board.getByRole("gridcell", { name: "Row 4, column 4, Number 8" })).toBeVisible();
 });
 
+test("exports a tagged tournament set with stable mirrored entries and duplicate detection", async ({ page }) => {
+  await page.goto("/scenario-builder");
+  await page.getByRole("textbox", { name: "Draft name" }).fill("Asymmetric opener");
+  await page.getByRole("toolbar", { name: "Tile palette" })
+    .getByRole("button", { name: "Number 2", exact: true })
+    .click();
+  await page.getByRole("grid", { name: "4 by 4 scenario board" })
+    .getByRole("gridcell", { name: "Row 1, column 1, Empty" })
+    .click();
+
+  const tournament = page.getByRole("region", { name: "Tournament scenario set" });
+  await tournament.getByRole("textbox", { name: "Set name" }).fill("Autumn cup");
+  await tournament.getByRole("textbox", { name: "Tags, comma separated" }).fill("Finals, Special, finals");
+  await tournament.getByRole("checkbox", { name: "Horizontal mirror" }).check();
+  await tournament.getByRole("checkbox", { name: "Vertical mirror" }).check();
+  await tournament.getByRole("checkbox", { name: "180° rotation" }).check();
+  await tournament.getByRole("button", { name: "Add current scenario" }).click();
+  await expect(tournament.getByRole("list", { name: "Tournament scenarios" }).getByRole("listitem")).toHaveCount(4);
+  await expect(tournament.getByRole("status")).toHaveText("4 scenarios added.");
+
+  await tournament.getByRole("button", { name: "Add current scenario" }).click();
+  await expect(tournament.getByRole("status")).toHaveText("0 scenarios added. 4 duplicate boards were omitted.");
+
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    tournament.getByRole("button", { name: "Export tournament set" }).click()
+  ]);
+  expect(download.suggestedFilename()).toMatch(/^autumn-cup-.+\.tournament-scenarios\.json$/);
+  const path = await download.path();
+  if (!path) throw new Error("Tournament scenario set download path unavailable");
+  const exported = JSON.parse(await readFile(path, "utf8"));
+  expect(exported).toMatchObject({
+    format: "binary2048-tournament-scenario-set",
+    version: 1,
+    name: "Autumn cup",
+    tags: ["finals", "special"]
+  });
+  expect(exported.id).toMatch(/^set_/);
+  expect(exported.entries).toHaveLength(4);
+  expect(exported.entries.map((entry: { variant: string }) => entry.variant)).toEqual([
+    "original",
+    "mirror-horizontal",
+    "mirror-vertical",
+    "rotate-180"
+  ]);
+  for (const entry of exported.entries) {
+    expect(entry.id).toMatch(/^scenario_/);
+    expect(entry.boardFingerprint).toMatch(/^board_/);
+    expect(entry.seed).toBe(42);
+  }
+});
+
 test("launches the authored board as an explicitly unranked practice game", async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.setItem("binary2048.tutorial.v1", '{"version":1,"status":"dismissed"}');

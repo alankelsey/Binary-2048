@@ -2443,6 +2443,60 @@ select:focus-visible {
   display: none;
 }
 
+.scenario-tournament-set {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+  padding: 0.7rem;
+  border: 1px solid var(--card-border);
+  border-radius: 0.55rem;
+}
+
+.scenario-tournament-set h3,
+.scenario-tournament-set p,
+.scenario-tournament-set fieldset {
+  margin-block: 0;
+}
+
+.scenario-tournament-set > p,
+.scenario-tournament-list small {
+  color: var(--meta-text);
+}
+
+.scenario-tournament-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.scenario-tournament-list {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding-left: 1.3rem;
+}
+
+.scenario-tournament-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.scenario-tournament-list span,
+.scenario-tournament-list small {
+  display: block;
+  min-width: 0;
+}
+
+.scenario-tournament-list small {
+  overflow-wrap: anywhere;
+}
+
+.scenario-tournament-message:empty {
+  display: none;
+}
+
 .scenario-previews {
   margin-top: 0.75rem;
   padding: 0.65rem 0.75rem;

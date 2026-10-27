@@ -33,6 +33,13 @@ import {
   createPracticeScenarioMarker,
   PRACTICE_SCENARIO_STORAGE_KEY
 } from "@/lib/binary2048/scenario-practice";
+import {
+  addScenarioToTournamentSet,
+  createTournamentScenarioSetFile,
+  tournamentScenarioSetFilename,
+  type TournamentScenarioEntry,
+  type TournamentScenarioVariant
+} from "@/lib/binary2048/scenario-tournament-set";
 import { saveResumeSnapshot } from "@/lib/binary2048/resume-recovery";
 
 const MIN_BOARD_SIZE = 2;
@@ -60,6 +67,12 @@ export function ScenarioBuilder() {
   const [fileMessage, setFileMessage] = useState("");
   const [practiceBusy, setPracticeBusy] = useState(false);
   const [practiceMessage, setPracticeMessage] = useState("");
+  const [tournamentSetName, setTournamentSetName] = useState("");
+  const [tournamentTags, setTournamentTags] = useState("");
+  const [tournamentVariants, setTournamentVariants] = useState<TournamentScenarioVariant[]>(["original"]);
+  const [tournamentEntries, setTournamentEntries] = useState<TournamentScenarioEntry[]>([]);
+  const [tournamentMessage, setTournamentMessage] = useState("");
+  const tournamentCreatedAt = useRef(new Date().toISOString());
   const painting = useRef(false);
   const paintedCells = useRef(new Set<string>());
   const suppressPointerClick = useRef(false);
@@ -324,6 +337,57 @@ export function ScenarioBuilder() {
     }
   }
 
+  function toggleTournamentVariant(variant: TournamentScenarioVariant, checked: boolean) {
+    setTournamentVariants((current) => checked
+      ? [...current, variant]
+      : current.filter((item) => item !== variant));
+  }
+
+  function addCurrentToTournamentSet() {
+    if (!validation.valid) {
+      setTournamentMessage("Resolve validation errors before adding this scenario.");
+      return;
+    }
+    try {
+      const result = addScenarioToTournamentSet({
+        entries: tournamentEntries,
+        scenario,
+        name: draftName,
+        tags: tournamentTags,
+        variants: tournamentVariants
+      });
+      setTournamentEntries(result.entries);
+      const duplicateMessage = result.duplicateCount > 0
+        ? ` ${result.duplicateCount} duplicate ${result.duplicateCount === 1 ? "board was" : "boards were"} omitted.`
+        : "";
+      setTournamentMessage(`${result.added.length} ${result.added.length === 1 ? "scenario" : "scenarios"} added.${duplicateMessage}`);
+    } catch (error) {
+      setTournamentMessage(error instanceof Error ? error.message : "Unable to add the scenario.");
+    }
+  }
+
+  function removeTournamentEntry(id: string) {
+    setTournamentEntries((current) => current.filter((entry) => entry.id !== id));
+    setTournamentMessage("Scenario removed from the tournament set.");
+  }
+
+  async function exportTournamentSet() {
+    try {
+      const file = createTournamentScenarioSetFile({
+        entries: tournamentEntries,
+        name: tournamentSetName,
+        tags: tournamentTags,
+        createdAtISO: tournamentCreatedAt.current
+      });
+      const { downloadJson } = await import("@/lib/binary2048/export-actions");
+      downloadJson(file, tournamentScenarioSetFilename(file.name, file.exportedAtISO));
+      setTournamentSetName(file.name);
+      setTournamentMessage(`${file.name} downloaded with ${file.entries.length} scenarios.`);
+    } catch (error) {
+      setTournamentMessage(error instanceof Error ? error.message : "Unable to export the tournament set.");
+    }
+  }
+
   function paintTarget(target: EventTarget | null) {
     const cell = target instanceof Element
       ? target.closest<HTMLElement>("[data-scenario-cell]")
@@ -462,6 +526,54 @@ export function ScenarioBuilder() {
                 </label>
               </div>
               <p className="scenario-file-message" role="status" aria-live="polite">{fileMessage}</p>
+            </section>
+            <section className="scenario-tournament-set" aria-labelledby="scenario-tournament-heading">
+              <h3 id="scenario-tournament-heading">Tournament scenario set</h3>
+              <p>Collect validated boards in a versioned export for an authorized tournament workflow. Duplicate boards are omitted.</p>
+              <label>
+                <span>Set name</span>
+                <input value={tournamentSetName} maxLength={80} onChange={(event) => setTournamentSetName(event.target.value)} />
+              </label>
+              <label>
+                <span>Tags, comma separated</span>
+                <input value={tournamentTags} onChange={(event) => setTournamentTags(event.target.value)} />
+              </label>
+              <fieldset>
+                <legend>Variants to add</legend>
+                <label className="scenario-checkbox">
+                  <input type="checkbox" checked disabled />
+                  <span>Original</span>
+                </label>
+                {([
+                  ["mirror-horizontal", "Horizontal mirror"],
+                  ["mirror-vertical", "Vertical mirror"],
+                  ["rotate-180", "180° rotation"]
+                ] as Array<[TournamentScenarioVariant, string]>).map(([variant, label]) => (
+                  <label className="scenario-checkbox" key={variant}>
+                    <input
+                      type="checkbox"
+                      checked={tournamentVariants.includes(variant)}
+                      onChange={(event) => toggleTournamentVariant(variant, event.target.checked)}
+                    />
+                    <span>{label}</span>
+                  </label>
+                ))}
+              </fieldset>
+              <div className="scenario-tournament-actions">
+                <button type="button" disabled={!validation.valid} onClick={addCurrentToTournamentSet}>Add current scenario</button>
+                <button type="button" disabled={tournamentEntries.length === 0} onClick={exportTournamentSet}>Export tournament set</button>
+              </div>
+              {tournamentEntries.length === 0 ? <p>No scenarios added.</p> : (
+                <ol className="scenario-tournament-list" aria-label="Tournament scenarios">
+                  {tournamentEntries.map((entry) => (
+                    <li key={entry.id}>
+                      <span><strong>{entry.name}</strong><small>Seed {entry.seed} · {entry.id}</small></span>
+                      <button type="button" onClick={() => removeTournamentEntry(entry.id)} aria-label={`Remove ${entry.name}`}>Remove</button>
+                    </li>
+                  ))}
+                </ol>
+              )}
+              <p className="scenario-tournament-message" role="status" aria-live="polite">{tournamentMessage}</p>
             </section>
           </section>
 

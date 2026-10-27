@@ -621,8 +621,9 @@ accessibility or correctness.
   existing game engine API, with a visible practice marker and ranked
   leaderboard exclusion
   ([evidence](./v2-phase7-unranked-scenario-practice-2026-10-27.md)).
-- [ ] Support tournament scenario sets with stable IDs, names, tags, mirrored
-  variants, deterministic seeds, and duplicate-board detection.
+- [x] Support tournament scenario sets with stable IDs, names, tags, mirrored
+  variants, deterministic seeds, and duplicate-board detection
+  ([evidence](./v2-phase7-tournament-scenario-sets-2026-10-27.md)).
 - [ ] Keep user-authored boards out of ranked leaderboards unless a future
   competition definition explicitly approves and signs the scenario.
 - [ ] Add engine/schema unit tests and Playwright coverage for every tile type,
