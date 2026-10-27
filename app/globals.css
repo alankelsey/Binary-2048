@@ -2233,6 +2233,68 @@ select:focus-visible {
   width: auto;
 }
 
+.scenario-drafts {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 1rem;
+  padding: 0.75rem;
+  border: 1px solid var(--card-border);
+  border-radius: 0.55rem;
+}
+
+.scenario-drafts h3,
+.scenario-drafts h4,
+.scenario-drafts p {
+  margin-block: 0;
+}
+
+.scenario-drafts h4 {
+  margin-top: 0.25rem;
+}
+
+.scenario-draft-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.scenario-draft-actions button,
+.scenario-draft-list button {
+  min-height: 2.75rem;
+  padding: 0.42rem 0.7rem;
+}
+
+.scenario-draft-message,
+.scenario-drafts > p {
+  color: var(--meta-text);
+  font-size: 0.82rem;
+}
+
+.scenario-draft-message:empty {
+  display: none;
+}
+
+.scenario-draft-list {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.scenario-draft-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.scenario-draft-list span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .scenario-status {
   color: var(--meta-text);
 }

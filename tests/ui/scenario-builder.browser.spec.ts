@@ -132,6 +132,29 @@ test("reports scenario validity and legal moves as the board and configuration c
   await expect(validation).toContainText("Wildcard multipliers must be powers of two of at least 2.");
 });
 
+test("saves, reloads, restores, and deletes a named local draft", async ({ page }) => {
+  await page.goto("/scenario-builder");
+  const palette = page.getByRole("toolbar", { name: "Tile palette" });
+  let board = page.getByRole("grid", { name: "4 by 4 scenario board" });
+
+  await page.getByRole("textbox", { name: "Draft name" }).fill("Corner opening");
+  await palette.getByRole("button", { name: "Number 4", exact: true }).click();
+  await board.getByRole("gridcell", { name: "Row 1, column 1, Empty" }).click();
+  await page.getByRole("button", { name: "Save locally" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Corner opening saved locally." })).toBeVisible();
+
+  await page.reload();
+  board = page.getByRole("grid", { name: "4 by 4 scenario board" });
+  await expect(page.getByRole("button", { name: "Load local draft Corner opening" })).toBeVisible();
+  await page.getByRole("toolbar", { name: "Tile palette" }).getByRole("button", { name: "Zero", exact: true }).click();
+  await board.getByRole("gridcell", { name: "Row 1, column 1, Empty" }).click();
+  await page.getByRole("button", { name: "Load local draft Corner opening" }).click();
+  await expect(board.getByRole("gridcell", { name: "Row 1, column 1, Number 4" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Delete local draft Corner opening" }).click();
+  await expect(page.getByText("No local drafts.", { exact: true })).toBeVisible();
+});
+
 test.describe("mobile touch and screen-reader announcements", () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 

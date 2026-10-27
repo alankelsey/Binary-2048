@@ -610,8 +610,9 @@ accessibility or correctness.
 - [x] Preview legal moves and resulting boards through the same deterministic
   engine used by gameplay and API simulation
   ([evidence](./v2-phase7-deterministic-move-previews-2026-10-27.md)).
-- [ ] Save named drafts locally and, for authenticated users, optionally save
-  private server-side scenario records with version and ownership metadata.
+- [x] Save named drafts locally and, for authenticated users, optionally save
+  private server-side scenario records with version and ownership metadata
+  ([evidence](./v2-phase7-named-scenario-drafts-2026-10-27.md)).
 - [ ] Export and import a versioned scenario JSON containing configuration,
   initial grid, seed, authoring metadata, and symmetry information without
   pretending it is a completed replay.
