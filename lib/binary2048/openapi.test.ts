@@ -58,6 +58,11 @@ describe("OPENAPI_SPEC", () => {
     expect(OPENAPI_SPEC.paths["/api/ops/models"]?.get?.summary).toContain("model registry");
     expect(OPENAPI_SPEC.paths["/api/user/data/export"]?.get?.summary).toContain("Export");
     expect(OPENAPI_SPEC.paths["/api/user/data"]?.delete?.summary).toContain("Delete");
+    expect(OPENAPI_SPEC.paths["/api/scenarios/drafts"]?.get?.summary).toContain("private scenario drafts");
+    const scenarioDraftPost = OPENAPI_SPEC.paths["/api/scenarios/drafts"]?.post as typeof OPENAPI_SPEC.paths["/api/scenarios/drafts"]["post"] & { security: unknown[] };
+    const scenarioDraftDelete = OPENAPI_SPEC.paths["/api/scenarios/drafts"]?.delete as typeof OPENAPI_SPEC.paths["/api/scenarios/drafts"]["delete"] & { "x-api-version": string };
+    expect(scenarioDraftPost.security).toContainEqual({ authSession: [] });
+    expect(scenarioDraftDelete["x-api-version"]).toBe("scenario-draft-v1");
   });
 
   it("documents quota headers and 429 retry behavior", () => {

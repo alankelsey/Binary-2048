@@ -230,6 +230,46 @@ const OPENAPI_BASE_SPEC = {
         }
       }
     },
+    "/api/scenarios/drafts": {
+      get: {
+        summary: "List private scenario drafts for the authenticated account",
+        responses: {
+          "200": {
+            description: "Private scenario drafts owned by the authenticated account",
+            content: { "application/json": { schema: { type: "object", required: ["drafts"], properties: { drafts: { type: "array", items: { "$ref": "#/components/schemas/ScenarioDraft" } } } } } }
+          },
+          "401": { description: "Authenticated session required" },
+          "503": { description: "Authentication or scenario draft storage unavailable" }
+        }
+      },
+      post: {
+        summary: "Create or update a private scenario draft for the authenticated account",
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { "$ref": "#/components/schemas/ScenarioDraft" } } }
+        },
+        responses: {
+          "200": {
+            description: "Private scenario draft saved",
+            content: { "application/json": { schema: { type: "object", required: ["draft"], properties: { draft: { "$ref": "#/components/schemas/ScenarioDraft" } } } } }
+          },
+          "400": { description: "Invalid versioned scenario draft" },
+          "401": { description: "Authenticated session required" },
+          "503": { description: "Authentication or scenario draft storage unavailable" }
+        }
+      },
+      delete: {
+        summary: "Delete a private scenario draft owned by the authenticated account",
+        parameters: [{ name: "id", in: "query", required: true, schema: { type: "string", pattern: "^[a-zA-Z0-9_-]{8,80}$" } }],
+        responses: {
+          "200": { description: "Private scenario draft deleted" },
+          "400": { description: "Invalid draft id" },
+          "401": { description: "Authenticated session required" },
+          "404": { description: "Scenario draft not found" },
+          "503": { description: "Authentication or scenario draft storage unavailable" }
+        }
+      }
+    },
     "/api/leaderboard": {
       get: {
         summary: "List ranked leaderboard entries",
@@ -936,7 +976,10 @@ const OPERATION_CONTRACTS: Record<string, OperationContract> = {
   "POST /api/replay/code": { ...PUBLIC, rateLimit: "No route-local request quota", version: "replay-code-v1", examples: { request: "Compact replay payload", response: "{ code, length, signed, hosted }" } },
   "POST /api/replay/postmortem": { ...PUBLIC, rateLimit: "No route-local request quota; body capped at 128 KiB", version: "replay-v1", examples: { request: "Versioned game export or replay envelope", response: "Ranked highest-cost move analysis" } },
   "GET /api/runs/{id}": { ...PUBLIC, rateLimit: "No route-local request quota", version: "canonical-run-v1", examples: { response: "Canonical persisted run record" } },
-  "GET /api/runs/{id}/replay": { ...PUBLIC, rateLimit: "No route-local request quota", version: "replay-v1", examples: { response: "Compact replay envelope for the persisted run" } }
+  "GET /api/runs/{id}/replay": { ...PUBLIC, rateLimit: "No route-local request quota", version: "replay-v1", examples: { response: "Compact replay envelope for the persisted run" } },
+  "GET /api/scenarios/drafts": { auth: "Authenticated Auth.js browser session; drafts are owner-scoped", security: [{ authSession: [] }], scopes: [], rateLimit: "No route-local request quota", version: "scenario-draft-v1", examples: { response: "{ drafts: [scenarioDraft] }" } },
+  "POST /api/scenarios/drafts": { auth: "Authenticated Auth.js browser session; drafts are owner-scoped", security: [{ authSession: [] }], scopes: [], rateLimit: "No route-local request quota", version: "scenario-draft-v1", examples: { request: "Versioned scenario draft", response: "{ draft: scenarioDraft }" } },
+  "DELETE /api/scenarios/drafts": { auth: "Authenticated Auth.js browser session; only the owner can delete a draft", security: [{ authSession: [] }], scopes: [], rateLimit: "No route-local request quota", version: "scenario-draft-v1", examples: { response: "{ deleted: true }" } }
 };
 
 const OPENAPI_COMPONENTS = {
@@ -954,7 +997,19 @@ const OPENAPI_COMPONENTS = {
     RateLimitError: { type: "object", required: ["error"], properties: { error: { type: "string" }, route: { type: "string" }, limit: { type: "integer" }, remaining: { type: "integer" }, retryAfterSeconds: { type: "integer" } } },
     JobAccepted: { type: "object", required: ["jobId", "status", "statusUrl", "resultUrl"], properties: { jobId: { type: "string" }, status: { const: "queued" }, statusUrl: { type: "string" }, resultUrl: { type: "string" }, retryAfterSeconds: { type: "integer" } } },
     StateIdentity: { type: "object", required: ["stateHash", "stateHashVersion"], properties: { stateHash: { type: "string", pattern: "^[0-9a-f]{8}$" }, stateHashVersion: { type: "string", const: STATE_HASH_VERSION } } },
-    ReplayEnvelope: { type: "object", required: ["header", "moves"], properties: { header: { type: "object" }, moves: { type: "array", items: { type: "string", enum: ["L", "R", "U", "D"] } }, signature: { type: "string" } } }
+    ReplayEnvelope: { type: "object", required: ["header", "moves"], properties: { header: { type: "object" }, moves: { type: "array", items: { type: "string", enum: ["L", "R", "U", "D"] } }, signature: { type: "string" } } },
+    ScenarioDraft: {
+      type: "object",
+      required: ["draftVersion", "id", "name", "createdAtISO", "updatedAtISO", "scenario"],
+      properties: {
+        draftVersion: { type: "integer", const: 1 },
+        id: { type: "string", pattern: "^[a-zA-Z0-9_-]{8,80}$" },
+        name: { type: "string", minLength: 1, maxLength: 80 },
+        createdAtISO: { type: "string", format: "date-time" },
+        updatedAtISO: { type: "string", format: "date-time" },
+        scenario: { type: "object", required: ["config", "gameMode", "symmetry", "grid"], properties: { config: { type: "object" }, gameMode: { type: "string", enum: ["classic", "bitstorm"] }, symmetry: { type: "string", enum: ["none", "horizontal", "vertical", "rotational", "four-way"] }, grid: { type: "array", items: { type: "array" } } } }
+      }
+    }
   }
 } as const;
 
