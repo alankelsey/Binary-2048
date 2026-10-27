@@ -194,6 +194,39 @@ test("exports and imports a versioned scenario without replay fields", async ({ 
   await expect(board.getByRole("gridcell", { name: "Row 4, column 4, Number 8" })).toBeVisible();
 });
 
+test("launches the authored board as an explicitly unranked practice game", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("binary2048.tutorial.v1", '{"version":1,"status":"dismissed"}');
+    document.cookie = "binary2048_tutorial_suppress=1; Path=/; SameSite=Lax";
+  });
+  let launchBody: Record<string, unknown> | undefined;
+  page.on("request", (request) => {
+    if (request.method() === "POST" && request.url().endsWith("/api/games")) {
+      launchBody = request.postDataJSON() as Record<string, unknown>;
+    }
+  });
+
+  await page.goto("/scenario-builder");
+  await page.getByRole("textbox", { name: "Draft name" }).fill("Practice opening");
+  await page.getByRole("toolbar", { name: "Tile palette" })
+    .getByRole("button", { name: "Number 2", exact: true })
+    .click();
+  await page.getByRole("grid", { name: "4 by 4 scenario board" })
+    .getByRole("gridcell", { name: "Row 1, column 1, Empty" })
+    .click();
+  const launch = page.getByRole("button", { name: "Launch unranked practice" });
+  await expect(launch).toBeEnabled();
+  await Promise.all([page.waitForURL((url) => url.pathname === "/"), launch.click()]);
+
+  expect(launchBody).toMatchObject({ economy: { sessionClass: "unranked" }, mode: "classic" });
+  await expect(page.locator(".practice-pill")).toHaveText("Practice: Practice opening · Unranked");
+  const gameBoard = page.getByRole("grid", { name: "Binary 2048 game board" });
+  await expect(gameBoard.getByRole("gridcell")).toHaveCount(16);
+  await expect(gameBoard.getByRole("gridcell", { name: "row 1 column 1 number 2" })).toBeVisible();
+  const marker = await page.evaluate(() => JSON.parse(window.localStorage.getItem("binary2048.practiceScenario.v1") ?? "null"));
+  expect(marker).toMatchObject({ version: 1, name: "Practice opening" });
+});
+
 test.describe("mobile touch and screen-reader announcements", () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 

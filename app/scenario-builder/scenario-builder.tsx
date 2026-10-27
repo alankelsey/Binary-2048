@@ -28,6 +28,12 @@ import {
   type ScenarioDraft
 } from "@/lib/binary2048/scenario-draft";
 import { createScenarioFile, parseScenarioJson, scenarioFilename } from "@/lib/binary2048/scenario-format";
+import {
+  buildScenarioPracticeRequest,
+  createPracticeScenarioMarker,
+  PRACTICE_SCENARIO_STORAGE_KEY
+} from "@/lib/binary2048/scenario-practice";
+import { saveResumeSnapshot } from "@/lib/binary2048/resume-recovery";
 
 const MIN_BOARD_SIZE = 2;
 const MAX_BOARD_SIZE = 8;
@@ -52,6 +58,8 @@ export function ScenarioBuilder() {
   const [draftMessage, setDraftMessage] = useState("");
   const [draftBusy, setDraftBusy] = useState(false);
   const [fileMessage, setFileMessage] = useState("");
+  const [practiceBusy, setPracticeBusy] = useState(false);
+  const [practiceMessage, setPracticeMessage] = useState("");
   const painting = useRef(false);
   const paintedCells = useRef(new Set<string>());
   const suppressPointerClick = useRef(false);
@@ -284,6 +292,38 @@ export function ScenarioBuilder() {
     }
   }
 
+  async function launchPracticeGame() {
+    if (!validation.valid) {
+      setPracticeMessage("Resolve validation errors before launching practice.");
+      return;
+    }
+    setPracticeBusy(true);
+    setPracticeMessage("Creating unranked practice game…");
+    try {
+      const response = await fetch("/api/games", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(buildScenarioPracticeRequest(scenario))
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok || typeof body.id !== "string" || !body.current || !body.recoverySnapshot) {
+        throw new Error(body.error ?? "Unable to create practice game.");
+      }
+      if (body.integrity?.sessionClass !== "unranked") {
+        throw new Error("Practice game was not marked unranked.");
+      }
+      const marker = createPracticeScenarioMarker(body.id, draftName);
+      window.localStorage.setItem("binary2048.currentGameId", body.id);
+      window.localStorage.setItem("binary2048.gameMode", scenario.gameMode);
+      window.localStorage.setItem(PRACTICE_SCENARIO_STORAGE_KEY, JSON.stringify(marker));
+      saveResumeSnapshot(window.localStorage, body.id, body.recoverySnapshot);
+      window.location.assign("/");
+    } catch (error) {
+      setPracticeMessage(error instanceof Error ? error.message : "Unable to create practice game.");
+      setPracticeBusy(false);
+    }
+  }
+
   function paintTarget(target: EventTarget | null) {
     const cell = target instanceof Element
       ? target.closest<HTMLElement>("[data-scenario-cell]")
@@ -480,6 +520,14 @@ export function ScenarioBuilder() {
                   {validation.errors.map((error) => <li key={error}>{error}</li>)}
                 </ul>
               )}
+            </section>
+            <section className="scenario-practice-launch" aria-labelledby="scenario-practice-heading">
+              <h3 id="scenario-practice-heading">Practice game</h3>
+              <p>Launch this exact board through the normal game engine. Practice sessions are always unranked and ineligible for ranked leaderboards.</p>
+              <button type="button" className="primary-action" disabled={!validation.valid || practiceBusy} onClick={launchPracticeGame}>
+                {practiceBusy ? "Launching practice…" : "Launch unranked practice"}
+              </button>
+              <p className="scenario-practice-message" role="status" aria-live="polite">{practiceMessage}</p>
             </section>
             <div
               className="scenario-board"

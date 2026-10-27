@@ -110,6 +110,7 @@ import AdvancedHelpLoader from "@/app/advanced-help-loader";
 import { applyUiPolicyOverrides, type UIControlOverrides } from "@/lib/binary2048/ui-policy-override";
 import type { UIControl } from "@/lib/binary2048/ui-policy";
 import { createReferralCode, type MarketingEventType } from "@/lib/binary2048/marketing";
+import { parsePracticeScenarioMarker, PRACTICE_SCENARIO_STORAGE_KEY } from "@/lib/binary2048/scenario-practice";
 import type { Cell, Dir, GameExport, GameState, SessionRecoverySnapshot } from "@/lib/binary2048/types";
 import {
   discardMovePerformanceTrace,
@@ -250,6 +251,7 @@ export default function Home() {
   const [compactMobile, setCompactMobile] = useState(false);
   const [mobileControlsOpen, setMobileControlsOpen] = useState(false);
   const [sessionClass, setSessionClass] = useState<SessionClass>("unranked");
+  const [practiceScenarioName, setPracticeScenarioName] = useState("");
   const [canContinueAfterWin, setCanContinueAfterWin] = useState(true);
   const [continueAfterWin, setContinueAfterWin] = useState(false);
   const [uiControlOverrides, setUiControlOverrides] = useState<UIControlOverrides>({});
@@ -575,6 +577,13 @@ export default function Home() {
     setState(json.current);
     setContinueAfterWin(false);
     setSessionClass((json?.integrity?.sessionClass as SessionClass) ?? "unranked");
+    const practiceMarker = parsePracticeScenarioMarker(window.localStorage.getItem(PRACTICE_SCENARIO_STORAGE_KEY));
+    if (practiceMarker?.gameId === json.id && json?.integrity?.sessionClass !== "ranked") {
+      setPracticeScenarioName(practiceMarker.name);
+    } else {
+      setPracticeScenarioName("");
+      window.localStorage.removeItem(PRACTICE_SCENARIO_STORAGE_KEY);
+    }
     setCanContinueAfterWin(resolveCanContinueAfterWin(json));
     if (json?.undo) setUndo(json.undo as UndoMeta);
     setCellEffects({});
@@ -611,6 +620,18 @@ export default function Home() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json?.current || !json?.id) return null;
+      const practiceMarker = parsePracticeScenarioMarker(window.localStorage.getItem(PRACTICE_SCENARIO_STORAGE_KEY));
+      if (
+        practiceMarker &&
+        "recoveryVersion" in snapshotExport &&
+        snapshotExport.sessionId === practiceMarker.gameId &&
+        json.id !== practiceMarker.gameId
+      ) {
+        window.localStorage.setItem(
+          PRACTICE_SCENARIO_STORAGE_KEY,
+          JSON.stringify({ ...practiceMarker, gameId: json.id })
+        );
+      }
       applyLoadedSession(json as { id: string; current: GameState; undo?: UndoMeta });
       return json as { id: string; current: GameState; undo?: UndoMeta };
     } catch {
@@ -668,6 +689,8 @@ export default function Home() {
     clearBufferedMoves("buffer_cleared_new_game");
     resetPrediction(state);
     setContinueAfterWin(false);
+    setPracticeScenarioName("");
+    window.localStorage.removeItem(PRACTICE_SCENARIO_STORAGE_KEY);
     setNewGameConfirmArmed(false);
     setBusy(true);
     setErrorMessage("");
@@ -2284,6 +2307,7 @@ export default function Home() {
           <span>High: {highScore}</span>
           <span>Difficulty: {SPAWN_MODES[activeMode].label}</span>
           <span>Mode: {GAME_MODES[gameMode].label}</span>
+          {practiceScenarioName && !replay ? <span className="practice-pill">Practice: {practiceScenarioName} · Unranked</span> : null}
           <span>{tutorial ? "Tutorial" : replay ? "Replay" : acknowledgedState?.won ? "Won" : acknowledgedState?.over ? "Game Over" : "Active"}</span>
         </div> : (
           <div className="tutorial-status-bar">
@@ -2297,7 +2321,7 @@ export default function Home() {
               ? `Tutorial lesson ${tutorial.lessonIndex + 1} of ${TUTORIAL_LESSONS.length}. ${tutorial.feedback}`
               : replay
             ? `Replay step ${replayStep} of ${replayStepsTotal}. Score ${viewState?.score ?? 0}. Moves ${viewState?.turn ?? 0}.`
-            : `Game ${gameId || "-"}, score ${viewState?.score ?? 0}, moves ${viewState?.turn ?? 0}, ${
+            : `Game ${gameId || "-"}${practiceScenarioName ? `, practice scenario ${practiceScenarioName}, unranked` : ""}, score ${viewState?.score ?? 0}, moves ${viewState?.turn ?? 0}, ${
                 acknowledgedState?.over ? "game over" : acknowledgedState?.won ? "won" : "active"
               }.`}
         </p>

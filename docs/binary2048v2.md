@@ -617,9 +617,10 @@ accessibility or correctness.
   initial grid, seed, authoring metadata, and symmetry information without
   pretending it is a completed replay
   ([evidence](./v2-phase7-scenario-json-roundtrip-2026-10-27.md)).
-- [ ] Launch the scenario as an explicitly unranked practice game, or submit it
-  to authorized tournament/training workflows through the existing simulation
-  APIs.
+- [x] Launch the scenario as an explicitly unranked practice game through the
+  existing game engine API, with a visible practice marker and ranked
+  leaderboard exclusion
+  ([evidence](./v2-phase7-unranked-scenario-practice-2026-10-27.md)).
 - [ ] Support tournament scenario sets with stable IDs, names, tags, mirrored
   variants, deterministic seeds, and duplicate-board detection.
 - [ ] Keep user-authored boards out of ranked leaderboards unless a future
