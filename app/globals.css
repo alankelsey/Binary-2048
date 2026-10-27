@@ -131,39 +131,6 @@
   --status-ok: #1f7a41;
 }
 
-:root[data-theme="cherryBlossom"] {
-  --panel: #fffaf8;
-  --tile: #fffdf8;
-  --text: #3f2929;
-  --subtitle: #745456;
-  --meta-text: #68484b;
-  --card-border: #d9b9b4;
-  --button-bg: #f8e5e2;
-  --button-bg-hover: #f1d4d0;
-  --button-border: #b87978;
-  --button-text: #4f2e32;
-  --button-disabled-bg: #eadfdb;
-  --button-disabled-border: #cbbab5;
-  --button-disabled-text: #806f6c;
-  --cell-filled-top: #f4d6cf;
-  --cell-filled-bottom: #e8bdb5;
-  --cell-filled-border: #a86567;
-  --hint-bg: #fff3ef;
-  --hint-border: #d8b5ad;
-  --hint-text: #644348;
-  --status-ok: #326c49;
-  --wild-top: #dce8ca;
-  --wild-bottom: #bdcf9f;
-  --wild-border: #667d4f;
-  --wild-icon: #263d22;
-  --lock-top: #efc1b7;
-  --lock-bottom: #d99083;
-  --lock-border: #884c4e;
-  --lock-icon: #48272d;
-  --bg-glow: #fae8e4;
-  --bg-base: #f5ddd8;
-}
-
 :root[data-color-mode="cb-protanopia"] {
   --wild-top: #106d6d;
   --wild-bottom: #0a4b50;
@@ -406,10 +373,11 @@ main {
   gap: 0.42rem;
   margin: 0.7rem auto;
   width: min(100%, clamp(240px, 56vmin, 430px));
+  background-color: var(--custom-board-color, transparent);
   touch-action: none;
 }
 
-:root[data-theme="cherryBlossom"] .board {
+:root[data-board-background="cherryBlossom"] .board {
   padding: 0.55rem;
   border: 1px solid rgba(118, 78, 70, 0.52);
   border-radius: 1rem;
@@ -419,28 +387,32 @@ main {
   box-shadow: 0 0.7rem 1.8rem rgba(92, 54, 50, 0.2);
 }
 
-:root[data-theme="cherryBlossom"] .cell {
+:root[data-board-background="cherryBlossom"] .cell {
   border-color: #c8aaa2;
   box-shadow: 0 0.18rem 0.45rem rgba(91, 59, 54, 0.2);
 }
 
-:root[data-theme="cherryBlossom"] .cell.filled {
-  color: #44292d;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.72);
+:root[data-tile-style="opaque"] .cell {
+  color: var(--custom-tile-text) !important;
+  background: var(--custom-tile-color) !important;
+  border-color: color-mix(in srgb, var(--custom-tile-text) 42%, var(--custom-tile-color)) !important;
+  text-shadow: none !important;
 }
 
-:root[data-theme="cherryBlossom"] .tile-zero {
-  color: #7c263d;
+:root[data-tile-style="opaque"] .wild-icon,
+:root[data-tile-style="opaque"] .lock-icon {
+  color: var(--custom-tile-text);
+  text-shadow: none;
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  :root[data-theme="cherryBlossom"] .board {
-    background: #f7e4df;
+  :root[data-board-background="cherryBlossom"] .board {
+    background: var(--custom-board-color);
   }
 }
 
 @media (forced-colors: active) {
-  :root[data-theme="cherryBlossom"] .board {
+  :root[data-board-background="cherryBlossom"] .board {
     background: Canvas;
   }
 }
@@ -1744,6 +1716,51 @@ select:focus-visible {
   gap: 0.35rem;
 }
 
+.background-mode-wrap,
+.tile-style-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.visual-color-pickers {
+  grid-column: 1 / -1;
+  width: 100%;
+  border: 1px solid var(--button-border);
+  border-radius: 0.55rem;
+  padding: 0.3rem 0.45rem;
+}
+
+.visual-color-pickers summary {
+  cursor: pointer;
+  color: var(--button-text);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.visual-color-picker-fields {
+  display: flex;
+  gap: 0.65rem;
+  margin-top: 0.45rem;
+}
+
+.visual-color-picker-fields label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--meta-text);
+  font-size: 0.78rem;
+}
+
+.visual-color-picker-fields input[type="color"] {
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0.15rem;
+  border: 1px solid var(--button-border);
+  border-radius: 0.4rem;
+  background: var(--button-bg);
+}
+
 .mode-select-wrap {
   display: inline-flex;
   align-items: center;
@@ -1899,6 +1916,16 @@ select:focus-visible {
     font-size: 0.8rem;
   }
 
+  .newgame-settings {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.4rem;
+  }
+
+  .newgame-settings > label,
+  .newgame-settings > .difficulty-select-wrap {
+    justify-content: space-between;
+  }
+
   .tagline {
     display: none;
   }
@@ -2036,8 +2063,24 @@ select:focus-visible {
 
   .color-mode-wrap,
   .theme-mode-wrap,
+  .background-mode-wrap,
+  .tile-style-wrap,
   .mode-select-wrap {
     width: 100%;
+    justify-content: space-between;
+  }
+
+  .background-mode-wrap select,
+  .tile-style-wrap select {
+    min-width: 9.5rem;
+  }
+
+  .visual-color-pickers,
+  .visual-color-picker-fields {
+    width: 100%;
+  }
+
+  .visual-color-picker-fields {
     justify-content: space-between;
   }
 

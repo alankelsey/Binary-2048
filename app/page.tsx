@@ -16,7 +16,19 @@ import { getUiPolicy } from "@/lib/binary2048/ui-policy";
 import { replayStateAtStep, type ReplayData } from "@/lib/binary2048/replay";
 import { buildShareLandingUrl, buildShareText, buildShareUrls } from "@/lib/binary2048/share";
 import { buildIssueReportUrl } from "@/lib/binary2048/issue-report";
-import { isThemeMode, THEMES, type ThemeMode } from "@/lib/binary2048/theme";
+import {
+  BOARD_BACKGROUNDS,
+  isBoardBackground,
+  isCssHexColor,
+  isThemeMode,
+  isTileStyle,
+  readableTextColor,
+  THEMES,
+  TILE_STYLES,
+  type BoardBackground,
+  type ThemeMode,
+  type TileStyle
+} from "@/lib/binary2048/theme";
 import { getControlVisibility } from "@/lib/binary2048/control-visibility";
 import { getReplayCodeFromSearch } from "@/lib/binary2048/replay-link";
 import { replaySpeedToDelayMs } from "@/lib/binary2048/replay-autoplay";
@@ -196,6 +208,10 @@ export default function Home() {
   const highScoreKey = "binary2048.highScore";
   const colorModeKey = "binary2048.colorMode";
   const themeModeKey = "binary2048.themeMode";
+  const boardBackgroundKey = "binary2048.boardBackground";
+  const tileStyleKey = "binary2048.tileStyle";
+  const boardColorKey = "binary2048.boardColor";
+  const tileColorKey = "binary2048.tileColor";
   const [gameId, setGameId] = useState<string>("");
   const [state, setState] = useState<GameState | null>(null);
   const [acknowledgedState, setAcknowledgedState] = useState<GameState | null>(null);
@@ -207,6 +223,10 @@ export default function Home() {
   const [spawnMode, setSpawnMode] = useState<SpawnMode>("normal");
   const [colorMode, setColorMode] = useState<ColorMode>("default");
   const [themeMode, setThemeMode] = useState<ThemeMode>("classic");
+  const [boardBackground, setBoardBackground] = useState<BoardBackground>("default");
+  const [tileStyle, setTileStyle] = useState<TileStyle>("normal");
+  const [boardColor, setBoardColor] = useState("#1f2833");
+  const [tileColor, setTileColor] = useState("#fffdf8");
   const [gameMode, setGameMode] = useState<GameMode>("classic");
   const [showDirectionControls, setShowDirectionControls] = useState(false);
   const [cellEffects, setCellEffects] = useState<Record<string, CellEffect>>({});
@@ -1509,7 +1529,19 @@ export default function Home() {
     const savedThemeMode = window.localStorage.getItem(themeModeKey);
     if (isThemeMode(savedThemeMode)) {
       setThemeMode(savedThemeMode);
+    } else if (savedThemeMode === "cherryBlossom") {
+      setThemeMode("classic");
+      setBoardBackground("cherryBlossom");
+      setTileStyle("opaque");
     }
+    const savedBoardBackground = window.localStorage.getItem(boardBackgroundKey);
+    if (isBoardBackground(savedBoardBackground)) setBoardBackground(savedBoardBackground);
+    const savedTileStyle = window.localStorage.getItem(tileStyleKey);
+    if (isTileStyle(savedTileStyle)) setTileStyle(savedTileStyle);
+    const savedBoardColor = window.localStorage.getItem(boardColorKey);
+    if (isCssHexColor(savedBoardColor)) setBoardColor(savedBoardColor);
+    const savedTileColor = window.localStorage.getItem(tileColorKey);
+    if (isCssHexColor(savedTileColor)) setTileColor(savedTileColor);
   }, []);
 
   useEffect(() => {
@@ -1541,6 +1573,18 @@ export default function Home() {
     window.localStorage.setItem(themeModeKey, themeMode);
     document.documentElement.setAttribute("data-theme", themeMode);
   }, [themeMode]);
+
+  useEffect(() => {
+    window.localStorage.setItem(boardBackgroundKey, boardBackground);
+    window.localStorage.setItem(tileStyleKey, tileStyle);
+    window.localStorage.setItem(boardColorKey, boardColor);
+    window.localStorage.setItem(tileColorKey, tileColor);
+    document.documentElement.setAttribute("data-board-background", boardBackground);
+    document.documentElement.setAttribute("data-tile-style", tileStyle);
+    document.documentElement.style.setProperty("--custom-board-color", boardColor);
+    document.documentElement.style.setProperty("--custom-tile-color", tileColor);
+    document.documentElement.style.setProperty("--custom-tile-text", readableTextColor(tileColor));
+  }, [boardBackground, boardColor, tileColor, tileStyle]);
 
   useLayoutEffect(() => {
     const localPaintWaiters = localPaintWaitersRef.current.splice(0);
@@ -2501,6 +2545,25 @@ export default function Home() {
                   {Object.entries(THEMES).map(([key, value]) => <option key={key} value={key}>{value.label}</option>)}
                 </select>
               </label>
+              <label className="background-mode-wrap">
+                <span className="difficulty-label">Background</span>
+                <select aria-label="Board background" value={boardBackground} onChange={(event) => setBoardBackground(event.target.value as BoardBackground)}>
+                  {Object.entries(BOARD_BACKGROUNDS).map(([key, value]) => <option key={key} value={key}>{value.label}</option>)}
+                </select>
+              </label>
+              <label className="tile-style-wrap">
+                <span className="difficulty-label">Tiles</span>
+                <select aria-label="Tile style" value={tileStyle} onChange={(event) => setTileStyle(event.target.value as TileStyle)}>
+                  {Object.entries(TILE_STYLES).map(([key, value]) => <option key={key} value={key}>{value.label}</option>)}
+                </select>
+              </label>
+              <details className="visual-color-pickers">
+                <summary>Colors</summary>
+                <div className="visual-color-picker-fields">
+                  <label><span>Board</span><input type="color" aria-label="Board color" value={boardColor} onChange={(event) => setBoardColor(event.target.value)} /></label>
+                  <label><span>Opaque tiles</span><input type="color" aria-label="Opaque tile color" value={tileColor} onChange={(event) => setTileColor(event.target.value)} /></label>
+                </div>
+              </details>
               <label className="mode-select-wrap">
                 <span className="difficulty-label">Mode</span>
                 <select aria-label="Game mode" value={gameMode} onChange={(event) => setGameMode(event.target.value as GameMode)}>

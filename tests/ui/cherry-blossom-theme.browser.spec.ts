@@ -10,9 +10,12 @@ test("offers a responsive cherry-blossom board with opaque HTML tiles", async ({
   });
 
   await page.goto("/");
-  await page.getByRole("combobox", { name: "Theme mode" }).selectOption("cherryBlossom");
-  await expect(page.locator("html")).toHaveAttribute("data-theme", "cherryBlossom");
-  await expect(page.getByRole("combobox", { name: "Theme mode" })).toHaveValue("cherryBlossom");
+  const backgroundToggle = page.getByRole("combobox", { name: "Board background" });
+  const tileToggle = page.getByRole("combobox", { name: "Tile style" });
+  await backgroundToggle.selectOption("cherryBlossom");
+  await tileToggle.selectOption("opaque");
+  await expect(page.locator("html")).toHaveAttribute("data-board-background", "cherryBlossom");
+  await expect(page.locator("html")).toHaveAttribute("data-tile-style", "opaque");
 
   const board = page.getByRole("grid", { name: "Binary 2048 game board" });
   await expect(board).toHaveCSS("background-image", /board-background\.jpg/);
@@ -21,14 +24,31 @@ test("offers a responsive cherry-blossom board with opaque HTML tiles", async ({
   expect(boardBox?.x).toBeGreaterThanOrEqual(0);
   expect((boardBox?.x ?? 0) + (boardBox?.width ?? 0)).toBeLessThanOrEqual(390);
 
+  await page.getByText("Colors", { exact: true }).click();
+  await page.getByLabel("Board color").fill("#334455");
+  await page.getByLabel("Opaque tile color").fill("#ffeecc");
+  await backgroundToggle.selectOption("default");
+  await tileToggle.selectOption("normal");
+  await expect(board).toHaveCSS("background-image", "none");
+  await expect(board).toHaveCSS("background-color", "rgb(51, 68, 85)");
+  await backgroundToggle.selectOption("cherryBlossom");
+  await tileToggle.selectOption("opaque");
+
   await page.getByRole("button", { name: "Start New Game" }).click();
   await expect(board.getByRole("gridcell")).toHaveCount(16);
   const emptyTile = board.locator(".cell.empty").first();
   await expect(emptyTile).toBeVisible();
-  await expect(emptyTile).toHaveCSS("background-color", "rgb(255, 253, 248)");
+  await expect(emptyTile).toHaveCSS("background-color", "rgb(255, 238, 204)");
 
   await page.reload();
-  await expect(page.locator("html")).toHaveAttribute("data-theme", "cherryBlossom");
+  await expect(page.locator("html")).toHaveAttribute("data-board-background", "cherryBlossom");
+  await expect(page.locator("html")).toHaveAttribute("data-tile-style", "opaque");
+  await expect.poll(() => page.locator("html").evaluate((element) =>
+    element.style.getPropertyValue("--custom-tile-color")
+  )).toBe("#ffeecc");
+  await expect.poll(() => page.locator("html").evaluate((element) =>
+    element.style.getPropertyValue("--custom-board-color")
+  )).toBe("#334455");
 });
 
 test("keeps special tiles legible on a custom-size floral board", async ({ page }) => {
@@ -82,7 +102,8 @@ test("keeps special tiles legible on a custom-size floral board", async ({ page 
   });
 
   await page.goto("/");
-  await page.getByRole("combobox", { name: "Theme mode" }).selectOption("cherryBlossom");
+  await page.getByRole("combobox", { name: "Board background" }).selectOption("cherryBlossom");
+  await page.getByRole("combobox", { name: "Tile style" }).selectOption("opaque");
   await page.getByRole("button", { name: "Start New Game" }).click();
 
   const board = page.getByRole("grid", { name: "Binary 2048 game board" });
@@ -94,7 +115,7 @@ test("keeps special tiles legible on a custom-size floral board", async ({ page 
   await expect(page.getByRole("gridcell", { name: "row 1 column 4 lock zero" })).toBeVisible();
 
   for (const selector of [".tile-number", ".tile-wild", ".tile-zero", ".tile-lock"]) {
-    const background = await board.locator(selector).first().evaluate((cell) => getComputedStyle(cell).backgroundImage);
-    expect(background).toContain("linear-gradient");
+    await expect(board.locator(selector).first()).toHaveCSS("background-color", "rgb(255, 253, 248)");
+    await expect(board.locator(selector).first()).toHaveCSS("background-image", "none");
   }
 });

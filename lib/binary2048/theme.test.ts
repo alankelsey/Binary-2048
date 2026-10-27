@@ -1,8 +1,17 @@
-import { isThemeMode, THEMES } from "@/lib/binary2048/theme";
+import {
+  BOARD_BACKGROUNDS,
+  isBoardBackground,
+  isCssHexColor,
+  isThemeMode,
+  isTileStyle,
+  readableTextColor,
+  THEMES,
+  TILE_STYLES
+} from "@/lib/binary2048/theme";
 
 describe("theme helpers", () => {
   it("exposes the expected theme key set and order", () => {
-    expect(Object.keys(THEMES)).toEqual(["classic", "midnight", "aurora", "ember", "light", "cherryBlossom"]);
+    expect(Object.keys(THEMES)).toEqual(["classic", "midnight", "aurora", "ember", "light"]);
   });
 
   it("keeps Original as the first/default theme option", () => {
@@ -17,7 +26,6 @@ describe("theme helpers", () => {
     expect(THEMES.aurora.label).toBe("Aurora");
     expect(THEMES.ember.label).toBe("Ember");
     expect(THEMES.light.label).toBe("Light");
-    expect(THEMES.cherryBlossom.label).toBe("Cherry Blossom (Experimental)");
   });
 
   it("supports all declared themes", () => {
@@ -31,5 +39,24 @@ describe("theme helpers", () => {
     expect(isThemeMode("default")).toBe(false);
     expect(isThemeMode("banana")).toBe(false);
     expect(isThemeMode(null)).toBe(false);
+  });
+
+  it("exposes independent background and tile-style choices", () => {
+    expect(BOARD_BACKGROUNDS).toEqual({
+      default: { label: "Default" },
+      cherryBlossom: { label: "Cherry Blossom" }
+    });
+    expect(TILE_STYLES).toEqual({ normal: { label: "Normal" }, opaque: { label: "Opaque" } });
+    expect(isBoardBackground("cherryBlossom")).toBe(true);
+    expect(isBoardBackground("flowers")).toBe(false);
+    expect(isTileStyle("opaque")).toBe(true);
+    expect(isTileStyle("glass")).toBe(false);
+  });
+
+  it("validates picker colors and derives readable opaque-tile text", () => {
+    expect(isCssHexColor("#fefefe")).toBe(true);
+    expect(isCssHexColor("red")).toBe(false);
+    expect(readableTextColor("#fffdf8")).toBe("#241719");
+    expect(readableTextColor("#241719")).toBe("#fffdf8");
   });
 });

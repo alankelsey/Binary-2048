@@ -13,8 +13,10 @@ the original flattened 6 × 3 composition is not shipped as game UI.
 - The floral artwork is a board background only. Tiles are separately rendered,
   fully opaque CSS surfaces, so artwork never reduces number or special-tile
   legibility.
-- The theme is optional and labeled `Cherry Blossom (Experimental)`; Original
-  remains the default and existing saved theme selection behavior is retained.
+- Background and tile treatment are independent persisted controls. Players can
+  switch between Default and Cherry Blossom backgrounds, choose Normal or
+  Opaque tiles, and set board and opaque-tile colors without changing the page
+  theme or color-vision mode.
 - The runtime JPEG is 1024 × 1024 and approximately 184 KB. The background uses
   `cover` with a centered focal point so 4 × 4 and custom square boards do not
   depend on baked slots.
@@ -39,9 +41,16 @@ upload, object storage, moderation, public sharing, or arbitrary image URLs.
 
 The focused theme tests and existing mobile-dock suite passed 17 browser tests,
 including a 5 × 3 fixture with 2048, zero, wildcard, and Lock-0 tiles.
-The theme helper suite passed 5 unit tests, and TypeScript passed. A 390 × 844
+The theme helper suite passed 7 unit tests, and TypeScript passed. A 390 × 844
 active-game capture was inspected after the New Game overlay closed: the floral
 image remained visible in the board gutters, the board stayed within the
 viewport, opaque cells prevented visual interference, and number tiles remained
-dominant. The experiment is therefore viable, but remains labeled experimental
-until the promotion checks above are complete.
+dominant. The experiment is therefore viable, but remains an experimental
+background option until the promotion checks above are complete.
+
+A follow-up separated visual choices into Background and Tiles selectors plus a
+Colors disclosure with board and opaque-tile pickers. Browser acceptance proves
+Default/Cherry Blossom and Normal/Opaque can be mixed, both custom colors apply,
+and all four values persist across reload. The first mobile capture exposed
+overlapping two-column controls; the final single-column 390 px capture was
+inspected with all labels, selectors, and both 44 px color inputs unobstructed.
