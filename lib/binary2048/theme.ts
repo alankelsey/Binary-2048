@@ -13,7 +13,18 @@ export const BOARD_BACKGROUNDS = {
 
 export const TILE_STYLES = {
   normal: { label: "Normal" },
+  translucent40: { label: "40% opacity" },
   opaque: { label: "Opaque" }
+} as const;
+
+export const TILE_COLOR_PRESETS = {
+  ivory: { label: "Warm Ivory", color: "#fffdf8" },
+  blossom: { label: "Blossom Pink", color: "#f5b7c5" },
+  petal: { label: "Petal Blush", color: "#f7d9df" },
+  sage: { label: "Spring Sage", color: "#b8c8a4" },
+  sky: { label: "Soft Sky", color: "#b9d9e8" },
+  lavender: { label: "Lavender", color: "#cbbfe3" },
+  apricot: { label: "Apricot", color: "#f2c59e" }
 } as const;
 
 export type ThemeMode = keyof typeof THEMES;

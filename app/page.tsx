@@ -24,6 +24,7 @@ import {
   isTileStyle,
   readableTextColor,
   THEMES,
+  TILE_COLOR_PRESETS,
   TILE_STYLES,
   type BoardBackground,
   type ThemeMode,
@@ -2561,7 +2562,20 @@ export default function Home() {
                 <summary>Colors</summary>
                 <div className="visual-color-picker-fields">
                   <label><span>Board</span><input type="color" aria-label="Board color" value={boardColor} onChange={(event) => setBoardColor(event.target.value)} /></label>
-                  <label><span>Opaque tiles</span><input type="color" aria-label="Opaque tile color" value={tileColor} onChange={(event) => setTileColor(event.target.value)} /></label>
+                  <label>
+                    <span>Tile palette</span>
+                    <select
+                      aria-label="Tile color preset"
+                      value={Object.values(TILE_COLOR_PRESETS).some((preset) => preset.color === tileColor) ? tileColor : "custom"}
+                      onChange={(event) => {
+                        if (event.target.value !== "custom") setTileColor(event.target.value);
+                      }}
+                    >
+                      {Object.values(TILE_COLOR_PRESETS).map((preset) => <option key={preset.color} value={preset.color}>{preset.label}</option>)}
+                      <option value="custom">Custom</option>
+                    </select>
+                  </label>
+                  <label><span>Custom tile</span><input type="color" aria-label="Custom tile color" value={tileColor} onChange={(event) => setTileColor(event.target.value)} /></label>
                 </div>
               </details>
               <label className="mode-select-wrap">

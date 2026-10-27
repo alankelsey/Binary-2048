@@ -392,6 +392,19 @@ main {
   box-shadow: 0 0.18rem 0.45rem rgba(91, 59, 54, 0.2);
 }
 
+:root[data-tile-style="translucent40"] .cell.filled {
+  color: var(--custom-tile-text) !important;
+  background: color-mix(in srgb, var(--custom-tile-color) 40%, transparent) !important;
+  border-color: color-mix(in srgb, var(--custom-tile-text) 52%, transparent) !important;
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--custom-tile-color) 35%, #000) !important;
+}
+
+:root[data-tile-style="translucent40"] .wild-icon,
+:root[data-tile-style="translucent40"] .lock-icon {
+  color: var(--custom-tile-text);
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--custom-tile-color) 35%, #000);
+}
+
 :root[data-tile-style="opaque"] .cell {
   color: var(--custom-tile-text) !important;
   background: var(--custom-tile-color) !important;
@@ -405,9 +418,18 @@ main {
   text-shadow: none;
 }
 
+:root[data-board-background="cherryBlossom"] .cell.empty {
+  background: color-mix(in srgb, var(--custom-tile-color) 70%, transparent) !important;
+}
+
 @media (prefers-reduced-transparency: reduce) {
   :root[data-board-background="cherryBlossom"] .board {
     background: var(--custom-board-color);
+  }
+
+  :root[data-tile-style="translucent40"] .cell.filled,
+  :root[data-board-background="cherryBlossom"] .cell.empty {
+    background: var(--custom-tile-color) !important;
   }
 }
 
@@ -1740,6 +1762,7 @@ select:focus-visible {
 
 .visual-color-picker-fields {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.65rem;
   margin-top: 0.45rem;
 }
@@ -1750,6 +1773,11 @@ select:focus-visible {
   gap: 0.35rem;
   color: var(--meta-text);
   font-size: 0.78rem;
+}
+
+.visual-color-picker-fields select {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .visual-color-picker-fields input[type="color"] {
@@ -2081,6 +2109,11 @@ select:focus-visible {
   }
 
   .visual-color-picker-fields {
+    justify-content: space-between;
+  }
+
+  .visual-color-picker-fields label {
+    width: 100%;
     justify-content: space-between;
   }
 

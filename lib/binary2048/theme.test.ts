@@ -6,6 +6,7 @@ import {
   isTileStyle,
   readableTextColor,
   THEMES,
+  TILE_COLOR_PRESETS,
   TILE_STYLES
 } from "@/lib/binary2048/theme";
 
@@ -46,9 +47,15 @@ describe("theme helpers", () => {
       default: { label: "Default" },
       cherryBlossom: { label: "Cherry Blossom" }
     });
-    expect(TILE_STYLES).toEqual({ normal: { label: "Normal" }, opaque: { label: "Opaque" } });
+    expect(TILE_STYLES).toEqual({
+      normal: { label: "Normal" },
+      translucent40: { label: "40% opacity" },
+      opaque: { label: "Opaque" }
+    });
+    expect(TILE_COLOR_PRESETS.blossom).toEqual({ label: "Blossom Pink", color: "#f5b7c5" });
     expect(isBoardBackground("cherryBlossom")).toBe(true);
     expect(isBoardBackground("flowers")).toBe(false);
+    expect(isTileStyle("translucent40")).toBe(true);
     expect(isTileStyle("opaque")).toBe(true);
     expect(isTileStyle("glass")).toBe(false);
   });

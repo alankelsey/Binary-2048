@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("offers a responsive cherry-blossom board with opaque HTML tiles", async ({ page }) => {
+test("offers responsive cherry-blossom opacity and palette controls", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(() => {
     window.localStorage.removeItem("binary2048.currentGameId");
@@ -26,7 +26,9 @@ test("offers a responsive cherry-blossom board with opaque HTML tiles", async ({
 
   await page.getByText("Colors", { exact: true }).click();
   await page.getByLabel("Board color").fill("#334455");
-  await page.getByLabel("Opaque tile color").fill("#ffeecc");
+  await page.getByRole("combobox", { name: "Tile color preset" }).selectOption({ label: "Blossom Pink" });
+  await expect(page.getByLabel("Custom tile color")).toHaveValue("#f5b7c5");
+  await page.getByLabel("Custom tile color").fill("#ffeecc");
   await backgroundToggle.selectOption("default");
   await tileToggle.selectOption("normal");
   await expect(board).toHaveCSS("background-image", "none");
@@ -38,11 +40,17 @@ test("offers a responsive cherry-blossom board with opaque HTML tiles", async ({
   await expect(board.getByRole("gridcell")).toHaveCount(16);
   const emptyTile = board.locator(".cell.empty").first();
   await expect(emptyTile).toBeVisible();
-  await expect(emptyTile).toHaveCSS("background-color", "rgb(255, 238, 204)");
+  await expect.poll(() => emptyTile.evaluate((element) => getComputedStyle(element).backgroundColor)).toMatch(/0\.7\)/);
+
+  await tileToggle.selectOption("translucent40");
+  await expect(page.locator("html")).toHaveAttribute("data-tile-style", "translucent40");
+  const filledTile = board.locator(".cell.filled").first();
+  await expect(filledTile).toBeVisible();
+  await expect.poll(() => filledTile.evaluate((element) => getComputedStyle(element).backgroundColor)).toMatch(/0\.4\)/);
 
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-board-background", "cherryBlossom");
-  await expect(page.locator("html")).toHaveAttribute("data-tile-style", "opaque");
+  await expect(page.locator("html")).toHaveAttribute("data-tile-style", "translucent40");
   await expect.poll(() => page.locator("html").evaluate((element) =>
     element.style.getPropertyValue("--custom-tile-color")
   )).toBe("#ffeecc");
