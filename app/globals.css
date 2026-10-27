@@ -2146,6 +2146,27 @@ select:focus-visible {
   padding: 0.42rem 0.7rem;
 }
 
+.scenario-validation {
+  margin-top: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--card-border);
+  border-radius: 0.55rem;
+}
+
+.scenario-validation.invalid {
+  border-color: #ef4444;
+}
+
+.scenario-validation h3,
+.scenario-validation p,
+.scenario-validation ul {
+  margin-block: 0;
+}
+
+.scenario-validation ul {
+  padding-left: 1.2rem;
+}
+
 .scenario-board {
   display: grid;
   gap: 0.42rem;

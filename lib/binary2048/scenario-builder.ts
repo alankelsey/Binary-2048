@@ -1,5 +1,5 @@
-import { DEFAULT_CONFIG } from "@/lib/binary2048/engine";
-import type { Cell, GameConfig } from "@/lib/binary2048/types";
+import { applyMove, DEFAULT_CONFIG } from "@/lib/binary2048/engine";
+import type { Cell, Dir, GameConfig, GameState } from "@/lib/binary2048/types";
 
 export type ScenarioGameMode = "classic" | "bitstorm";
 export type ScenarioSymmetry = "none" | "horizontal" | "vertical" | "rotational" | "four-way";
@@ -16,6 +16,14 @@ export type ScenarioGridHistory = {
   present: Cell[][];
   future: Cell[][][];
 };
+
+export type ScenarioValidation = {
+  valid: boolean;
+  errors: string[];
+  legalMoves: Dir[];
+};
+
+const DIRECTIONS: Dir[] = ["up", "down", "left", "right"];
 
 export function createEmptyScenarioGrid(height: number, width: number): Cell[][] {
   return Array.from({ length: height }, () => Array<Cell>(width).fill(null));
@@ -114,6 +122,79 @@ export function scenarioTileLabel(tile: Cell): string {
   if (tile.t === "z") return "Zero";
   if (tile.t === "w") return `Wildcard times ${tile.m}`;
   return "Lock-0";
+}
+
+export function validateScenario(config: GameConfig, grid: Cell[][]): ScenarioValidation {
+  const errors: string[] = [];
+  if (!Number.isInteger(config.width) || config.width < 2 || config.width > 8) {
+    errors.push("Columns must be a whole number from 2 through 8.");
+  }
+  if (!Number.isInteger(config.height) || config.height < 2 || config.height > 8) {
+    errors.push("Rows must be a whole number from 2 through 8.");
+  }
+  if (grid.length !== config.height || grid.some((row) => row.length !== config.width)) {
+    errors.push("Board dimensions must match the configured rows and columns.");
+  }
+  if (!Number.isSafeInteger(config.seed) || config.seed < 1) {
+    errors.push("Seed must be a positive whole number.");
+  }
+  if (!isPowerOfTwo(config.winTile) || config.winTile < 2) {
+    errors.push("Win tile must be a power of two of at least 2.");
+  }
+
+  const probabilities = [
+    config.spawn.pZero,
+    config.spawn.pOne,
+    config.spawn.pWildcard,
+    config.spawn.pLock
+  ];
+  if (probabilities.some((probability) => !Number.isFinite(probability) || probability < 0 || probability > 1)) {
+    errors.push("Each spawn probability must be between 0 and 1.");
+  } else if (Math.abs(probabilities.reduce((sum, probability) => sum + probability, 0) - 1) > 1e-6) {
+    errors.push("Spawn probabilities must total 1.");
+  }
+  if (
+    config.spawn.wildcardMultipliers.length === 0 ||
+    config.spawn.wildcardMultipliers.some((multiplier) => !isPowerOfTwo(multiplier) || multiplier < 2)
+  ) {
+    errors.push("Wildcard multipliers must be powers of two of at least 2.");
+  }
+
+  for (const [rowIndex, row] of grid.entries()) {
+    for (const [columnIndex, cell] of row.entries()) {
+      if (cell?.t === "n" && (!isPowerOfTwo(cell.v) || cell.v < 1)) {
+        errors.push(`Row ${rowIndex + 1}, column ${columnIndex + 1} has an invalid number tile.`);
+      }
+      if (cell?.t === "w" && !config.spawn.wildcardMultipliers.includes(cell.m)) {
+        errors.push(`Row ${rowIndex + 1}, column ${columnIndex + 1} uses an unsupported wildcard multiplier.`);
+      }
+    }
+  }
+
+  let legalMoves: Dir[] = [];
+  if (errors.length === 0) {
+    const state: GameState = {
+      id: "scenario-validation",
+      config,
+      width: config.width,
+      height: config.height,
+      seed: config.seed,
+      rngStep: 0,
+      score: 0,
+      turn: 0,
+      won: false,
+      over: false,
+      grid
+    };
+    legalMoves = DIRECTIONS.filter((direction) => applyMove(state, direction).moved);
+    if (legalMoves.length === 0) errors.push("Board must have at least one legal move.");
+  }
+
+  return { valid: errors.length === 0, errors, legalMoves };
+}
+
+function isPowerOfTwo(value: number): boolean {
+  return Number.isSafeInteger(value) && value > 0 && Math.log2(value) % 1 === 0;
 }
 
 function cloneCell(cell: Cell): Cell {

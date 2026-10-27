@@ -598,7 +598,7 @@ accessibility or correctness.
 - [x] Add symmetry tools for horizontal mirror, vertical mirror, 180-degree
   rotation, and four-way symmetry so tournament boards can be constructed
   without manual transcription errors.
-- [ ] Validate dimensions, tile values, wildcard multipliers, configuration,
+- [x] Validate dimensions, tile values, wildcard multipliers, configuration,
   and whether the board has at least one legal move before play or export.
 - [ ] Preview legal moves and resulting boards through the same deterministic
   engine used by gameplay and API simulation.

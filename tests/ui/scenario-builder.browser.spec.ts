@@ -35,6 +35,7 @@ test("paints across cells with a pointer drag", async ({ page }) => {
 
   const first = page.getByRole("gridcell", { name: "Row 1, column 1, Empty" });
   const second = page.getByRole("gridcell", { name: "Row 1, column 2, Empty" });
+  await first.scrollIntoViewIfNeeded();
   const firstBox = await first.boundingBox();
   const secondBox = await second.boundingBox();
   if (!firstBox || !secondBox) throw new Error("Scenario cells must be visible");
@@ -99,6 +100,24 @@ test("applies every symmetry mode as one announced, undoable board edit", async 
   ]) {
     await expect(page.getByRole("gridcell", { name })).toBeVisible();
   }
+});
+
+test("reports scenario validity and legal moves as the board and configuration change", async ({ page }) => {
+  await page.goto("/scenario-builder");
+
+  const validation = page.getByRole("region", { name: "Validation" });
+  await expect(validation).toContainText("Board must have at least one legal move.");
+
+  await page.getByRole("toolbar", { name: "Tile palette" })
+    .getByRole("button", { name: "Number 2", exact: true })
+    .click();
+  await page.getByRole("gridcell", { name: "Row 1, column 1, Empty" }).click();
+  await expect(validation).toContainText("Scenario ready. Legal moves: down, right.");
+
+  await page.getByRole("spinbutton", { name: "One" }).fill("0.5");
+  await expect(validation).toContainText("Spawn probabilities must total 1.");
+  await page.getByRole("textbox", { name: "Wildcard multipliers" }).fill("3");
+  await expect(validation).toContainText("Wildcard multipliers must be powers of two of at least 2.");
 });
 
 test.describe("mobile touch and screen-reader announcements", () => {

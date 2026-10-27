@@ -6,6 +6,7 @@ import {
   placeScenarioTile,
   scenarioSymmetryCoordinates,
   scenarioTileLabel,
+  validateScenario,
   redoScenarioGrid,
   undoScenarioGrid,
   resizeScenarioGrid
@@ -90,6 +91,48 @@ describe("scenario builder state", () => {
   it("deduplicates symmetry coordinates on center axes", () => {
     expect(scenarioSymmetryCoordinates(3, 3, 1, 1, "four-way")).toEqual([[1, 1]]);
     expect(scenarioSymmetryCoordinates(3, 4, 1, 0, "four-way")).toEqual([[1, 0], [1, 3]]);
+  });
+
+  it("validates configuration, tiles, wildcard support, and legal moves", () => {
+    const scenario = createScenarioBuilderState();
+    expect(validateScenario(scenario.config, scenario.grid)).toMatchObject({
+      valid: false,
+      errors: ["Board must have at least one legal move."],
+      legalMoves: []
+    });
+
+    const playable = placeScenarioTile(scenario.grid, 0, 0, { t: "n", v: 2 });
+    expect(validateScenario(scenario.config, playable)).toMatchObject({
+      valid: true,
+      errors: [],
+      legalMoves: ["down", "right"]
+    });
+
+    const invalidConfig = {
+      ...scenario.config,
+      seed: 0,
+      winTile: 3,
+      spawn: {
+        ...scenario.config.spawn,
+        pOne: 0.5,
+        wildcardMultipliers: [3]
+      }
+    };
+    const invalidGrid = placeScenarioTile(playable, 0, 1, { t: "w", m: 8 });
+    expect(validateScenario(invalidConfig, invalidGrid).errors).toEqual(expect.arrayContaining([
+      "Seed must be a positive whole number.",
+      "Win tile must be a power of two of at least 2.",
+      "Spawn probabilities must total 1.",
+      "Wildcard multipliers must be powers of two of at least 2.",
+      "Row 1, column 2 uses an unsupported wildcard multiplier."
+    ]));
+
+    const blockedConfig = { ...scenario.config, width: 2, height: 2 };
+    const blocked: Cell[][] = [
+      [{ t: "n", v: 1 }, { t: "n", v: 2 }],
+      [{ t: "n", v: 4 }, { t: "n", v: 8 }]
+    ];
+    expect(validateScenario(blockedConfig, blocked).errors).toContain("Board must have at least one legal move.");
   });
 
   it("supports commit, undo, redo, and clearing redo after a new edit", () => {

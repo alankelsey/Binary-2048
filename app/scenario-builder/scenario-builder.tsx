@@ -12,6 +12,7 @@ import {
   scenarioSymmetryCoordinates,
   scenarioTileLabel,
   undoScenarioGrid,
+  validateScenario,
   type ScenarioGameMode,
   type ScenarioSymmetry
 } from "@/lib/binary2048/scenario-builder";
@@ -45,6 +46,10 @@ export function ScenarioBuilder() {
       { t: "i" }
     ],
     [scenario.config.spawn.wildcardMultipliers]
+  );
+  const validation = useMemo(
+    () => validateScenario(scenario.config, scenario.grid),
+    [scenario.config, scenario.grid]
   );
 
   function updateConfig<K extends keyof GameConfig>(key: K, value: GameConfig[K]) {
@@ -256,6 +261,16 @@ export function ScenarioBuilder() {
               <button type="button" onClick={redo} disabled={history.future.length === 0}>Redo</button>
               <button type="button" onClick={reset}>Reset board</button>
             </div>
+            <section className={`scenario-validation ${validation.valid ? "valid" : "invalid"}`} aria-labelledby="scenario-validation-heading">
+              <h3 id="scenario-validation-heading">Validation</h3>
+              {validation.valid ? (
+                <p>Scenario ready. Legal moves: {validation.legalMoves.join(", ")}.</p>
+              ) : (
+                <ul>
+                  {validation.errors.map((error) => <li key={error}>{error}</li>)}
+                </ul>
+              )}
+            </section>
             <div
               className="scenario-board"
               role="grid"
