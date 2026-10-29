@@ -1,6 +1,53 @@
 import { expect, test } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
+test("opens as a dedicated configurable empty-board view with game navigation", async ({ page }) => {
+  await page.goto("/scenario-builder");
+
+  await expect(page.getByRole("heading", { name: "Scenario Builder", level: 1 })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Back to game" })).toHaveAttribute("href", "/");
+  await expect(page.getByRole("grid", { name: "4 by 4 scenario board" }).getByRole("gridcell", { name: /Empty$/ })).toHaveCount(16);
+  await expect(page.getByRole("spinbutton", { name: "Columns" })).toHaveValue("4");
+  await expect(page.getByRole("spinbutton", { name: "Rows" })).toHaveValue("4");
+  await expect(page.getByRole("spinbutton", { name: "Seed" })).toHaveValue("42");
+  await expect(page.getByRole("spinbutton", { name: "Win tile" })).toHaveValue("2048");
+  await expect(page.getByRole("combobox", { name: "Game mode" })).toHaveValue("classic");
+  await expect(page.getByRole("combobox", { name: "Zero behavior" })).toHaveValue("annihilate");
+  for (const label of ["Zero", "One", "Wildcard", "Lock-0"]) {
+    await expect(page.getByRole("spinbutton", { name: label, exact: true })).toBeVisible();
+  }
+  await expect(page.getByRole("textbox", { name: "Wildcard multipliers" })).toHaveValue("2, 4, 8");
+
+  await page.goto("/");
+  await expect(page.locator('nav[aria-label="game tools"] a[href="/scenario-builder"]'))
+    .toHaveText("Scenario Builder");
+});
+
+test("places every supported tile category and wildcard multiplier", async ({ page }) => {
+  await page.goto("/scenario-builder");
+
+  const palette = page.getByRole("toolbar", { name: "Tile palette" });
+  const board = page.getByRole("grid", { name: "4 by 4 scenario board" });
+  const placements = [
+    { palette: "Number 8", row: 1, column: 1, cell: "Number 8" },
+    { palette: "Zero", row: 1, column: 2, cell: "Zero" },
+    { palette: "Wildcard times 2", row: 1, column: 3, cell: "Wildcard times 2" },
+    { palette: "Wildcard times 4", row: 1, column: 4, cell: "Wildcard times 4" },
+    { palette: "Wildcard times 8", row: 2, column: 1, cell: "Wildcard times 8" },
+    { palette: "Lock-0", row: 2, column: 2, cell: "Lock-0" }
+  ];
+
+  for (const placement of placements) {
+    await palette.getByRole("button", { name: placement.palette, exact: true }).click();
+    await board.getByRole("gridcell", {
+      name: `Row ${placement.row}, column ${placement.column}, Empty`
+    }).click();
+    await expect(board.getByRole("gridcell", {
+      name: `Row ${placement.row}, column ${placement.column}, ${placement.cell}`
+    })).toBeVisible();
+  }
+});
+
 test("places, replaces, erases, undoes, redoes, and resets with accessible controls", async ({ page }) => {
   await page.goto("/scenario-builder");
 
@@ -389,5 +436,37 @@ test.describe("mobile touch and screen-reader announcements", () => {
     expect(paletteNames).toContain("Zero");
     expect(paletteNames).toContain("Wildcard times 2");
     expect(paletteNames).toContain("Lock-0");
+  });
+
+  test("keeps the maximum 8 by 8 board inside the mobile viewport", async ({ page }) => {
+    await page.goto("/scenario-builder");
+    await page.getByRole("spinbutton", { name: "Columns" }).fill("8");
+    await page.getByRole("spinbutton", { name: "Rows" }).fill("8");
+
+    const board = page.getByRole("grid", { name: "8 by 8 scenario board" });
+    await expect(board.getByRole("gridcell")).toHaveCount(64);
+    await board.scrollIntoViewIfNeeded();
+
+    const layout = await page.evaluate(() => {
+      const boardElement = document.querySelector<HTMLElement>(".scenario-board");
+      const cardElement = document.querySelector<HTMLElement>(".scenario-builder-card");
+      if (!boardElement || !cardElement) throw new Error("Scenario builder layout is missing");
+      const boardRect = boardElement.getBoundingClientRect();
+      const cardRect = cardElement.getBoundingClientRect();
+      return {
+        viewportWidth: window.innerWidth,
+        documentWidth: document.documentElement.scrollWidth,
+        boardLeft: boardRect.left,
+        boardRight: boardRect.right,
+        cardLeft: cardRect.left,
+        cardRight: cardRect.right
+      };
+    });
+
+    expect(layout.documentWidth).toBeLessThanOrEqual(layout.viewportWidth);
+    expect(layout.boardLeft).toBeGreaterThanOrEqual(0);
+    expect(layout.boardRight).toBeLessThanOrEqual(layout.viewportWidth);
+    expect(layout.cardLeft).toBeGreaterThanOrEqual(0);
+    expect(layout.cardRight).toBeLessThanOrEqual(layout.viewportWidth);
   });
 });

@@ -99,6 +99,9 @@ export type UndoEvent = {
 export type SessionIntegrity = {
   sessionClass: "unranked" | "ranked";
   source: "created" | "imported";
+  boardOrigin?: "canonical" | "user_authored";
+  gameMode?: "classic" | "bitstorm" | "numbers-only";
+  modeRulesetId?: string;
   importedFromRulesetId?: string;
 };
 

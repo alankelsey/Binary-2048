@@ -1,8 +1,10 @@
+<!-- cspell:words alankelsey despawn despawns FBBB hitboxes loadouts Merch -->
+
 # Binary 2048 v2 Plan
 
 Status: active delivery plan; V1 completed 2026-10-05
 Created: 2026-09-17  
-Implementation status: Phases 0 through 5 complete
+Implementation status: Phases 0 through 7 complete
 
 ## Repository source of truth
 
@@ -102,36 +104,42 @@ Lightsail, and one comparable managed or unmanaged VPS.
   free Hobby plan as personal, non-commercial use and pauses Hobby projects that
   exceed included usage; record the current plan terms and relevant limits from
   the [official Vercel plan documentation](https://vercel.com/docs/plans/hobby).
-- [ ] Model Netlify from its current credit system rather than legacy bandwidth
+- [x] Model Netlify from its current credit system rather than legacy bandwidth
   and build-minute allowances. Record production-deploy, compute, bandwidth,
   and request consumption, the free plan's hard monthly limit, and paid-plan
-  behavior from the [official pricing page](https://www.netlify.com/pricing/).
-- [ ] Run a Cloudflare compatibility spike instead of assuming ordinary Next.js
+  behavior from the [official pricing page](https://www.netlify.com/pricing/)
+  ([evidence](./v2-hosting-netlify-credit-model-2026-10-28.md)).
+- [x] Run a Cloudflare compatibility spike instead of assuming ordinary Next.js
   Node.js deployment. Record the supported adapter and Next.js version, Node.js
   compatibility gaps, CPU/request limits, middleware behavior, and image/cache
   differences using the [official Next.js adapter guide](https://developers.cloudflare.com/workers/framework-guides/web-apps/opennext/)
   and [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/).
+  Decision: reject the current candidate after the official checker reported
+  36% compatibility ([evidence](./v2-cloudflare-compatibility-spike-2026-10-28.md)).
 - [ ] Prove MongoDB connectivity separately on every candidate. Do not propose
   the Atlas Data API as a fallback: [MongoDB states](https://www.mongodb.com/docs/api/doc/atlas-app-services-admin-api-v3/)
   that the Data API reached end of life on 2025-09-30. For Cloudflare, test the
   actual driver/TCP/TLS path, transactions, connection reuse, cold starts,
   regional latency, and Atlas network controls rather than inferring
   compatibility from generic TCP support.
-- [ ] Audit repository portability: Node `crypto`, the native MongoDB driver and
+- [x] Audit repository portability: Node `crypto`, the native MongoDB driver and
   transactions, NextAuth callbacks/cookies, AWS SQS/S3/CloudWatch integrations,
   scheduled telemetry, runtime duration/body limits, streaming, environment
   variables, build output, logs, and rollback. Remove the Amplify-specific need
   to bake secrets through `next.config.mjs` in any migration design; secrets must
-  remain runtime-only and must not enter client or reusable build artifacts.
+  remain runtime-only and must not enter client or reusable build artifacts
+  ([evidence](./v2-hosting-portability-audit-2026-10-28.md)).
 - [ ] Prove production failure behavior on the candidate: required Mongo-backed
   sessions, inventory, leaderboard, run storage, and rate limits must fail closed
   when configuration or connectivity is missing rather than silently falling
   back to per-instance memory. Verify the platform's authoritative client-IP
   header before using forwarded addresses for rate limits.
-- [ ] Design replacements or bridges for host-specific operations: scoped AWS
+- [x] Design replacements or bridges for host-specific operations: scoped AWS
   authorization for web-to-SQS and S3 calls, route-log delivery to the existing
   CloudWatch telemetry aggregator or a new platform-neutral sink, deploy status
   and rollback automation, WAF/rate-limit policy, alarms, and incident evidence.
+  The first migration boundary retains AWS behind a least-privilege HTTPS bridge
+  ([design](./v2-hosting-operations-bridge-design-2026-10-28.md)).
 - [ ] Compare two deployment boundaries for every candidate: move only the
   Next.js web runtime while retaining the accepted AWS worker/SQS/S3/CloudWatch
   stack, and move additional services. Attribute retained AWS and Atlas costs so
@@ -281,19 +289,25 @@ before implementation is promoted into a shipped ruleset.
 
 ### Anchored Lock-0 behavior
 
-- [ ] Prototype line resolution where a spawned Lock-0 remains at its board
+- [x] Prototype line resolution where a spawned Lock-0 remains at its board
   coordinate instead of sliding. For the active swipe, it partitions its row or
   column like a board edge while tiles in each resulting segment continue to
-  slide and merge normally.
-- [ ] Define and prototype the Lock-0 lifecycle/despawn trigger. A tile moving
+  slide and merge normally
+  ([evidence](./v2-anchored-lock-line-resolution-spike-2026-10-27.md)).
+- [x] Define and prototype the Lock-0 lifecycle/despawn trigger. A tile moving
   toward an active lock must stop in the adjacent cell; when the lock despawns,
-  that tile may enter or pass the vacated cell only on a later swipe.
-- [ ] Cover all four directions, tiles on both sides, multiple locks, adjacent
+  that tile may enter or pass the vacated cell only on a later swipe
+  ([evidence](./v2-anchored-lock-lifecycle-spike-2026-10-27.md)).
+- [x] Cover all four directions, tiles on both sides, multiple locks, adjacent
   merges, no-op/turn/spawn semantics, undo, win/game-over detection,
   replay/export/import, recovery, simulation/action masks, and deterministic
-  RNG.
-- [ ] Decide whether anchored locks replace the V1 rule globally or ship in a
+  RNG
+  ([evidence](./v2-anchored-lock-integration-matrix-2026-10-27.md)).
+- [x] Decide whether anchored locks replace the V1 rule globally or ship in a
   versioned V2 ruleset, including replay migration and event semantics.
+  Decision: preserve V1 and isolate anchored behavior in
+  `binary2048-v2-anchored-locks`
+  ([decision record](./v2-anchored-lock-ruleset-decision-2026-10-27.md)).
 
 The spike must explicitly decide whether despawn remains tied to global turn
 parity or becomes per-lock lifetime/collision state, whether zero or wildcard
@@ -301,22 +315,29 @@ tiles can trigger despawn, and how several locks age independently.
 
 ### Death by Luck wildcard mode
 
-- [ ] Prototype an explicitly serialized, unranked `Death by Luck` game mode
+- [x] Prototype an explicitly serialized, unranked `Death by Luck` game mode
   with an overabundance of wildcard spawns, rather than inferring its identity
-  from `pWildcard`.
-- [ ] In this mode, prototype non-combinable wildcard-to-wildcard collisions
+  from `pWildcard`
+  ([evidence](./v2-death-by-luck-explicit-mode-spike-2026-10-27.md)).
+- [x] In this mode, prototype non-combinable wildcard-to-wildcard collisions
   while preserving wildcard-plus-number multiplication as the high-upside path
-  to a fast win.
-- [ ] Define interactions with zero, Lock-0, equal and unequal wildcard
+  to a fast win
+  ([evidence](./v2-death-by-luck-wildcard-collision-spike-2026-10-27.md)).
+- [x] Define interactions with zero, Lock-0, equal and unequal wildcard
   multipliers, scoring, win/game-over, undo, replay/import/export,
-  simulation/action masks, and leaderboard eligibility.
-- [ ] Run fixed-seed and Monte Carlo balance experiments across candidate
+  simulation/action masks, and leaderboard eligibility
+  ([evidence](./v2-death-by-luck-interaction-matrix-2026-10-27.md)).
+- [x] Run fixed-seed and Monte Carlo balance experiments across candidate
   wildcard rates and multiplier distributions. Report win rate,
   loss-by-board-fill rate, moves to win/loss, score/max-tile distribution, and
-  sensitivity to luck before choosing defaults.
-- [ ] Produce deterministic engine/schema regressions and browser/tutorial/help
+  sensitivity to luck before choosing defaults. The first candidate grid was
+  rejected and no default was selected
+  ([evidence](./v2-death-by-luck-balance-experiment-2026-10-28.md)).
+- [x] Produce deterministic engine/schema regressions and browser/tutorial/help
   acceptance criteria with the spike decision; do not ship the mode until that
-  decision is recorded.
+  decision is recorded. Decision: retain the isolated unranked prototype and do
+  not ship it until a future balance gate and the acceptance criteria pass
+  ([decision record](./v2-death-by-luck-spike-decision-2026-10-28.md)).
 
 ### Cosmetic store, 3D themes, and custom backgrounds
 
@@ -326,44 +347,49 @@ oblique for a responsive square interaction grid. Rebuild the look as separate,
 orthographic web layers so visual depth never changes board geometry or hitboxes
 ([asset workflow and spike brief](./v2-cosmetic-store-visual-spike-2026-10-14.md)).
 
-- [ ] Define a Rocket League-style cosmetic catalog for tile sets, board
+- [x] Define a Rocket League-style cosmetic catalog for tile sets, board
   frames/borders, slot treatments, board surfaces, and page backgrounds. Specify
   preview, purchase, ownership, equip/loadout, bundles, rarity/rotation only if
   justified, receipts/refunds, gifting policy, and cross-device entitlements.
   Cosmetics must remain noncompetitive and must never change rules or odds.
   Use durable cosmetic entitlements and versioned loadouts rather than the
   existing consumable quantity balances; keep preview/equip separate from a
-  later verified real-money checkout.
-- [ ] Prototype a versioned theme manifest and renderer that composes independent
+  later verified real-money checkout
+  ([contract](./v2-cosmetic-catalog-contract-2026-10-28.md)).
+- [x] Prototype a versioned theme manifest and renderer that composes independent
   tile, number/icon, slot, frame, surface, and background assets. Prove mixed
   ownership/loadouts, fallback assets, cache invalidation, offline behavior,
   replay/share portability, and compatibility with every special tile. Validate
   IDs, renderer/schema versions, owned-origin URLs, dimensions, MIME, byte size,
   content hashes, provenance, fallbacks, accessibility tokens, and compatibility;
-  keep cosmetics outside deterministic state and verify equip ownership server-side.
+  keep cosmetics outside deterministic state and verify equip ownership server-side
+  ([evidence](./v2-cosmetic-manifest-renderer-prototype-2026-10-28.md)).
 - [ ] Compare CSS/SVG depth, pre-rendered orthographic 2D sprites, and a bounded
   WebGL/3D renderer. Measure load, memory, GPU, paint/composite, battery, and
   input-to-next-frame on the target Pixel before choosing a production path.
   Choose numeric transfer, decoded-memory, animation, LCP/CLS, and input-latency
   budgets before judging the proof.
-- [ ] Prototype small original animated tile treatments using CSS/vector motion
+- [x] Prototype small original animated tile treatments using CSS/vector motion
   or a bounded sprite atlas. Set simultaneous-animation, frame-rate, decoded
   memory, and bundle budgets; provide static fallbacks and honor
   `prefers-reduced-motion`. Do not use unlicensed anime characters or styles
-  that imitate a specific living artist or protected franchise.
-- [ ] Design a player background-upload pipeline with authenticated ownership,
+  that imitate a specific living artist or protected franchise
+  ([evidence](./v2-cosmetic-animation-prototype-2026-10-28.md)).
+- [x] Design a player background-upload pipeline with authenticated ownership,
   direct object-storage upload, strict byte/dimension/type limits, actual image
   decoding, metadata stripping, safe crop/focal-point tools, moderation/reporting,
   copyright attestations, derivative generation, quotas, deletion/export, CDN
   isolation, and cost/abuse controls. Uploaded content must never become CSS,
-  HTML, SVG, script, or a public URL before validation.
-- [ ] Produce a small asset proof from the concept direction: one wood/brass/felt
+  HTML, SVG, script, or a public URL before validation
+  ([design](./v2-player-background-upload-design-2026-10-28.md)).
+- [x] Produce a small asset proof from the concept direction: one wood/brass/felt
   board theme, one jewel/beveled tile set including zero/wildcard/Lock-0, one
   responsive background, and one animated-tile sample. Test light/dark contrast,
   color-vision modes, legibility through large values, 320px/200% zoom, and
   reduced motion before any store implementation decision. Record immutable
   reference locations and creator/generator, ownership, license, and allowed
-  derivative use before producing assets.
+  derivative use before producing assets
+  ([evidence and release boundary](./v2-cosmetic-asset-proof-2026-10-28.md)).
 
 Cosmetic spike exit criterion: a checked-in decision record chooses the
 rendering and asset formats, performance budgets, entitlement model, upload
@@ -375,6 +401,24 @@ Exit criterion: checked-in decision records choose precise semantics,
 configuration, versioning, and balance targets with deterministic prototype
 evidence. Current production behavior remains unchanged until separately
 approved.
+
+### V2 closure records
+
+Implementation Phases 0 through 7 are complete. Close V2 only after the
+remaining external proof gates above are resolved and both final records are
+checked in:
+
+- [ ] Record the final hosting decision: stay or migrate, supported by the
+  commercial-use classification, candidate MongoDB and fail-closed proofs,
+  comparable deployment boundaries, the measured 30-day workload, a three-year
+  total-cost comparison, and—if migration remains viable—the approved bounded
+  deployment proof. Include the migration trigger and rollback plan.
+- [ ] Record the final cosmetic rendering decision after physical target-Pixel
+  measurements compare CSS/SVG, orthographic sprites, and bounded WebGL. Choose
+  the production renderer and asset formats, numeric performance budgets,
+  accessible fallback behavior, and whether the Workbench proof is rejected,
+  retained for further iteration, or approved for a separately authorized
+  production implementation.
 
 ## Delivery plan
 
@@ -585,9 +629,12 @@ accessibility or correctness.
 
 ### Phase 7: visual scenario builder
 
-- [ ] Add a dedicated scenario-builder view with an empty or existing board,
+Status: complete.
+
+- [x] Add a dedicated scenario-builder view with an empty or existing board,
   board-size controls, seed, win tile, spawn configuration, game mode, and
-  zero behavior.
+  zero behavior
+  ([evidence](./v2-phase7-dedicated-scenario-builder-view-2026-10-27.md)).
 - [x] Provide a tile palette containing empty/erase, number tiles, zero,
   supported wildcard multipliers, and Lock-0.
 - [x] Let the user choose a palette tile and then place it in any board cell;
@@ -624,12 +671,14 @@ accessibility or correctness.
 - [x] Support tournament scenario sets with stable IDs, names, tags, mirrored
   variants, deterministic seeds, and duplicate-board detection
   ([evidence](./v2-phase7-tournament-scenario-sets-2026-10-27.md)).
-- [ ] Keep user-authored boards out of ranked leaderboards unless a future
-  competition definition explicitly approves and signs the scenario.
-- [ ] Add engine/schema unit tests and Playwright coverage for every tile type,
+- [x] Keep user-authored boards out of ranked leaderboards unless a future
+  competition definition explicitly approves and signs the scenario
+  ([evidence](./v2-phase7-user-authored-ranked-exclusion-2026-10-27.md)).
+- [x] Add engine/schema unit tests and Playwright coverage for every tile type,
   placement and replacement, clearing, undo/redo, symmetry operations,
   validation, draft persistence, JSON round trips, mobile layout, keyboard
-  operation, and tournament export.
+  operation, and tournament export
+  ([evidence](./v2-phase7-scenario-builder-test-coverage-2026-10-27.md)).
 
 Exit criterion: a user can construct a symmetric special-tile board without
 editing JSON, save and reopen it, export and re-import an identical versioned
@@ -865,3 +914,12 @@ work during normal moves, special-tile effects, long histories, or support-UI
 state changes. Any proposed change must define a before/after acceptance metric
 and demonstrate enough improvement to justify the added component and
 prop-comparison complexity.
+
+## Numbers-only game mode
+
+- [x] Add an explicitly serialized game mode that spawns and plays with numeric
+  tiles only. Exclude zero, wildcard, and Lock-0 tiles; define its numeric spawn
+  distribution, scoring and win/game-over behavior, replay/import/export
+  compatibility, leaderboard eligibility, deterministic engine/schema
+  regressions, and browser/tutorial/help acceptance criteria before shipping
+  ([evidence](./v2-numbers-only-mode-2026-10-28.md)).

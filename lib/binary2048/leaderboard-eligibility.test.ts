@@ -52,6 +52,25 @@ describe("leaderboard eligibility", () => {
     expect(result.reason).toContain("Seeded starts");
   });
 
+  it("rejects a user-authored board even when it otherwise resembles a canonical ranked start", async () => {
+    const grid: Cell[][] = [
+      [{ t: "n", v: 1 }, { t: "n", v: 1 }, null, null],
+      [null, null, null, null],
+      [null, null, null, null],
+      [null, null, null, null]
+    ];
+    const session = await createSession(
+      { seed: 7005, winTile: 2 },
+      grid,
+      { sessionClass: "ranked", boardOrigin: "user_authored" }
+    );
+
+    const result = getLeaderboardEligibility(session);
+
+    expect(result.eligible).toBe(false);
+    expect(result.reason).toContain("User-authored boards");
+  });
+
   it("marks undo-assisted ranked runs as boosted", async () => {
     const session = (await finishRankedSession(7004));
     (await undoSession(session.current.id));
@@ -59,5 +78,21 @@ describe("leaderboard eligibility", () => {
     const latest = getLeaderboardEligibility((await getSession(session.current.id))!);
     expect(latest.eligible).toBe(false);
     expect(latest.reason).toContain("Undo-assisted");
+  });
+
+  it("rejects numbers-only mode even if a caller constructs it as ranked", async () => {
+    const session = await createSession(
+      {
+        seed: 7006,
+        spawn: { pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2] }
+      },
+      [[{ t: "n", v: 1 }, { t: "n", v: 1 }, null, null], ...Array.from({ length: 3 }, () => Array(4).fill(null))],
+      { sessionClass: "ranked", gameMode: "numbers-only", modeRulesetId: "binary2048-v2-numbers-only" }
+    );
+
+    expect(getLeaderboardEligibility(session)).toEqual(expect.objectContaining({
+      eligible: false,
+      reason: expect.stringContaining("Only classic mode")
+    }));
   });
 });

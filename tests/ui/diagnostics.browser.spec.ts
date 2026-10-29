@@ -4,6 +4,16 @@ import type { Cell, Dir, GameConfig, GameState } from "@/lib/binary2048/types";
 
 const gameLogEnabled = process.env.NEXT_PUBLIC_GAME_LOG_ENABLED === "1";
 
+async function mockSession(page: import("@playwright/test").Page, authenticated: boolean) {
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(authenticated ? { user: { name: "Diagnostics tester" }, tier: "authed" } : {})
+    });
+  });
+}
+
 function recoveryMoves(body: {
   recoverySnapshot?: { moves?: Dir[] };
   compactRecovery?: { checkpoint?: { moves?: Dir[] }; acknowledgedTail?: Dir[] };
@@ -14,8 +24,24 @@ function recoveryMoves(body: {
   ];
 }
 
-test("support mode is off by default while critical diagnostics remain available", async ({ page }) => {
+test("support mode is hidden while signed out and documentation remains available", async ({ page }) => {
+  await mockSession(page, false);
+  await page.goto("/");
+
+  await expect(page.getByRole("region", { name: "Game diagnostics" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Enable Support Mode" })).toHaveCount(0);
+  const docs = page.getByRole("navigation", { name: "Documentation links" });
+  await expect(docs.getByRole("link", { name: "Documentation" })).toHaveAttribute("href", "/docs");
+  await expect(docs.getByRole("link", { name: "GitHub README" })).toHaveAttribute(
+    "href",
+    "https://github.com/alankelsey/Binary-2048#readme"
+  );
+  await expect(docs.getByRole("link", { name: "API Docs (OpenAPI)" })).toHaveAttribute("href", "/api-docs");
+});
+
+test("support mode is off by default for a signed-in player while critical diagnostics remain available", async ({ page }) => {
   test.skip(gameLogEnabled, "Runs only against the normal app configuration");
+  await mockSession(page, true);
   await page.goto("/");
   await expect(page.getByRole("region", { name: "Game diagnostics" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Enable Support Mode" })).toBeVisible();
@@ -32,6 +58,7 @@ test("support mode is off by default while critical diagnostics remain available
 
 test("game log captures moves, export/replay results, console errors, and supports toggle/copy/clear", async ({ page }) => {
   test.skip(!gameLogEnabled, "Requires NEXT_PUBLIC_GAME_LOG_ENABLED=1");
+  await mockSession(page, true);
   const config: GameConfig = {
     ...DEFAULT_CONFIG,
     seed: 5150,
@@ -207,6 +234,7 @@ test("game log captures moves, export/replay results, console errors, and suppor
 
 test("support mode persists across reload, disables immediately, and removes expired state", async ({ page }) => {
   test.skip(!gameLogEnabled, "Requires NEXT_PUBLIC_GAME_LOG_ENABLED=1");
+  await mockSession(page, true);
   await page.goto("/");
   await page.getByRole("button", { name: "Enable Support Mode" }).click();
   await expect(page.getByRole("button", { name: "Disable Support Mode" })).toBeVisible();

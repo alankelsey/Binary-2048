@@ -8,6 +8,7 @@ export default function AdvancedHelpBody() {
       <p>`Lock-0` (`⛓`) blocks one collision turn, then behaves like `0` on the next moved turn.</p>
       <p>Wildcard tiles (`✦`) double any number tile they collide with, then disappear.</p>
       <p>Game ends when no empty cells and no valid merges remain.</p>
+      <p>Numbers only mode uses the same merge, score, win, and game-over rules but never spawns special tiles. It is unranked.</p>
       <p>Tip: keep your highest value anchored to one side and avoid breaking the chain.</p>
     </div>
   );

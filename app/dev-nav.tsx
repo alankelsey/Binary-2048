@@ -7,6 +7,7 @@ const NAV_LINKS = [
   { href: "/ops", label: "Operations" },
   { href: "/auth", label: "Auth" },
   { href: "/ghost-race", label: "Ghost Race" },
+  { href: "/scenario-builder", label: "Scenario Builder" },
   { href: "/docs", label: "Docs" },
   { href: "/api-docs", label: "API Docs" }
 ] as const;

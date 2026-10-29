@@ -230,6 +230,8 @@ function countNonEmptyCells(session: GameSession): number { return session.initi
 
 export function getLeaderboardEligibility(session: GameSession): LeaderboardEligibility {
   if (session.integrity.sessionClass !== "ranked" || session.integrity.source !== "created") return { eligible: false, bracket: "ranked_boosted", reason: "Only ranked created sessions are eligible" };
+  if (session.integrity.gameMode && session.integrity.gameMode !== "classic") return { eligible: false, bracket: "ranked_boosted", reason: "Only classic mode is eligible for ranked leaderboard" };
+  if (session.integrity.boardOrigin === "user_authored") return { eligible: false, bracket: "ranked_boosted", reason: "User-authored boards are not eligible for ranked leaderboard" };
   if (countNonEmptyCells(session) !== 2) return { eligible: false, bracket: "ranked_boosted", reason: "Seeded starts are not eligible for ranked leaderboard" };
   if (session.undoUsed > 0) return { eligible: false, bracket: "ranked_boosted", reason: "Undo-assisted runs are not eligible for ranked_pure" };
   return { eligible: true, bracket: "ranked_pure" };

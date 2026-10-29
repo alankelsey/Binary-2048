@@ -23,6 +23,13 @@ import {
   isCompactRecoveryPayload,
   type CompactRecoveryPayload
 } from "@/lib/binary2048/compact-recovery";
+import {
+  assertNumbersOnlyConfig,
+  assertNumbersOnlyGrid,
+  assertNumbersOnlyIdentity,
+  NUMBERS_ONLY_MODE,
+  NUMBERS_ONLY_RULESET_ID
+} from "@/lib/binary2048/numbers-only";
 
 const UNDO_MODES = {
   normal: { pWildcard: 0.1, undoLimit: 2 },
@@ -54,6 +61,9 @@ export function getUndoMeta(session: Pick<GameSession, "undoLimit" | "undoUsed">
 
 type CreateSessionOptions = {
   sessionClass?: "ranked" | "unranked";
+  boardOrigin?: "canonical" | "user_authored";
+  gameMode?: "classic" | "bitstorm" | "numbers-only";
+  modeRulesetId?: string;
 };
 
 export type SessionPath =
@@ -258,6 +268,11 @@ async function deleteStoredSession(id: string) {
 
 export async function createSession(config?: Partial<GameConfig>, initialGrid?: Cell[][], options?: CreateSessionOptions) {
   const created = createGame(config, initialGrid);
+  if (options?.gameMode === NUMBERS_ONLY_MODE) {
+    assertNumbersOnlyIdentity(options.modeRulesetId);
+    assertNumbersOnlyConfig(created.state.config);
+    assertNumbersOnlyGrid(created.state.grid);
+  }
   const session: GameSession = {
     sessionVersion: SESSION_SCHEMA_VERSION,
     initialState: created.state,
@@ -267,7 +282,13 @@ export async function createSession(config?: Partial<GameConfig>, initialGrid?: 
     undoLimit: inferUndoLimit(created.state.config),
     undoUsed: 0,
     undoEvents: [],
-    integrity: { sessionClass: options?.sessionClass ?? "unranked", source: "created" }
+    integrity: {
+      sessionClass: options?.sessionClass ?? "unranked",
+      source: "created",
+      boardOrigin: options?.boardOrigin ?? "canonical",
+      gameMode: options?.gameMode,
+      modeRulesetId: options?.modeRulesetId
+    }
   };
   (await writeStoredSession(created.state.id, session));
   return session;
@@ -521,6 +542,15 @@ export async function importSession(exported: GameExport, recorder?: SessionTimi
   if (!exported.config || !exported.initial?.grid || !Array.isArray(exported.steps)) {
     throw new Error("Export is missing required fields");
   }
+  const importedGameMode = exported.meta?.integrity?.gameMode;
+  if (importedGameMode && !["classic", "bitstorm", NUMBERS_ONLY_MODE].includes(importedGameMode)) {
+    throw new Error("Export contains an unsupported game mode");
+  }
+  if (importedGameMode === NUMBERS_ONLY_MODE) {
+    assertNumbersOnlyIdentity(exported.meta.integrity.modeRulesetId);
+    assertNumbersOnlyConfig(exported.config);
+    assertNumbersOnlyGrid(exported.initial.grid);
+  }
 
   const created = createGame(exported.config, exported.initial.grid);
   const initialState = created.state;
@@ -565,6 +595,8 @@ export async function importSession(exported: GameExport, recorder?: SessionTimi
     integrity: {
       sessionClass: "unranked",
       source: "imported",
+      gameMode: importedGameMode,
+      modeRulesetId: importedGameMode === NUMBERS_ONLY_MODE ? NUMBERS_ONLY_RULESET_ID : undefined,
       importedFromRulesetId: exported.meta?.rulesetId
     }
   };
@@ -583,6 +615,11 @@ export async function importRecoverySnapshot(snapshot: SessionRecoverySnapshot, 
   }
   if (!snapshot.config || !Array.isArray(snapshot.initialGrid) || !Array.isArray(snapshot.moves)) {
     throw new Error("Recovery snapshot is missing required fields");
+  }
+  if (snapshot.integrity?.gameMode === NUMBERS_ONLY_MODE) {
+    assertNumbersOnlyIdentity(snapshot.integrity.modeRulesetId);
+    assertNumbersOnlyConfig(snapshot.config);
+    assertNumbersOnlyGrid(snapshot.initialGrid);
   }
   const replayStartedAt = nowMs();
   let exported: GameExport;

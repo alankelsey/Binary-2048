@@ -517,7 +517,19 @@ const OPENAPI_BASE_SPEC = {
         summary: "Create a game session",
         requestBody: {
           required: false,
-          content: { "application/json": { schema: { type: "object" } } }
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  mode: { type: "string", enum: ["classic", "bitstorm", "numbers-only"] },
+                  config: { type: "object" },
+                  initialGrid: { type: "array", items: { type: "array" } },
+                  economy: { type: "object" }
+                }
+              }
+            }
+          }
         },
         responses: {
           "200": { description: "Game created" },
@@ -954,7 +966,7 @@ const SCOPED_RESEARCH = (scope: string): Pick<OperationContract, "auth" | "secur
 const OPERATION_CONTRACTS: Record<string, OperationContract> = {
   "GET /api/jobs/{id}": { ...SCOPED_RESEARCH("jobs:read"), auth: "Scoped research/admin credential bound to the submitting principal; ownerless pre-deployment jobs retain opaque-id access until their 24-hour TTL", rateLimit: "job_status: default 120 requests / 5 minutes; contract v2 reads bounded metadata only; stored artifacts expire after 24 hours", version: "job-v2", examples: { response: "{ jobId, status, resultUrl?, result? (deprecated stored-artifact compatibility), error?, expiresAt }" } },
   "GET /api/jobs/{id}/result": { ...SCOPED_RESEARCH("jobs:read"), auth: "Same principal ownership and bounded ownerless-job compatibility policy as job status; artifacts are verified before parsing", rateLimit: "job_status: shared default 120 requests / 5 minutes; worker-result-v1 artifact capped at 12 MiB and retained for 24 hours", version: "worker-result-v1", examples: { response: "{ jobId, status: 'complete', result }" } },
-  "POST /api/games": { ...PUBLIC, rateLimit: "No route-local request quota", version: "session-schema-v2", examples: { request: "{ seed?: 42, mode?: 'normal' }", response: "{ id, current, recoverySnapshot, integrity }" } },
+  "POST /api/games": { ...PUBLIC, rateLimit: "No route-local request quota", version: "session-schema-v2", examples: { request: "{ config?: { seed: 42 }, mode?: 'classic' | 'bitstorm' | 'numbers-only' }", response: "{ id, current, recoverySnapshot, integrity, mode }" } },
   "GET /api/games/{id}": { ...PUBLIC, rateLimit: "No route-local request quota", version: "session-schema-v2", examples: { response: "{ id, current, recoverySnapshot, integrity }" } },
   "POST /api/games/{id}/move": { ...OPTIONAL_API_KEY, rateLimit: "game_move: default 600 requests / 5 minutes; API-key counters are shared", version: COMPACT_SYNC_VERSION, examples: { request: "{ dir: 'left', expectTurn, expectStateHashVersion, expectStateHash }", response: "{ current, stateHash, stateHashVersion, sync }" } },
   "POST /api/games/{id}/undo": { ...PUBLIC, rateLimit: "No route-local request quota", version: "session-schema-v2", examples: { response: "{ current, undo, recoverySnapshot }" } },

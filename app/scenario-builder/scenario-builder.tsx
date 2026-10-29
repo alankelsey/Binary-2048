@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type PointerEvent as ReactPointerEvent } from "react";
 import {
   commitScenarioGrid,
@@ -428,6 +429,7 @@ export function ScenarioBuilder() {
         <header>
           <h1>Scenario Builder</h1>
           <p className="brand-subtitle">Configure a deterministic board before placing tiles.</p>
+          <Link className="button" href="/">Back to game</Link>
         </header>
 
         <div className="scenario-builder-layout">

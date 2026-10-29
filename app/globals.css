@@ -339,6 +339,8 @@ main {
 .fullscreen-shell.fullscreen-active .game-hint,
 .fullscreen-shell:fullscreen .share-row,
 .fullscreen-shell.fullscreen-active .share-row,
+.fullscreen-shell:fullscreen .docs-footer,
+.fullscreen-shell.fullscreen-active .docs-footer,
 .fullscreen-shell:fullscreen .build-version,
 .fullscreen-shell.fullscreen-active .build-version {
   display: none;
@@ -436,6 +438,202 @@ main {
 @media (forced-colors: active) {
   :root[data-board-background="cherryBlossom"] .board {
     background: Canvas;
+  }
+}
+
+.cosmetic-asset-proof {
+  --proof-text: #fff;
+  box-sizing: border-box;
+  display: grid;
+  width: min(100%, 72rem);
+  min-width: 0;
+  gap: clamp(0.75rem, 2vw, 1.5rem);
+  padding: clamp(0.75rem, 3vw, 2rem);
+  overflow-wrap: anywhere;
+  color: var(--proof-text);
+  background: #071426 url("/themes/workbench-proof-v1/page-background.jpg") center / cover;
+}
+
+.cosmetic-asset-proof[data-scheme="light"] {
+  --proof-text: #111827;
+  background-color: #f8fafc;
+  background-blend-mode: screen;
+}
+
+.cosmetic-proof-board {
+  width: min(100%, 34rem);
+  margin: 0 auto;
+  text-align: center;
+}
+
+.cosmetic-proof-board img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+}
+
+.cosmetic-proof-board figcaption,
+.cosmetic-proof-motion > span {
+  display: inline-block;
+  margin-top: 0.45rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  color: #fff;
+  background: #050b14;
+}
+
+.cosmetic-proof-tile-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(0.35rem, 1.5vw, 0.9rem);
+}
+
+.cosmetic-proof-tile {
+  display: grid;
+  aspect-ratio: 1;
+  place-items: center;
+  background-image: url("/themes/workbench-proof-v1/jewel-tile-atlas.png");
+  background-repeat: no-repeat;
+  background-size: 200% 200%;
+}
+
+.cosmetic-proof-tile-0 { background-position: 0 0; }
+.cosmetic-proof-tile-1 { background-position: 100% 0; }
+.cosmetic-proof-tile-2 { background-position: 0 100%; }
+.cosmetic-proof-tile-3 { background-position: 100% 100%; }
+
+.cosmetic-proof-token {
+  max-width: 80%;
+  padding: 0.2em 0.35em;
+  border: 2px solid currentColor;
+  border-radius: 0.35em;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.82);
+  font-size: clamp(0.58rem, 3vw, 1.15rem);
+  font-weight: 900;
+  line-height: 1.05;
+  text-align: center;
+  text-shadow: 0 1px 1px #000;
+}
+
+.cosmetic-proof-tile-1 .cosmetic-proof-token { border-radius: 50%; }
+.cosmetic-proof-tile-2 .cosmetic-proof-token::before { content: "✦ "; }
+.cosmetic-proof-tile-3 .cosmetic-proof-token::before { content: "▣ "; }
+
+.cosmetic-asset-proof[data-vision-mode="deuteranopia"],
+.cosmetic-asset-proof[data-vision-mode="protanopia"] {
+  filter: saturate(0.72) contrast(1.08);
+}
+
+.cosmetic-asset-proof[data-vision-mode="tritanopia"] {
+  filter: sepia(0.12) saturate(0.76) contrast(1.08);
+}
+
+.cosmetic-proof-motion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+@media (max-width: 320px) {
+  .cosmetic-asset-proof { padding: 0.5rem; }
+  .cosmetic-proof-tile-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (forced-colors: active) {
+  .cosmetic-asset-proof,
+  .cosmetic-proof-tile {
+    color: CanvasText;
+    background: Canvas;
+    filter: none;
+  }
+
+  .cosmetic-proof-token {
+    color: CanvasText;
+    background: Canvas;
+  }
+}
+
+/* Isolated cosmetic animation proof. No production component imports this markup. */
+.cosmetic-animation-prototype {
+  --cosmetic-animation-order: 0;
+  position: relative;
+  display: inline-grid;
+  width: 5rem;
+  aspect-ratio: 1;
+  place-items: center;
+  overflow: hidden;
+  border: 2px solid #9a6b2f;
+  border-radius: 0.8rem;
+  color: #fffdf8;
+  background: linear-gradient(145deg, #26364d, #101824);
+  contain: layout paint style;
+  isolation: isolate;
+}
+
+.cosmetic-animation-face {
+  position: relative;
+  z-index: 1;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.cosmetic-animation-effect {
+  position: absolute;
+  inset: -35%;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.cosmetic-animation-brass-glint .cosmetic-animation-effect,
+.cosmetic-animation-jewel-sheen .cosmetic-animation-effect {
+  background: linear-gradient(105deg, transparent 38%, rgba(255, 247, 191, 0.72) 48%, transparent 58%);
+  transform: translateX(-65%) rotate(8deg);
+  animation: cosmetic-glint 1.6s ease-in-out calc(var(--cosmetic-animation-order) * 80ms) infinite;
+}
+
+.cosmetic-animation-jewel-sheen {
+  border-color: #79d9ff;
+  background: radial-gradient(circle at 35% 28%, #2d9bc5, #17385e 52%, #11182b);
+}
+
+.cosmetic-animation-wildcard-orbit .cosmetic-animation-effect {
+  inset: 12%;
+  border: 2px dotted rgba(191, 235, 255, 0.8);
+  border-radius: 50%;
+  animation: cosmetic-orbit 2.4s linear calc(var(--cosmetic-animation-order) * 80ms) infinite;
+}
+
+@keyframes cosmetic-glint {
+  0%, 55% { opacity: 0; transform: translateX(-65%) rotate(8deg); }
+  65% { opacity: 1; }
+  85%, 100% { opacity: 0; transform: translateX(65%) rotate(8deg); }
+}
+
+@keyframes cosmetic-orbit {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cosmetic-animation-prototype .cosmetic-animation-effect {
+    animation: none;
+    opacity: 0.28;
+    transform: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .cosmetic-animation-prototype {
+    border-color: CanvasText;
+    color: CanvasText;
+    background: Canvas;
+  }
+
+  .cosmetic-animation-prototype .cosmetic-animation-effect {
+    display: none;
   }
 }
 
@@ -964,6 +1162,27 @@ select:focus-visible {
 
 .share-status {
   color: var(--status-ok);
+}
+
+.docs-footer {
+  display: flex;
+  justify-content: center;
+  gap: 0.35rem 0.85rem;
+  flex-wrap: wrap;
+  margin-top: 0.8rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--card-border);
+  font-size: 0.76rem;
+  color: var(--meta-text);
+}
+
+.docs-footer a {
+  color: var(--accent);
+  text-underline-offset: 0.18em;
+}
+
+.docs-footer a:hover {
+  color: var(--text);
 }
 
 .button {

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type TouchEvent } from "react";
 import { computeCellEffects, type CellEffect, type MoveEvent } from "@/lib/binary2048/cell-effects";
 import {
@@ -130,7 +131,7 @@ import {
 
 type SpawnMode = "normal" | "ltfg" | "death";
 type ColorMode = "default" | "cb-protanopia" | "cb-deuteranopia" | "cb-tritanopia";
-type GameMode = "classic" | "bitstorm";
+type GameMode = "classic" | "bitstorm" | "numbers-only";
 
 type UndoMeta = { limit: number; used: number; remaining: number };
 type SessionClass = "ranked" | "unranked";
@@ -155,7 +156,8 @@ const SPAWN_MODES: Record<
 };
 const GAME_MODES: Record<GameMode, { label: string }> = {
   classic: { label: "Classic" },
-  bitstorm: { label: "Bitstorm" }
+  bitstorm: { label: "Bitstorm" },
+  "numbers-only": { label: "Numbers only" }
 };
 const DIFFICULTY_HELP_TEXT =
   "Difficulty changes wildcard/lock spawn rates: Normal = balanced, LTFG = more wildcards and fewer locks, Death by AI = fewer wildcards and more locks.";
@@ -705,9 +707,10 @@ export default function Home() {
       restoredPendingMovesRef.current = [];
     }
     try {
-      const pZero = 0.15;
-      const pWildcard = SPAWN_MODES[spawnMode].pWildcard;
-      const pLock = SPAWN_MODES[spawnMode].pLock;
+      const numbersOnly = gameMode === "numbers-only";
+      const pZero = numbersOnly ? 0 : 0.15;
+      const pWildcard = numbersOnly ? 0 : SPAWN_MODES[spawnMode].pWildcard;
+      const pLock = numbersOnly ? 0 : SPAWN_MODES[spawnMode].pLock;
       const pOne = 1 - pZero - pWildcard - pLock;
       const authHeaders = await authBridgeRef.current?.authorizationHeader();
       addDiagnostic("new_game_request", {
@@ -1538,7 +1541,7 @@ export default function Home() {
       setSpawnMode(savedMode);
     }
     const savedGameMode = window.localStorage.getItem(gameModeKey);
-    if (savedGameMode === "classic" || savedGameMode === "bitstorm") {
+    if (savedGameMode === "classic" || savedGameMode === "bitstorm" || savedGameMode === "numbers-only") {
       setGameMode(savedGameMode);
     }
     const savedColorMode = window.localStorage.getItem(colorModeKey);
@@ -2547,6 +2550,7 @@ export default function Home() {
                   aria-labelledby="new-game-difficulty-label"
                   className={`difficulty-select mode-${spawnMode}`}
                   value={spawnMode}
+                  disabled={gameMode === "numbers-only"}
                   onChange={(event) => setSpawnMode(event.target.value as SpawnMode)}
                 >
                   <option value="normal">{SPAWN_MODES.normal.label}</option>
@@ -2607,8 +2611,14 @@ export default function Home() {
                 <select aria-label="Game mode" value={gameMode} onChange={(event) => setGameMode(event.target.value as GameMode)}>
                   <option value="classic">{GAME_MODES.classic.label}</option>
                   <option value="bitstorm">{GAME_MODES.bitstorm.label}</option>
+                  <option value="numbers-only">{GAME_MODES["numbers-only"].label}</option>
                 </select>
               </label>
+              {gameMode === "numbers-only" ? (
+                <p className="field-help-note" role="note">
+                  Numbers only spawns number tiles—no zero, wildcard, or Lock-0 tiles—and is unranked.
+                </p>
+              ) : null}
               <label className="tutorial-suppress-choice">
                 <input
                   type="checkbox"
@@ -2864,7 +2874,7 @@ export default function Home() {
           />
         </div>
         </div>
-        <section className="diagnostics-panel" aria-label="Game diagnostics">
+        {authenticated ? <section className="diagnostics-panel" aria-label="Game diagnostics">
           <div className="diagnostics-header">
             <strong>Support diagnostics</strong>
             <div className="diagnostics-actions">
@@ -2919,11 +2929,15 @@ export default function Home() {
               value={diagnosticText}
             />
           ) : null}
-        </section>
+        </section> : null}
         <details className="game-hint" onToggle={(event) => setAdvancedHelpOpen(event.currentTarget.open)}>
           <summary>How to play: Swipe on mobile or use arrow keys/WASD. Keep your strongest chain organized.</summary>
           {advancedHelpOpen ? <AdvancedHelpLoader /> : null}
         </details>
+        <nav className="share-row" aria-label="game tools">
+          <span>Tools:</span>
+          <Link className="button" href="/scenario-builder">Scenario Builder</Link>
+        </nav>
         <div className="share-row" aria-label="share actions">
           <span>Share:</span>
           <button
@@ -2965,6 +2979,17 @@ export default function Home() {
           </button>
           {shareMessage ? <span className="share-status">{shareMessage}</span> : null}
         </div>
+        <nav className="docs-footer" aria-label="Documentation links">
+          <Link href="/docs">Documentation</Link>
+          <a
+            href="https://github.com/alankelsey/Binary-2048#readme"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            GitHub README
+          </a>
+          <Link href="/api-docs">API Docs (OpenAPI)</Link>
+        </nav>
         <p className="build-version" aria-label="app version">
           v{APP_VERSION} ({APP_COMMIT})
         </p>

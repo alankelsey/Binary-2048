@@ -1,5 +1,6 @@
 import {
   createScenarioDraft,
+  isScenarioBuilderState,
   parseScenarioDrafts,
   SCENARIO_DRAFT_VERSION,
   upsertScenarioDraft
@@ -35,5 +36,26 @@ describe("scenario drafts", () => {
     expect(() => createScenarioDraft({ id: "short", name: "Draft", scenario })).toThrow("Draft ID is invalid.");
     expect(() => createScenarioDraft({ id: "draft_12345678", name: "   ", scenario })).toThrow("Draft name is required.");
     expect(createScenarioDraft({ id: "draft_12345678", name: "x".repeat(100), scenario }).name).toHaveLength(80);
+  });
+
+  it("accepts every tile schema and rejects malformed tile records", () => {
+    const scenario = createScenarioBuilderState();
+    scenario.grid[0] = [
+      { t: "n", v: 8 },
+      { t: "z" },
+      { t: "w", m: 4 },
+      { t: "i" }
+    ];
+    expect(isScenarioBuilderState(scenario)).toBe(true);
+
+    for (const invalidCell of [
+      { t: "n", v: 0 },
+      { t: "w", m: 1 },
+      { t: "unknown" }
+    ]) {
+      const invalid = structuredClone(scenario) as unknown as Record<string, unknown>;
+      (invalid.grid as unknown[][])[0][0] = invalidCell;
+      expect(isScenarioBuilderState(invalid)).toBe(false);
+    }
   });
 });

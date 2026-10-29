@@ -88,10 +88,15 @@ describe("docs content", () => {
 
   it("links docs routes from api docs page and README", () => {
     const apiDocsPage = readFileSync(join(repoRoot, "app", "api-docs", "page.tsx"), "utf8");
+    const mainPage = readFileSync(join(repoRoot, "app", "page.tsx"), "utf8");
     const readme = readFileSync(join(repoRoot, "README.md"), "utf8");
     expect(apiDocsPage).toContain('href="/docs"');
     expect(apiDocsPage).toContain('href="/docs/user"');
     expect(apiDocsPage).toContain('href="/docs/developer"');
+    expect(mainPage).toContain('aria-label="Documentation links"');
+    expect(mainPage).toContain('href="/docs"');
+    expect(mainPage).toContain('href="https://github.com/alankelsey/Binary-2048#readme"');
+    expect(mainPage).toContain('href="/api-docs"');
     expect(readme).toContain("http://localhost:3000/docs");
     expect(readme).toContain("http://localhost:3000/docs/user");
     expect(readme).toContain("http://localhost:3000/docs/developer");

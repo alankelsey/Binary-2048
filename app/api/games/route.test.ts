@@ -48,6 +48,7 @@ describe("POST /api/games", () => {
     expect(json.undo?.remaining).toBe(2);
     expect(json.integrity?.sessionClass).toBe("unranked");
     expect(json.integrity?.source).toBe("created");
+    expect(json.integrity?.boardOrigin).toBe("canonical");
     expect(json.economy?.lockTilesEnabled).toBe(true);
     expect(json.economy?.canContinueAfterWin).toBe(true);
     expect(json.recoverySnapshot).toMatchObject({ recoveryVersion: 1, moves: [] });
@@ -68,6 +69,31 @@ describe("POST /api/games", () => {
 
     expect(res.status).toBe(400);
     expect(json.error).toContain("canonical board and win rules");
+  });
+
+  it("records a supplied unranked board as user-authored integrity metadata", async () => {
+    const initialGrid = [
+      [{ t: "n", v: 1 }, { t: "n", v: 1 }, null, null],
+      [null, null, null, null],
+      [null, null, null, null],
+      [null, null, null, null]
+    ];
+    const req = new Request("http://localhost/api/games", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ config: { seed: 100 }, initialGrid })
+    });
+
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.integrity).toMatchObject({
+      sessionClass: "unranked",
+      source: "created",
+      boardOrigin: "user_authored"
+    });
+    expect(json.recoverySnapshot?.integrity?.boardOrigin).toBe("user_authored");
   });
 
   it("returns 403 for guest game creation when challenge is enforced and token missing", async () => {
@@ -152,6 +178,55 @@ describe("POST /api/games", () => {
     const cells = (json.current?.grid ?? []).flat();
     const filled = cells.filter((cell: unknown) => cell !== null).length;
     expect(filled).toBeGreaterThanOrEqual(4);
+  });
+
+  it("creates an explicitly serialized unranked numbers-only mode", async () => {
+    const req = new Request("http://localhost/api/games", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        mode: "numbers-only",
+        config: {
+          seed: 4321,
+          spawn: { pZero: 1, pOne: 0, pWildcard: 0, pLock: 0, wildcardMultipliers: [8] }
+        }
+      })
+    });
+
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.mode).toBe("numbers-only");
+    expect(json.current.config.spawn).toEqual({
+      pZero: 0, pOne: 1, pWildcard: 0, pLock: 0, wildcardMultipliers: [2]
+    });
+    expect(json.current.grid.flat().filter(Boolean).every((cell: { t: string }) => cell.t === "n")).toBe(true);
+    expect(json.integrity).toMatchObject({
+      sessionClass: "unranked",
+      source: "created",
+      gameMode: "numbers-only",
+      modeRulesetId: "binary2048-v2-numbers-only"
+    });
+    expect(json.recoverySnapshot.integrity).toMatchObject(json.integrity);
+  });
+
+  it("rejects special tiles supplied to numbers-only mode", async () => {
+    const req = new Request("http://localhost/api/games", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        mode: "numbers-only",
+        config: { seed: 4322, width: 2, height: 2 },
+        initialGrid: [[{ t: "z" }, null], [null, null]]
+      })
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+    await expect(res.json()).resolves.toEqual(expect.objectContaining({
+      error: expect.stringContaining("does not allow special")
+    }));
   });
 
   it("disables lock spawn for ranked games without lock entitlement", async () => {

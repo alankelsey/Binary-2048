@@ -9,11 +9,17 @@ import { createSession, exportRecoverySnapshot, getUndoMeta } from "@/lib/binary
 import { applyLockEconomyPolicy, type LockEconomyContext } from "@/lib/binary2048/lock-economy";
 import type { Cell, GameConfig } from "@/lib/binary2048/types";
 import type { UserTier } from "@/lib/binary2048/security-policy";
+import {
+  assertNumbersOnlyGrid,
+  createNumbersOnlyConfig,
+  NUMBERS_ONLY_MODE,
+  NUMBERS_ONLY_RULESET_ID
+} from "@/lib/binary2048/numbers-only";
 
 type CreateGameBody = {
   config?: Partial<GameConfig>;
   initialGrid?: Cell[][];
-  mode?: "classic" | "bitstorm";
+  mode?: "classic" | "bitstorm" | "numbers-only";
   economy?: {
     sessionClass?: "ranked" | "unranked";
     userTier?: UserTier;
@@ -45,8 +51,9 @@ export async function POST(req: Request) {
     let initialGrid = body.initialGrid;
     const requestedSeed = body.config?.seed;
     const effectiveSeed = typeof requestedSeed === "number" ? requestedSeed : randomSeed();
-    const mode = body.mode === "bitstorm" ? "bitstorm" : "classic";
+    const mode = body.mode === "bitstorm" || body.mode === NUMBERS_ONLY_MODE ? body.mode : "classic";
     const sessionClass = body.economy?.sessionClass === "ranked" ? "ranked" : "unranked";
+    const boardOrigin = body.initialGrid ? "user_authored" : "canonical";
     if (sessionClass === "ranked") {
       const configKeys = Object.keys(body.config ?? {});
       if (
@@ -91,7 +98,16 @@ export async function POST(req: Request) {
         : plainEntitlements;
     const economyContext: LockEconomyContext = { sessionClass, userTier, entitlements };
 
-    if (!initialGrid && mode === "bitstorm") {
+    if (mode === NUMBERS_ONLY_MODE) {
+      const merged = mergeConfig(config);
+      config = createNumbersOnlyConfig(effectiveSeed, {
+        width: merged.width,
+        height: merged.height,
+        winTile: merged.winTile,
+        spawnOnNoopMove: merged.spawnOnNoopMove
+      });
+      if (initialGrid) assertNumbersOnlyGrid(initialGrid);
+    } else if (!initialGrid && mode === "bitstorm") {
       const merged = mergeConfig(config);
       const effectiveConfig = applyLockEconomyPolicy({ ...merged, seed: effectiveSeed }, economyContext);
       initialGrid = generateBitstormInitialGrid(effectiveConfig);
@@ -101,7 +117,12 @@ export async function POST(req: Request) {
       config = applyLockEconomyPolicy({ ...merged, seed: effectiveSeed }, economyContext);
     }
 
-    const session = (await createSession(config, initialGrid, { sessionClass }));
+    const session = (await createSession(config, initialGrid, {
+      sessionClass,
+      boardOrigin,
+      gameMode: mode,
+      modeRulesetId: mode === NUMBERS_ONLY_MODE ? NUMBERS_ONLY_RULESET_ID : undefined
+    }));
     return NextResponse.json({
       id: session.current.id,
       current: session.current,

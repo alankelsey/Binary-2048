@@ -7,6 +7,7 @@ describe("sitemap", () => {
     expect(urls).toContain("https://www.binary2048.com/");
     expect(urls).toContain("https://www.binary2048.com/leaderboard");
     expect(urls).toContain("https://www.binary2048.com/store");
+    expect(urls).toContain("https://www.binary2048.com/scenario-builder");
     expect(urls).toContain("https://www.binary2048.com/docs");
   });
 });
